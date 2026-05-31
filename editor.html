@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>YOU&amp;I 안내판 편집기</title>
+  <link rel="stylesheet" href="editor.css">
+</head>
+<body>
+
+  <!-- 상단 바 -->
+  <div class="topbar">
+    <div class="brand">YOU<span>&amp;</span>I 안내판 편집기</div>
+    <div class="sep"></div>
+
+    <div class="group">
+      <label class="inl">보드</label>
+      <select id="boardPreset" title="안내판 규격 프리셋"></select>
+    </div>
+    <div class="group">
+      <label class="inl">W</label><input type="number" id="bWidth" title="가로(mm)">
+      <label class="inl">H</label><input type="number" id="bHeight" title="세로(mm)">
+      <label class="inl">여백</label><input type="number" id="bMargin" title="여백(mm)">
+      <label class="inl">모서리</label><input type="number" id="bRadius" title="모서리(mm)">
+      <input type="color" id="bBg" title="바탕색">
+    </div>
+
+    <div class="sep"></div>
+    <div class="group">
+      <button id="zoomOut" title="축소">−</button>
+      <button id="zoomFit" title="화면맞춤">맞춤</button>
+      <button id="zoomIn" title="확대">+</button>
+      <button id="toggleGuides" class="active" title="가이드 표시">가이드</button>
+    </div>
+
+    <div class="sep"></div>
+    <div class="group">
+      <label class="inl">DPI</label>
+      <select id="exportDpi" title="내보내기 해상도">
+        <option value="96">96</option>
+        <option value="150" selected>150</option>
+        <option value="300">300 (인쇄)</option>
+      </select>
+      <button id="exportPng" class="primary" title="PNG로 내보내기">PNG 내보내기</button>
+      <button id="saveJson" title="작업 파일 저장">저장</button>
+      <button id="loadJson" title="작업 파일 불러오기">불러오기</button>
+    </div>
+  </div>
+
+  <!-- 본문 -->
+  <div class="main">
+    <!-- 좌: 추가 도구 + 레이어 -->
+    <aside class="sidebar">
+      <div class="sb-section">
+        <h3>추가</h3>
+        <div class="tool-grid">
+          <button id="addText">＋ 텍스트</button>
+          <button id="addRect">＋ 사각형</button>
+          <button id="addEllipse">＋ 원</button>
+          <button id="addImage">＋ 이미지</button>
+        </div>
+        <div class="prow" style="margin-top:8px">
+          <select id="pictoSelect" style="flex:1"></select>
+          <button id="addPicto">＋픽토</button>
+        </div>
+      </div>
+      <h3>레이어</h3>
+      <div id="layers"></div>
+    </aside>
+
+    <!-- 중앙 캔버스 -->
+    <div id="stageWrap">
+      <canvas id="stage"></canvas>
+    </div>
+
+    <!-- 우: 속성 -->
+    <aside class="sidebar right">
+      <h3>속성</h3>
+      <div id="props"></div>
+    </aside>
+  </div>
+
+  <div class="hintbar">
+    팁 · 더블클릭으로 텍스트 편집 · 드래그로 이동 · 모서리 핸들로 크기조정 · Space+드래그 화면이동 · Ctrl+휠 확대/축소 · Delete 삭제 · 이미지/SVG는 캔버스로 드래그&드롭 (일러스트 .ai는 SVG로 내보낸 뒤 사용)
+  </div>
+
+  <input type="file" id="fileInput" accept="image/*,.svg" hidden>
+  <input type="file" id="jsonInput" accept="application/json,.json" hidden>
+
+  <script src="design-system.js"></script>
+  <script src="editor.js"></script>
+</body>
+</html>
