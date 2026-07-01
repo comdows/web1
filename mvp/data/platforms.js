@@ -18,9 +18,18 @@
       { id: "fulfillment",  name: "물류·풀필먼트·배송대행", icon: "📦", desc: "보관·포장·출고를 대행" },
       { id: "global",       name: "수출입·해외판매",     icon: "🚢", desc: "해외 바이어·소비자에게 파는 B2B/B2C 채널" },
       { id: "wholesale",    name: "도매·소싱",           icon: "🏭", desc: "사입·도매 상품을 떼오는 채널" },
-      { id: "space",        name: "숙박·공간·예약",      icon: "🏨", desc: "숙소·공간·예약 서비스 중개" },
+      { id: "space",        name: "숙박·공간·투어 예약", icon: "🏨", desc: "숙소·공간·투어·액티비티 예약 중개" },
       { id: "resale",       name: "중고·리커머스",       icon: "♻️", desc: "중고 거래 플랫폼" },
-      { id: "content",      name: "콘텐츠·창작 수익화",  icon: "🎨", desc: "콘텐츠·강의·창작물로 수익화" }
+      { id: "content",      name: "콘텐츠·창작 수익화",  icon: "🎨", desc: "온라인 강의·글·웹툰·영상 등 창작·교육 콘텐츠 수익화" },
+      { id: "fashion",      name: "패션·뷰티 버티컬 커머스", icon: "👗", desc: "패션·의류·뷰티 특화 입점 판매채널" },
+      { id: "food",         name: "식품·신선·정기배송",  icon: "🥬", desc: "식품·농수산·신선식품 판매·정기배송 채널" },
+      { id: "handmade",     name: "핸드메이드·작가마켓", icon: "🎁", desc: "수공예·디자인 굿즈 창작자 마켓" },
+      { id: "jobs",         name: "구인구직·긱워크·인력", icon: "🧰", desc: "채용·아르바이트·긱 일자리 매칭" },
+      { id: "homeservice",  name: "생활·홈서비스 O2O",   icon: "🧹", desc: "청소·이사·수리·돌봄 등 생활서비스 매칭" },
+      { id: "realestate",   name: "부동산·상업공간 중개", icon: "🏢", desc: "주거·사무실·매장 등 부동산 임차·거래 중개" },
+      { id: "beautyhealth", name: "뷰티·헬스케어 예약",  icon: "💇", desc: "미용실·병원·시술 예약 중개" },
+      { id: "auto",         name: "자동차 거래·정비",    icon: "🚗", desc: "중고차 거래·자동차 정비 서비스 연결" },
+      { id: "ticket",       name: "티켓·공연·이벤트 예매", icon: "🎟️", desc: "공연·전시·스포츠 등 표 판매·예매" }
     ],
 
     platforms: [
@@ -96,6 +105,8 @@
       { id:"airbnb",      name:"에어비앤비",      category:"space", region:"해외", url:"https://www.airbnb.co.kr",           blurb:"글로벌 숙소·체험 호스팅." },
       { id:"spacecloud",  name:"스페이스클라우드", category:"space", region:"국내", url:"https://www.spacecloud.kr",          blurb:"모임·연습·촬영 공간 시간 대여." },
       { id:"catchtable",  name:"캐치테이블",      category:"space", region:"국내", url:"https://www.catchtable.co.kr",       blurb:"식당 예약·웨이팅 중개." },
+      { id:"myrealtrip",  name:"마이리얼트립",    category:"space", region:"국내", url:"https://www.myrealtrip.com",         blurb:"투어·가이드·액티비티 예약 중개." },
+      { id:"klook",       name:"클룩(Klook)",     category:"space", region:"해외", url:"https://www.klook.com",              blurb:"아시아권 여행·액티비티·티켓 예약." },
 
       // ── 중고·리커머스 ──
       { id:"daangn",      name:"당근마켓",        category:"resale", region:"국내", url:"https://www.daangn.com",             blurb:"지역 기반 중고 직거래·동네생활." },
@@ -106,7 +117,68 @@
       { id:"npremium",    name:"네이버 프리미엄콘텐츠", category:"content", region:"국내", url:"https://contents.premium.naver.com", blurb:"유료 구독 콘텐츠 발행·판매." },
       { id:"class101",    name:"클래스101",       category:"content", region:"국내", url:"https://class101.net",              blurb:"온라인 클래스 제작·판매(크리에이터)." },
       { id:"brunch",      name:"브런치스토리",    category:"content", region:"국내", url:"https://brunch.co.kr",              blurb:"글 발행·작가 활동 플랫폼." },
-      { id:"youtube",     name:"유튜브",          category:"content", region:"글로벌", url:"https://www.youtube.com",          blurb:"영상 콘텐츠 게시·광고 수익화." }
+      { id:"youtube",     name:"유튜브",          category:"content", region:"글로벌", url:"https://www.youtube.com",          blurb:"영상 콘텐츠 게시·광고 수익화." },
+      { id:"inflearn",    name:"인프런",          category:"content", region:"국내", url:"https://www.inflearn.com",          blurb:"개발·디자인·직무 온라인 강의 마켓." },
+      { id:"fastcampus",  name:"패스트캠퍼스",    category:"content", region:"국내", url:"https://fastcampus.co.kr",          blurb:"직무·부트캠프형 프리미엄 온라인 강의." },
+      { id:"naverwebtoon",name:"네이버웹툰",      category:"content", region:"국내", url:"https://comic.naver.com",           blurb:"국내 최대 웹툰 연재 플랫폼." },
+      { id:"kakaopage",   name:"카카오페이지",    category:"content", region:"국내", url:"https://page.kakao.com",            blurb:"웹툰·웹소설 연재·유료 열람." },
+
+      // ── 패션·뷰티 버티컬 커머스 ──
+      { id:"zigzag",      name:"지그재그",        category:"fashion", region:"국내", url:"https://zigzag.kr",                 blurb:"여성 패션 큐레이션 마켓, 영상쇼핑 중심." },
+      { id:"ably",        name:"에이블리",        category:"fashion", region:"국내", url:"https://www.a-bly.com",             blurb:"여성 의류·잡화 셀러 입점형 마켓." },
+      { id:"musinsa",     name:"무신사",          category:"fashion", region:"국내", url:"https://www.musinsa.com",           blurb:"패션·스니커즈·뷰티 종합 플랫폼." },
+      { id:"wconcept",    name:"W컨셉",           category:"fashion", region:"국내", url:"https://www.wconcept.co.kr",        blurb:"디자이너·컨템포러리 패션 편집몰." },
+      { id:"brandi",      name:"브랜디",          category:"fashion", region:"국내", url:"https://www.brandi.co.kr",          blurb:"모바일 여성 패션 마켓." },
+      { id:"29cm",        name:"29CM",            category:"fashion", region:"국내", url:"https://www.29cm.co.kr",            blurb:"패션·라이프스타일 편집 큐레이션몰." },
+
+      // ── 식품·신선·정기배송 ──
+      { id:"kurly",       name:"마켓컬리",        category:"food", region:"국내", url:"https://www.kurly.com",              blurb:"신선식품 새벽배송 이커머스." },
+      { id:"oasis",       name:"오아시스마켓",    category:"food", region:"국내", url:"https://www.oasis.co.kr",            blurb:"친환경·신선식품 새벽배송." },
+      { id:"jeongyukgak", name:"정육각",          category:"food", region:"국내", url:"https://www.jeongyukgak.com",        blurb:"신선육류 직판·정기배송." },
+
+      // ── 핸드메이드·작가마켓 ──
+      { id:"idus",        name:"아이디어스",      category:"handmade", region:"국내", url:"https://www.idus.com",            blurb:"수공예·핸드메이드 작가 마켓." },
+      { id:"10x10",       name:"텐바이텐",        category:"handmade", region:"국내", url:"https://www.10x10.co.kr",         blurb:"디자인 문구·잡화 편집 마켓." },
+
+      // ── 구인구직·긱워크·인력 ──
+      { id:"saramin",     name:"사람인",          category:"jobs", region:"국내", url:"https://www.saramin.co.kr",          blurb:"정규·경력직 채용 매칭 플랫폼." },
+      { id:"jobkorea",    name:"잡코리아",        category:"jobs", region:"국내", url:"https://www.jobkorea.co.kr",         blurb:"종합 채용 정보 플랫폼." },
+      { id:"albamon",     name:"알바몬",          category:"jobs", region:"국내", url:"https://www.albamon.com",            blurb:"아르바이트·단기 일자리 중개." },
+      { id:"alba",        name:"알바천국",        category:"jobs", region:"국내", url:"https://www.alba.co.kr",             blurb:"아르바이트 구인구직 플랫폼." },
+      { id:"coupangflex", name:"쿠팡플렉스",      category:"jobs", region:"국내", url:"https://www.coupang.com/np/campaigns/1015", blurb:"개인 배송 긱워크(자차 배송)." },
+      { id:"baeminconnect", name:"배민커넥트",    category:"jobs", region:"국내", url:"https://www.baemin.com/connect",      blurb:"배달의민족 라이더 긱워크." },
+
+      // ── 생활·홈서비스 O2O ──
+      { id:"miso",        name:"미소",            category:"homeservice", region:"국내", url:"https://miso.kr",             blurb:"가사·청소·이사 등 홈서비스 매칭." },
+      { id:"cleanlab",    name:"청소연구소",      category:"homeservice", region:"국내", url:"https://www.cleaninglab.co.kr", blurb:"가사도우미·홈클리닝 매칭." },
+      { id:"daerijubu",   name:"대리주부",        category:"homeservice", region:"국내", url:"https://www.hom.kr",           blurb:"가사·돌봄 도우미 중개." },
+      { id:"jjakkak",     name:"째깍악어",        category:"homeservice", region:"국내", url:"https://www.tictoccroc.com",   blurb:"아이 돌봄·놀이 선생님 매칭." },
+
+      // ── 부동산·상업공간 중개 ──
+      { id:"zigbang",     name:"직방",            category:"realestate", region:"국내", url:"https://www.zigbang.com",      blurb:"원룸·오피스텔·아파트 등 주거 부동산 중개." },
+      { id:"dabang",      name:"다방",            category:"realestate", region:"국내", url:"https://www.dabangapp.com",    blurb:"주거용 부동산 매물 정보." },
+      { id:"naverland",   name:"네이버 부동산",   category:"realestate", region:"국내", url:"https://land.naver.com",       blurb:"종합 부동산 매물·시세 정보." },
+      { id:"rsquare",     name:"알스퀘어",        category:"realestate", region:"국내", url:"https://www.rsquare.co.kr",    blurb:"사무실·상업용 부동산 중개(B2B)." },
+      { id:"ziptoss",     name:"집토스",          category:"realestate", region:"국내", url:"https://www.ziptoss.com",      blurb:"전·월세 중개 부동산 플랫폼." },
+
+      // ── 뷰티·헬스케어 예약 ──
+      { id:"gangnamunni", name:"강남언니",        category:"beautyhealth", region:"국내", url:"https://www.gangnamunni.com", blurb:"미용·성형·피부 시술 정보·예약." },
+      { id:"goodoc",      name:"굿닥",            category:"beautyhealth", region:"국내", url:"https://www.goodoc.co.kr",     blurb:"병원·약국 검색·예약." },
+      { id:"ddocdoc",     name:"똑닥",            category:"beautyhealth", region:"국내", url:"https://www.ddocdoc.com",      blurb:"병원 예약·접수·대기 관리." },
+      { id:"kakaohair",   name:"카카오헤어샵",    category:"beautyhealth", region:"국내", url:"https://hairshop.kakao.com",   blurb:"미용실 예약 중개." },
+
+      // ── 자동차 거래·정비 ──
+      { id:"encar",       name:"엔카",            category:"auto", region:"국내", url:"https://www.encar.com",              blurb:"국내 대표 중고차 거래 플랫폼." },
+      { id:"heydealer",   name:"헤이딜러",        category:"auto", region:"국내", url:"https://www.heydealer.com",          blurb:"내 차 팔기(딜러 경매) 중개." },
+      { id:"kcar",        name:"K Car(케이카)",   category:"auto", region:"국내", url:"https://www.kcar.com",               blurb:"중고차 직영 판매·매입." },
+      { id:"kbchachacha", name:"KB차차차",        category:"auto", region:"국내", url:"https://www.kbchachacha.com",        blurb:"KB 계열 중고차 거래 플랫폼." },
+      { id:"cardoc",      name:"카닥",            category:"auto", region:"국내", url:"https://www.cardoc.co.kr",           blurb:"자동차 정비·수리 견적 매칭." },
+
+      // ── 티켓·공연·이벤트 예매 ──
+      { id:"interparkticket", name:"인터파크 티켓", category:"ticket", region:"국내", url:"https://tickets.interpark.com",   blurb:"공연·콘서트·스포츠 등 종합 예매." },
+      { id:"yes24ticket", name:"예스24 공연",     category:"ticket", region:"국내", url:"http://ticket.yes24.com",            blurb:"공연·뮤지컬 중심 예매." },
+      { id:"ticketlink",  name:"티켓링크",        category:"ticket", region:"국내", url:"https://www.ticketlink.co.kr",       blurb:"공연·스포츠 예매." },
+      { id:"melonticket", name:"멜론티켓",        category:"ticket", region:"국내", url:"https://ticket.melon.com",           blurb:"공연·콘서트 예매(음악 중심)." }
     ]
   };
 
