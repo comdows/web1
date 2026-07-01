@@ -30,7 +30,7 @@
 
   <div class="banner">
     ⓘ 현재는 <b>MVP 데모</b>입니다. 표시된 수수료·정산 정보는 <b>예시 값</b>이며 실제와 다를 수 있습니다.
-    정식 서비스에서는 모든 수치에 출처·검증일을 표기합니다.
+    정식 서비스에서는 모든 수치에 출처·검증일을 표기하고, 검증 전 평가성 서술은 표시하지 않습니다.
   </div>
 
   <section id="verticals">
@@ -41,10 +41,28 @@
 
   <section id="beachhead">
     <h2 class="sec">🎯 크라우드펀딩 플랫폼 비교</h2>
-    <p class="sub">체크박스로 2~4개를 담아 <a href="compare.html">비교함</a>에서 나란히 보세요.</p>
-    <div class="plist" id="plist"></div>
+    <p class="sub">검색·필터로 좁힌 뒤, 2~4개를 담아 <a href="compare.html">나란히 비교</a>하세요.</p>
+    <div class="toolbar">
+      <input class="search" id="q" type="search" placeholder="플랫폼 이름 검색 (예: 와디즈)">
+    </div>
+    <div class="filters" id="filters">
+      <span class="fchip" data-f="reward" aria-pressed="false">리워드형</span>
+      <span class="fchip" data-f="invest" aria-pressed="false">투자형</span>
+      <span class="fchip" data-f="domestic" aria-pressed="false">국내</span>
+      <span class="fchip" data-f="escrow" aria-pressed="false">에스크로</span>
+      <span class="fchip" data-f="fee7" aria-pressed="false">수수료 7%↓</span>
+      <span class="fchip" data-f="fast" aria-pressed="false">정산 14일↓</span>
+    </div>
+    <div class="plist" id="plist" style="margin-top:14px"></div>
   </section>
 </main>
+
+<!-- 하단 스티키 비교 바 -->
+<div class="stickybar" id="sticky"><div class="container">
+  <span class="cnt"><b id="sb-count">0</b>개 담김</span>
+  <a class="btn primary" id="sb-go" href="compare.html">나란히 비교하기 →</a>
+</div></div>
+<div class="toast" id="toast"></div>
 
 <footer class="site"><div class="container">
   플랫폼올 (가칭) · "플랫폼을 위한 플랫폼" 1단계 MVP 데모 · 데이터는 예시입니다.
@@ -54,43 +72,84 @@
 <script src="assets/app.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // 버티컬 카드
-  const vg = document.getElementById("vgrid");
-  vg.innerHTML = App.verticals.map(v => `
-    <a class="card" href="${v.depth === 'deep' ? '#beachhead' : 'javascript:void(0)'}"
-       ${v.depth==='deep' ? '' : 'onclick="return false" style=\"cursor:default;opacity:.75\"'}>
+  // 버티컬 카드 (스텁도 클릭 가능 — 크롤 그래프 연결)
+  document.getElementById("vgrid").innerHTML = App.verticals.map(v => {
+    const href = v.depth === 'deep' ? '#beachhead'
+      : 'platform.html?id=' + (App.byVertical(v.id)[0]||{}).platform_id;
+    return `<a class="card" href="${href}">
       <div class="icon">${v.icon}</div>
       <h3>${v.name}</h3>
       <p>${v.desc}</p>
       <span class="tag ${v.depth}">${v.depth==='deep' ? '상세 비교 제공' : '목록 준비 중'}</span>
-    </a>`).join("");
+    </a>`;
+  }).join("");
 
-  // 비컨헤드 플랫폼 카드
   const cf = App.byVertical("crowdfunding");
-  const cmp = App.getCompareSet();
   const pl = document.getElementById("plist");
-  pl.innerHTML = cf.map(p => `
-    <div class="pcard">
-      <div class="row">
-        <h3><a href="platform.html?id=${p.platform_id}">${p.name}</a></h3>
-        <span class="chip">${p.funding_type||''}</span>
-      </div>
-      <div class="fee">수수료 <b>${App.feeText(p)}</b> · 정산 ${p.settlement.cycle_days}일${p.settlement.escrow?' · 에스크로':''}</div>
-      <div class="chips">${(p.region||[]).map(r=>`<span class="chip">${r}</span>`).join("")}
-        ${(p.fee_model.hidden_fees||[]).length?`<span class="chip">숨은비용 ${p.fee_model.hidden_fees.length}건</span>`:''}</div>
-      <div class="actions">
-        <a class="btn ghost" href="platform.html?id=${p.platform_id}">상세</a>
-        <label class="cmp"><input type="checkbox" data-id="${p.platform_id}" ${cmp.has(p.platform_id)?'checked':''}> 비교함에 담기</label>
-      </div>
-    </div>`).join("");
+  const active = new Set();
 
+  const match = (p) => {
+    const q = (document.getElementById("q").value||"").trim().toLowerCase();
+    if (q && !p.name.toLowerCase().includes(q)) return false;
+    for (const f of active) {
+      if (f==='reward'   && !/리워드/.test(p.funding_type||'')) return false;
+      if (f==='invest'   && !/투자|증권/.test(p.funding_type||'')) return false;
+      if (f==='domestic' && !(p.region||[]).includes('국내')) return false;
+      if (f==='escrow'   && !p.settlement.escrow) return false;
+      if (f==='fee7'     && !(p.fee_model.rate_min <= 7)) return false;
+      if (f==='fast'     && !(p.settlement.cycle_days <= 14)) return false;
+    }
+    return true;
+  };
+
+  function render() {
+    const cmp = App.getCompareSet();
+    const list = cf.filter(match);
+    pl.innerHTML = list.length ? list.map(p => `
+      <div class="pcard">
+        <div class="row">
+          <h3><a href="platform.html?id=${p.platform_id}">${p.name}</a>${p.promoted?'<span class="promoted-tag">AD</span>':''}</h3>
+          <span class="chip">${p.funding_type||''}</span>
+        </div>
+        <div class="fee">수수료 <b>${App.feeText(p)}</b> · 정산 ${p.settlement.cycle_days}일${p.settlement.escrow?' · 에스크로':''}</div>
+        <div class="chips">${(p.region||[]).map(r=>`<span class="chip">${r}</span>`).join("")}
+          ${(p.fee_model.hidden_fees||[]).length?`<span class="chip">숨은비용 ${p.fee_model.hidden_fees.length}건</span>`:''}</div>
+        <div class="actions">
+          <a class="btn ghost" href="platform.html?id=${p.platform_id}">상세</a>
+          <a class="btn ghost" href="${p.outbound_url}" target="_blank" rel="nofollow sponsored noopener"
+             onclick="__track('outbound_click',{id:'${p.platform_id}',from:'index'})">공식 ↗</a>
+          <label class="cmp"><input type="checkbox" data-id="${p.platform_id}" ${cmp.has(p.platform_id)?'checked':''}> 비교함</label>
+        </div>
+      </div>`).join("") : `<div class="empty">조건에 맞는 플랫폼이 없습니다. 필터를 조정해보세요.</div>`;
+  }
+
+  function syncSticky() {
+    const n = App.getCompareSet().size;
+    document.getElementById("cmp-count").textContent = n;
+    document.getElementById("sb-count").textContent = n;
+    document.getElementById("sb-go").href = App.compareUrl();
+    document.getElementById("sticky").classList.toggle("show", n >= 1);
+  }
+  function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1400); }
+
+  document.getElementById("q").addEventListener("input", render);
+  document.getElementById("filters").addEventListener("click", (e) => {
+    const c = e.target.closest(".fchip"); if (!c) return;
+    const f = c.dataset.f;
+    if (active.has(f)) { active.delete(f); c.setAttribute("aria-pressed","false"); }
+    else { active.add(f); c.setAttribute("aria-pressed","true"); }
+    render();
+  });
   pl.addEventListener("change", (e) => {
     if (e.target.matches("input[type=checkbox]")) {
       const ok = App.toggleCompare(e.target.dataset.id);
-      if (!ok) e.target.checked = false;
-      document.getElementById("cmp-count").textContent = App.getCompareSet().size;
+      if (!ok) { e.target.checked = false; return; }
+      toast(e.target.checked ? "비교함에 담았어요" : "비교함에서 뺐어요");
+      syncSticky();
     }
   });
+
+  render(); syncSticky();
 });
 </script>
 </body>

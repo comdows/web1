@@ -31,28 +31,66 @@ document.addEventListener("DOMContentLoaded", () => {
   const id = new URLSearchParams(location.search).get("id");
   const p = App.byId(id);
   const box = document.getElementById("detail");
-
   if (!p) { box.innerHTML = `<div class="empty">플랫폼을 찾을 수 없습니다. <a href="index.html">목록으로</a></div>`; return; }
 
+  // ── 카탈로그 스텁: 최소 유틸(공개 수수료 1줄 + 출처 + 계산기/공식 링크 + 수요신호) ──
   if (p.stub) {
-    box.innerHTML = `<div class="detail-head"><h1 style="margin:0">${p.name}</h1></div>
-      <p class="sub">${p.note || '상세 비교 준비 중입니다.'}</p>
-      <div class="empty">이 분야는 아직 <b>카탈로그(목록)</b> 단계입니다. 비컨헤드 검증 후 순차적으로 상세 비교를 제공합니다.<br>
-      <a href="index.html">← 발견·비교로</a></div>`;
+    const v = App.verticalById(p.vertical) || {};
+    box.innerHTML = `
+      <a class="muted" href="index.html">← 발견·비교</a>
+      <div class="detail-head" style="margin-top:8px"><h1 style="margin:0">${p.name}</h1>
+        <span class="chip">${v.name||''}</span>${(p.region||[]).map(r=>`<span class="chip">${r}</span>`).join("")}</div>
+      <dl class="kv">
+        <dt>공개 수수료(요약)</dt><dd>${p.official_fee_note||'공식 안내 확인 필요'}</dd>
+        <dt>출처</dt><dd>${p.source_url?`<a href="${p.source_url}" target="_blank" rel="nofollow noopener">${p.source_url}</a>`:'-'}</dd>
+      </dl>
+      <div class="banner">이 분야는 아직 <b>카탈로그(목록)</b> 단계입니다. 비컨헤드(크라우드펀딩) 검증 후 순차적으로 상세 비교를 제공합니다.</div>
+      <div class="cta" style="display:flex;gap:12px;flex-wrap:wrap">
+        <a class="btn primary" href="${p.outbound_url}" target="_blank" rel="nofollow sponsored noopener"
+           onclick="__track('outbound_click',{id:'${p.platform_id}',from:'stub'})">${p.name} 공식 사이트 ↗</a>
+        <button class="btn ghost" id="notify">🔔 이 분야 상세 비교 나오면 알림받기</button>
+      </div>
+      <div id="notify-box" style="margin-top:12px"></div>`;
+    document.getElementById("notify").addEventListener("click", () => {
+      document.getElementById("notify-box").innerHTML =
+        `<div class="field" style="max-width:360px"><input type="email" id="email" placeholder="이메일 주소">
+         <button class="btn ghost" id="sub" style="margin-top:8px">구독</button></div>`;
+      document.getElementById("sub").addEventListener("click", () => {
+        const em = document.getElementById("email").value;
+        __track("demand_signal", { vertical: p.vertical, platform: p.platform_id, email_len: (em||'').length });
+        try { const k="subs"; const a=JSON.parse(localStorage.getItem(k)||"[]"); a.push({v:p.vertical,em}); localStorage.setItem(k,JSON.stringify(a)); } catch(e){}
+        document.getElementById("notify-box").innerHTML = `<p class="muted">✅ 신청되었습니다. 상세 비교가 준비되면 알려드릴게요.</p>`;
+      });
+    });
     return;
   }
 
-  const f = p.fee_model, s = p.settlement, o = p.onboarding;
+  // ── 딥 레코드 ──
+  const f = p.fee_model, s = p.settlement, o = p.onboarding, st = App.staleness(p);
+  const cautions = App.isTrusted(p)
+    ? (p.cautions||[]).map(h=>`<div class="bad">${h}</div>`).join("")
+    : `<div class="muted">평가성 주의사항은 공식 출처로 검증된 뒤 표시됩니다.</div>`;
+
   box.innerHTML = `
     <a class="muted" href="index.html">← 크라우드펀딩 목록</a>
+    <div class="ad-slot"><b>[광고 자리]</b> 상위노출/입점 슬롯 (Sponsored) — 트래픽 검증 후 판매</div>
     <div class="detail-head" style="margin-top:8px">
       <h1 style="margin:0">${p.name}</h1>
       <span class="chip">${p.funding_type||''}</span>
       ${(p.region||[]).map(r=>`<span class="chip">${r}</span>`).join("")}
+      ${p.promoted?'<span class="promoted-tag">AD</span>':''}
+    </div>
+
+    <div class="cta" style="display:flex;gap:12px;margin:16px 0;flex-wrap:wrap">
+      <a class="btn primary" href="${p.outbound_url}" target="_blank" rel="nofollow sponsored noopener"
+         onclick="__track('outbound_click',{id:'${p.platform_id}',from:'detail'})">${p.name} 공식 사이트로 이동 ↗</a>
+      <a class="btn ghost" href="calculator.html">💰 실수령 계산</a>
+      <a class="btn ghost" href="compare.html?ids=${p.platform_id},wadiz">비교하기</a>
     </div>
 
     <dl class="kv">
-      <dt>수수료</dt><dd><b>${App.feeText(p)}</b> ${f.hidden_fees&&f.hidden_fees.length?`· 추가: ${f.hidden_fees.join(", ")}`:''}</dd>
+      <dt>수수료</dt><dd><b>${App.feeText(p)}</b> ${f.hidden_fees&&f.hidden_fees.length?`· 추가: ${f.hidden_fees.join(", ")}`:''}
+        ${f.pg_included?'· <span class="muted">PG 포함</span>':''}</dd>
       <dt>정산주기</dt><dd>${s.cycle_days}일 ${s.escrow?'· 에스크로 있음':''} ${s.holdback_pct?`· 정산유보 ${s.holdback_pct}%`:''}</dd>
       <dt>정산/분쟁 정책</dt><dd>${s.dispute_policy||'-'}</dd>
       <dt>가입 대상</dt><dd>${o.biz_type_required}</dd>
@@ -65,18 +103,16 @@ document.addEventListener("DOMContentLoaded", () => {
     <h2 class="sec">강점 & 주의점</h2>
     <div class="pillbox">
       ${(p.highlights||[]).map(h=>`<div class="good">${h}</div>`).join("")}
-      ${(p.cautions||[]).map(h=>`<div class="bad">${h}</div>`).join("")}
+      ${cautions}
     </div>
 
     <div class="banner" style="margin-top:20px">
-      데이터 신뢰도: <b>${p.evidence.source}</b> · 검증일 ${p.evidence.verified_at} · confidence:${p.evidence.confidence}.
+      데이터 신뢰: <span class="badge ${st.cls}">${st.label}</span> · 출처 <b>${p.evidence.source}</b>
+      ${p.evidence.source_url?`(<a href="${p.evidence.source_url}" target="_blank" rel="nofollow noopener">원문</a>)`:''}
+      · 검증일 ${p.evidence.verified_at} · 재검토 예정 ${p.evidence.next_review_due}.
       이 값은 <b>데모 예시</b>이며 계약 전 원문 약관 확인이 필요합니다.
-    </div>
-
-    <div class="cta" style="display:flex;gap:12px;margin-top:16px">
-      <a class="btn primary" href="calculator.html">💰 실수령 계산해보기</a>
-      <a class="btn ghost" href="compare.html">비교함 보기</a>
     </div>`;
+  __track("platform_view", { id: p.platform_id });
 });
 </script>
 </body>

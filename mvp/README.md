@@ -5,24 +5,35 @@
 
 ## 실행
 ```
-# 방법 1: 파일 직접 열기
-open mvp/index.html          # macOS
-xdg-open mvp/index.html      # Linux
+# 1) (선택) 프리렌더 빌드 — 색인용 정적 페이지/sitemap 생성
+cd mvp && node build.js
 
-# 방법 2: 로컬 서버(권장)
-cd mvp && python3 -m http.server 8000
-# → http://localhost:8000
+# 2-a) 로컬 서버(권장)
+python3 -m http.server 8000        # → http://localhost:8000
+#   Windows PowerShell: python -m http.server 8000
+
+# 2-b) 또는 파일 직접 열기 (서버 없이)
+#   Windows: start index.html   /  macOS: open index.html  /  Linux: xdg-open index.html
 ```
 
 ## 구성
 | 파일 | 역할 | 기획서 대응 |
 |---|---|---|
-| `index.html` | 버티컬 허브 + 크라우드펀딩(비컨헤드) 목록 | §8.2 화면1·§6.2 이중구조 |
-| `compare.html` | 2~4개 플랫폼 나란히 비교 테이블 | §8.2 화면2 |
-| `platform.html?id=` | 플랫폼 상세(스키마 전 항목 + evidence) | §8.2 화면3 |
-| `calculator.html` | 수수료·정산 반영 실수령 계산기(단면 유틸) | §8.2 화면4·§8.3 |
-| `data/platforms.js` | 스키마 기반 플랫폼 데이터 | §7.2 데이터 스키마 |
-| `assets/style.css`, `assets/app.js` | 스타일·공용 로직 | — |
+| `index.html` | 버티컬 허브 + 검색·필터 + 크라우드펀딩 목록 + 스티키 비교바 | §8.2 화면1·§6.2 이중구조 |
+| `compare.html` | 2~4개 비교(URL 공유 가능) + 신뢰 가드 + 출처 링크 | §8.2 화면2 |
+| `platform.html?id=` | 딥 상세(광고슬롯·아웃바운드·신선도) / 스텁 최소유틸·수요신호 | §8.2 화면3 |
+| `calculator.html` | 실수령 계산기(수수료 레인지·PG 이중계상 방지) | §8.2 화면4·§8.3 |
+| `data/platforms.js` | 스키마 기반 데이터(브라우저+Node 공용, evidence·outbound 필드) | §7.2 데이터 스키마 |
+| `build.js` | **프리렌더**: 스키마 검증 + 정적 페이지/비교/sitemap/robots 생성 | §9 SEO·단계적 색인 |
+| `crowdfunding/*.html`, `compare/*.html` | build 산출물: 색인 가능한 고유 URL + JSON-LD | §9.3 프로그래매틱 SEO |
+| `assets/style.css`, `assets/app.js` | 스타일 · 공용 로직(신뢰가드·계측·비교상태) | — |
+
+## v2 개선 (에이전트팀 리뷰 반영)
+- **법적 노출 차단:** 미검증(confidence≠high) 데이터의 **평가성 부정 서술을 렌더 차단**(신뢰 가드).
+- **계산기 정확도:** `rate_max` 고정 → 하한/대표/상한 레인지, PG 포함형 **이중계상 방지**.
+- **측정·화폐화 파이프:** 아웃바운드 CTA + 클릭 계측 스텁(`__track`) + 광고 슬롯 DOM.
+- **SEO:** 클라이언트 렌더의 색인 불가 문제를 **빌드 프리렌더**(고유 URL·sitemap·JSON-LD)로 해결, 스텁은 noindex.
+- **전환·재방문:** 검색·필터칩·스티키 비교바, 비교셋 URL 공유, 스텁 수요신호(알림 구독).
 
 ## 설계 원칙 반영
 - **넓은 카탈로그 + 좁은 비컨헤드:** 6개 버티컬은 목록만, 크라우드펀딩만 상세 비교(§6.2).
