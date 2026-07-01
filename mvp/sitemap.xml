@@ -2,6 +2,8 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://platformall.example/index.html</loc></url>
   <url><loc>https://platformall.example/c/openmarket.html</loc></url>
+  <url><loc>https://platformall.example/c/homeshopping.html</loc></url>
+  <url><loc>https://platformall.example/c/mallbuilder.html</loc></url>
   <url><loc>https://platformall.example/c/social.html</loc></url>
   <url><loc>https://platformall.example/c/live.html</loc></url>
   <url><loc>https://platformall.example/c/funding.html</loc></url>
