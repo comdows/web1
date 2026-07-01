@@ -69,6 +69,9 @@ h2.sec{font-size:20px; margin:8px 0 16px; letter-spacing:-.01em}
 .chip{background:var(--chip); border:1px solid var(--border); color:var(--muted); font-size:11px; padding:3px 8px; border-radius:999px}
 .pcard .actions{display:flex; gap:8px; margin-top:6px}
 .pcard label.cmp{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); cursor:pointer}
+.pcard .blurb{color:var(--muted); font-size:13.5px; margin:0; line-height:1.5}
+.catblock{padding:8px 0 18px; scroll-margin-top:72px}
+.catblock h2.sec{border-bottom:1px solid var(--border); padding-bottom:8px}
 
 /* Compare table */
 .cmp-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius)}

@@ -1,4 +1,3 @@
 User-agent: *
 Allow: /
-# 카탈로그 스텁은 개별 페이지 meta noindex로 제어
 Sitemap: https://platformall.example/sitemap.xml

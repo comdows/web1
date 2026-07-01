@@ -3,153 +3,100 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>플랫폼올 — 붙을 플랫폼, 같은 기준으로 비교하세요</title>
-<meta name="description" content="판매채널·크라우드펀딩·프리랜서마켓 등 '나가서 붙는 플랫폼'을 수수료·정산조건까지 같은 기준으로 비교합니다.">
+<title>플랫폼올 — 분야별 플랫폼 한눈에 보기</title>
+<meta name="description" content="판매채널·크라우드펀딩·프리랜서·배달·수출입 등 사업자·개인이 활용할 수 있는 플랫폼을 분야별로 정리한 디렉토리.">
 <link rel="stylesheet" href="assets/style.css">
 </head>
 <body>
 <header class="site"><div class="container">
   <div class="logo">플랫폼<b>올</b></div>
   <nav class="top">
-    <a href="index.html">발견·비교</a>
-    <a href="compare.html">비교함 (<span id="cmp-count">0</span>)</a>
-    <a href="calculator.html">실수령 계산기</a>
+    <a href="index.html">분야별 플랫폼</a>
+    <a href="#cats">분야 바로가기</a>
   </nav>
 </div></header>
 
 <main class="container">
   <section class="hero">
-    <h1>어디에 붙을지 고민이라면,<br>같은 자로 재서 비교하세요.</h1>
-    <p>크라우드펀딩·프리랜서마켓·판매채널처럼 <b>내가 나가서 붙는 플랫폼</b>을
-       수수료·정산주기·숨은비용까지 한 화면에서 비교합니다. 흩어진 블로그를 뒤질 필요 없이.</p>
-    <div class="cta">
-      <a class="btn primary" href="#verticals">플랫폼 둘러보기</a>
-      <a class="btn ghost" href="calculator.html">💰 실수령 계산해보기</a>
-    </div>
-  </section>
-
-  <div class="banner">
-    ⓘ 현재는 <b>MVP 데모</b>입니다. 표시된 수수료·정산 정보는 <b>예시 값</b>이며 실제와 다를 수 있습니다.
-    정식 서비스에서는 모든 수치에 출처·검증일을 표기하고, 검증 전 평가성 서술은 표시하지 않습니다.
-  </div>
-
-  <section id="verticals">
-    <h2 class="sec">어떤 종류의 플랫폼을 찾으세요?</h2>
-    <p class="sub">지금은 <b>크라우드펀딩</b>을 가장 깊게 비교합니다. 나머지 분야는 순차 확장 중입니다.</p>
-    <div class="grid" id="vgrid"></div>
-  </section>
-
-  <section id="beachhead">
-    <h2 class="sec">🎯 크라우드펀딩 플랫폼 비교</h2>
-    <p class="sub">검색·필터로 좁힌 뒤, 2~4개를 담아 <a href="compare.html">나란히 비교</a>하세요.</p>
+    <h1>어떤 분야에 어떤 플랫폼이 있을까?</h1>
+    <p>사업자·개인이 <b>나가서 붙을 수 있는 플랫폼</b>을 분야별로 정리했습니다.
+       판매채널·크라우드펀딩·프리랜서·배달·수출입·도매·숙박·중고까지, 이름과 개략 설명만 빠르게 훑어보세요.</p>
     <div class="toolbar">
-      <input class="search" id="q" type="search" placeholder="플랫폼 이름 검색 (예: 와디즈)">
+      <input class="search" id="q" type="search" placeholder="플랫폼·분야 검색 (예: 쿠팡, 펀딩, 수출)">
     </div>
-    <div class="filters" id="filters">
-      <span class="fchip" data-f="reward" aria-pressed="false">리워드형</span>
-      <span class="fchip" data-f="invest" aria-pressed="false">투자형</span>
-      <span class="fchip" data-f="domestic" aria-pressed="false">국내</span>
-      <span class="fchip" data-f="escrow" aria-pressed="false">에스크로</span>
-      <span class="fchip" data-f="fee7" aria-pressed="false">수수료 7%↓</span>
-      <span class="fchip" data-f="fast" aria-pressed="false">정산 14일↓</span>
-    </div>
-    <div class="plist" id="plist" style="margin-top:14px"></div>
   </section>
+
+  <section id="cats">
+    <div class="filters" id="catfilter"></div>
+  </section>
+
+  <div id="dir"></div>
+
+  <div class="banner" style="margin-top:24px">
+    ⓘ 각 플랫폼 설명은 <b>개략 소개</b>입니다. 수수료·정산·입점 조건 등 상세 정보는 각 플랫폼 <b>공식 사이트</b>에서 확인하세요.
+    빠진 플랫폼이나 분야가 있으면 알려주시면 추가합니다.
+  </div>
 </main>
 
-<!-- 하단 스티키 비교 바 -->
-<div class="stickybar" id="sticky"><div class="container">
-  <span class="cnt"><b id="sb-count">0</b>개 담김</span>
-  <a class="btn primary" id="sb-go" href="compare.html">나란히 비교하기 →</a>
-</div></div>
-<div class="toast" id="toast"></div>
-
 <footer class="site"><div class="container">
-  플랫폼올 (가칭) · "플랫폼을 위한 플랫폼" 1단계 MVP 데모 · 데이터는 예시입니다.
+  플랫폼올 (가칭) · 분야별 플랫폼 디렉토리 · 개략 설명이며 상세는 공식 사이트 확인.
 </div></footer>
 
 <script src="data/platforms.js"></script>
 <script src="assets/app.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // 버티컬 카드 (스텁도 클릭 가능 — 크롤 그래프 연결)
-  document.getElementById("vgrid").innerHTML = App.verticals.map(v => {
-    const href = v.depth === 'deep' ? '#beachhead'
-      : 'platform.html?id=' + (App.byVertical(v.id)[0]||{}).platform_id;
-    return `<a class="card" href="${href}">
-      <div class="icon">${v.icon}</div>
-      <h3>${v.name}</h3>
-      <p>${v.desc}</p>
-      <span class="tag ${v.depth}">${v.depth==='deep' ? '상세 비교 제공' : '목록 준비 중'}</span>
-    </a>`;
-  }).join("");
+  const dir = document.getElementById("dir");
+  const q = document.getElementById("q");
+  let activeCat = null;
 
-  const cf = App.byVertical("crowdfunding");
-  const pl = document.getElementById("plist");
-  const active = new Set();
+  // 분야 바로가기 칩
+  document.getElementById("catfilter").innerHTML =
+    `<span class="fchip" data-cat="" aria-pressed="true">전체</span>` +
+    App.categories.map(c => `<span class="fchip" data-cat="${c.id}" aria-pressed="false">${c.icon} ${c.name}</span>`).join("");
 
-  const match = (p) => {
-    const q = (document.getElementById("q").value||"").trim().toLowerCase();
-    if (q && !p.name.toLowerCase().includes(q)) return false;
-    for (const f of active) {
-      if (f==='reward'   && !/리워드/.test(p.funding_type||'')) return false;
-      if (f==='invest'   && !/투자|증권/.test(p.funding_type||'')) return false;
-      if (f==='domestic' && !(p.region||[]).includes('국내')) return false;
-      if (f==='escrow'   && !p.settlement.escrow) return false;
-      if (f==='fee7'     && !(p.fee_model.rate_min <= 7)) return false;
-      if (f==='fast'     && !(p.settlement.cycle_days <= 14)) return false;
-    }
-    return true;
-  };
+  function card(p) {
+    return `<div class="pcard">
+      <div class="row">
+        <h3>${p.name}</h3>
+        <span class="chip">${p.region}</span>
+      </div>
+      <p class="blurb">${p.blurb}</p>
+      <a class="btn ghost" style="align-self:flex-start;padding:6px 10px;font-size:12px"
+         href="${p.url}" target="_blank" rel="nofollow noopener"
+         onclick="__track('outbound',{id:'${p.id}'})">공식 사이트 ↗</a>
+    </div>`;
+  }
 
   function render() {
-    const cmp = App.getCompareSet();
-    const list = cf.filter(match);
-    pl.innerHTML = list.length ? list.map(p => `
-      <div class="pcard">
-        <div class="row">
-          <h3><a href="platform.html?id=${p.platform_id}">${p.name}</a>${p.promoted?'<span class="promoted-tag">AD</span>':''}</h3>
-          <span class="chip">${p.funding_type||''}</span>
-        </div>
-        <div class="fee">수수료 <b>${App.feeText(p)}</b> · 정산 ${p.settlement.cycle_days}일${p.settlement.escrow?' · 에스크로':''}</div>
-        <div class="chips">${(p.region||[]).map(r=>`<span class="chip">${r}</span>`).join("")}
-          ${(p.fee_model.hidden_fees||[]).length?`<span class="chip">숨은비용 ${p.fee_model.hidden_fees.length}건</span>`:''}</div>
-        <div class="actions">
-          <a class="btn ghost" href="platform.html?id=${p.platform_id}">상세</a>
-          <a class="btn ghost" href="${p.outbound_url}" target="_blank" rel="nofollow sponsored noopener"
-             onclick="__track('outbound_click',{id:'${p.platform_id}',from:'index'})">공식 ↗</a>
-          <label class="cmp"><input type="checkbox" data-id="${p.platform_id}" ${cmp.has(p.platform_id)?'checked':''}> 비교함</label>
-        </div>
-      </div>`).join("") : `<div class="empty">조건에 맞는 플랫폼이 없습니다. 필터를 조정해보세요.</div>`;
-  }
-
-  function syncSticky() {
-    const n = App.getCompareSet().size;
-    document.getElementById("cmp-count").textContent = n;
-    document.getElementById("sb-count").textContent = n;
-    document.getElementById("sb-go").href = App.compareUrl();
-    document.getElementById("sticky").classList.toggle("show", n >= 1);
-  }
-  function toast(msg){ const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show"); setTimeout(()=>t.classList.remove("show"),1400); }
-
-  document.getElementById("q").addEventListener("input", render);
-  document.getElementById("filters").addEventListener("click", (e) => {
-    const c = e.target.closest(".fchip"); if (!c) return;
-    const f = c.dataset.f;
-    if (active.has(f)) { active.delete(f); c.setAttribute("aria-pressed","false"); }
-    else { active.add(f); c.setAttribute("aria-pressed","true"); }
-    render();
-  });
-  pl.addEventListener("change", (e) => {
-    if (e.target.matches("input[type=checkbox]")) {
-      const ok = App.toggleCompare(e.target.dataset.id);
-      if (!ok) { e.target.checked = false; return; }
-      toast(e.target.checked ? "비교함에 담았어요" : "비교함에서 뺐어요");
-      syncSticky();
+    const kw = (q.value || "").trim().toLowerCase();
+    const cats = App.categories.filter(c => !activeCat || c.id === activeCat);
+    let html = "";
+    let total = 0;
+    for (const c of cats) {
+      let list = App.byCategory(c.id);
+      if (kw) list = list.filter(p =>
+        p.name.toLowerCase().includes(kw) || p.blurb.toLowerCase().includes(kw) || c.name.toLowerCase().includes(kw));
+      if (!list.length) continue;
+      total += list.length;
+      html += `<section class="catblock" id="cat-${c.id}">
+        <h2 class="sec">${c.icon} ${c.name} <span class="muted" style="font-size:14px;font-weight:400">· ${c.desc} (${list.length})</span></h2>
+        <div class="plist">${list.map(card).join("")}</div>
+      </section>`;
     }
-  });
+    dir.innerHTML = html || `<div class="empty">검색 결과가 없습니다. 다른 키워드로 찾아보세요.</div>`;
+    if (kw && total) dir.insertAdjacentHTML("afterbegin", `<p class="sub">"${kw}" 검색 결과 ${total}개</p>`);
+  }
 
-  render(); syncSticky();
+  document.getElementById("catfilter").addEventListener("click", (e) => {
+    const c = e.target.closest(".fchip"); if (!c) return;
+    activeCat = c.dataset.cat || null;
+    document.querySelectorAll("#catfilter .fchip").forEach(x => x.setAttribute("aria-pressed", x === c ? "true" : "false"));
+    render();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  });
+  q.addEventListener("input", render);
+  render();
 });
 </script>
 </body>
