@@ -1,9 +1,6 @@
 /*
  * 플랫폼 디렉토리 데이터 (분야별 목록 + 개략 설명)
- * ─────────────────────────────────────────────────────────────
- * 형식: "어떤 분야에 어떤 플랫폼이 있는지 + 한 줄 설명" 큐레이션 디렉토리.
- * blurb는 각 플랫폼이 '무엇인지'에 대한 중립적·사실적 한 줄 소개. 상세는 공식 사이트 확인.
- * (URL·설명은 웹 검색 기반이며 일부 변동 가능 — 확인 필요 시 공식 사이트 우선)
+ * blurb는 중립·사실 한 줄 소개. 상세는 공식 사이트 확인. (URL·설명은 웹 검색 기반, 일부 변동 가능)
  */
 (function () {
   var CFG = {
@@ -35,7 +32,10 @@
       { id: "kids", name: "육아·키즈", icon: "🧸", desc: "육아용품·교육·돌봄 커머스/서비스" },
       { id: "print", name: "인쇄·굿즈 제작", icon: "🖨️", desc: "POD·명함·판촉물·굿즈 제작 판매" },
       { id: "assets", name: "창작물·디지털 자산 유통", icon: "🎼", desc: "음원·사진·폰트·디자인·전자책 유통" },
-      { id: "fitness", name: "운동·피트니스·스포츠", icon: "🏋️", desc: "운동시설 예약·강습·트레이너 매칭" }
+      { id: "fitness", name: "운동·피트니스·스포츠", icon: "🏋️", desc: "운동시설 예약·강습·트레이너 매칭" },
+      { id: "wedding", name: "웨딩·결혼 준비", icon: "💍", desc: "웨딩홀·스드메·청첩장·예물·허니문" },
+      { id: "photo", name: "사진·영상 촬영·초대장", icon: "📸", desc: "스냅·영상 촬영 매칭·모바일 초대장·포토부스" },
+      { id: "event", name: "행사·케이터링·꽃", icon: "🎉", desc: "파티·행사 대행·케이터링·꽃·기프트" }
     ],
 
     platforms: [
@@ -708,7 +708,96 @@
       { id:"watercleanse", name:"워터클랜즈", category:"fitness", region:"국내", url:"https://watercleanse.co.kr", blurb:"지역별 소규모 수영 특강 예약 플랫폼." },
       { id:"ddakple", name:"딱플", category:"fitness", region:"국내", url:"https://www.ddakple.com", blurb:"생활체육 체육관 실시간 검색·예약·결제." },
       { id:"runday", name:"런데이", category:"fitness", region:"국내", url:"https://runday.co.kr", blurb:"음성 코칭 러닝·걷기 트레이닝 앱." },
-      { id:"mochaclass", name:"모카클래스", category:"fitness", region:"국내", url:"https://mochaclass.com", blurb:"요가·필라테스·레저 원데이클래스 예약." }
+      { id:"mochaclass", name:"모카클래스", category:"fitness", region:"국내", url:"https://mochaclass.com", blurb:"요가·필라테스·레저 원데이클래스 예약." },
+      // ── 웨딩·결혼 준비 (28) ──
+      { id:"weddingbook", name:"웨딩북", category:"wedding", region:"국내", url:"https://www.weddingbook.com/", blurb:"웨딩홀·스드메·허니문 예약·후기 결혼준비 플랫폼." },
+      { id:"iwedding", name:"아이웨딩", category:"wedding", region:"국내", url:"https://www.iwedding.co.kr/", blurb:"웨딩홀 예약·스드메 패키지 종합 웨딩 플랫폼." },
+      { id:"directwedding", name:"다이렉트 결혼준비", category:"wedding", region:"국내", url:"https://www.directwedding.co.kr/", blurb:"웨딩홀·스드메·허니문·혼수 결혼준비 플랫폼." },
+      { id:"itwed", name:"아이티웨딩", category:"wedding", region:"국내", url:"https://www.itwed.co.kr/", blurb:"웨딩홀 찾기·웨딩 역경매 결혼준비 플랫폼." },
+      { id:"sinbuya", name:"신부야", category:"wedding", region:"국내", url:"https://www.sinbuya.com/", blurb:"웨딩홀·스드메 가격·견적 공개 결혼준비 플랫폼." },
+      { id:"wedqueen", name:"웨딩의 여신", category:"wedding", region:"국내", url:"https://www.wedqueen.com/", blurb:"결혼 준비 일정·견적 공유 웨딩 준비 앱." },
+      { id:"apps5", name:"요즘웨딩", category:"wedding", region:"국내", url:"https://apps.apple.com/kr/app/id6739044980", blurb:"맞춤 계획표·웨딩업체 추천 올인원 앱." },
+      { id:"oding", name:"오딩", category:"wedding", region:"국내", url:"https://oding.co.kr", blurb:"스드메·본식스냅·스몰웨딩 비교·예약." },
+      { id:"kingswed", name:"웨딩킹", category:"wedding", region:"국내", url:"https://kingswed.com/", blurb:"제휴사 예약·셀프 견적 결혼준비 플랫폼." },
+      { id:"wedytor", name:"웨디터", category:"wedding", region:"국내", url:"https://wedytor.co.kr/", blurb:"모바일청첩장·식순·예산장 올인원 플랫폼." },
+      { id:"kgwed", name:"결직웨딩", category:"wedding", region:"국내", url:"https://kgwed.com/", blurb:"스드메·본식 촬영 직거래 연결 플랫폼." },
+      { id:"smartweddingpro", name:"스마트웨딩", category:"wedding", region:"국내", url:"https://smartwedding-pro.com/", blurb:"웨딩홀 추천·스드메 패키지 웨딩 플랫폼." },
+      { id:"houseweddinglink", name:"하우스웨딩링크", category:"wedding", region:"국내", url:"https://www.houseweddinglink.com/", blurb:"스몰·하우스웨딩 장소·업체 연결 플랫폼." },
+      { id:"haileyhouse", name:"헤일리하우스", category:"wedding", region:"국내", url:"https://haileyhouse.co.kr/", blurb:"주택·별장 스몰웨딩 장소·디렉팅 서비스." },
+      { id:"barunsoncard", name:"바른손카드", category:"wedding", region:"국내", url:"https://www.barunsoncard.com/", blurb:"종이·모바일 청첩장 제작 브랜드." },
+      { id:"itscard", name:"잇츠카드", category:"wedding", region:"국내", url:"https://www.itscard.co.kr/", blurb:"모바일 청첩장 제작·수정 서비스." },
+      { id:"bojagicard", name:"보자기카드", category:"wedding", region:"국내", url:"https://bojagicard.com/", blurb:"종이·모바일 청첩장·식전영상 서비스." },
+      { id:"salondeletter", name:"살롱드레터", category:"wedding", region:"국내", url:"https://salondeletter.com/", blurb:"테마·음악 커스텀 모바일 청첩장 서비스." },
+      { id:"toourguest", name:"투아워게스트", category:"wedding", region:"국내", url:"https://toourguest.com/", blurb:"디자인 템플릿 모바일 청첩장 제작." },
+      { id:"theirmood", name:"데어무드", category:"wedding", region:"국내", url:"https://theirmood.com/", blurb:"템플릿형 모바일 청첩장 제작 서비스." },
+      { id:"pastelmovie", name:"파스텔무비", category:"wedding", region:"국내", url:"https://pastelmovie.com/", blurb:"모바일 청첩장·식전영상 제작 서비스." },
+      { id:"maad", name:"메드스튜디오", category:"wedding", region:"국내", url:"https://m.maad.co.kr/", blurb:"결혼반지·예물 웨딩 주얼리 브랜드." },
+      { id:"nouv", name:"누브", category:"wedding", region:"국내", url:"https://nouv.co.kr/", blurb:"청담 예물 다이아몬드·주얼리 브랜드." },
+      { id:"ringplate", name:"링플레이트", category:"wedding", region:"국내", url:"http://www.ringplate.com/", blurb:"커스텀 웨딩밴드·커플링 주얼리 브랜드." },
+      { id:"ehoneymoon", name:"이허니문", category:"wedding", region:"해외", url:"https://e-honeymoon.co.kr/", blurb:"신혼여행지 상품 예약 허니문 전문 여행사." },
+      { id:"palmtour", name:"팜투어", category:"wedding", region:"해외", url:"https://www.palmtour.co.kr/", blurb:"몰디브·하와이 등 허니문 전문 여행사." },
+      { id:"hihoneymoon", name:"하이허니문", category:"wedding", region:"해외", url:"https://www.hihoneymoon.co.kr/", blurb:"신혼여행 상품 예약 허니문 전문 여행사." },
+      { id:"monoscale", name:"모노스케일", category:"wedding", region:"국내", url:"https://monoscale.net/", blurb:"본식스냅·웨딩 영상 촬영 예약 플랫폼." },
+      // ── 사진·영상 촬영·초대장 (24) ──
+      { id:"filmconnect", name:"필름커넥트", category:"photo", region:"국내", url:"https://www.filmconnect.co.kr/", blurb:"본식·돌·프로필 스냅/스튜디오 작가 예약·매칭." },
+      { id:"snaaaper", name:"스냅퍼", category:"photo", region:"국내", url:"https://www.snaaaper.com/", blurb:"본식·돌·데이트스냅 작가 검색·예약 서비스." },
+      { id:"graphus", name:"그래퍼스", category:"photo", region:"국내", url:"https://www.graphus.co.kr/", blurb:"사진·영상 작가 포트폴리오 검색·중개 플랫폼." },
+      { id:"apps6", name:"스냅핏", category:"photo", region:"국내", url:"https://apps.apple.com/kr/app/id6642695481", blurb:"프로필·스냅 작가 포트폴리오·가격비교 예약 앱." },
+      { id:"snappi", name:"스내피", category:"photo", region:"국내", url:"https://snappi.imweb.me/", blurb:"일상·프로필 촬영 작가 매칭 서비스." },
+      { id:"snapcap", name:"스냅캡", category:"photo", region:"국내", url:"https://snapcap.kr/", blurb:"장소·컨셉·작가 선택 출장 촬영 매칭 플랫폼." },
+      { id:"honeypic", name:"허니픽", category:"photo", region:"해외", url:"https://honeypic.com/", blurb:"해외 여행지 현지 스냅 작가 매칭·예약." },
+      { id:"stafpic", name:"스텝픽", category:"photo", region:"국내", url:"https://stafpic.com/", blurb:"영상 촬영·제작사 의뢰자 연결 외주 매칭." },
+      { id:"videocon", name:"비디오콘", category:"photo", region:"국내", url:"https://www.videocon.io/", blurb:"영상 제작사 매칭·비교견적 외주 플랫폼." },
+      { id:"vidfolio", name:"비드폴리오", category:"photo", region:"국내", url:"https://vidfolio.kr/", blurb:"포트폴리오 기반 영상 제작사 매칭 서비스." },
+      { id:"match", name:"드롭샷매치", category:"photo", region:"국내", url:"https://match.dropshot.io/", blurb:"기업·영상제작사 비교견적 B2B 매칭." },
+      { id:"vcrewcorp", name:"브이크루", category:"photo", region:"국내", url:"https://www.vcrewcorp.com/", blurb:"영상 제작·편집·촬영 대행 매칭 서비스." },
+      { id:"studiopeople", name:"스튜디오피플", category:"photo", region:"국내", url:"https://www.studiopeople.kr/", blurb:"프로필·증명·바디프로필 촬영 예약 서비스." },
+      { id:"successstudio", name:"성공사진관", category:"photo", region:"국내", url:"https://www.success-studio.kr/", blurb:"사진관 예약·고객·매출 관리 솔루션." },
+      { id:"mcard", name:"바른손M카드", category:"photo", region:"국내", url:"https://mcard.barunsoncard.com/", blurb:"바른손 모바일 청첩장·초대장 제작." },
+      { id:"feelmaker", name:"필메이커", category:"photo", region:"국내", url:"https://feelmaker.co.kr/", blurb:"스킨 선택 무료 모바일 청첩장 제작." },
+      { id:"directwedcard", name:"필카드", category:"photo", region:"국내", url:"https://directwedcard.com/", blurb:"무료 모바일 청첩장 제작 서비스." },
+      { id:"moiitee", name:"모이티", category:"photo", region:"국내", url:"https://www.moiitee.com/", blurb:"모바일 청첩장·웨딩포스터·식권 셀프 제작." },
+      { id:"dalpeng", name:"달팽", category:"photo", region:"국내", url:"https://dalpeng.com/", blurb:"청첩장·돌잔치·행사 모바일 초대장 제작." },
+      { id:"deardeer", name:"디얼디어", category:"photo", region:"국내", url:"https://deardeer.kr/", blurb:"종이·모바일 청첩장 제작 서비스." },
+      { id:"ofy", name:"온니포유", category:"photo", region:"국내", url:"https://ofy.kr/", blurb:"돌잔치·청첩장 모바일 초대장 제작." },
+      { id:"life4cut", name:"인생네컷", category:"photo", region:"국내", url:"https://www.life4cut.co.kr/", blurb:"셀프 촬영·즉석 인화 네컷사진 포토부스." },
+      { id:"photogray", name:"포토그레이", category:"photo", region:"국내", url:"https://photogray.com/", blurb:"셀프 촬영 포토부스 네컷사진 브랜드." },
+      { id:"photoair", name:"포토에어", category:"photo", region:"국내", url:"https://photo-air.com/", blurb:"출장형 렌탈 셀프 포토부스 서비스." },
+      // ── 행사·케이터링·꽃 (34) ──
+      { id:"partypang", name:"파티팡", category:"event", region:"국내", url:"https://www.partypang.co.kr/", blurb:"파티용품·장식·헬륨풍선 배달 전문몰." },
+      { id:"partyhae", name:"파티해", category:"event", region:"국내", url:"https://partyhae.com/", blurb:"파티 장식·풍선·이벤트 소품 할인 쇼핑몰." },
+      { id:"joyparty", name:"조이파티", category:"event", region:"국내", url:"https://www.joyparty.co.kr/", blurb:"생일파티용품·풍선 차량배달 전문점." },
+      { id:"rentalfr", name:"렌탈프리", category:"event", region:"국내", url:"https://rentalfr.com/", blurb:"포토월·바테이블 등 행사용품 렌탈." },
+      { id:"rentalmonkey", name:"렌탈몽키", category:"event", region:"국내", url:"https://rental-monkey.com/", blurb:"테이블 등 행사용품 대여 전문 업체." },
+      { id:"whitebooth", name:"하얀부스", category:"event", region:"국내", url:"https://www.whitebooth.co.kr/", blurb:"행사용품 렌탈·설치·행사 기획 업체." },
+      { id:"partykorea", name:"파티코리아", category:"event", region:"국내", url:"https://partykorea.co.kr/", blurb:"개업·기업행사 출장뷔페·케이터링." },
+      { id:"koreabuffet", name:"코리아출장부페", category:"event", region:"국내", url:"https://www.koreabuffet.co.kr/", blurb:"수도권 출장뷔페·케이터링 서비스." },
+      { id:"awesomeparty", name:"어썸파티", category:"event", region:"국내", url:"https://awesomeparty.co.kr/", blurb:"포장 배달형 케이터링·파티박스 서비스." },
+      { id:"roomservicehomeparty", name:"룸서비스 홈파티", category:"event", region:"국내", url:"https://roomservicehomeparty.com/", blurb:"집들이·모임 홈파티 출장뷔페 케이터링." },
+      { id:"justincatering", name:"저스틴케이터링", category:"event", region:"국내", url:"https://www.justincatering.com/", blurb:"호텔식 도시락·프리미엄 케이터링 주문." },
+      { id:"damsoban", name:"담소반", category:"event", region:"국내", url:"https://www.damsoban.co.kr/", blurb:"셰프·플로리스트 케이터링·도시락 주문." },
+      { id:"foodsupporters", name:"푸드서포터즈", category:"event", region:"국내", url:"https://www.foodsupporters.com/", blurb:"단체 도시락·케이터링 주문·배달 플랫폼." },
+      { id:"fooding", name:"오피스푸딩", category:"event", region:"국내", url:"https://fooding.io/", blurb:"사무실 단체식·간식·케이터링 주문 플랫폼." },
+      { id:"kukka", name:"꾸까", category:"event", region:"국내", url:"https://kukka.kr/", blurb:"꽃 정기구독 온라인 플라워 브랜드." },
+      { id:"flipflower", name:"플립플라워", category:"event", region:"국내", url:"https://www.flipflower.co.kr/", blurb:"꽃 정기구독 서비스." },
+      { id:"florano", name:"플로라노", category:"event", region:"국내", url:"https://www.florano.shop/", blurb:"프리미엄 꽃 정기구독·플라워 카페 브랜드." },
+      { id:"snowfoxflowers", name:"스노우폭스 플라워", category:"event", region:"국내", url:"https://snowfoxflowers.com/", blurb:"합리적 가격 꽃 판매 플라워 브랜드." },
+      { id:"honestflower", name:"어니스트플라워", category:"event", region:"국내", url:"https://honestflower.kr/", blurb:"일상용 꽃 판매·배송 플라워 브랜드." },
+      { id:"fleurue", name:"플레루", category:"event", region:"국내", url:"https://www.fleurue.com/", blurb:"일상용 꽃 정기구독 플라워 서비스." },
+      { id:"flowerrepublic", name:"플라워리퍼블릭", category:"event", region:"국내", url:"http://www.flowerrepublic.co.kr/", blurb:"근조·축하화환·개업선물 당일배송." },
+      { id:"cultwoflower", name:"컬투플라워", category:"event", region:"국내", url:"https://www.cultwo-flower.com/", blurb:"꽃다발·화환 전국 당일배송 꽃배달." },
+      { id:"flower119", name:"플라워119", category:"event", region:"국내", url:"https://www.flower119.co.kr/", blurb:"전국 꽃집 네트워크 화환·꽃 당일배송." },
+      { id:"flowerplus", name:"플라워플러스", category:"event", region:"국내", url:"https://flowerplus.co.kr/", blurb:"기업용 화환·식물 원스톱 꽃배달." },
+      { id:"biz", name:"기프티쇼 비즈", category:"event", region:"국내", url:"https://biz.giftishow.com/", blurb:"기업용 모바일쿠폰·판촉물 대량발송." },
+      { id:"barunsonthegift", name:"바른손 더기프트", category:"event", region:"국내", url:"https://www.barunsonthegift.com/", blurb:"답례품·선물 전문몰." },
+      { id:"giftinfo", name:"세종기프트", category:"event", region:"국내", url:"https://giftinfo.co.kr/", blurb:"판촉물·기념품·답례품 제작·판매." },
+      { id:"showgle", name:"쇼글", category:"event", region:"국내", url:"https://www.showgle.co.kr/", blurb:"공연팀·연예인 섭외 매칭 플랫폼." },
+      { id:"eventnet", name:"이벤트넷", category:"event", region:"국내", url:"https://eventnet.co.kr/", blurb:"행사·전시·컨벤션 전문가 매칭 커뮤니티." },
+      { id:"eventplus", name:"이벤트플러스", category:"event", region:"국내", url:"https://www.eventplus.co.kr/", blurb:"장비 대여·인력 섭외 행사 대행 매칭." },
+      { id:"myfair", name:"마이페어", category:"event", region:"국내", url:"https://myfair.co/", blurb:"해외 박람회 부스 예약·파트너 매칭 전시." },
+      { id:"iex", name:"아이전시", category:"event", region:"국내", url:"https://i-ex.co.kr/", blurb:"전시·박람회 부스·포토존 설치 대행." },
+      { id:"gopropose", name:"고프로포즈", category:"event", region:"국내", url:"https://gopropose.com/", blurb:"프로포즈·기념일 서프라이즈 이벤트 대행." },
+      { id:"luvhunter", name:"러브헌터", category:"event", region:"국내", url:"https://www.luvhunter.net/", blurb:"프로포즈·기념일 이벤트 대행 업체." }
     ]
   };
 
