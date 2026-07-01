@@ -53,12 +53,14 @@ document.addEventListener("DOMContentLoaded", () => {
   // 분야 바로가기 칩
   document.getElementById("catfilter").innerHTML =
     `<span class="fchip" data-cat="" aria-pressed="true">전체</span>` +
+    `<span class="fchip" data-new="1" aria-pressed="false">🆕 신규만</span>` +
     App.categories.map(c => `<span class="fchip" data-cat="${c.id}" aria-pressed="false">${c.icon} ${c.name}</span>`).join("");
+  let newOnly = false;
 
   function card(p) {
     return `<div class="pcard">
       <div class="row">
-        <h3>${p.name}</h3>
+        <h3>${p.name}${p.new ? '<span class="new-tag">NEW</span>' : ''}</h3>
         <span class="chip">${p.region}</span>
       </div>
       <p class="blurb">${p.blurb}</p>
@@ -75,6 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
     let total = 0;
     for (const c of cats) {
       let list = App.byCategory(c.id);
+      if (newOnly) list = list.filter(p => p.new);
       if (kw) list = list.filter(p =>
         p.name.toLowerCase().includes(kw) || p.blurb.toLowerCase().includes(kw) || c.name.toLowerCase().includes(kw));
       if (!list.length) continue;
@@ -90,8 +93,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("catfilter").addEventListener("click", (e) => {
     const c = e.target.closest(".fchip"); if (!c) return;
+    if (c.dataset.new) {
+      newOnly = !newOnly;
+      c.setAttribute("aria-pressed", newOnly ? "true" : "false");
+      render();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      return;
+    }
     activeCat = c.dataset.cat || null;
-    document.querySelectorAll("#catfilter .fchip").forEach(x => x.setAttribute("aria-pressed", x === c ? "true" : "false"));
+    newOnly = false;
+    document.querySelectorAll("#catfilter .fchip").forEach(x => x.setAttribute("aria-pressed", (x === c) ? "true" : (x.dataset.new ? "false" : "false")));
     render();
     window.scrollTo({ top: 0, behavior: "smooth" });
   });

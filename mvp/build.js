@@ -80,7 +80,7 @@ function categoryPage(cat, platforms) {
     <p class="sub">${esc(cat.desc)} · 총 ${list.length}곳 (개략 설명)</p>
     <div class="plist">
       ${list.map((p) => `<div class="pcard">
-        <div class="row"><h3>${esc(p.name)}</h3><span class="chip">${esc(p.region)}</span></div>
+        <div class="row"><h3>${esc(p.name)}${p.new ? '<span class="new-tag">NEW</span>' : ''}</h3><span class="chip">${esc(p.region)}</span></div>
         <p class="blurb">${esc(p.blurb)}</p>
         <a class="btn ghost" style="align-self:flex-start;padding:6px 10px;font-size:12px" href="${esc(p.url)}" target="_blank" rel="nofollow noopener">공식 사이트 ↗</a>
       </div>`).join("")}
