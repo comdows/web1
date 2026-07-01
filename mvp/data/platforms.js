@@ -376,7 +376,7 @@
       { id:"withsellit", name:"셀잇", category:"resale", region:"국내", url:"https://www.withsellit.com/", blurb:"중고 전자기기 컨시어지 거래 서비스." },
       { id:"aladin", name:"알라딘 중고", category:"resale", region:"국내", url:"https://www.aladin.co.kr/usedstore/wgate.aspx", blurb:"온·오프라인 중고 도서·음반·굿즈 매입/판매." },
       { id:"hellomarket", name:"헬로마켓", category:"resale", region:"국내", url:"https://www.hellomarket.com/", blurb:"개인 간 중고거래 모바일 커머스 앱." },
-      // ── 콘텐츠·창작 수익화 (51) ──
+      // ── 콘텐츠·창작 수익화 (60, NEW 9) ──
       { id:"npremium", name:"네이버 프리미엄콘텐츠", category:"content", region:"국내", url:"https://contents.premium.naver.com", blurb:"유료 구독 콘텐츠 발행·판매." },
       { id:"class101", name:"클래스101", category:"content", region:"국내", url:"https://class101.net", blurb:"온라인 클래스 제작·판매(크리에이터)." },
       { id:"brunch", name:"브런치스토리", category:"content", region:"국내", url:"https://brunch.co.kr", blurb:"글 발행·작가 활동 플랫폼." },
@@ -428,6 +428,15 @@
       { id:"typecast", name:"타입캐스트", category:"content", region:"국내", url:"https://typecast.ai/", blurb:"감정 표현 TTS 기반의 AI 성우 음성 생성 서비스." },
       { id:"pozalabs", name:"포자랩스", category:"content", region:"국내", url:"https://www.pozalabs.com/", blurb:"저작권 이슈 없는 AI 생성 배경음악을 제작·유통하는 음악 플랫폼." },
       { id:"britg", name:"브릿G", category:"content", region:"국내", url:"https://britg.kr/", blurb:"장편·중단편 소설을 장르 구분 없이 자유 연재·판매하는 플랫폼." },
+      { new:true, id:"ctee", name:"크티", category:"content", region:"해외", url:"https://ctee.kr", blurb:"최근 성장 중인 신생 크리에이터 수익화 플랫폼으로 멤버십·후원·상품 판매를 플랫폼 수수료 0%로 지원한다." },
+      { new:true, id:"fancimm", name:"팬심M", category:"content", region:"해외", url:"https://fancimm.com", blurb:"크리에이터와 팬의 1:1 비공개 소통·후원·굿즈를 중개하는 신생 팬덤 수익화 플랫폼이다." },
+      { new:true, id:"litt", name:"리틀리", category:"content", region:"해외", url:"https://litt.ly", blurb:"2021년 시작한 국내 올인원 프로필 링크 서비스로 링크 정리에 더해 후원·커머스 등 크리에이터 수익화 기능을 제공한다." },
+      { new:true, id:"carat", name:"캐럿", category:"content", region:"해외", url:"https://carat.im", blurb:"스타트업 패러닷이 만든 신생 AI 콘텐츠 제작 에이전트로 대화형 인터페이스로 텍스트·이미지·영상·오디오를 생성한다." },
+      { new:true, id:"gazet", name:"가제트", category:"content", region:"해외", url:"https://gazet.ai", blurb:"한국어에 특화된 신생 생성형 AI 글쓰기 도구로 블로그·광고 카피 등 문장을 자동 생성한다." },
+      { new:true, id:"musia", name:"뮤지아", category:"content", region:"해외", url:"https://musia.ai", blurb:"크리에이티브마인드가 운영하는 AI 작곡 서비스로 음악 지식 없이도 곡을 생성·편집할 수 있는 신생 뮤직테크 도구다." },
+      { new:true, id:"fikad", name:"피카클립", category:"content", region:"해외", url:"https://www.fikad.boo", blurb:"2023년 설립된 대전 스타트업 피카디의 서비스로 긴 영상을 AI가 여러 개의 숏폼으로 자동 제작해준다." },
+      { new:true, id:"toonda", name:"툰다", category:"content", region:"해외", url:"https://toonda.com", blurb:"스타트업 콘파파가 개발한 신생 웹툰 창작 툴로 글콘티·그림콘티·식자 작업을 지원한다." },
+      { new:true, id:"ploonet", name:"플루닛", category:"content", region:"해외", url:"https://www.ploonet.com", blurb:"생성형·대화형 AI 기반의 가상인간과 영상 제작 서비스를 제공하는 국내 신생 AI 콘텐츠 기업이다." },
       // ── 패션·뷰티 버티컬 커머스 (68) ──
       { id:"zigzag", name:"지그재그", category:"fashion", region:"국내", url:"https://zigzag.kr", blurb:"여성 패션 큐레이션 마켓, 영상쇼핑 중심." },
       { id:"ably", name:"에이블리", category:"fashion", region:"국내", url:"https://www.a-bly.com", blurb:"여성 의류·잡화 셀러 입점형 마켓." },
@@ -685,7 +694,7 @@
       { id:"archiproperty", name:"아키부동산", category:"realestate", region:"국내", url:"https://www.archiproperty.com/", blurb:"꼬마빌딩 매매와 상가·사무실 임대를 다루는 부동산 중개." },
       { id:"xnob0bj3f9wty2d24ab95b", name:"공장네트웍스", category:"realestate", region:"국내", url:"https://xn--ob0bj3f9wty2d24ab95b.com/", blurb:"전국 공장·창고·물류센터 매매·임대 전문 중개 플랫폼." },
       { id:"penggo", name:"펭고", category:"realestate", region:"국내", url:"http://www.penggo.net/", blurb:"상온·냉장·냉동 창고 임대와 매매를 중개하는 서비스." },
-      // ── 뷰티·헬스케어 예약 (24) ──
+      // ── 뷰티·헬스케어 예약 (30, NEW 6) ──
       { id:"gangnamunni", name:"강남언니", category:"beautyhealth", region:"국내", url:"https://www.gangnamunni.com", blurb:"미용·성형·피부 시술 정보·예약." },
       { id:"goodoc", name:"굿닥", category:"beautyhealth", region:"국내", url:"https://www.goodoc.co.kr", blurb:"병원·약국 검색·예약." },
       { id:"ddocdoc", name:"똑닥", category:"beautyhealth", region:"국내", url:"https://www.ddocdoc.com", blurb:"병원 예약·접수·대기 관리." },
@@ -710,7 +719,13 @@
       { id:"en", name:"비그린", category:"beautyhealth", region:"국내", url:"https://en.vegreen.co.kr/", blurb:"비건·친환경을 표방하는 스킨케어 브랜드." },
       { id:"nutridday", name:"Nutri D-Day", category:"beautyhealth", region:"국내", url:"https://nutridday.com/", blurb:"저분자 피쉬콜라겐 등 이너뷰티 제품을 파는 D2C 자사몰." },
       { id:"foodology", name:"푸드올로지", category:"beautyhealth", region:"국내", url:"https://food-ology.co.kr/", blurb:"이너뷰티·다이어트 식품 라인을 운영하는 D2C 브랜드몰." },
-      // ── 자동차 거래·정비 (39) ──
+      { new:true, id:"mindle", name:"마인들링", category:"beautyhealth", region:"국내", url:"https://mindle.kr/", blurb:"서울대병원 출신 정신과 전문의가 창업한 포티파이의 셀프 멘탈케어 구독 앱으로, 심리검사부터 맞춤형 케어까지 제공하는 신생 멘탈테크 서비스다." },
+      { new:true, id:"inside", name:"인사이드", category:"beautyhealth", region:"국내", url:"https://www.inside.im/", blurb:"2021년 설립된 오웰헬스가 운영하는 인지행동치료(CBT) 기반 정신건강 자가검사·멘탈케어 앱으로, 현재 '디스턴싱'으로 서비스되는 신생 서비스다." },
+      { new:true, id:"checkup", name:"착한의사", category:"beautyhealth", region:"국내", url:"https://checkup.adoc.co.kr/", blurb:"건강검진 비교·예약과 결과조회를 지원하는 헬스케어 플랫폼으로, 운영사 비바이노베이션이 2024년 60억원 규모 시리즈A를 유치한 신생 스타트업이다." },
+      { new:true, id:"checkupmoa", name:"검진모아", category:"beautyhealth", region:"국내", url:"https://www.checkupmoa.com/", blurb:"종합건강검진과 국가건강검진 비용 할인·예약 정보를 모아 제공하는 신생 건강검진 예약 플랫폼이다." },
+      { new:true, id:"wellcheck", name:"웰체크", category:"beautyhealth", region:"국내", url:"https://www.well-check.co.kr/", blurb:"당뇨·고혈압 등 만성질환자의 혈압·혈당·복약 데이터를 의료진과 함께 관리하는 디지털 헬스케어 플랫폼이다." },
+      { new:true, id:"heymama", name:"헤이마마", category:"beautyhealth", region:"국내", url:"https://heymama.kr/", blurb:"2023년 출시된 더패밀리랩의 펨테크 서비스로, 산후 여성의 기능 회복과 건강관리를 비대면 홈트레이닝으로 돕는 신생 여성 헬스케어 앱이다." },
+      // ── 자동차 거래·정비 (44, NEW 5) ──
       { id:"encar", name:"엔카", category:"auto", region:"국내", url:"https://www.encar.com", blurb:"국내 대표 중고차 거래 플랫폼." },
       { id:"heydealer", name:"헤이딜러", category:"auto", region:"국내", url:"https://www.heydealer.com", blurb:"내 차 팔기(딜러 경매) 중개." },
       { id:"kcar", name:"K Car(케이카)", category:"auto", region:"국내", url:"https://www.kcar.com", blurb:"중고차 직영 판매·매입." },
@@ -750,6 +765,11 @@
       { id:"carbridge", name:"카브릿지", category:"auto", region:"국내", url:"https://car-bridge.co.kr/", blurb:"사고차·고장차를 수리 없이 매입 견적내는 서비스." },
       { id:"joinsauto", name:"조인스오토", category:"auto", region:"국내", url:"https://joinsauto.co.kr/", blurb:"폐차 견적 비교(규제샌드박스 임시허가)를 제공하는 플랫폼." },
       { id:"goodbrother", name:"착한형오토바이", category:"auto", region:"국내", url:"https://goodbrother.co.kr/", blurb:"중고 오토바이 출장 매입을 전문으로 하는 서비스." },
+      { new:true, id:"evmodu", name:"모두의충전", category:"auto", region:"국내", url:"https://evmodu.kr/", blurb:"전국 전기차 충전소 정보와 통합결제(모두페이)를 제공하는 신생 스타트업 스칼라데이터의 EV 충전 앱으로, 30억원 규모 시리즈A를 유치했다." },
+      { new:true, id:"pluglink", name:"플러그링크", category:"auto", region:"국내", url:"https://pluglink.kr/", blurb:"아파트·오피스텔 등 공동주택에 완속 충전 인프라를 무상 설치·운영하는 앱 기반 전기차 충전 신생 스타트업이다." },
+      { new:true, id:"octoev", name:"옥토브", category:"auto", region:"국내", url:"https://www.octoev.com/", blurb:"2022년 설립된 신생 스타트업으로, 레일을 따라 충전기가 이동하며 여러 대를 자동 충전하는 무인 전기차 충전 시스템 '스카이차저'를 개발한다." },
+      { new:true, id:"autostay", name:"오토스테이", category:"auto", region:"국내", url:"https://www.autostay.co.kr/", blurb:"월정액 구독으로 전국 매장에서 자동세차를 무제한 이용하는 신생 구독형 세차 서비스로, 최근 세차·전기차 충전 결합 매장으로 확장 중이다." },
+      { new:true, id:"carvazo", name:"카바조", category:"auto", region:"국내", url:"https://www.carvazo.com/", blurb:"중고차 구매 시 전문 정비사가 동행해 차량 상태를 검수해주는 O2O 서비스로, 2023년 헤이딜러로부터 전략적 투자를 유치한 신생 플랫폼이다." },
       // ── 티켓·공연·이벤트 예매 (22) ──
       { id:"interparkticket", name:"인터파크 티켓", category:"ticket", region:"국내", url:"https://tickets.interpark.com", blurb:"공연·콘서트·스포츠 등 종합 예매." },
       { id:"yes24ticket", name:"예스24 공연", category:"ticket", region:"국내", url:"http://ticket.yes24.com", blurb:"공연·뮤지컬 중심 예매." },
