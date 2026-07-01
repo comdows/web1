@@ -43,7 +43,7 @@
     ],
 
     platforms: [
-      // ── 오픈마켓·종합몰 (9) ──
+      // ── 오픈마켓·종합몰 (10, NEW 1) ──
       { id:"coupang", name:"쿠팡", category:"openmarket", region:"국내", url:"https://www.coupang.com", blurb:"로켓배송 물류망을 갖춘 국내 최대 종합 이커머스." },
       { id:"smartstore", name:"네이버 스마트스토어", category:"openmarket", region:"국내", url:"https://smartstore.naver.com", blurb:"네이버 검색·페이와 연동되는 입점형 쇼핑몰." },
       { id:"11st", name:"11번가", category:"openmarket", region:"국내", url:"https://www.11st.co.kr", blurb:"SK 계열 종합 오픈마켓." },
@@ -53,6 +53,7 @@
       { id:"lotteon", name:"롯데온", category:"openmarket", region:"국내", url:"https://www.lotteon.com", blurb:"롯데 유통 계열 통합 온라인몰." },
       { id:"interpark", name:"인터파크쇼핑", category:"openmarket", region:"국내", url:"https://shopping.interpark.com", blurb:"공연·투어에 강한 종합 쇼핑몰." },
       { id:"shoppingseller", name:"톡스토어", category:"openmarket", region:"국내", url:"https://shopping-seller.kakao.com/", blurb:"카카오톡 채널 기반 오픈형 쇼핑 판매 플랫폼." },
+      { new:true, id:"aboutfishing", name:"어바웃피싱", category:"openmarket", region:"국내", url:"https://aboutfishing.kr/", blurb:"선상낚시 예약에 낚시용품 커머스·중고장터·커뮤니티를 결합한 낚시 버티컬 마켓으로 2023년 쇼핑몰을 연 신생 슈퍼앱." },
       // ── 홈쇼핑·T커머스 (10) ──
       { id:"hnsmall", name:"홈앤쇼핑", category:"homeshopping", region:"국내", url:"https://www.hnsmall.com/", blurb:"중소기업 제품 중심 TV홈쇼핑·온라인몰." },
       { id:"gongyoungshop", name:"공영쇼핑", category:"homeshopping", region:"국내", url:"https://www.gongyoungshop.kr/", blurb:"중소기업·농어민 판로 지원 공영 홈쇼핑." },
@@ -71,7 +72,7 @@
       { id:"makeshop", name:"메이크샵", category:"mallbuilder", region:"국내", url:"https://www.makeshop.co.kr/", blurb:"임대형 쇼핑몰 구축 솔루션." },
       { id:"godo", name:"고도몰", category:"mallbuilder", region:"국내", url:"https://www.godo.co.kr/", blurb:"NHN의 쇼핑몰 구축·호스팅 솔루션." },
       { id:"wisa", name:"위사", category:"mallbuilder", region:"국내", url:"https://www.wisa.co.kr/", blurb:"독립·임대형 쇼핑몰 구축 이커머스 솔루션." },
-      // ── 소셜·공동구매·특가 (21) ──
+      // ── 소셜·공동구매·특가 (23, NEW 2) ──
       { id:"allways", name:"올웨이즈", category:"social", region:"국내", url:"https://www.notefolio.net", blurb:"팀 구매(공동구매) 기반 초저가 커머스." },
       { id:"kakaogift", name:"카카오톡 선물하기", category:"social", region:"국내", url:"https://gift.kakao.com", blurb:"카카오톡 기반 선물·모바일 쿠폰 판매." },
       { id:"wemakeprice", name:"위메프", category:"social", region:"국내", url:"https://www.wemakeprice.com", blurb:"특가·딜 중심 소셜커머스." },
@@ -93,7 +94,9 @@
       { id:"coocha", name:"쿠차", category:"social", region:"국내", url:"http://www.coocha.co.kr/", blurb:"소셜커머스·오픈마켓 핫딜·특가 비교 검색." },
       { id:"uglyus", name:"어글리어스", category:"social", region:"국내", url:"https://uglyus.co.kr/", blurb:"못난이 농산물 정기배송 친환경 구독." },
       { id:"motnany", name:"못난이마켓", category:"social", region:"국내", url:"https://www.motnany.com/", blurb:"못난이 농산물 산지·소비자 직거래 마켓." },
-      // ── 라이브커머스 (12) ──
+      { new:true, id:"sodomall", name:"소도몰", category:"social", region:"국내", url:"https://www.sodomall.com/", blurb:"카톡 오픈채팅 기반으로 동네 매장에서 픽업하는 오프라인 공동구매 매장 프랜차이즈로 2024년 출범한 신생." },
+      { new:true, id:"colley", name:"콜리", category:"social", region:"국내", url:"https://colley.kr/", blurb:"IP 소품 '덕질'을 위한 편집샵·중고 덕친마켓·굿즈를 결합한 취향 커머스 앱으로 떠오르는 서비스." },
+      // ── 라이브커머스 (13, NEW 1) ──
       { id:"navershopl", name:"네이버 쇼핑라이브", category:"live", region:"국내", url:"https://shoppinglive.naver.com", blurb:"네이버 스마트스토어 연동 라이브 방송 판매." },
       { id:"grip", name:"그립(Grip)", category:"live", region:"국내", url:"https://www.grip.show", blurb:"소상공인·1인 판매자 중심 라이브커머스." },
       { id:"kakaoshopl", name:"카카오 쇼핑라이브", category:"live", region:"국내", url:"https://store.kakao.com", blurb:"카카오 채널 기반 라이브 판매." },
@@ -106,6 +109,7 @@
       { id:"jamlive", name:"잼라이브", category:"live", region:"국내", url:"https://jamlive.tv/", blurb:"인플루언서 중심 인터랙티브 라이브커머스." },
       { id:"display", name:"CJ온스타일 라이브", category:"live", region:"국내", url:"https://display.cjonstyle.com/", blurb:"CJ ENM 모바일 라이브 방송 커머스." },
       { id:"7shoppinglive", name:"세븐쇼핑라이브", category:"live", region:"국내", url:"https://7shoppinglive.com/", blurb:"뉴스 콘셉트 라이브 커머스 방송 플랫폼." },
+      { new:true, id:"soonshop", name:"순샵", category:"live", region:"국내", url:"https://www.soonshop.co.kr/", blurb:"크리에이터 숏폼 리뷰 영상으로 상품을 파는 숏폼 커머스로 2024년 5월 정식 출시된 신생(순이엔티)." },
       // ── 크라우드펀딩 (23, NEW 4) ──
       { id:"wadiz", name:"와디즈", category:"funding", region:"국내", url:"https://www.wadiz.kr", blurb:"리워드·투자형을 모두 다루는 국내 최대 크라우드펀딩." },
       { id:"tumblbug", name:"텀블벅", category:"funding", region:"국내", url:"https://tumblbug.com", blurb:"창작·콘텐츠 프로젝트 중심 리워드형 펀딩." },
@@ -268,7 +272,7 @@
       { id:"sell4", name:"아마존 글로벌셀링 외부 서비스 사업자 네트워크", category:"global", region:"국내", url:"https://sell.amazon.co.kr/support/service-provider-network", blurb:"인증·물류·마케팅 등 아마존 진출을 돕는 공식 서비스 프로바이더(에이전시) 목록." },
       { id:"sellerpick", name:"셀러픽", category:"global", region:"국내", url:"https://www.sellerpick.co.kr/", blurb:"해외 마켓 상품 등록·이미지 번역·AI 추천을 지원하는 역직구/구매대행 솔루션." },
       { id:"globalselling", name:"Mercado Libre Global Selling", category:"global", region:"해외", url:"https://global-selling.mercadolibre.com/", blurb:"멕시코·브라질 등 중남미를 단일 계정으로 판매하는 메르카도리브레 크로스보더 프로그램." },
-      // ── 도매·소싱 (45) ──
+      // ── 도매·소싱 (46, NEW 1) ──
       { id:"domeggook", name:"도매꾹", category:"wholesale", region:"국내", url:"https://domeggook.com", blurb:"국내 대표 온라인 도매·소량 사입." },
       { id:"domemedae", name:"도매매", category:"wholesale", region:"국내", url:"https://domeme.domeggook.com", blurb:"배송대행(위탁판매) 특화 도매." },
       { id:"ownerclan", name:"오너클랜", category:"wholesale", region:"국내", url:"https://ownerclan.com", blurb:"위탁판매용 대량 상품 소싱." },
@@ -314,6 +318,7 @@
       { id:"dplaza", name:"디플라자", category:"wholesale", region:"국내", url:"https://www.dplaza.kr/", blurb:"동대문 원단·의류부자재·액세서리를 파는 도매 종합몰." },
       { id:"dongdaemun153", name:"동대문153", category:"wholesale", region:"국내", url:"https://www.dongdaemun153.co.kr/", blurb:"액세서리·봉제 부자재를 다루는 동대문 도매 쇼핑몰." },
       { id:"ndmarket", name:"남도마켓", category:"wholesale", region:"국내", url:"https://www.ndmarket.co.kr/", blurb:"남대문·동대문 도매상품 사입을 돕는 B2B 소싱 플랫폼." },
+      { new:true, id:"sellup", name:"셀업", category:"wholesale", region:"국내", url:"https://www.sell-up.co.kr/", blurb:"동대문 도소매·사입삼촌의 소싱·주문·결제·정산을 앱으로 처리하는 패션 B2B 사입 플랫폼으로 최근 급성장한 신흥 서비스." },
       // ── 숙박·공간·투어 예약 (42, NEW 4) ──
       { id:"yanolja", name:"야놀자", category:"space", region:"국내", url:"https://www.yanolja.com", blurb:"숙박·레저 예약 중개." },
       { id:"goodchoice", name:"여기어때", category:"space", region:"국내", url:"https://www.goodchoice.kr", blurb:"숙박·액티비티 예약 중개." },
@@ -357,7 +362,7 @@
       { id:"theowl", name:"부엉이곳간", category:"space", region:"국내", url:"https://www.theowl.co.kr/", blurb:"마포·홍대·합정 공유오피스와 시간제 회의실 대여." },
       { id:"valuevenue", name:"가치공간", category:"space", region:"국내", url:"https://www.valuevenue.co.kr/", blurb:"팝업스토어 전문 공간 대여·매칭 리테일 플랫폼." },
       { id:"modushare", name:"쇼픈", category:"space", region:"국내", url:"https://www.modushare.co.kr/", blurb:"팝업·전시·촬영 용도별 공간을 매칭하는 대여 플랫폼." },
-      // ── 중고·리커머스 (18) ──
+      // ── 중고·리커머스 (25, NEW 7) ──
       { id:"daangn", name:"당근마켓", category:"resale", region:"국내", url:"https://www.daangn.com", blurb:"지역 기반 중고 직거래·동네생활." },
       { id:"bunjang", name:"번개장터", category:"resale", region:"국내", url:"https://m.bunjang.co.kr", blurb:"모바일 중고 거래(안전결제 제공)." },
       { id:"junggonara", name:"중고나라", category:"resale", region:"국내", url:"https://web.joongna.com", blurb:"국내 최대 규모 중고 거래 커뮤니티/앱." },
@@ -376,6 +381,13 @@
       { id:"withsellit", name:"셀잇", category:"resale", region:"국내", url:"https://www.withsellit.com/", blurb:"중고 전자기기 컨시어지 거래 서비스." },
       { id:"aladin", name:"알라딘 중고", category:"resale", region:"국내", url:"https://www.aladin.co.kr/usedstore/wgate.aspx", blurb:"온·오프라인 중고 도서·음반·굿즈 매입/판매." },
       { id:"hellomarket", name:"헬로마켓", category:"resale", region:"국내", url:"https://www.hellomarket.com/", blurb:"개인 간 중고거래 모바일 커머스 앱." },
+      { new:true, id:"recl", name:"리클", category:"resale", region:"국내", url:"https://recl.co.kr/", blurb:"모바일로 헌 옷을 간편 수거해 리워드를 주고 되파는 중고의류 리커머스로, 2023년 앱 출시 후 급성장한 신생." },
+      { new:true, id:"newoff", name:"뉴오프", category:"resale", region:"국내", url:"https://www.newoff.co.kr/", blurb:"안 입는 옷을 수거·검수·살균해 재판매하는 중고의류 커머스로, 2024년 출시되고 퓨처플레이 시드 투자를 받은 신생." },
+      { new:true, id:"secondsold", name:"세컨솔드", category:"resale", region:"국내", url:"https://secondsold.kr/", blurb:"전국 오프라인 빈티지샵을 한 곳에 모은 빈티지·구제 패션 모음 커머스 앱으로 2024년 말 나온 신생." },
+      { new:true, id:"collectiv", name:"콜렉티브", category:"resale", region:"국내", url:"https://collectiv.kr/", blurb:"프리미엄·디자이너 세컨핸드 패션을 거래하는 C2C 앱(크레이빙콜렉터)으로, 크림 투자를 받으며 떠오른 리커머스." },
+      { new:true, id:"fruitsfamily", name:"후루츠패밀리", category:"resale", region:"국내", url:"https://fruitsfamily.com/", blurb:"판매수수료 0원을 내세운 빈티지·세컨핸드 패션 커뮤니티 마켓으로 Z세대 중심으로 떠오른 리커머스." },
+      { new:true, id:"viver", name:"바이버", category:"resale", region:"국내", url:"https://www.viver.co.kr/", blurb:"전문가 검수 기반 명품 시계 C2C 거래 플랫폼(두나무 계열)으로 최근 급성장한 신흥 리셀 서비스." },
+      { new:true, id:"chicpap", name:"시크", category:"resale", region:"국내", url:"https://chicpap.com/", blurb:"명품 커뮤니티 시크먼트와 크림이 함께 만든 안전결제 기반 중고 명품 거래 앱으로 2022년경 등장한 신생." },
       // ── 콘텐츠·창작 수익화 (60, NEW 9) ──
       { id:"npremium", name:"네이버 프리미엄콘텐츠", category:"content", region:"국내", url:"https://contents.premium.naver.com", blurb:"유료 구독 콘텐츠 발행·판매." },
       { id:"class101", name:"클래스101", category:"content", region:"국내", url:"https://class101.net", blurb:"온라인 클래스 제작·판매(크리에이터)." },
@@ -506,7 +518,7 @@
       { id:"byatti", name:"바이아띠", category:"fashion", region:"국내", url:"https://www.byatti.com/", blurb:"생활한복을 전문으로 하는 온라인 쇼핑몰." },
       { id:"philosophia", name:"필로소피아", category:"fashion", region:"국내", url:"https://philosophia.co.kr/", blurb:"여성 요가복·필라테스복 전문 애슬레저 브랜드." },
       { id:"conch", name:"콘치웨어", category:"fashion", region:"국내", url:"https://conch.co.kr/", blurb:"필라테스·요가 레깅스 등 피트니스 웨어 브랜드." },
-      // ── 식품·신선·정기배송 (50) ──
+      // ── 식품·신선·정기배송 (51, NEW 1) ──
       { id:"kurly", name:"마켓컬리", category:"food", region:"국내", url:"https://www.kurly.com", blurb:"신선식품 새벽배송 이커머스." },
       { id:"oasis", name:"오아시스마켓", category:"food", region:"국내", url:"https://www.oasis.co.kr", blurb:"친환경·신선식품 새벽배송." },
       { id:"jeongyukgak", name:"정육각", category:"food", region:"국내", url:"https://www.jeongyukgak.com", blurb:"신선육류 직판·정기배송." },
@@ -557,6 +569,7 @@
       { id:"calobye", name:"칼로바이", category:"food", region:"국내", url:"https://www.calobye.shop/", blurb:"프로틴 음료 등 다이어트·단백질 식품을 파는 D2C 자사몰." },
       { id:"dshop", name:"다신샵", category:"food", region:"국내", url:"https://dshop.dietshin.com/", blurb:"단백질·다이어트 식품을 전문으로 하는 다이어트 식품몰." },
       { id:"granola", name:"그래놀라몰", category:"food", region:"국내", url:"https://www.granola.co.kr/", blurb:"그래놀라·뮤즐리·견과 등을 모은 시리얼·건강간식 전문몰." },
+      { new:true, id:"kihya", name:"키햐", category:"food", region:"국내", url:"https://www.kihya.com/", blurb:"위스키·와인·사케 등 주류를 가격비교·스마트오더로 파는 앱으로 2022년 설립된 신생 주류 커머스." },
       // ── 핸드메이드·작가마켓 (11) ──
       { id:"idus", name:"아이디어스", category:"handmade", region:"국내", url:"https://www.idus.com", blurb:"수공예·핸드메이드 작가 마켓." },
       { id:"10x10", name:"텐바이텐", category:"handmade", region:"국내", url:"https://www.10x10.co.kr", blurb:"디자인 문구·잡화 편집 마켓." },
@@ -793,7 +806,7 @@
       { id:"finestage", name:"파인스테이지", category:"ticket", region:"국내", url:"https://finestage.co.kr/", blurb:"클래식 음악 공연 전문 예매 사이트." },
       { id:"ticketguide", name:"티켓가이드", category:"ticket", region:"해외", url:"https://www.ticketguide.co.kr/", blurb:"유럽축구 등 해외 스포츠 직관 티켓 예매 서비스." },
       { id:"thebestplay", name:"연극열전", category:"ticket", region:"국내", url:"https://www.thebestplay.co.kr/", blurb:"연극 공연 정보·예매를 제공하는 사이트." },
-      // ── 반려동물 (41) ──
+      // ── 반려동물 (42, NEW 1) ──
       { id:"petfriends", name:"펫프렌즈", category:"pet", region:"국내", url:"https://www.pet-friends.co.kr/", blurb:"사료·간식·용품 반려동물 종합 커머스·빠른배송." },
       { id:"aboutpet", name:"어바웃펫", category:"pet", region:"국내", url:"https://www.aboutpet.co.kr/", blurb:"GS리테일 계열 반려동물 종합 쇼핑 커머스." },
       { id:"biteme", name:"바잇미", category:"pet", region:"국내", url:"https://www.biteme.co.kr/", blurb:"자체 제작 강아지 용품·간식·의류 브랜드몰." },
@@ -835,7 +848,8 @@
       { id:"21gram", name:"21그램", category:"pet", region:"국내", url:"https://21gram.co.kr/", blurb:"반려동물 장례 준비물부터 화장 절차까지 지원하는 장례식장이다." },
       { id:"petvip", name:"펫VIP", category:"pet", region:"국내", url:"https://www.petvip.co.kr/", blurb:"반려동물 출장·방문 미용과 목욕·돌봄을 제공하는 서비스다." },
       { id:"charactergrooming", name:"캐릭터그루밍", category:"pet", region:"국내", url:"https://charactergrooming.imweb.me/", blurb:"캐릭터·창작 스타일의 애견 미용을 예약하는 니치 그루밍샵이다." },
-      // ── 육아·키즈 (33) ──
+      { new:true, id:"othermars", name:"아더마스", category:"pet", region:"국내", url:"https://othermars.shop/", blurb:"유기농 무첨가 자연식 펫푸드를 자사몰 중심으로 파는 D2C 브랜드(올데이올가닉)로 2023년 이후 성장한 신생." },
+      // ── 육아·키즈 (34, NEW 1) ──
       { id:"momq", name:"맘큐", category:"kids", region:"국내", url:"https://www.momq.co.kr/", blurb:"유한킴벌리 육아·출산용품 커머스·멤버십 직영몰." },
       { id:"kizmom", name:"키즈맘쇼핑", category:"kids", region:"국내", url:"https://www.kizmom.kr/", blurb:"수입 유아용품·완구 전문 온라인 쇼핑몰." },
       { id:"inuri", name:"아이누리", category:"kids", region:"국내", url:"http://www.i-nuri.com/", blurb:"유아 보육·교육용품 커머스 사이트." },
@@ -869,7 +883,8 @@
       { id:"planacampus", name:"플랜에이캠퍼스", category:"kids", region:"국내", url:"https://www.planacampus.com/", blurb:"검증된 교사가 방문하는 유아 미술 교육 서비스다." },
       { id:"gguge", name:"꾸그", category:"kids", region:"국내", url:"https://www.gguge.com/", blurb:"아동 대상 라이브 온라인 수업을 중개하는 플랫폼이다." },
       { id:"raraclass", name:"라라클래스", category:"kids", region:"국내", url:"https://www.raraclass.com/", blurb:"미취학·초등 대상 체험·도슨트 프로그램을 운영한다." },
-      // ── 인쇄·굿즈 제작 (36) ──
+      { new:true, id:"kidsning", name:"키즈닝", category:"kids", region:"국내", url:"https://www.kidsning.co.kr/", blurb:"육아맘 셀럽마켓·아동 패션·육아템을 모은 육아 라이프스타일 쇼핑앱(밀크코퍼레이션)으로 최근 떠오른 신흥." },
+      // ── 인쇄·굿즈 제작 (37, NEW 1) ──
       { id:"marpple", name:"마플", category:"print", region:"국내", url:"https://www.marpple.com/kr", blurb:"커스텀 굿즈를 1개부터 주문 제작하는 POD 플랫폼." },
       { id:"marpple2", name:"마플샵", category:"print", region:"국내", url:"https://marpple.shop/kr", blurb:"디자인 등록만으로 무재고 굿즈를 제작·판매하는 크리에이터 커머스." },
       { id:"ohprint", name:"오프린트미", category:"print", region:"국내", url:"https://www.ohprint.me/", blurb:"명함·스티커·현수막·커스텀 의류를 소량 제작하는 인쇄 서비스." },
@@ -906,6 +921,7 @@
       { id:"3dprocess", name:"3D프로", category:"print", region:"국내", url:"https://3dprocess.co.kr/", blurb:"3D프린팅 출력 대행·시제품 주문 제작." },
       { id:"stellamove", name:"스텔라무브", category:"print", region:"국내", url:"https://www.stellamove.com/", blurb:"FDM·SLA 3D프린팅 시제품·조형물 제작." },
       { id:"creallo", name:"크렐로", category:"print", region:"국내", url:"https://creallo.com/", blurb:"3D프린팅·CNC·사출 맞춤 부품 온라인 제조." },
+      { new:true, id:"inupt", name:"이넙트", category:"print", region:"국내", url:"https://inupt.io/", blurb:"IP·캐릭터 굿즈 소량 제작을 쉽게 해주는 커스텀 굿즈 제작 플랫폼으로 새로 떠오른 신생 서비스." },
       // ── 창작물·디지털 자산 유통 (43, NEW 4) ──
       { id:"poclanos", name:"포크라노스", category:"assets", region:"국내", url:"https://poclanos.com/", blurb:"인디 뮤지션 음원·음반 국내외 배급 유통사." },
       { id:"danalenter", name:"다날엔터테인먼트", category:"assets", region:"국내", url:"https://www.danalenter.co.kr/", blurb:"음원 국내외 스트리밍·다운로드 유통사." },
