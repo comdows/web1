@@ -1,0 +1,111 @@
+:root{
+  --bg:#0f1115; --surface:#171a21; --surface2:#1e222b; --border:#2a2f3a;
+  --text:#e8eaed; --muted:#9aa3b2; --brand:#5b8def; --brand2:#7c5cff;
+  --good:#37c978; --warn:#ffb020; --bad:#ff5c72; --chip:#232833;
+  --radius:12px; --maxw:1080px;
+  font-synthesis:none;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Apple SD Gothic Neo","Malgun Gothic",sans-serif;
+  line-height:1.55; -webkit-font-smoothing:antialiased;
+}
+a{color:var(--brand); text-decoration:none}
+a:hover{text-decoration:underline}
+.container{max-width:var(--maxw); margin:0 auto; padding:0 20px}
+
+/* Header */
+header.site{position:sticky; top:0; z-index:20; background:rgba(15,17,21,.85); backdrop-filter:blur(8px); border-bottom:1px solid var(--border)}
+header.site .container{display:flex; align-items:center; gap:20px; height:60px}
+.logo{font-weight:800; font-size:18px; letter-spacing:-.02em}
+.logo b{color:var(--brand)}
+nav.top{display:flex; gap:18px; margin-left:auto; font-size:14px}
+nav.top a{color:var(--muted)}
+nav.top a:hover,nav.top a.active{color:var(--text); text-decoration:none}
+
+/* Hero */
+.hero{padding:56px 0 28px}
+.hero h1{font-size:34px; line-height:1.25; margin:0 0 12px; letter-spacing:-.02em}
+.hero p{color:var(--muted); font-size:16px; max-width:640px; margin:0 0 20px}
+.hero .cta{display:flex; gap:12px; flex-wrap:wrap}
+
+/* Buttons */
+.btn{display:inline-flex; align-items:center; gap:8px; padding:10px 16px; border-radius:10px; font-weight:600; font-size:14px; cursor:pointer; border:1px solid var(--border); background:var(--surface2); color:var(--text)}
+.btn:hover{text-decoration:none; border-color:#3a4150}
+.btn.primary{background:var(--brand); border-color:var(--brand); color:#fff}
+.btn.primary:hover{background:#4b7ee0}
+.btn.ghost{background:transparent}
+
+/* Banner */
+.banner{background:linear-gradient(90deg,rgba(124,92,255,.12),rgba(91,141,239,.12)); border:1px solid var(--border); border-radius:var(--radius); padding:12px 16px; font-size:13px; color:var(--muted); margin:8px 0 24px}
+.banner b{color:var(--warn)}
+
+/* Section */
+section{padding:20px 0}
+h2.sec{font-size:20px; margin:8px 0 16px; letter-spacing:-.01em}
+.sub{color:var(--muted); font-size:14px; margin:-6px 0 18px}
+
+/* Vertical grid */
+.grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(220px,1fr)); gap:14px}
+.card{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px; transition:border-color .15s, transform .15s}
+.card:hover{border-color:#3a4150; transform:translateY(-2px)}
+.card .icon{font-size:26px}
+.card h3{margin:8px 0 4px; font-size:16px}
+.card p{color:var(--muted); font-size:13px; margin:0}
+.tag{display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:999px; margin-top:10px}
+.tag.deep{background:rgba(55,201,120,.15); color:var(--good)}
+.tag.catalog{background:rgba(154,163,178,.15); color:var(--muted)}
+
+/* Platform list */
+.plist{display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:14px}
+.pcard{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; display:flex; flex-direction:column; gap:8px}
+.pcard .row{display:flex; align-items:center; justify-content:space-between; gap:8px}
+.pcard h3{margin:0; font-size:16px}
+.pcard .fee{font-size:13px; color:var(--muted)}
+.pcard .fee b{color:var(--text)}
+.pcard .chips{display:flex; flex-wrap:wrap; gap:6px}
+.chip{background:var(--chip); border:1px solid var(--border); color:var(--muted); font-size:11px; padding:3px 8px; border-radius:999px}
+.pcard .actions{display:flex; gap:8px; margin-top:6px}
+.pcard label.cmp{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--muted); cursor:pointer}
+
+/* Compare table */
+.cmp-wrap{overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius)}
+table.cmp{border-collapse:collapse; width:100%; min-width:640px; font-size:14px}
+table.cmp th,table.cmp td{text-align:left; padding:12px 14px; border-bottom:1px solid var(--border); vertical-align:top}
+table.cmp thead th{background:var(--surface2); position:sticky; top:0}
+table.cmp tbody th{background:var(--surface); color:var(--muted); font-weight:600; width:150px}
+table.cmp td{background:var(--surface)}
+.badge{display:inline-block; font-size:11px; font-weight:700; padding:2px 8px; border-radius:6px; margin:1px 2px 1px 0}
+.badge.good{background:rgba(55,201,120,.15); color:var(--good)}
+.badge.warn{background:rgba(255,176,32,.15); color:var(--warn)}
+.badge.bad{background:rgba(255,92,114,.15); color:var(--bad)}
+
+/* Calculator */
+.calc{display:grid; grid-template-columns:1fr 1fr; gap:24px}
+@media(max-width:720px){.calc{grid-template-columns:1fr}}
+.field{margin-bottom:14px}
+.field label{display:block; font-size:13px; color:var(--muted); margin-bottom:6px}
+.field input,.field select{width:100%; padding:10px 12px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:15px}
+.result{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:20px}
+.result .big{font-size:30px; font-weight:800; letter-spacing:-.02em; margin:4px 0 12px}
+.result .line{display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px dashed var(--border); font-size:14px}
+.result .line span:last-child{font-variant-numeric:tabular-nums}
+.result .net{color:var(--good)}
+.result .fee-neg{color:var(--bad)}
+
+/* Detail */
+.detail-head{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap}
+.kv{display:grid; grid-template-columns:170px 1fr; gap:10px 16px; margin:16px 0}
+.kv dt{color:var(--muted); font-size:13px}
+.kv dd{margin:0; font-size:14px}
+.pillbox{display:flex; flex-direction:column; gap:6px; margin:6px 0}
+.pillbox .good::before{content:"✔ "; color:var(--good)}
+.pillbox .bad::before{content:"⚠ "; color:var(--warn)}
+
+/* Footer */
+footer.site{border-top:1px solid var(--border); margin-top:48px; padding:24px 0; color:var(--muted); font-size:13px}
+footer.site a{color:var(--muted)}
+.muted{color:var(--muted)}
+.empty{color:var(--muted); padding:40px; text-align:center; border:1px dashed var(--border); border-radius:var(--radius)}

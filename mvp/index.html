@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>플랫폼올 — 붙을 플랫폼, 같은 기준으로 비교하세요</title>
+<meta name="description" content="판매채널·크라우드펀딩·프리랜서마켓 등 '나가서 붙는 플랫폼'을 수수료·정산조건까지 같은 기준으로 비교합니다.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site"><div class="container">
+  <div class="logo">플랫폼<b>올</b></div>
+  <nav class="top">
+    <a href="index.html">발견·비교</a>
+    <a href="compare.html">비교함 (<span id="cmp-count">0</span>)</a>
+    <a href="calculator.html">실수령 계산기</a>
+  </nav>
+</div></header>
+
+<main class="container">
+  <section class="hero">
+    <h1>어디에 붙을지 고민이라면,<br>같은 자로 재서 비교하세요.</h1>
+    <p>크라우드펀딩·프리랜서마켓·판매채널처럼 <b>내가 나가서 붙는 플랫폼</b>을
+       수수료·정산주기·숨은비용까지 한 화면에서 비교합니다. 흩어진 블로그를 뒤질 필요 없이.</p>
+    <div class="cta">
+      <a class="btn primary" href="#verticals">플랫폼 둘러보기</a>
+      <a class="btn ghost" href="calculator.html">💰 실수령 계산해보기</a>
+    </div>
+  </section>
+
+  <div class="banner">
+    ⓘ 현재는 <b>MVP 데모</b>입니다. 표시된 수수료·정산 정보는 <b>예시 값</b>이며 실제와 다를 수 있습니다.
+    정식 서비스에서는 모든 수치에 출처·검증일을 표기합니다.
+  </div>
+
+  <section id="verticals">
+    <h2 class="sec">어떤 종류의 플랫폼을 찾으세요?</h2>
+    <p class="sub">지금은 <b>크라우드펀딩</b>을 가장 깊게 비교합니다. 나머지 분야는 순차 확장 중입니다.</p>
+    <div class="grid" id="vgrid"></div>
+  </section>
+
+  <section id="beachhead">
+    <h2 class="sec">🎯 크라우드펀딩 플랫폼 비교</h2>
+    <p class="sub">체크박스로 2~4개를 담아 <a href="compare.html">비교함</a>에서 나란히 보세요.</p>
+    <div class="plist" id="plist"></div>
+  </section>
+</main>
+
+<footer class="site"><div class="container">
+  플랫폼올 (가칭) · "플랫폼을 위한 플랫폼" 1단계 MVP 데모 · 데이터는 예시입니다.
+</div></footer>
+
+<script src="data/platforms.js"></script>
+<script src="assets/app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // 버티컬 카드
+  const vg = document.getElementById("vgrid");
+  vg.innerHTML = App.verticals.map(v => `
+    <a class="card" href="${v.depth === 'deep' ? '#beachhead' : 'javascript:void(0)'}"
+       ${v.depth==='deep' ? '' : 'onclick="return false" style=\"cursor:default;opacity:.75\"'}>
+      <div class="icon">${v.icon}</div>
+      <h3>${v.name}</h3>
+      <p>${v.desc}</p>
+      <span class="tag ${v.depth}">${v.depth==='deep' ? '상세 비교 제공' : '목록 준비 중'}</span>
+    </a>`).join("");
+
+  // 비컨헤드 플랫폼 카드
+  const cf = App.byVertical("crowdfunding");
+  const cmp = App.getCompareSet();
+  const pl = document.getElementById("plist");
+  pl.innerHTML = cf.map(p => `
+    <div class="pcard">
+      <div class="row">
+        <h3><a href="platform.html?id=${p.platform_id}">${p.name}</a></h3>
+        <span class="chip">${p.funding_type||''}</span>
+      </div>
+      <div class="fee">수수료 <b>${App.feeText(p)}</b> · 정산 ${p.settlement.cycle_days}일${p.settlement.escrow?' · 에스크로':''}</div>
+      <div class="chips">${(p.region||[]).map(r=>`<span class="chip">${r}</span>`).join("")}
+        ${(p.fee_model.hidden_fees||[]).length?`<span class="chip">숨은비용 ${p.fee_model.hidden_fees.length}건</span>`:''}</div>
+      <div class="actions">
+        <a class="btn ghost" href="platform.html?id=${p.platform_id}">상세</a>
+        <label class="cmp"><input type="checkbox" data-id="${p.platform_id}" ${cmp.has(p.platform_id)?'checked':''}> 비교함에 담기</label>
+      </div>
+    </div>`).join("");
+
+  pl.addEventListener("change", (e) => {
+    if (e.target.matches("input[type=checkbox]")) {
+      const ok = App.toggleCompare(e.target.dataset.id);
+      if (!ok) e.target.checked = false;
+      document.getElementById("cmp-count").textContent = App.getCompareSet().size;
+    }
+  });
+});
+</script>
+</body>
+</html>

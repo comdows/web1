@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>비교함 — 플랫폼올</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site"><div class="container">
+  <div class="logo">플랫폼<b>올</b></div>
+  <nav class="top">
+    <a href="index.html">발견·비교</a>
+    <a href="compare.html">비교함 (<span id="cmp-count">0</span>)</a>
+    <a href="calculator.html">실수령 계산기</a>
+  </nav>
+</div></header>
+
+<main class="container">
+  <section>
+    <h2 class="sec" style="margin-top:28px">플랫폼 나란히 비교</h2>
+    <p class="sub">같은 축으로 정렬해 <b>숨은 비용·정산 리스크</b>를 한눈에 봅니다. (담은 항목: 최대 4개)</p>
+    <div id="out"></div>
+  </section>
+</main>
+
+<footer class="site"><div class="container">
+  플랫폼올 (가칭) · 1단계 MVP 데모 · 데이터는 예시입니다.
+</div></footer>
+
+<script src="data/platforms.js"></script>
+<script src="assets/app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const ids = [...App.getCompareSet()];
+  const out = document.getElementById("out");
+  const items = ids.map(id => App.byId(id)).filter(p => p && !p.stub);
+
+  if (!items.length) {
+    out.innerHTML = `<div class="empty">비교함이 비어 있습니다.<br>
+      <a href="index.html">발견·비교</a>에서 플랫폼을 2~4개 담아보세요.</div>`;
+    return;
+  }
+
+  const feeBadge = (p) => {
+    const hidden = (p.fee_model.hidden_fees||[]).length;
+    return `<span class="badge ${p.fee_model.rate_max>=9?'warn':'good'}">${App.feeText(p)}</span>` +
+           (hidden ? `<span class="badge bad">숨은비용 ${hidden}건</span>` : `<span class="badge good">숨은비용 없음</span>`);
+  };
+  const settleBadge = (s) => {
+    const b = s.cycle_days<=14 ? 'good' : (s.cycle_days<=21?'warn':'bad');
+    return `<span class="badge ${b}">${s.cycle_days}일</span>` + (s.escrow?`<span class="badge good">에스크로</span>`:'');
+  };
+
+  const rows = [
+    ["펀딩 유형",   p => p.funding_type || '-'],
+    ["지역",        p => (p.region||[]).join(", ")],
+    ["수수료",      p => feeBadge(p)],
+    ["숨은 비용",   p => (p.fee_model.hidden_fees||[]).map(h=>`<span class="badge warn">${h}</span>`).join(" ") || '-'],
+    ["정산주기",    p => settleBadge(p.settlement)],
+    ["분쟁/정산정책", p => p.settlement.dispute_policy || '-'],
+    ["가입 대상",   p => p.onboarding.biz_type_required],
+    ["심사기간",    p => `${p.onboarding.review_days}일`],
+    ["트래픽(추정)", p => p.scale.traffic_tier],
+    ["강점",        p => (p.highlights||[]).map(h=>`<span class="badge good">${h}</span>`).join(" ")],
+    ["주의점",      p => (p.cautions||[]).map(h=>`<span class="badge bad">${h}</span>`).join(" ")],
+    ["데이터 신뢰", p => `<span class="badge ${p.evidence.confidence==='high'?'good':'warn'}">${p.evidence.source} · ${p.evidence.verified_at}</span>`]
+  ];
+
+  out.innerHTML = `<div class="cmp-wrap"><table class="cmp">
+    <thead><tr><th>항목</th>${items.map(p=>`<th><a href="platform.html?id=${p.platform_id}">${p.name}</a></th>`).join("")}</tr></thead>
+    <tbody>${rows.map(([label,fn]) =>
+      `<tr><th>${label}</th>${items.map(p=>`<td>${fn(p)}</td>`).join("")}</tr>`).join("")}
+    </tbody></table></div>
+    <p class="sub" style="margin-top:14px">🎯 초록 = 유리 / 노랑 = 확인 필요 / 빨강 = 주의. 데모 값이므로 실제 계약 전 반드시 원문 약관을 확인하세요.</p>`;
+});
+</script>
+</body>
+</html>

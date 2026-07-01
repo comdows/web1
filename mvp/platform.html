@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>플랫폼 상세 — 플랫폼올</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site"><div class="container">
+  <div class="logo">플랫폼<b>올</b></div>
+  <nav class="top">
+    <a href="index.html">발견·비교</a>
+    <a href="compare.html">비교함 (<span id="cmp-count">0</span>)</a>
+    <a href="calculator.html">실수령 계산기</a>
+  </nav>
+</div></header>
+
+<main class="container">
+  <section id="detail" style="padding-top:28px"></section>
+</main>
+
+<footer class="site"><div class="container">
+  플랫폼올 (가칭) · 1단계 MVP 데모 · 데이터는 예시입니다.
+</div></footer>
+
+<script src="data/platforms.js"></script>
+<script src="assets/app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const id = new URLSearchParams(location.search).get("id");
+  const p = App.byId(id);
+  const box = document.getElementById("detail");
+
+  if (!p) { box.innerHTML = `<div class="empty">플랫폼을 찾을 수 없습니다. <a href="index.html">목록으로</a></div>`; return; }
+
+  if (p.stub) {
+    box.innerHTML = `<div class="detail-head"><h1 style="margin:0">${p.name}</h1></div>
+      <p class="sub">${p.note || '상세 비교 준비 중입니다.'}</p>
+      <div class="empty">이 분야는 아직 <b>카탈로그(목록)</b> 단계입니다. 비컨헤드 검증 후 순차적으로 상세 비교를 제공합니다.<br>
+      <a href="index.html">← 발견·비교로</a></div>`;
+    return;
+  }
+
+  const f = p.fee_model, s = p.settlement, o = p.onboarding;
+  box.innerHTML = `
+    <a class="muted" href="index.html">← 크라우드펀딩 목록</a>
+    <div class="detail-head" style="margin-top:8px">
+      <h1 style="margin:0">${p.name}</h1>
+      <span class="chip">${p.funding_type||''}</span>
+      ${(p.region||[]).map(r=>`<span class="chip">${r}</span>`).join("")}
+    </div>
+
+    <dl class="kv">
+      <dt>수수료</dt><dd><b>${App.feeText(p)}</b> ${f.hidden_fees&&f.hidden_fees.length?`· 추가: ${f.hidden_fees.join(", ")}`:''}</dd>
+      <dt>정산주기</dt><dd>${s.cycle_days}일 ${s.escrow?'· 에스크로 있음':''} ${s.holdback_pct?`· 정산유보 ${s.holdback_pct}%`:''}</dd>
+      <dt>정산/분쟁 정책</dt><dd>${s.dispute_policy||'-'}</dd>
+      <dt>가입 대상</dt><dd>${o.biz_type_required}</dd>
+      <dt>심사기간</dt><dd>${o.review_days}일</dd>
+      <dt>초기비용</dt><dd>${o.setup_cost ? App.won(o.setup_cost) : '없음'}</dd>
+      <dt>트래픽(추정)</dt><dd>${p.scale.traffic_tier}</dd>
+      <dt>대상</dt><dd>${p.scale.b2b_b2c} · ${p.scale.geo}</dd>
+    </dl>
+
+    <h2 class="sec">강점 & 주의점</h2>
+    <div class="pillbox">
+      ${(p.highlights||[]).map(h=>`<div class="good">${h}</div>`).join("")}
+      ${(p.cautions||[]).map(h=>`<div class="bad">${h}</div>`).join("")}
+    </div>
+
+    <div class="banner" style="margin-top:20px">
+      데이터 신뢰도: <b>${p.evidence.source}</b> · 검증일 ${p.evidence.verified_at} · confidence:${p.evidence.confidence}.
+      이 값은 <b>데모 예시</b>이며 계약 전 원문 약관 확인이 필요합니다.
+    </div>
+
+    <div class="cta" style="display:flex;gap:12px;margin-top:16px">
+      <a class="btn primary" href="calculator.html">💰 실수령 계산해보기</a>
+      <a class="btn ghost" href="compare.html">비교함 보기</a>
+    </div>`;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>실수령 계산기 — 플랫폼올</title>
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site"><div class="container">
+  <div class="logo">플랫폼<b>올</b></div>
+  <nav class="top">
+    <a href="index.html">발견·비교</a>
+    <a href="compare.html">비교함 (<span id="cmp-count">0</span>)</a>
+    <a href="calculator.html">실수령 계산기</a>
+  </nav>
+</div></header>
+
+<main class="container">
+  <section>
+    <h2 class="sec" style="margin-top:28px">💰 크라우드펀딩 실수령 계산기</h2>
+    <p class="sub">모금 목표액을 넣으면 플랫폼 수수료·PG·부가세를 반영한 <b>실제 손에 쥐는 금액</b>을 계산합니다. 로그인 불필요.</p>
+
+    <div class="calc">
+      <div>
+        <div class="field">
+          <label>플랫폼 선택</label>
+          <select id="pf"></select>
+        </div>
+        <div class="field">
+          <label>목표 모금액 (원)</label>
+          <input id="amount" type="number" inputmode="numeric" value="10000000" min="0" step="100000">
+        </div>
+        <div class="field">
+          <label>PG 결제수수료 (%) <span class="muted">— 플랫폼 별도 부과 가정</span></label>
+          <input id="pg" type="number" value="2.5" min="0" step="0.1">
+        </div>
+        <div class="field">
+          <label><input type="checkbox" id="vat" style="width:auto;vertical-align:middle"> 수수료에 부가세 10% 추가</label>
+        </div>
+      </div>
+
+      <div class="result">
+        <div class="muted">예상 실수령액</div>
+        <div class="big net" id="net">–</div>
+        <div class="line"><span>목표 모금액</span><span id="r-amount">–</span></div>
+        <div class="line"><span id="r-feelabel">플랫폼 수수료</span><span class="fee-neg" id="r-fee">–</span></div>
+        <div class="line"><span id="r-pglabel">PG 수수료</span><span class="fee-neg" id="r-pg">–</span></div>
+        <div class="line"><span id="r-vatlabel">부가세</span><span class="fee-neg" id="r-vat">–</span></div>
+        <div class="line"><b>실수령 합계</b><b class="net" id="r-net">–</b></div>
+        <div class="line"><span>실부담률</span><span id="r-rate">–</span></div>
+        <p class="sub" id="note" style="margin-top:14px"></p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="site"><div class="container">
+  플랫폼올 (가칭) · 1단계 MVP 데모 · 수수료 값은 예시이며 실제 계약 조건과 다를 수 있습니다.
+</div></footer>
+
+<script src="data/platforms.js"></script>
+<script src="assets/app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const cf = App.byVertical("crowdfunding");
+  const pf = document.getElementById("pf");
+  pf.innerHTML = cf.map(p => `<option value="${p.platform_id}">${p.name} (${App.feeText(p)})</option>`).join("");
+
+  const el = id => document.getElementById(id);
+
+  function calc() {
+    const p = App.byId(pf.value);
+    const amount = Math.max(0, Number(el("amount").value) || 0);
+    // 플랫폼 수수료는 범위 상한을 보수적으로 사용(최악 시나리오 안내)
+    const feeRate = p.fee_model.rate_max / 100;
+    const pgRate = Math.max(0, Number(el("pg").value) || 0) / 100;
+    const vatOn = el("vat").checked;
+
+    let platformFee = amount * feeRate;
+    let pgFee = amount * pgRate;
+    let vat = vatOn ? (platformFee + pgFee) * 0.10 : 0;
+    const net = amount - platformFee - pgFee - vat;
+    const burden = amount > 0 ? (1 - net / amount) * 100 : 0;
+
+    el("net").textContent = App.won(net);
+    el("r-amount").textContent = App.won(amount);
+    el("r-feelabel").textContent = `플랫폼 수수료 (${p.fee_model.rate_max}%, 상한 기준)`;
+    el("r-fee").textContent = "− " + App.won(platformFee);
+    el("r-pg").textContent = "− " + App.won(pgFee);
+    el("r-vat").textContent = vatOn ? "− " + App.won(vat) : "미적용";
+    el("r-net").textContent = App.won(net);
+    el("r-rate").textContent = burden.toFixed(1) + "%";
+
+    const hid = (p.fee_model.hidden_fees||[]);
+    el("note").innerHTML = hid.length
+      ? `⚠ ${p.name}은(는) <b>${hid.join(", ")}</b> 등 추가 비용이 있을 수 있습니다. 상한 기준 계산이니 실제는 더 낮을 수 있습니다.`
+      : `상한 기준 계산입니다. 실제 조건은 플랫폼과 확인하세요.`;
+  }
+
+  ["change","input"].forEach(ev => {
+    pf.addEventListener(ev, calc);
+    el("amount").addEventListener(ev, calc);
+    el("pg").addEventListener(ev, calc);
+    el("vat").addEventListener(ev, calc);
+  });
+  calc();
+});
+</script>
+</body>
+</html>
