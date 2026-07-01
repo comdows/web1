@@ -67,9 +67,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ── 딥 레코드 ──
   const f = p.fee_model, s = p.settlement, o = p.onboarding, st = App.staleness(p);
+  const facts = (p.facts||[]).map(h=>`<div class="good">${h}</div>`).join("");
   const cautions = App.isTrusted(p)
     ? (p.cautions||[]).map(h=>`<div class="bad">${h}</div>`).join("")
-    : `<div class="muted">평가성 주의사항은 공식 출처로 검증된 뒤 표시됩니다.</div>`;
+    : ((p.cautions||[]).length ? `<div class="muted">추가 평가성 주의사항은 공식 출처로 검증된 뒤 표시됩니다.</div>` : '');
+  const cycleText = s.cycle_days == null ? '확인 불가(공식 미확인)' : `${s.cycle_days}일`;
 
   box.innerHTML = `
     <a class="muted" href="index.html">← 크라우드펀딩 목록</a>
@@ -90,19 +92,20 @@ document.addEventListener("DOMContentLoaded", () => {
 
     <dl class="kv">
       <dt>수수료</dt><dd><b>${App.feeText(p)}</b> ${f.hidden_fees&&f.hidden_fees.length?`· 추가: ${f.hidden_fees.join(", ")}`:''}
-        ${f.pg_included?'· <span class="muted">PG 포함</span>':''}</dd>
-      <dt>정산주기</dt><dd>${s.cycle_days}일 ${s.escrow?'· 에스크로 있음':''} ${s.holdback_pct?`· 정산유보 ${s.holdback_pct}%`:''}</dd>
+        ${f.pg_included?'· <span class="muted">PG 포함</span>':''} ${f.note?`<br><span class="muted">${f.note}</span>`:''}</dd>
+      <dt>정산주기</dt><dd>${cycleText} ${s.escrow?'· 에스크로 있음':''} ${s.holdback_pct?`· 정산유보 ${s.holdback_pct}%`:''}</dd>
       <dt>정산/분쟁 정책</dt><dd>${s.dispute_policy||'-'}</dd>
       <dt>가입 대상</dt><dd>${o.biz_type_required}</dd>
-      <dt>심사기간</dt><dd>${o.review_days}일</dd>
+      <dt>심사기간</dt><dd>${o.review_days == null ? '확인 불가' : o.review_days + '일'}</dd>
       <dt>초기비용</dt><dd>${o.setup_cost ? App.won(o.setup_cost) : '없음'}</dd>
       <dt>트래픽(추정)</dt><dd>${p.scale.traffic_tier}</dd>
       <dt>대상</dt><dd>${p.scale.b2b_b2c} · ${p.scale.geo}</dd>
     </dl>
 
-    <h2 class="sec">강점 & 주의점</h2>
+    <h2 class="sec">강점 · 사실 · 주의</h2>
     <div class="pillbox">
       ${(p.highlights||[]).map(h=>`<div class="good">${h}</div>`).join("")}
+      ${facts}
       ${cautions}
     </div>
 

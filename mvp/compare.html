@@ -64,22 +64,29 @@ document.addEventListener("DOMContentLoaded", () => {
     App.__track && App.__track("share_compare", { ids: items.map(p=>p.platform_id) });
   });
 
-  // 신뢰 가드: high 신뢰가 아니면 수수료 색상 단정을 '미검증(회색)'으로 다운그레이드
+  // 수수료 배지: 요율 비공개/신뢰도에 따라 색상 단정 회피
   const feeBadge = (p) => {
-    const hidden = (p.fee_model.hidden_fees||[]).length;
-    const cls = App.isTrusted(p) ? (p.fee_model.rate_max>=9?'warn':'good') : 'muted-badge';
+    const f = p.fee_model, hidden = (f.hidden_fees||[]).length;
+    if (f.disclosed === false || f.rate_min == null)
+      return `<span class="badge muted-badge">요율 비공개</span>` + (hidden ? ` <span class="badge warn">추가비용 ${hidden}건</span>` : '');
+    const cls = App.isTrusted(p) ? (f.rate_max>=13?'warn':'good') : 'muted-badge';
     const note = App.isTrusted(p) ? '' : ' <span class="badge muted-badge">미검증</span>';
     return `<span class="badge ${cls}">${App.feeText(p)}</span>` +
-           (hidden ? `<span class="badge warn">숨은비용 ${hidden}건</span>` : '') + note;
+           (hidden ? `<span class="badge warn">추가비용 ${hidden}건</span>` : '') + note;
   };
   const settleBadge = (s) => {
+    if (s.cycle_days == null)
+      return `<span class="badge muted-badge">확인 불가</span>` + (s.escrow?`<span class="badge good">에스크로</span>`:'');
     const b = s.cycle_days<=14 ? 'good' : (s.cycle_days<=21?'warn':'bad');
-    return `<span class="badge ${b}">${s.cycle_days}일</span>` + (s.escrow?`<span class="badge good">에스크로</span>`:'');
+    return `<span class="badge ${b}">${s.cycle_days}일</span>`
+      + (s.holdback_pct?` <span class="badge warn">유보 ${s.holdback_pct}%</span>`:'')
+      + (s.escrow?` <span class="badge good">에스크로</span>`:'');
   };
-  // 평가성(부정) 서술은 신뢰 검증 전엔 렌더하지 않음 (§12)
-  const cautionCell = (p) => {
-    if (!App.isTrusted(p)) return `<span class="muted">검증 후 표시</span>`;
-    return (p.cautions||[]).map(h=>`<span class="badge bad">${h}</span>`).join(" ") || '-';
+  // 사실성 주석(출처 有)은 표시, 평가성(cautions)은 high 검증 전엔 미표시 (§12)
+  const factsCell = (p) => {
+    const facts = (p.facts||[]).map(h=>`<span class="badge muted-badge">${h}</span>`).join(" ");
+    const caut = App.isTrusted(p) ? (p.cautions||[]).map(h=>`<span class="badge bad">${h}</span>`).join(" ") : '';
+    return (facts + " " + caut).trim() || '-';
   };
   const trustCell = (p) => {
     const st = App.staleness(p);
@@ -97,10 +104,10 @@ document.addEventListener("DOMContentLoaded", () => {
     ["정산주기",    p => settleBadge(p.settlement)],
     ["정산/분쟁 정책", p => p.settlement.dispute_policy || '-'],
     ["가입 대상",   p => p.onboarding.biz_type_required],
-    ["심사기간",    p => `${p.onboarding.review_days}일`],
+    ["심사기간",    p => p.onboarding.review_days == null ? '<span class="muted">확인 불가</span>' : `${p.onboarding.review_days}일`],
     ["트래픽(추정)", p => p.scale.traffic_tier],
     ["강점",        p => (p.highlights||[]).map(h=>`<span class="badge good">${h}</span>`).join(" ")],
-    ["주의점",      p => cautionCell(p)],
+    ["사실·주의",   p => factsCell(p)],
     ["데이터 신뢰", p => trustCell(p)],
     ["바로가기",    p => outbound(p)]
   ];
@@ -110,8 +117,8 @@ document.addEventListener("DOMContentLoaded", () => {
     <tbody>${rows.map(([label,fn]) =>
       `<tr><th>${label}</th>${items.map(p=>`<td>${fn(p)}</td>`).join("")}</tr>`).join("")}
     </tbody></table></div>
-    <p class="sub" style="margin-top:14px">🎯 초록 = 유리 / 노랑 = 확인 필요 / 빨강 = 주의. <b>수수료·정산은 데모 예시</b>이며,
-    평가성 서술은 공식 출처로 검증되기 전까지 표시하지 않습니다. 계약 전 반드시 원문 약관을 확인하세요.</p>`;
+    <p class="sub" style="margin-top:14px">🎯 초록 = 유리 / 노랑 = 확인 필요 / 회색 = 미검증·비공개. <b>수수료·정산은 각 플랫폼 공식 출처(원문 링크) 기반</b>이나
+    자동조회 차단으로 스니펫 교차확인(신뢰도 mid/low)입니다. 평가성 서술은 원문 직접검증(high) 전까지 표시하지 않습니다. 계약 전 반드시 원문 약관을 확인하세요.</p>`;
   __track("compare_view", { ids: items.map(p=>p.platform_id) });
 });
 </script>

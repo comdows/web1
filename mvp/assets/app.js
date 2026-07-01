@@ -38,9 +38,15 @@
     feeText(p) {
       if (p.stub || !p.fee_model) return "정보 준비 중";
       const f = p.fee_model;
+      if (f.disclosed === false || f.rate_min == null) return "요율 비공개";
       if (f.type === "percent")
         return f.rate_min === f.rate_max ? `${f.rate_min}%` : `${f.rate_min}~${f.rate_max}%`;
       return f.type;
+    },
+    // 계산기에 쓸 수 있는(요율 공개된) 딥 레코드인지
+    isCalculable(p) {
+      return !p.stub && p.fee_model && p.fee_model.disclosed !== false &&
+             typeof p.fee_model.rate_min === "number" && typeof p.fee_model.rate_max === "number";
     },
 
     won: (n) => new Intl.NumberFormat("ko-KR").format(Math.round(n)) + "원",

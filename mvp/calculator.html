@@ -73,9 +73,17 @@
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const cf = App.byVertical("crowdfunding");
+  const calculable = cf.filter(p => App.isCalculable(p));
+  const excluded = cf.filter(p => !App.isCalculable(p));
   const pf = document.getElementById("pf");
-  pf.innerHTML = cf.map(p => `<option value="${p.platform_id}">${p.name} (${App.feeText(p)})</option>`).join("");
+  pf.innerHTML = calculable.map(p => `<option value="${p.platform_id}">${p.name} (${App.feeText(p)})</option>`).join("");
   const el = id => document.getElementById(id);
+  if (excluded.length) {
+    const note = document.createElement("p");
+    note.className = "sub";
+    note.innerHTML = `※ ${excluded.map(p=>p.name).join(", ")}은(는) <b>요율이 공식 미공개</b>이거나 증권형이라 계산 대상에서 제외했습니다. (지어내지 않습니다)`;
+    pf.parentElement.appendChild(note);
+  }
 
   // 특정 요율(rate)로 실수령 계산
   function net(p, amount, rate) {

@@ -35,8 +35,14 @@ function validate(platforms) {
       ["outbound_url", p.outbound_url],
     ];
     for (const [name, v] of req) if (v == null || v === "") errors.push(`[deep ${p.platform_id}] ${name} 누락`);
-    if (p.fee_model && (typeof p.fee_model.rate_min !== "number" || typeof p.fee_model.rate_max !== "number"))
-      errors.push(`[deep ${p.platform_id}] fee_model.rate_min/max 숫자 아님(NaN 전파 위험)`);
+    // 요율 공개(disclosed) 레코드만 숫자 강제. 비공개는 rate null 허용하되 note 필수(지어내기 방지).
+    if (p.fee_model) {
+      if (p.fee_model.disclosed === false) {
+        if (!p.fee_model.note) errors.push(`[deep ${p.platform_id}] fee_model.disclosed=false인데 note(비공개 사유) 누락`);
+      } else if (typeof p.fee_model.rate_min !== "number" || typeof p.fee_model.rate_max !== "number") {
+        errors.push(`[deep ${p.platform_id}] 요율 공개 레코드인데 rate_min/max 숫자 아님(NaN 전파 위험)`);
+      }
+    }
   }
   if (errors.length) {
     console.error("❌ 데이터 스키마 검증 실패:\n" + errors.map((e) => "  - " + e).join("\n"));
@@ -84,12 +90,16 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script
 // ── 2) 플랫폼 상세 정적 페이지 ──────────────────────────────
 function feeText(p) {
   const f = p.fee_model;
+  if (f.disclosed === false || f.rate_min == null) return "요율 비공개";
   return f.rate_min === f.rate_max ? `${f.rate_min}%` : `${f.rate_min}~${f.rate_max}%`;
+}
+function cycleText(s) {
+  return s.cycle_days == null ? "확인 불가(공식 미확인)" : `${s.cycle_days}일`;
 }
 function platformPage(p) {
   const f = p.fee_model, s = p.settlement;
   const title = `${p.name} 수수료·정산주기 비교 | 플랫폼올`;
-  const desc = `${p.name} 크라우드펀딩 수수료 ${feeText(p)}, 정산주기 ${s.cycle_days}일. 숨은 비용·가입 조건을 같은 기준으로 비교하세요. (데모 예시 데이터)`;
+  const desc = `${p.name} 크라우드펀딩 수수료 ${feeText(p)}, 정산주기 ${cycleText(s)}. 숨은 비용·가입 조건을 같은 기준으로 비교하세요. (출처 표기 데이터)`;
   const canonical = `${SITE}/crowdfunding/${p.platform_id}.html`;
   // FAQPage + BreadcrumbList (rich result 대응)
   const jsonld = {
@@ -99,9 +109,9 @@ function platformPage(p) {
         "@type": "FAQPage",
         "mainEntity": [
           { "@type": "Question", "name": `${p.name} 수수료는 얼마인가요?`,
-            "acceptedAnswer": { "@type": "Answer", "text": `${p.name}의 플랫폼 수수료는 약 ${feeText(p)} 수준입니다(데모 예시). ${(f.hidden_fees||[]).length ? "추가로 " + f.hidden_fees.join(", ") + "이(가) 있을 수 있습니다." : ""}` } },
+            "acceptedAnswer": { "@type": "Answer", "text": (f.disclosed === false ? `${p.name}의 플랫폼 수수료율은 공식 페이지에 공개되어 있지 않아 직접 문의가 필요합니다.` : `${p.name}의 플랫폼 수수료는 약 ${feeText(p)} 수준입니다.`) + ((f.hidden_fees||[]).length ? " 추가로 " + f.hidden_fees.join(", ") + "이(가) 있을 수 있습니다." : "") + " (출처 표기, 계약 전 원문 확인 필요)" } },
           { "@type": "Question", "name": `${p.name} 정산주기는 어떻게 되나요?`,
-            "acceptedAnswer": { "@type": "Answer", "text": `${p.name}의 정산주기는 약 ${s.cycle_days}일입니다${s.escrow ? ", 에스크로가 적용됩니다" : ""}(데모 예시).` } },
+            "acceptedAnswer": { "@type": "Answer", "text": `${p.name}의 정산주기는 ${cycleText(s)}입니다${s.escrow ? ", 에스크로가 적용됩니다" : ""}${s.holdback_pct ? `, 정산유보 ${s.holdback_pct}%가 있습니다` : ""}.` } },
         ],
       },
       { "@type": "BreadcrumbList", "itemListElement": [
@@ -117,15 +127,15 @@ function platformPage(p) {
     <p class="sub">${esc(p.funding_type || "")} · ${esc((p.region||[]).join(", "))} · 데모 예시 데이터</p>
     <div class="ad-slot"><b>[광고 자리]</b> 상위노출/입점 슬롯 (Sponsored)</div>
     <dl class="kv">
-      <dt>플랫폼 수수료</dt><dd><b>${feeText(p)}</b> ${(f.hidden_fees||[]).length ? "· 추가: " + esc(f.hidden_fees.join(", ")) : ""}</dd>
-      <dt>정산주기</dt><dd>${s.cycle_days}일 ${s.escrow ? "· 에스크로" : ""}</dd>
+      <dt>플랫폼 수수료</dt><dd><b>${feeText(p)}</b> ${(f.hidden_fees||[]).length ? "· 추가: " + esc(f.hidden_fees.join(", ")) : ""} ${f.note ? "<br><span class='muted'>" + esc(f.note) + "</span>" : ""}</dd>
+      <dt>정산주기</dt><dd>${cycleText(s)} ${s.escrow ? "· 에스크로" : ""} ${s.holdback_pct ? "· 정산유보 " + s.holdback_pct + "%" : ""}</dd>
       <dt>가입 대상</dt><dd>${esc(p.onboarding.biz_type_required)}</dd>
-      <dt>심사기간</dt><dd>${p.onboarding.review_days}일</dd>
       <dt>강점</dt><dd>${esc((p.highlights||[]).join(", "))}</dd>
+      ${(p.facts||[]).length ? "<dt>사실(출처)</dt><dd>" + esc(p.facts.join(" · ")) + "</dd>" : ""}
     </dl>
-    <p>${esc(p.name)}의 플랫폼 수수료는 약 <b>${feeText(p)}</b>, 정산주기는 약 <b>${s.cycle_days}일</b> 수준입니다(데모 예시).
+    <p>${esc(p.name)}의 정산주기는 <b>${cycleText(s)}</b>이며, 플랫폼 수수료는 ${f.disclosed === false ? "<b>공식 미공개</b>(직접 문의 필요)" : "약 <b>" + feeText(p) + "</b>"}입니다.
        실제 조건은 <a href="${esc(p.outbound_url)}" target="_blank" rel="nofollow sponsored noopener">공식 사이트</a> 및
-       <a href="${esc(p.evidence.source_url)}" target="_blank" rel="nofollow noopener">원문 안내</a>에서 확인하세요.</p>
+       <a href="${esc(p.evidence.source_url)}" target="_blank" rel="nofollow noopener">원문 안내</a>에서 확인하세요. (데이터 신뢰도: ${esc(p.evidence.confidence)})</p>
     <div class="cta" style="display:flex;gap:12px;flex-wrap:wrap;margin-top:16px">
       <a class="btn primary" href="${esc(p.outbound_url)}" target="_blank" rel="nofollow sponsored noopener">${esc(p.name)} 공식 사이트 ↗</a>
       <a class="btn ghost" href="../platform.html?id=${esc(p.platform_id)}">인터랙티브 상세</a>
@@ -139,7 +149,7 @@ function comparePage(a, b) {
   const [x, y] = [a, b].sort((m, n) => m.platform_id.localeCompare(n.platform_id));
   const slug = `${x.platform_id}-vs-${y.platform_id}`;
   const title = `${x.name} vs ${y.name} 수수료·정산 비교 | 플랫폼올`;
-  const desc = `${x.name}(수수료 ${feeText(x)}, 정산 ${x.settlement.cycle_days}일) vs ${y.name}(수수료 ${feeText(y)}, 정산 ${y.settlement.cycle_days}일) 크라우드펀딩 비교. (데모 예시)`;
+  const desc = `${x.name}(수수료 ${feeText(x)}, 정산 ${cycleText(x.settlement)}) vs ${y.name}(수수료 ${feeText(y)}, 정산 ${cycleText(y.settlement)}) 크라우드펀딩 비교. (출처 표기)`;
   const canonical = `${SITE}/compare/${slug}.html`;
   const row = (label, fx, fy) => `<tr><th>${esc(label)}</th><td>${fx}</td><td>${fy}</td></tr>`;
   const body = `
@@ -150,14 +160,14 @@ function comparePage(a, b) {
       <thead><tr><th>항목</th><th>${esc(x.name)}</th><th>${esc(y.name)}</th></tr></thead>
       <tbody>
         ${row("수수료", feeText(x), feeText(y))}
-        ${row("정산주기", x.settlement.cycle_days + "일", y.settlement.cycle_days + "일")}
+        ${row("정산주기", cycleText(x.settlement), cycleText(y.settlement))}
         ${row("펀딩 유형", esc(x.funding_type), esc(y.funding_type))}
         ${row("지역", esc((x.region||[]).join(", ")), esc((y.region||[]).join(", ")))}
         ${row("가입 대상", esc(x.onboarding.biz_type_required), esc(y.onboarding.biz_type_required))}
       </tbody>
     </table></div>
     <p style="margin-top:14px">${esc(x.name)}와(과) ${esc(y.name)} 중 선택은 수수료(${feeText(x)} vs ${feeText(y)})와
-       정산주기(${x.settlement.cycle_days}일 vs ${y.settlement.cycle_days}일)를 기준으로 판단하세요. 데모 예시이니 계약 전 원문 확인 필수.</p>
+       정산주기(${cycleText(x.settlement)} vs ${cycleText(y.settlement)})를 기준으로 판단하세요. 출처 표기 데이터이니 계약 전 원문 확인 필수.</p>
     <div class="cta" style="display:flex;gap:12px;margin-top:16px">
       <a class="btn primary" href="../compare.html?ids=${esc(x.platform_id)},${esc(y.platform_id)}">인터랙티브 비교 ↗</a>
       <a class="btn ghost" href="../calculator.html">💰 실수령 계산</a>
