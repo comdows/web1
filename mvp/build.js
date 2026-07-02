@@ -1,0 +1,186 @@
+#!/usr/bin/env node
+/*
+ * build.js — 디렉토리 프리렌더 (프레임워크 없음, 순수 Node)
+ * ─────────────────────────────────────────────────────────────
+ * platforms.js 단일 소스로부터:
+ *   1) 데이터 검증(필수 필드) — 실패 시 빌드 중단
+ *   2) /c/{category}.html — 분야별 목록 페이지(색인 가능, 본문에 플랫폼·설명 포함, JSON-LD ItemList)
+ *   3) sitemap.xml, robots.txt
+ * 실행:  node build.js   (mvp/ 디렉터리에서)
+ */
+const fs = require("fs");
+const path = require("path");
+const CFG = require("./data/platforms.js");
+const FLAGS = require("./data/config.js");
+const LISTINGS = require("./data/listings.js");
+
+// 2·3단계 리스팅 검증 — 스키마 오류·개인정보 유입을 빌드에서 차단
+function validateListings() {
+  const errors = [];
+  const catIds = new Set(CFG.categories.map((c) => c.id));
+  const pii = /(01[016789][-\s]?\d{3,4}[-\s]?\d{4})|@(gmail|naver|daum|kakao|hanmail)\./i;
+  for (const l of LISTINGS.partnerships || []) {
+    for (const f of ["id", "type", "from", "want", "title", "detail", "give", "get", "posted", "status"])
+      if (l[f] == null || l[f] === "") errors.push(`[제휴 ${l.id || "?"}] ${f} 누락`);
+    if (l.from && !catIds.has(l.from)) errors.push(`[제휴 ${l.id}] from 분야 오류: ${l.from}`);
+    (l.want || []).forEach((w) => { if (!catIds.has(w)) errors.push(`[제휴 ${l.id}] want 분야 오류: ${w}`); });
+    if (!["open", "matched", "paused", "closed"].includes(l.status)) errors.push(`[제휴 ${l.id}] status 오류: ${l.status}`);
+    if (!(LISTINGS.partnerTypes || []).includes(l.type)) errors.push(`[제휴 ${l.id}] type 오류: ${l.type}`);
+    if (pii.test(JSON.stringify(l))) errors.push(`[제휴 ${l.id}] 연락처/개인정보 의심 문자열 포함 — 리스팅에 개인정보 금지`);
+  }
+  for (const d of LISTINGS.deals || []) {
+    for (const f of ["id", "category", "region", "revenue", "mode", "summary", "posted", "status"])
+      if (d[f] == null || d[f] === "") errors.push(`[매물 ${d.id || "?"}] ${f} 누락`);
+    if (d.category && !catIds.has(d.category)) errors.push(`[매물 ${d.id}] 분야 오류: ${d.category}`);
+    if (pii.test(JSON.stringify(d))) errors.push(`[매물 ${d.id}] 연락처/개인정보 의심 문자열 포함 — 익명 원칙 위반`);
+  }
+  if (errors.length) { console.error("❌ 리스팅 검증 실패:\n" + errors.map((e) => "  - " + e).join("\n")); process.exit(1); }
+  console.log(`✅ 리스팅 검증 통과 (제휴 ${(LISTINGS.partnerships || []).length}, 매물 ${(LISTINGS.deals || []).length})`);
+}
+
+const ROOT = __dirname;
+// GitHub Pages 배포 주소(mvp/를 사이트 루트로 서빙). 커스텀 도메인 연결 시 교체.
+const SITE = process.env.SITE_URL || "https://comdows.github.io/web1";
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+// ── 1) 검증 ──
+function validate(groups, cats, platforms) {
+  const errors = [];
+  const catIds = new Set(cats.map((c) => c.id));
+  const groupIds = new Set((groups || []).map((g) => g.id));
+  for (const c of cats) {
+    if (!c.group) errors.push(`[category ${c.id}] group 누락`);
+    else if (!groupIds.has(c.group)) errors.push(`[category ${c.id}] 알 수 없는 group: ${c.group}`);
+  }
+  for (const p of platforms) {
+    for (const f of ["id", "name", "category", "blurb", "url"]) if (!p[f]) errors.push(`[${p.id || "?"}] ${f} 누락`);
+    if (p.category && !catIds.has(p.category)) errors.push(`[${p.id}] 알 수 없는 category: ${p.category}`);
+  }
+  if (errors.length) { console.error("❌ 검증 실패:\n" + errors.map((e) => "  - " + e).join("\n")); process.exit(1); }
+  console.log(`✅ 검증 통과 (그룹 ${(groups || []).length}, 분야 ${cats.length}, 플랫폼 ${platforms.length})`);
+}
+
+function shell({ title, desc, canonical, jsonld, body, depth }) {
+  const asset = depth ? "../assets" : "assets";
+  const home = depth ? "../index.html" : "index.html";
+  return `<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>${esc(title)}</title>
+<meta name="description" content="${esc(desc)}">
+<meta name="robots" content="index,follow">
+<link rel="canonical" href="${esc(canonical)}">
+<meta property="og:title" content="${esc(title)}">
+<meta property="og:description" content="${esc(desc)}">
+<meta property="og:type" content="website">
+<meta property="og:url" content="${esc(canonical)}">
+<link rel="stylesheet" href="${asset}/style.css">
+${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script>` : ""}
+</head>
+<body>
+<header class="site"><div class="container">
+  <div class="logo">플랫폼<b>올</b></div>
+  <nav class="top">
+    <a href="${home}">분야별 플랫폼</a>
+    <a href="${depth ? "../" : ""}partners.html">🤝 제휴 매칭${FLAGS.stage2 ? "" : '<span class="soon"> 준비중</span>'}</a>
+    <a href="${depth ? "../" : ""}exchange.html">🏦 거래소${FLAGS.stage3 ? "" : '<span class="soon"> 준비중</span>'}</a>
+  </nav>
+</div></header>
+<main class="container">${body}</main>
+<footer class="site"><div class="container">
+  플랫폼올 (가칭) · 분야별 플랫폼 디렉토리 · 개략 설명이며 상세는 공식 사이트 확인. ·
+  <a target="_blank" rel="noopener" href="https://github.com/comdows/web1/issues/new?title=%5B%ED%94%8C%EB%9E%AB%ED%8F%BC%20%EC%A0%9C%EB%B3%B4%5D">플랫폼 제보</a>
+</div></footer>
+<script src="${asset}/app.js"></script>
+<script>App.hydrateStars(document);</script>
+</body>
+</html>`;
+}
+
+// 이니셜 아바타 색 — assets/app.js의 avatarHue와 동일 해시(양쪽 일관성 유지)
+function avatarHue(name) {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+  return h % 360;
+}
+function hostOf(url) { try { return new URL(url).hostname; } catch (e) { return null; } }
+
+function cardHTML(p) {
+  const host = hostOf(p.url);
+  return `<div class="pcard" data-pid="${esc(p.id)}">
+    <div class="row">
+      <span class="avatar" style="background:hsl(${avatarHue(p.name)} 45% 38%)">${esc(p.name.charAt(0))}${host ? `<img class="favicon" loading="lazy" src="https://www.google.com/s2/favicons?domain=${esc(host)}&sz=64" alt="" onerror="this.remove()">` : ""}</span>
+      <h3>${esc(p.name)}${p.new ? '<span class="new-tag">NEW</span>' : ""}</h3>
+      <button class="star" data-star="${esc(p.id)}" aria-label="즐겨찾기" title="즐겨찾기">☆</button>
+    </div>
+    <p class="blurb">${esc(p.blurb)}</p>
+    <div class="cardfoot">
+      <span class="chip">${esc(p.region)}</span>
+      <a class="btn ghost gosite" href="${esc(p.url)}" target="_blank" rel="nofollow noopener" data-go="${esc(p.id)}">공식 ↗</a>
+    </div>
+  </div>`;
+}
+
+function categoryPage(cat, platforms) {
+  const list = platforms.filter((p) => p.category === cat.id);
+  const title = `${cat.name} 플랫폼 총정리 (${list.length}곳) | 플랫폼올`;
+  const desc = `${cat.name} — ${cat.desc}. ${list.map((p) => p.name).join(", ")} 등 ${list.length}개 플랫폼을 개략 설명과 함께 정리했습니다.`;
+  const canonical = `${SITE}/c/${cat.id}.html`;
+  const jsonld = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    "name": `${cat.name} 플랫폼`,
+    "itemListElement": list.map((p, i) => ({
+      "@type": "ListItem", "position": i + 1, "name": p.name, "url": p.url, "description": p.blurb,
+    })),
+  };
+  const group = (CFG.groups || []).find((g) => g.id === cat.group);
+  const siblings = CFG.categories.filter((c) => c.group === cat.group && c.id !== cat.id);
+  const body = `
+    <nav class="sub" style="margin-top:20px">
+      <a href="../index.html">홈</a> › <a href="../index.html?group=${esc(cat.group)}">${esc(group ? group.name : "")}</a> › ${esc(cat.name)}
+    </nav>
+    <h1>${esc(cat.icon)} ${esc(cat.name)} 플랫폼</h1>
+    <p class="sub">${esc(cat.desc)} · 총 ${list.length}곳 (개략 설명) · ⭐로 즐겨찾기에 저장</p>
+    <div class="plist">
+      ${list.map(cardHTML).join("")}
+    </div>
+    ${siblings.length ? `<h2 class="sec" style="margin-top:26px">같은 그룹의 다른 분야</h2>
+    <div class="filters">${siblings.map((s) => `<a class="fchip" href="${esc(s.id)}.html" style="text-decoration:none">${esc(s.icon)} ${esc(s.name)}</a>`).join("")}</div>` : ""}
+    <!-- giscus 분야별 게시판 슬롯: 저장소 Discussions 활성화 + https://giscus.app 에서 발급한
+         data-repo-id/data-category-id를 채운 뒤 아래 주석을 해제하면 분야별 댓글 게시판이 켜집니다.
+    <section id="board" style="margin-top:30px">
+      <h2 class="sec">💬 ${esc(cat.name)} 이야기</h2>
+      <script src="https://giscus.app/client.js"
+        data-repo="comdows/web1" data-repo-id="" data-category="Announcements" data-category-id=""
+        data-mapping="pathname" data-strict="0" data-reactions-enabled="1" data-emit-metadata="0"
+        data-input-position="top" data-theme="dark" data-lang="ko" data-loading="lazy" crossorigin="anonymous" async>
+      </script>
+    </section>
+    -->
+    <p class="sub" style="margin-top:20px"><a href="../index.html">← 전체 분야 보기</a></p>`;
+  return shell({ title, desc, canonical, jsonld, body, depth: true });
+}
+
+// ── 실행 ──
+const cats = CFG.categories, platforms = CFG.platforms;
+validate(CFG.groups, cats, platforms);
+validateListings();
+
+const cDir = path.join(ROOT, "c");
+fs.mkdirSync(cDir, { recursive: true });
+const urls = [`${SITE}/index.html`];
+for (const cat of cats) {
+  fs.writeFileSync(path.join(cDir, `${cat.id}.html`), categoryPage(cat, platforms));
+  urls.push(`${SITE}/c/${cat.id}.html`);
+}
+
+fs.writeFileSync(path.join(ROOT, "sitemap.xml"),
+  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+  urls.map((u) => `  <url><loc>${esc(u)}</loc></url>`).join("\n") + `\n</urlset>`);
+fs.writeFileSync(path.join(ROOT, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml\n`);
+
+console.log(`✅ 프리렌더 완료: 분야 페이지 ${cats.length}개, sitemap ${urls.length}개 URL → c/, sitemap.xml, robots.txt`);

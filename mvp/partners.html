@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>제휴 매칭 — 플랫폼올</title>
+<meta name="description" content="플랫폼끼리 회원 상호송출·교차 프로모션·광고 지면 교환·공동 이벤트 파트너를 찾는 제휴 매칭 보드.">
+<link rel="stylesheet" href="assets/style.css">
+<style>
+  .gg{display:grid; gap:6px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; font-size:13px}
+  .gg b{color:var(--good)} .gg .get b{color:var(--brand)}
+  .steps{display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:10px; margin:10px 0}
+  .step{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:12px 14px; font-size:13px}
+  .step b{display:block; margin-bottom:4px}
+  .step .n{color:var(--brand); font-weight:800}
+  details.faq{background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 14px; margin:8px 0}
+  details.faq summary{cursor:pointer; font-weight:600; font-size:14px}
+  details.faq p{color:var(--muted); font-size:13px; margin:8px 0 2px}
+  .pcard.hl{border-color:var(--brand); box-shadow:0 0 0 1px var(--brand)}
+</style>
+</head>
+<body>
+<header class="site"><div class="container">
+  <div class="logo">플랫폼<b>올</b></div>
+  <nav class="top">
+    <a href="index.html">분야별 플랫폼</a>
+    <a href="partners.html">🤝 제휴 매칭<span class="soon" data-soon="stage2"></span></a>
+    <a href="exchange.html">🏦 거래소<span class="soon" data-soon="stage3"></span></a>
+  </nav>
+</div></header>
+
+<main class="container">
+  <section class="hero" style="padding-bottom:16px">
+    <h1>🤝 플랫폼 제휴 매칭</h1>
+    <p>혼자 광고비 태우지 말고, <b>타깃이 겹치는 다른 플랫폼과 회원을 교환</b>하세요.
+       상호송출·교차 프로모션·광고 지면 교환·공동 이벤트 파트너를 찾아드립니다.</p>
+  </section>
+
+  <div class="banner">
+    ⚖️ <b>자금 미보유 원칙</b> — 플랫폼올은 파트너 <b>발견과 소개(매칭)</b>만 제공합니다.
+    정산·결제·회원정보 이관은 양사가 직접 계약하고 직접 처리하며, 플랫폼올은 결제망·정산금에 일절 접근하지 않습니다.
+  </div>
+
+  <!-- 준비 중(티저) 모드 -->
+  <section id="teaser" style="display:none">
+    <div class="empty" style="text-align:left">
+      <h2 style="margin-top:0">🚧 오픈 준비 중입니다</h2>
+      <p class="muted">제휴 매칭 보드는 참여 희망 플랫폼이 일정 수 모이면 오픈합니다. 지금 사전등록하시면 오픈 시 가장 먼저 매칭 제안을 받습니다.</p>
+      <p class="muted">이런 걸 하게 됩니다: ① 우리 플랫폼과 타깃이 겹치는 파트너 후보 제안 ② 회원 상호송출·교차쿠폰·지면교환·공동 이벤트 중개 ③ 성사 시 조건 협의 자리 연결</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px" id="teaser-cta"></div>
+      <p class="muted" style="font-size:12px;margin-top:10px" id="teaser-privacy"></p>
+    </div>
+  </section>
+
+  <!-- 활성화 모드: 매칭 보드 -->
+  <section id="board" style="display:none">
+    <div class="toolbar2">
+      <select id="f-cat" aria-label="분야 필터"></select>
+      <span id="type-chips"></span>
+      <span style="margin-left:auto" id="register-cta"></span>
+    </div>
+    <p class="results-note" id="count"></p>
+    <div class="plist" id="plist"></div>
+
+    <h2 class="sec" style="margin-top:30px">어떻게 진행되나요</h2>
+    <div class="steps">
+      <div class="step"><span class="n">1</span> <b>제안 등록</b>제휴 유형·주고받을 것(Give/Get)을 적어 접수. 검수 후 익명 정보로 게시(영업일 2~3일).</div>
+      <div class="step"><span class="n">2</span> <b>매칭 신청</b>관심 있는 플랫폼이 자기 소개와 함께 신청.</div>
+      <div class="step"><span class="n">3</span> <b>상호 확인·소개</b>플랫폼올이 양측 의사를 확인하고, 동의 시에만 연락처를 상호 공유.</div>
+      <div class="step"><span class="n">4</span> <b>직접 계약</b>조건 협의·계약·정산은 양사가 직접. 플랫폼올은 관여하지 않음.</div>
+    </div>
+
+    <h2 class="sec" style="margin-top:24px">비용</h2>
+    <p class="sub">오픈 초기 <b>등록·매칭 모두 무료</b>입니다. 이후 성사 건에 한해 <b>정액 중개료</b>(사전 고지) 방식으로 전환 예정이며,
+       거래액 기반 수수료(%)는 받지 않습니다(자금 미보유 원칙).</p>
+
+    <h2 class="sec" style="margin-top:24px">자주 묻는 질문</h2>
+    <details class="faq"><summary>연락처가 공개되나요?</summary>
+      <p>아니요. 리스팅에는 연락처·실명이 게시되지 않으며, <b>양측이 소개에 동의한 뒤에만</b> 운영자가 연락처를 상호 전달합니다.</p></details>
+    <details class="faq"><summary>아무 플랫폼이나 등록할 수 있나요?</summary>
+      <p>공식 사이트가 확인되는 실제 운영 중인 플랫폼만 게시합니다. 디렉토리 등재 플랫폼은 <b>등재 확인 배지</b>가 붙습니다. 금융·성인 등 일부 업종은 제한될 수 있습니다.</p></details>
+    <details class="faq"><summary>회원 정보를 주고받아도 되나요?</summary>
+      <p>회원 DB 자체를 넘기는 방식은 개인정보보호법 위반 소지가 큽니다. 쿠폰·배너·안내 링크 등 <b>각 사가 자기 회원에게 상대를 노출</b>하는 방식을 권장하며, 그 외 방식은 반드시 법률 검토 후 진행하세요.</p></details>
+    <details class="faq"><summary>얼마나 걸리나요?</summary>
+      <p>검수·게시 2~3영업일, 신청 발생 시 양측 의사 확인 후 통상 1주 내 소개까지 진행됩니다.</p></details>
+  </section>
+</main>
+
+<footer class="site"><div class="container">
+  플랫폼올 (가칭) · 제휴 매칭은 소개·연결 서비스이며 정산·결제에 관여하지 않습니다.
+</div></footer>
+
+<script src="data/config.js"></script>
+<script src="data/listings.js"></script>
+<script src="data/platforms.js"></script>
+<script src="assets/app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const preview = new URLSearchParams(location.search).get("preview") === "1";
+  const on = (window.SITE_FLAGS && SITE_FLAGS.stage2) || preview;
+  document.querySelectorAll("[data-soon]").forEach(s => {
+    if (!(window.SITE_FLAGS && SITE_FLAGS[s.dataset.soon])) s.textContent = " 준비중";
+  });
+
+  // 접수 채널: 공개 이슈에는 개인정보 금지. contactEmail 설정 시 이메일 접수가 기본.
+  const EMAIL = (window.SITE_FLAGS && SITE_FLAGS.contactEmail) || "";
+  const PRIVACY = "⚠️ GitHub 이슈는 누구나 볼 수 있는 공개 게시판입니다. 이슈에 전화번호·이메일 등 개인정보를 적지 마세요. 접수 후 운영자가 이슈 댓글로 비공개 연락 절차를 안내합니다.";
+  const issueUrl = (title, body, labels) =>
+    "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent(title) +
+    "&body=" + encodeURIComponent(body + "\n\n(연락처는 적지 마세요 — 운영자가 이슈 댓글로 다음 절차를 안내합니다)") +
+    (labels ? "&labels=" + encodeURIComponent(labels) : "");
+  const mailUrl = (subject, body) => "mailto:" + EMAIL + "?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+  const ctaPair = (subject, issueBody, labels) => {
+    const gh = `<a class="btn ${EMAIL ? "ghost" : "primary"}" target="_blank" rel="noopener" href="${issueUrl(subject, issueBody, labels)}">${EMAIL ? "GitHub으로 접수" : subject.replace(/\[|\]/g, "")}</a>`;
+    const mail = EMAIL ? `<a class="btn primary" href="${mailUrl(subject, issueBody)}">✉️ 이메일로 접수</a>` : "";
+    return mail + gh;
+  };
+
+  const regBody = "플랫폼 이름:\n분야:\n제휴 유형(상호송출/교차프로모션/공동이벤트/지면교환/번들):\n원하는 상대 분야:\n우리가 제공할 것(Give):\n상대에게 원하는 것(Get):\n규모(대략):";
+
+  if (!on) {
+    document.getElementById("teaser").style.display = "";
+    document.getElementById("teaser-cta").innerHTML =
+      ctaPair("[제휴 사전등록]", regBody, "stage2,사전등록") + '<a class="btn ghost" href="index.html">← 디렉토리로</a>';
+    if (!EMAIL) document.getElementById("teaser-privacy").textContent = PRIVACY;
+    window.__track("stage2_teaser_view", {});
+    return;
+  }
+
+  document.getElementById("board").style.display = "";
+  document.getElementById("register-cta").innerHTML = ctaPair("[제휴 제안 등록]", regBody, "stage2,제휴제안");
+
+  const catName = (id) => { const c = App.categoryById(id); return c ? c.icon + " " + c.name : id; };
+  const L = LISTINGS.partnerships || [];
+
+  // 분야 필터(제안 분야 + 희망 상대 분야 기준) — 리스팅에 등장하는 분야만 노출
+  const catSet = new Set(); L.forEach(l => { catSet.add(l.from); (l.want || []).forEach(w => catSet.add(w)); });
+  document.getElementById("f-cat").innerHTML = '<option value="">전체 분야</option>' +
+    [...catSet].map(id => `<option value="${id}">${catName(id)}</option>`).join("");
+  document.getElementById("type-chips").innerHTML =
+    `<span class="fchip" data-f="" aria-pressed="true">전체 유형</span>` +
+    (LISTINGS.partnerTypes || []).map(t => `<span class="fchip" data-f="${App.esc(t)}" aria-pressed="false">${App.esc(t)}</span>`).join("");
+
+  let fType = "", fCat = "";
+  function render() {
+    const list = L.filter(l => (!fType || l.type === fType) && (!fCat || l.from === fCat || (l.want || []).includes(fCat)));
+    document.getElementById("count").textContent = `제안 ${list.length}건 (모집 중 ${list.filter(l => l.status === "open").length})`;
+    document.getElementById("plist").innerHTML = list.map(l => `
+      <div class="pcard" id="${App.esc(l.id)}">
+        <div class="row">
+          <h3>${App.esc(l.title)}</h3>
+          <span class="chip">${App.esc(l.type)}</span>
+        </div>
+        <p class="blurb">${App.esc(l.detail)}</p>
+        <div class="gg">
+          <span class="give"><b>주는 것</b> · ${App.esc(l.give)}</span>
+          <span class="get"><b>원하는 것</b> · ${App.esc(l.get)}</span>
+        </div>
+        <div class="chips">
+          <span class="chip">제안: ${catName(l.from)}</span>
+          <span class="chip">희망: ${(l.want || []).map(catName).join(" · ")}</span>
+          <span class="chip">${App.esc(l.size || "")}</span>
+          <span class="chip">게시 ${App.esc(l.posted)}</span>
+          ${l.verified ? '<span class="badge good">디렉토리 등재</span>' : ""}
+          ${l.demo ? '<span class="badge muted-badge">데모 예시</span>' : ""}
+          <span class="badge ${l.status === "open" ? "good" : l.status === "matched" ? "warn" : "muted-badge"}">${l.status === "open" ? "매칭 모집 중" : l.status === "matched" ? "매칭 완료" : App.esc(l.status)}</span>
+        </div>
+        <div class="actions" style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+          ${l.status === "open" ? ctaPair("[매칭 신청] " + l.id,
+            `신청 대상: ${l.id} ${l.title}\n우리 플랫폼 이름:\n분야:\n규모(대략):\n제안 요지(무엇을 주고받을지):`, "stage2,매칭신청") : ""}
+          <button class="btn ghost sharebtn" data-share="${App.esc(l.id)}">🔗 공유</button>
+        </div>
+      </div>`).join("") || '<div class="empty">조건에 맞는 제안이 아직 없습니다. 첫 제안을 등록해보세요.</div>';
+  }
+  document.getElementById("type-chips").addEventListener("click", (e) => {
+    const c = e.target.closest(".fchip"); if (!c) return;
+    fType = c.dataset.f || "";
+    document.querySelectorAll("#type-chips .fchip").forEach(x => x.setAttribute("aria-pressed", x === c));
+    render();
+  });
+  document.getElementById("f-cat").addEventListener("change", (e) => { fCat = e.target.value; render(); });
+  document.getElementById("plist").addEventListener("click", async (e) => {
+    const s = e.target.closest("[data-share]"); if (!s) return;
+    const url = location.href.split("#")[0].split("?")[0] + "#" + s.dataset.share;
+    try { await navigator.clipboard.writeText(url); s.textContent = "✅ 복사됨"; setTimeout(() => s.textContent = "🔗 공유", 1500); }
+    catch (err) { prompt("링크를 복사하세요", url); }
+  });
+  render();
+  if (!EMAIL) document.getElementById("count").textContent += " · " + PRIVACY;
+
+  // 딥링크(#P-xxx) 하이라이트 — 최초 로드 + 로드 후 해시 이동 모두 처리
+  function highlightHash() {
+    document.querySelectorAll(".pcard.hl").forEach(el => el.classList.remove("hl"));
+    if (!location.hash) return;
+    const el = document.getElementById(location.hash.slice(1));
+    if (el) { el.classList.add("hl"); el.scrollIntoView({ block: "center" }); }
+  }
+  window.addEventListener("hashchange", highlightHash);
+  highlightHash();
+  window.__track("stage2_board_view", { preview });
+});
+</script>
+</body>
+</html>

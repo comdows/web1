@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>플랫폼올 — 분야별 플랫폼 한눈에 보기</title>
+<meta name="description" content="판매채널·크라우드펀딩·프리랜서·배달·수출입 등 사업자·개인이 활용할 수 있는 1,000+ 플랫폼을 분야별로 정리한 디렉토리.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site"><div class="container">
+  <div class="logo">플랫폼<b>올</b></div>
+  <nav class="top">
+    <a href="index.html">분야별 플랫폼</a>
+    <a href="partners.html">🤝 제휴 매칭<span class="soon" data-soon="stage2"></span></a>
+    <a href="exchange.html">🏦 거래소<span class="soon" data-soon="stage3"></span></a>
+    <a href="#" id="nav-fav">⭐ 즐겨찾기 (<span id="fav-count">0</span>)</a>
+  </nav>
+</div></header>
+
+<main class="container">
+  <section class="hero">
+    <h1>어떤 분야에 어떤 플랫폼이 있을까?</h1>
+    <p>사업자·개인이 <b>나가서 붙을 수 있는 플랫폼</b>을 분야별로 정리했습니다.
+       이름과 개략 설명만 빠르게 훑고, 마음에 들면 ⭐로 저장하세요.</p>
+    <input class="search" id="q" type="search" placeholder="플랫폼·분야 검색 (예: 쿠팡, 펀딩, 수출)">
+    <div class="stats" id="stats"></div>
+  </section>
+
+  <div class="toolbar2">
+    <select id="sort" aria-label="정렬">
+      <option value="default">기본 정렬</option>
+      <option value="new">🆕 신규 우선</option>
+      <option value="name">가나다순</option>
+    </select>
+    <span class="fchip" id="chip-new" aria-pressed="false">🆕 신규만</span>
+    <span class="fchip" id="chip-fav" aria-pressed="false">⭐ 내 즐겨찾기</span>
+    <a class="btn ghost" style="margin-left:auto;padding:8px 12px;font-size:13px" target="_blank" rel="noopener"
+       href="https://github.com/comdows/web1/issues/new?title=%5B%ED%94%8C%EB%9E%AB%ED%8F%BC%20%EC%A0%9C%EB%B3%B4%5D&body=%ED%94%8C%EB%9E%AB%ED%8F%BC%20%EC%9D%B4%EB%A6%84%3A%0A%EA%B3%B5%EC%8B%9D%20URL%3A%0A%EB%B6%84%EC%95%BC%3A%0A%ED%95%9C%20%EC%A4%84%20%EC%84%A4%EB%AA%85%3A">
+       ➕ 플랫폼 제보</a>
+  </div>
+
+  <section id="recent-sec" style="display:none">
+    <h2 class="sec">🕘 최근 본 플랫폼</h2>
+    <div class="hstrip" id="recent"></div>
+  </section>
+
+  <section id="new-sec">
+    <h2 class="sec">🆕 새로 나온 플랫폼 <span class="muted" style="font-size:13px;font-weight:400">· 최근 출시·주목 서비스</span></h2>
+    <div class="hstrip" id="newstrip"></div>
+  </section>
+
+  <section>
+    <h2 class="sec">분야 한눈에 보기</h2>
+    <div class="groups" id="groups"></div>
+  </section>
+
+  <div id="flat" style="display:none">
+    <p class="results-note" id="flat-note"></p>
+    <div class="plist" id="flat-list"></div>
+  </div>
+
+  <div id="dir"></div>
+
+  <div class="banner" style="margin-top:24px">
+    ⓘ 각 플랫폼 설명은 <b>개략 소개</b>입니다. 수수료·조건 등 상세는 각 <b>공식 사이트</b>에서 확인하세요.
+    빠진 플랫폼은 상단 <b>제보</b> 버튼으로 알려주시면 추가합니다.
+  </div>
+</main>
+
+<footer class="site"><div class="container">
+  플랫폼올 (가칭) · 분야별 플랫폼 디렉토리 · 개략 설명이며 상세는 공식 사이트 확인.
+</div></footer>
+
+<div class="toast" id="toast"></div>
+
+<script src="data/config.js"></script>
+<script src="data/platforms.js"></script>
+<script src="assets/app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const $ = (id) => document.getElementById(id);
+  const params = new URLSearchParams(location.search);
+
+  // 2·3단계 준비중 배지 (config.js 플래그)
+  document.querySelectorAll("[data-soon]").forEach(s => {
+    if (!(window.SITE_FLAGS && SITE_FLAGS[s.dataset.soon])) s.textContent = " 준비중";
+  });
+
+  // ── 단일 상태 (URL 파라미터로 초기화) ──
+  const state = {
+    q: params.get("q") || "",
+    cat: params.get("cat") || "",
+    group: params.get("group") || "",
+    favOnly: params.get("fav") === "1",
+    newOnly: params.get("new") === "1",
+    sort: params.get("sort") || App.Store.get(App.K.sort, "default")
+  };
+  const openCats = new Set(App.Store.get(App.K.open, []));
+
+  // ── 검색 인덱스 (1회 구축) ──
+  const catName = {}; App.categories.forEach(c => catName[c.id] = c.name);
+  const searchIndex = App.platforms.map(p => ({
+    p, hay: (p.name + " " + p.blurb + " " + (catName[p.category] || "") + " " + p.region).toLowerCase()
+  }));
+
+  // ── 스탯 타일 ──
+  const newCount = App.platforms.filter(p => p.new).length;
+  $("stats").innerHTML = [
+    ["등록 플랫폼", App.platforms.length.toLocaleString("ko-KR")],
+    ["분야", App.categories.length],
+    ["신규 플랫폼", newCount]
+  ].map(([l, v]) => `<div class="stat"><div class="label">${l}</div><div class="value">${v}</div></div>`).join("");
+
+  // ── 정렬 ──
+  function sortList(list) {
+    if (state.sort === "name") return list.slice().sort((a, b) => a.name.localeCompare(b.name, "ko"));
+    if (state.sort === "new") return list.slice().sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0));
+    return list;
+  }
+
+  // ── 스트립: 최근 본 / 신규 ──
+  function renderRecent() {
+    const items = App.Recent.list(12).map(r => App.byId(r.id)).filter(Boolean);
+    $("recent-sec").style.display = items.length ? "" : "none";
+    if (items.length) $("recent").innerHTML = items.map(p => App.cardHTML(p, { catLabel: true })).join("");
+  }
+  function renderNewStrip() {
+    const items = App.platforms.filter(p => p.new).slice(-24).reverse();
+    $("newstrip").innerHTML = items.map(p => App.cardHTML(p, { catLabel: true })).join("")
+      + `<div class="pcard" style="justify-content:center;align-items:center;display:flex"><button class="btn ghost" id="see-all-new">신규 전체 보기 →</button></div>`;
+  }
+
+  // ── 그룹 카드 ──
+  function renderGroups() {
+    $("groups").innerHTML = App.groups.map(g => {
+      const cs = App.categoriesByGroup(g.id);
+      const n = cs.reduce((s, c) => s + App.byCategory(c.id).length, 0);
+      return `<div class="gcard" data-group="${g.id}">
+        <div class="gicon">${g.icon}</div><h3>${g.name}</h3><p>${g.desc}</p>
+        <div class="gmeta"><b>${n.toLocaleString("ko-KR")}</b>개 · ${cs.length}개 분야</div>
+      </div>`;
+    }).join("");
+  }
+
+  // ── 디렉토리 (그룹 헤더 + 접이식 분야, 본문은 지연 렌더) ──
+  function renderDirectory() {
+    let html = "";
+    for (const g of App.groups) {
+      const cs = App.categoriesByGroup(g.id);
+      html += `<div class="ghead" id="g-${g.id}"><h2>${g.icon} ${g.name}</h2><span class="muted">${g.desc}</span></div>`;
+      for (const c of cs) {
+        const n = App.byCategory(c.id).length;
+        const open = openCats.has(c.id);
+        html += `<div class="catblock${open ? "" : " collapsed"}" id="cat-${c.id}">
+          <button class="cathead" data-cat="${c.id}" aria-expanded="${open}">
+            <span class="cicon">${c.icon}</span><span class="cname">${c.name}</span>
+            <span class="cdesc">${c.desc}</span><span class="ccount">${n}</span><span class="caret">▶</span>
+          </button>
+          <div class="catbody"><div class="plist"></div></div>
+        </div>`;
+      }
+    }
+    $("dir").innerHTML = html;
+    openCats.forEach(id => renderSection(id));
+  }
+
+  function renderSection(catId, force) {
+    const block = document.getElementById("cat-" + catId);
+    if (!block) return;
+    const plist = block.querySelector(".plist");
+    if (plist.dataset.rendered && !force) return;
+    plist.innerHTML = sortList(App.byCategory(catId)).map(p => App.cardHTML(p)).join("");
+    plist.dataset.rendered = "1";
+  }
+
+  // ── 평면 결과 (검색 / 즐겨찾기 / 신규만) ──
+  function flatMode() { return state.q.trim() !== "" || state.favOnly || state.newOnly; }
+  function renderFlat() {
+    let list;
+    let label;
+    if (state.favOnly) {
+      const favs = new Set(App.Favs.all());
+      list = App.platforms.filter(p => favs.has(p.id));
+      label = `⭐ 즐겨찾기 ${list.length}개`;
+    } else if (state.newOnly && !state.q.trim()) {
+      list = App.platforms.filter(p => p.new);
+      label = `🆕 신규 플랫폼 ${list.length}개`;
+    } else {
+      const kw = state.q.trim().toLowerCase();
+      list = searchIndex.filter(x => x.hay.includes(kw)).map(x => x.p);
+      if (state.newOnly) list = list.filter(p => p.new);
+      label = `"${App.esc(state.q)}" 검색 결과 ${list.length.toLocaleString("ko-KR")}개`;
+    }
+    list = sortList(list);
+    const cap = 200;
+    $("flat-note").innerHTML = label + (list.length > cap ? ` — 상위 ${cap}개 표시 (검색어를 좁혀보세요)` : "");
+    $("flat-list").innerHTML = list.slice(0, cap).map(p => App.cardHTML(p, { catLabel: true })).join("")
+      || `<div class="empty">결과가 없습니다.${state.favOnly ? " 카드의 ☆를 눌러 즐겨찾기에 담아보세요." : " 다른 키워드로 찾아보세요."}</div>`;
+  }
+
+  // ── 화면 갱신 + URL 동기화 ──
+  function updateView() {
+    const flat = flatMode();
+    $("flat").style.display = flat ? "" : "none";
+    $("dir").style.display = flat ? "none" : "";
+    document.querySelector('[id="groups"]').parentElement.style.display = flat ? "none" : "";
+    $("new-sec").style.display = flat ? "none" : "";
+    $("recent-sec").style.display = flat ? "none" : ($("recent").children.length ? "" : "none");
+    if (flat) renderFlat();
+    $("chip-new").setAttribute("aria-pressed", state.newOnly);
+    $("chip-fav").setAttribute("aria-pressed", state.favOnly);
+    $("fav-count").textContent = App.Favs.all().length;
+    syncURL();
+  }
+  const syncURL = App.debounce(() => {
+    const u = new URLSearchParams();
+    if (state.q.trim()) u.set("q", state.q.trim());
+    if (state.newOnly) u.set("new", "1");
+    if (state.favOnly) u.set("fav", "1");
+    if (state.sort !== "default") u.set("sort", state.sort);
+    history.replaceState(null, "", u.toString() ? "?" + u.toString() : location.pathname);
+  }, 300);
+
+  // ── 이벤트 ──
+  $("q").value = state.q;
+  $("q").addEventListener("input", App.debounce(() => { state.q = $("q").value; updateView(); }, 150));
+  $("sort").value = state.sort;
+  $("sort").addEventListener("change", () => {
+    state.sort = $("sort").value;
+    App.Store.set(App.K.sort, state.sort);
+    document.querySelectorAll(".catblock:not(.collapsed)").forEach(b => renderSection(b.id.replace("cat-", ""), true));
+    updateView();
+  });
+  $("chip-new").addEventListener("click", () => { state.newOnly = !state.newOnly; if (state.newOnly) state.favOnly = false; updateView(); });
+  $("chip-fav").addEventListener("click", () => { state.favOnly = !state.favOnly; if (state.favOnly) state.newOnly = false; updateView(); });
+  $("nav-fav").addEventListener("click", (e) => { e.preventDefault(); state.favOnly = true; state.newOnly = false; updateView(); window.scrollTo({ top: 0, behavior: "smooth" }); });
+  $("groups").addEventListener("click", (e) => {
+    const g = e.target.closest("[data-group]"); if (!g) return;
+    const el = document.getElementById("g-" + g.dataset.group);
+    if (el) el.scrollIntoView({ behavior: "smooth" });
+  });
+  document.body.addEventListener("click", (e) => {
+    if (e.target.id === "see-all-new") { state.newOnly = true; state.favOnly = false; updateView(); window.scrollTo({ top: 0, behavior: "smooth" }); }
+    const head = e.target.closest(".cathead");
+    if (head) {
+      const id = head.dataset.cat;
+      const block = document.getElementById("cat-" + id);
+      const nowOpen = block.classList.toggle("collapsed") === false;
+      head.setAttribute("aria-expanded", nowOpen);
+      if (nowOpen) { renderSection(id); openCats.add(id); } else { openCats.delete(id); }
+      App.Store.set(App.K.open, [...openCats]);
+    }
+  });
+
+  // 별·외부링크 하이드레이션(전역 위임) — 즐겨찾기 카운트 실시간 갱신 포함
+  App.hydrateStars(document);
+  document.addEventListener("click", (e) => {
+    if (e.target.closest("[data-star]")) { $("fav-count").textContent = App.Favs.all().length;
+      if (state.favOnly) renderFlat(); }
+    if (e.target.closest("[data-go]")) renderRecent();
+  });
+
+  // ── 초기 렌더 ──
+  renderRecent(); renderNewStrip(); renderGroups(); renderDirectory();
+  // 딥링크: ?cat= 자동 펼침·스크롤, ?group= 스크롤
+  if (state.cat && App.categoryById(state.cat)) {
+    const block = document.getElementById("cat-" + state.cat);
+    if (block) { block.classList.remove("collapsed"); block.querySelector(".cathead").setAttribute("aria-expanded", "true"); renderSection(state.cat); block.scrollIntoView(); }
+  } else if (state.group) {
+    const el = document.getElementById("g-" + state.group);
+    if (el) el.scrollIntoView();
+  }
+  updateView();
+});
+</script>
+</body>
+</html>

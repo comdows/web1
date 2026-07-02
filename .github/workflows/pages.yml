@@ -1,0 +1,59 @@
+name: Deploy to GitHub Pages
+
+# mvp/ 정적 사이트를 GitHub Pages로 배포합니다.
+# 사이트가 저장소 루트가 아닌 mvp/ 하위에 있고, 루트에는 무관한 옛 파일이 있어
+# "브랜치에서 배포"(/, /docs만 지원) 대신 Actions 워크플로우로 mvp/만 올립니다.
+
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "mvp/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch: {}   # 수동 실행 허용
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# 동시 배포 1건만 유지(진행 중 실행은 취소하지 않고 대기)
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Prerender (build.js — 분야 페이지·sitemap 생성)
+        working-directory: mvp
+        run: node build.js
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload artifact (mvp/)
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: mvp
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

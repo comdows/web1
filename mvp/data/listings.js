@@ -1,0 +1,56 @@
+/*
+ * listings.js — 2단계(제휴 매칭)·3단계(거래소) 리스팅 데이터
+ * ─────────────────────────────────────────────────────────────
+ * ⚠️ 아래 항목은 화면 구성 확인용 "데모 예시"다(실제 제안·매물 아님).
+ *    실제 운영: 접수(이슈/메일) → docs/stage2-ops.md 검수 체크리스트 통과 → 여기에 추가 → node build.js → 배포.
+ *    개인정보(연락처·실명)는 절대 이 파일에 넣지 않는다. 매물(deals)은 익명 코드명만.
+ *
+ * partnerships 스키마 v2:
+ *   { id, type, from(분야 id), want(분야 id[]), title, detail,
+ *     give(우리가 제공), get(상대에게 원하는 것), size(규모 밴드),
+ *     posted(게시일 YYYY-MM-DD), status: "open"|"matched"|"paused"|"closed", verified(디렉토리 등재 플랫폼 여부), demo }
+ * deals 스키마: { id(코드명), category, region, revenue(연매출 밴드), mode(희망 형태),
+ *     summary(익명 요약), posted, status: "open"|"진행중"|"완료", demo }
+ */
+(function () {
+  var LISTINGS = {
+    partnerTypes: ["회원 상호송출", "교차 프로모션", "공동 이벤트", "광고 지면 교환", "공동구매·번들"],
+    partnerships: [
+      { id: "P-101", type: "회원 상호송출", from: "funding", want: ["fashion", "handmade"], demo: true, verified: true,
+        title: "리워드 펀딩 종료 메이커에게 판매채널 연결",
+        detail: "펀딩이 끝난 메이커는 상시 판매처가 필요하고, 판매채널은 검증된 신상품이 필요합니다. 서로의 빈틈을 채우는 정기 송출 제휴.",
+        give: "펀딩 성공 메이커 리스트를 매월 파트너 채널로 안내", get: "파트너 셀러의 신제품 펀딩 개설 유치",
+        size: "월 활성 메이커 수백 명", posted: "2026-06-20", status: "open" },
+      { id: "P-102", type: "교차 프로모션", from: "pet", want: ["space"], demo: true, verified: true,
+        title: "반려동물 커머스 × 애견동반 숙소 상호 쿠폰",
+        detail: "구매 고객에게 상대 서비스 쿠폰을 제공하는 비용 정산 없는 상호 노출 교환.",
+        give: "주문 완료 화면·알림에 파트너 쿠폰 노출", get: "예약 확정 고객에게 당사 쿠폰 노출",
+        size: "월 주문 수천 건", posted: "2026-06-25", status: "open" },
+      { id: "P-103", type: "공동 이벤트", from: "fitness", want: ["food"], demo: true, verified: false,
+        title: "러닝 대회 × 건강식단 브랜드 공동 챌린지",
+        detail: "완주자 대상 식단 구독 체험권 제공, 공동 마케팅.",
+        give: "대회 참가자 대상 브랜드 노출·체험단 모집", get: "완주 리워드용 체험권·상품 협찬",
+        size: "회당 참가자 1천 명+", posted: "2026-06-10", status: "matched" },
+      { id: "P-104", type: "광고 지면 교환", from: "content", want: ["jobs", "freelance"], demo: true, verified: true,
+        title: "직무 뉴스레터 ↔ 커리어 플랫폼 광고 지면 상호 교환",
+        detail: "정산 없이 서로의 광고 지면(뉴스레터 하단 ↔ 앱 배너)을 동일 가치로 맞교환.",
+        give: "구독자 대상 뉴스레터 하단 배너 월 2회", get: "앱/웹 배너 동일 노출량",
+        size: "구독자 수만 명", posted: "2026-06-28", status: "open" },
+      { id: "P-105", type: "공동구매·번들", from: "food", want: ["kids"], demo: true, verified: false,
+        title: "이유식 식단 구독 × 육아용품 번들 패키지",
+        detail: "첫 구독 고객 대상 상호 번들 구성. 각자 자기 상품만 배송·정산(교차 정산 없음).",
+        give: "구독 신규 고객에게 파트너 상품 쿠폰 동봉", get: "육아용품 구매 고객에게 구독 할인 제공",
+        size: "월 신규 구독 수백 건", posted: "2026-07-01", status: "open" }
+    ],
+    deals: [
+      { id: "D-001", category: "handmade", region: "국내", revenue: "연매출 1~5억", mode: "지분 전량 매각", demo: true, posted: "2026-06-15",
+        summary: "운영 6년차 수공예 버티컬 마켓. 작가 풀·단골 고객 보유, 운영자 이직으로 매각 희망.", status: "open" },
+      { id: "D-002", category: "delivery", region: "국내", revenue: "연매출 5~10억", mode: "지분 일부 + 운영 승계", demo: true, posted: "2026-06-22",
+        summary: "지역 기반 배달 중개. 가맹점 네트워크 안정적, 확장 자본 유치 또는 매각 병행 검토.", status: "open" },
+      { id: "D-003", category: "content", region: "국내", revenue: "연매출 1억 미만", mode: "자산 양수도(회원·콘텐츠)", demo: true, posted: "2026-06-05",
+        summary: "니치 취미 클래스 플랫폼. 콘텐츠 라이브러리와 회원 DB 중심의 자산 매각.", status: "진행중" }
+    ]
+  };
+  if (typeof window !== "undefined") window.LISTINGS = LISTINGS;
+  if (typeof module !== "undefined" && module.exports) module.exports = LISTINGS;
+})();
