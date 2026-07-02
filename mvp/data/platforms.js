@@ -1198,7 +1198,8 @@
       { id:"jjinsuit", name:"제이진슈트", category:"rental", region:"국내", url:"https://jjinsuit.com/", blurb:"프리미엄 맞춤정장 렌탈 서비스." },
       { id:"greant", name:"그린트", category:"rental", region:"국내", url:"https://m.greant.co.kr/", blurb:"면접·예복 정장 익일배송 렌탈." },
       { id:"eshare", name:"공유누리", category:"rental", region:"국내", url:"https://www.eshare.go.kr/", blurb:"공공기관 공구·기기 공유·대여 정부 플랫폼." },
-      // ── 사무·MRO·산업재 B2B (59) ──
+      // ── 사무·MRO·산업재 B2B (60) ──
+      { new:true, id:"ium", name:"이음(I:UM)", category:"office", region:"국내", url:"https://www.i-um.co.kr/", blurb:"지식산업센터·산업단지 입주 중소기업·제조사를 단지 단위로 잇는 하이퍼로컬 B2B 네트워킹 플랫폼. 협력사·거래처 발굴, 공급망 분석, 기업 홍보·파트너 매칭을 무료 제공." },
       { id:"officedepot", name:"오피스디포", category:"office", region:"국내", url:"https://www.officedepot.co.kr/", blurb:"기업·개인 사무용품·소모품 온라인 쇼핑몰." },
       { id:"officenex", name:"오피스넥스", category:"office", region:"국내", url:"https://www.officenex.com/", blurb:"잉크·토너·사무기기 사무용품 B2B 쇼핑몰." },
       { id:"ioffice", name:"아이오피스", category:"office", region:"국내", url:"http://i-office.co.kr/", blurb:"사무용품·비품 온라인 전문몰." },
