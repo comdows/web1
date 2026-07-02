@@ -39,7 +39,8 @@ function validateListings() {
 }
 
 const ROOT = __dirname;
-const SITE = "https://platformall.example"; // 실제 도메인으로 교체
+// GitHub Pages 배포 주소(mvp/를 사이트 루트로 서빙). 커스텀 도메인 연결 시 교체.
+const SITE = process.env.SITE_URL || "https://comdows.github.io/web1";
 const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
   ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
