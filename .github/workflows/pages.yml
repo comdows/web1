@@ -1,15 +1,14 @@
 name: Deploy to GitHub Pages
 
-# mvp/ 정적 사이트를 GitHub Pages로 배포합니다.
-# 사이트가 저장소 루트가 아닌 mvp/ 하위에 있고, 루트에는 무관한 옛 파일이 있어
-# "브랜치에서 배포"(/, /docs만 지원) 대신 Actions 워크플로우로 mvp/만 올립니다.
+# 세모플 React 앱(app/)을 빌드해 GitHub Pages로 배포한다.
+# (이전 정적 사이트 mvp/ 는 저장소에 백업으로 보존 — 되돌리려면 이 워크플로우를 mvp 업로드로 되돌리면 된다.)
 
 on:
   push:
     branches:
       - master
     paths:
-      - "mvp/**"
+      - "app/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch: {}   # 수동 실행 허용
 
@@ -18,7 +17,6 @@ permissions:
   pages: write
   id-token: write
 
-# 동시 배포 1건만 유지(진행 중 실행은 취소하지 않고 대기)
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -34,18 +32,24 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
+          cache: npm
+          cache-dependency-path: app/package-lock.json
 
-      - name: Prerender (build.js — 분야 페이지·sitemap 생성)
-        working-directory: mvp
-        run: node build.js
+      - name: Install deps
+        working-directory: app
+        run: npm ci
+
+      - name: Build (Vite, base=/web1/)
+        working-directory: app
+        run: npm run build
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload artifact (mvp/)
+      - name: Upload artifact (app/dist)
         uses: actions/upload-pages-artifact@v3
         with:
-          path: mvp
+          path: app/dist
 
   deploy:
     needs: build

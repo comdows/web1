@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>세모플 — 브랜드 보드</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css">
+<style>
+  :root{
+    /* ── Ink / Surfaces (dark, B2B infra) ── */
+    --ink-900:#080B14; --ink-850:#0B0F1C; --ink-800:#0E1424; --ink-700:#141C31;
+    --ink-600:#1B2540; --ink-500:#24314F; --line:#28344F; --line-soft:#1C2740;
+    --text:#EAF0FF; --muted:#98A6C8; --faint:#5C688A;
+    /* ── Brand (신뢰 블루) ── */
+    --brand-700:#1E39C4; --brand-600:#2A49E0; --brand-500:#3D63FF; --brand-400:#6A86FF;
+    --brand-300:#9DB0FF; --brand-tint:rgba(61,99,255,.14);
+    /* ── Accent (teal, 검증·성사·신규) ── */
+    --teal-500:#22D3B8; --teal-400:#4FE3CC; --teal-tint:rgba(34,211,184,.15);
+    /* ── Semantic ── */
+    --success:#2CC08A; --warn:#F5B544; --danger:#F2695F; --info:var(--brand-500);
+    /* ── Radius / Elevation ── */
+    --r-sm:8px; --r-md:12px; --r-lg:16px; --r-xl:22px; --r-pill:999px;
+    --sh-1:0 1px 2px rgba(0,0,0,.4); --sh-2:0 6px 20px rgba(0,0,0,.35);
+    --sh-glow:0 0 0 1px var(--brand-tint),0 10px 30px rgba(61,99,255,.18);
+    --maxw:1080px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:
+      radial-gradient(1200px 600px at 80% -10%,rgba(61,99,255,.16),transparent 60%),
+      radial-gradient(900px 500px at -10% 10%,rgba(34,211,184,.08),transparent 55%),
+      var(--ink-900);
+    color:var(--text);font-family:Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;
+    -webkit-font-smoothing:antialiased}
+  .wrap{max-width:var(--maxw);margin:0 auto;padding:56px 24px 90px}
+  section{margin:0 0 46px}
+  .eyebrow{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand-300);font-weight:700;margin:0 0 14px}
+  h2.sec{font-size:13px;font-weight:700;color:var(--faint);letter-spacing:.12em;text-transform:uppercase;
+    margin:0 0 18px;padding-bottom:10px;border-bottom:1px solid var(--line-soft)}
+  .card{background:linear-gradient(180deg,var(--ink-800),var(--ink-850));border:1px solid var(--line-soft);
+    border-radius:var(--r-lg);padding:22px}
+  .grid{display:grid;gap:14px}
+
+  /* ── Hero / Logo ── */
+  .hero{display:flex;flex-direction:column;gap:26px;padding:44px 0 20px}
+  .logo{display:inline-flex;align-items:center;gap:14px}
+  .mark{width:46px;height:46px;flex:0 0 auto}
+  .word{font-size:34px;font-weight:800;letter-spacing:-.02em}
+  .word b{color:var(--brand-400)}
+  .tagline{font-size:19px;color:var(--muted);max-width:640px;margin:0}
+  .tagline b{color:var(--text);font-weight:700}
+  .lockups{display:flex;gap:18px;flex-wrap:wrap;margin-top:8px}
+  .lock{display:flex;align-items:center;gap:12px;padding:16px 20px;border-radius:var(--r-md);border:1px solid var(--line-soft)}
+  .lock.dark{background:var(--ink-850)}
+  .lock.light{background:#F4F7FF;color:#0E1424}
+  .lock.light .word{color:#0E1424}.lock.light .word b{color:var(--brand-600)}
+  .lock.brand{background:linear-gradient(135deg,var(--brand-600),var(--brand-500));border-color:transparent}
+  .lock .word{font-size:22px}
+  .lock.mono .word{color:var(--text)}.lock.mono .word b{color:var(--text)}
+
+  /* ── Colors ── */
+  .swatches{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+  .sw{border-radius:var(--r-md);overflow:hidden;border:1px solid var(--line-soft);background:var(--ink-800)}
+  .sw .chip{height:70px}
+  .sw .meta{padding:9px 11px;font-size:12px}
+  .sw .nm{font-weight:600}.sw .hex{color:var(--faint);font-variant-numeric:tabular-nums}
+
+  /* ── Type ── */
+  .type-row{display:flex;align-items:baseline;gap:16px;padding:12px 0;border-bottom:1px solid var(--line-soft);flex-wrap:wrap}
+  .type-row .lab{width:120px;color:var(--faint);font-size:12px;flex:0 0 auto}
+  .d1{font-size:40px;font-weight:800;letter-spacing:-.025em}
+  .h1{font-size:28px;font-weight:800;letter-spacing:-.02em}
+  .h2{font-size:22px;font-weight:700}
+  .h3{font-size:18px;font-weight:700}
+  .bd{font-size:15px;font-weight:400}
+  .cap{font-size:12px;color:var(--muted)}
+
+  /* ── Tokens ── */
+  .tok{display:flex;gap:10px;flex-wrap:wrap}
+  .tok .b{background:var(--ink-700);border:1px solid var(--line-soft);border-radius:var(--r-sm);padding:10px 13px;font-size:12px}
+  .tok .b span{color:var(--faint)}
+  .radii{display:flex;gap:14px;align-items:flex-end;flex-wrap:wrap}
+  .radii div{width:64px;height:64px;background:var(--brand-tint);border:1px solid var(--brand-500);display:flex;align-items:flex-end;justify-content:center;font-size:11px;color:var(--brand-300);padding:4px}
+
+  /* ── Components preview ── */
+  .btn{display:inline-flex;align-items:center;gap:8px;font-family:inherit;font-size:14px;font-weight:600;
+    padding:11px 18px;border-radius:var(--r-pill);border:1px solid transparent;cursor:pointer;text-decoration:none}
+  .btn.primary{background:linear-gradient(135deg,var(--brand-500),var(--brand-600));color:#fff;box-shadow:var(--sh-glow)}
+  .btn.ghost{background:transparent;border-color:var(--line);color:var(--text)}
+  .btn.teal{background:var(--teal-tint);border-color:var(--teal-500);color:var(--teal-400)}
+  .badge{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:var(--r-pill)}
+  .badge.new{background:var(--teal-tint);color:var(--teal-400)}
+  .badge.good{background:rgba(44,192,138,.16);color:var(--success)}
+  .badge.soon{background:rgba(245,181,68,.15);color:var(--warn)}
+  .badge.muted{background:var(--ink-600);color:var(--muted)}
+  .prow{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px}
+
+  .pcard{background:var(--ink-800);border:1px solid var(--line-soft);border-radius:var(--r-md);padding:16px;max-width:320px}
+  .pcard .top{display:flex;align-items:center;gap:11px}
+  .avatar{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-weight:800;color:#fff;font-size:16px;flex:0 0 auto}
+  .pcard h4{margin:0;font-size:15px;font-weight:700}
+  .pcard .cat{font-size:12px;color:var(--faint)}
+  .pcard p{margin:11px 0 0;font-size:13px;color:var(--muted);line-height:1.5}
+
+  .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;max-width:520px}
+  .stat{background:linear-gradient(180deg,var(--ink-800),var(--ink-850));border:1px solid var(--line-soft);
+    border-radius:var(--r-md);padding:16px 18px}
+  .stat .n{font-size:26px;font-weight:800;letter-spacing:-.02em}
+  .stat .n.b{color:var(--brand-400)}.stat .n.t{color:var(--teal-400)}
+  .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
+
+  .voice{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .voice .do,.voice .dont{border-radius:var(--r-md);padding:16px;border:1px solid var(--line-soft)}
+  .voice .do{background:rgba(44,192,138,.07)}.voice .dont{background:rgba(242,105,95,.06)}
+  .voice h4{margin:0 0 8px;font-size:13px;letter-spacing:.05em}
+  .voice .do h4{color:var(--success)}.voice .dont h4{color:var(--danger)}
+  .voice li{font-size:13px;color:var(--muted);margin:5px 0}
+  .foot{color:var(--faint);font-size:12px;border-top:1px solid var(--line-soft);padding-top:18px;margin-top:10px}
+  @media(max-width:640px){.voice,.stats{grid-template-columns:1fr}.d1{font-size:32px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <p class="eyebrow">Brand Foundation · v0.1</p>
+    <div class="logo">
+      <svg class="mark" viewBox="0 0 48 48" fill="none" aria-label="세모플 로고">
+        <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#6A86FF"/><stop offset="1" stop-color="#2A49E0"/></linearGradient></defs>
+        <path d="M24 5 L43 39 H5 Z" stroke="url(#g)" stroke-width="2.5" stroke-linejoin="round" fill="rgba(61,99,255,.10)"/>
+        <circle cx="24" cy="5" r="4" fill="#6A86FF"/>
+        <circle cx="43" cy="39" r="4" fill="#22D3B8"/>
+        <circle cx="5" cy="39" r="4" fill="#2A49E0"/>
+        <circle cx="24" cy="27" r="2.4" fill="#EAF0FF"/>
+        <path d="M24 5 L24 27 M43 39 L24 27 M5 39 L24 27" stroke="#3D63FF" stroke-width="1.4" opacity=".55"/>
+      </svg>
+      <span class="word">세모<b>플</b></span>
+    </div>
+    <p class="tagline"><b>세상의 모든 플랫폼.</b> 흩어진 판매·비즈니스 플랫폼을 한 곳에서 발견하고, 잇고, 거래하는 B2B 인프라.</p>
+
+    <div class="lockups">
+      <div class="lock dark"><svg class="mark" style="width:26px;height:26px" viewBox="0 0 48 48"><path d="M24 6 L42 38 H6 Z" stroke="#6A86FF" stroke-width="3" fill="none" stroke-linejoin="round"/></svg><span class="word">세모<b>플</b></span></div>
+      <div class="lock light"><svg class="mark" style="width:26px;height:26px" viewBox="0 0 48 48"><path d="M24 6 L42 38 H6 Z" stroke="#2A49E0" stroke-width="3" fill="none" stroke-linejoin="round"/></svg><span class="word">세모<b>플</b></span></div>
+      <div class="lock brand mono"><svg class="mark" style="width:26px;height:26px" viewBox="0 0 48 48"><path d="M24 6 L42 38 H6 Z" stroke="#fff" stroke-width="3" fill="none" stroke-linejoin="round"/></svg><span class="word">세모<b>플</b></span></div>
+    </div>
+  </section>
+
+  <!-- COLOR -->
+  <section>
+    <h2 class="sec">Color · 컬러 팔레트</h2>
+    <p class="eyebrow" style="color:var(--muted);text-transform:none;letter-spacing:0;font-weight:400;margin-bottom:12px">
+      기본은 다크 인프라 톤. 브랜드 블루(신뢰·연결) + 틸 액센트(검증·성사·신규).</p>
+    <div class="swatches">
+      <div class="sw"><div class="chip" style="background:#080B14"></div><div class="meta"><div class="nm">Ink 900</div><div class="hex">#080B14</div></div></div>
+      <div class="sw"><div class="chip" style="background:#0E1424"></div><div class="meta"><div class="nm">Ink 800</div><div class="hex">#0E1424</div></div></div>
+      <div class="sw"><div class="chip" style="background:#1B2540"></div><div class="meta"><div class="nm">Ink 600</div><div class="hex">#1B2540</div></div></div>
+      <div class="sw"><div class="chip" style="background:#3D63FF"></div><div class="meta"><div class="nm">Brand 500</div><div class="hex">#3D63FF</div></div></div>
+      <div class="sw"><div class="chip" style="background:#6A86FF"></div><div class="meta"><div class="nm">Brand 400</div><div class="hex">#6A86FF</div></div></div>
+      <div class="sw"><div class="chip" style="background:#22D3B8"></div><div class="meta"><div class="nm">Teal 500</div><div class="hex">#22D3B8</div></div></div>
+      <div class="sw"><div class="chip" style="background:#2CC08A"></div><div class="meta"><div class="nm">Success</div><div class="hex">#2CC08A</div></div></div>
+      <div class="sw"><div class="chip" style="background:#F5B544"></div><div class="meta"><div class="nm">Warn</div><div class="hex">#F5B544</div></div></div>
+      <div class="sw"><div class="chip" style="background:#F2695F"></div><div class="meta"><div class="nm">Danger</div><div class="hex">#F2695F</div></div></div>
+      <div class="sw"><div class="chip" style="background:#EAF0FF"></div><div class="meta"><div class="nm">Text</div><div class="hex">#EAF0FF</div></div></div>
+    </div>
+  </section>
+
+  <!-- TYPE -->
+  <section>
+    <h2 class="sec">Typography · Pretendard</h2>
+    <div class="card">
+      <div class="type-row"><span class="lab">Display / 40 · 800</span><span class="d1">세상의 모든 플랫폼</span></div>
+      <div class="type-row"><span class="lab">H1 / 28 · 800</span><span class="h1">어떤 분야에 어떤 플랫폼이 있을까?</span></div>
+      <div class="type-row"><span class="lab">H2 / 22 · 700</span><span class="h2">제휴 매칭 · 플랫폼 거래소</span></div>
+      <div class="type-row"><span class="lab">H3 / 18 · 700</span><span class="h3">커머스·판매채널</span></div>
+      <div class="type-row"><span class="lab">Body / 15 · 400</span><span class="bd">사업자·개인이 나가서 붙을 수 있는 플랫폼을 분야별로 정리했습니다.</span></div>
+      <div class="type-row" style="border:none"><span class="lab">Caption / 12</span><span class="cap">각 설명은 개략 소개이며 상세는 공식 사이트에서 확인.</span></div>
+    </div>
+  </section>
+
+  <!-- TOKENS -->
+  <section>
+    <h2 class="sec">Tokens · 간격 · 라운드 · 그림자</h2>
+    <div class="grid" style="grid-template-columns:1fr">
+      <div class="card">
+        <div class="tok" style="margin-bottom:18px">
+          <div class="b"><span>space</span> 4 · 8 · 12 · 16 · 24 · 32 · 48</div>
+          <div class="b"><span>maxw</span> 1080</div>
+          <div class="b"><span>shadow</span> sh-1 / sh-2 / glow</div>
+        </div>
+        <div class="radii">
+          <div style="border-radius:8px">8</div>
+          <div style="border-radius:12px">12</div>
+          <div style="border-radius:16px">16</div>
+          <div style="border-radius:22px">22</div>
+          <div style="border-radius:999px">pill</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPONENTS -->
+  <section>
+    <h2 class="sec">Components · 핵심 컴포넌트 미리보기</h2>
+    <div class="card">
+      <div class="prow">
+        <a class="btn primary">플랫폼 제보 →</a>
+        <a class="btn ghost">내 즐겨찾기</a>
+        <a class="btn teal">✓ 관심 등록</a>
+        <span class="badge new">NEW</span>
+        <span class="badge good">성사</span>
+        <span class="badge soon">준비중</span>
+        <span class="badge muted">데모</span>
+      </div>
+
+      <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-start">
+        <div class="pcard">
+          <div class="top">
+            <div class="avatar" style="background:linear-gradient(135deg,#3D63FF,#2A49E0)">쿠</div>
+            <div><h4>쿠팡 <span class="badge new" style="vertical-align:middle">NEW</span></h4><div class="cat">🏬 오픈마켓·종합몰</div></div>
+          </div>
+          <p>로켓배송 기반 국내 최대 규모의 오픈마켓·종합 이커머스 판매채널.</p>
+        </div>
+
+        <div class="stats">
+          <div class="stat"><div class="n b">1,559</div><div class="l">플랫폼</div></div>
+          <div class="stat"><div class="n">35</div><div class="l">분야</div></div>
+          <div class="stat"><div class="n t">98</div><div class="l">신규</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- VOICE -->
+  <section>
+    <h2 class="sec">Voice &amp; Tone · 보이스</h2>
+    <div class="voice">
+      <div class="do">
+        <h4>DO — 이렇게</h4>
+        <li>중립적·사실 중심. "개략 소개"에 충실</li>
+        <li>간결하고 명료하게. 군더더기 없음</li>
+        <li>신뢰를 주는 담백한 전문가 톤</li>
+        <li>사업자를 존중하는 실무적 어휘</li>
+      </div>
+      <div class="dont">
+        <h4>DON'T — 지양</h4>
+        <li>과장·낚시성 표현("최고!", "대박")</li>
+        <li>특정 플랫폼 비방·우열 단정</li>
+        <li>근거 없는 수치·순위</li>
+        <li>가벼운 밈·유행어 남발</li>
+      </div>
+    </div>
+    <p class="foot">세모플 (가칭 확정: 세상의 모든 플랫폼) · Brand Foundation v0.1 · 다크 우선, 라이트 대응 · Pretendard · 로고 마크 = 세모(△)+연결 노드</p>
+  </section>
+
+</div>
+</body>
+</html>
