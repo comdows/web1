@@ -7,7 +7,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches:
-      - claude/platform-discovery-matching-strategy-4izkl5
+      - master
     paths:
       - "mvp/**"
       - ".github/workflows/pages.yml"
