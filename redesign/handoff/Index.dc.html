@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px">
+  <div style="max-width:1180px;margin:0 auto;padding:44px 28px 120px">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:1px solid #1B2334;padding-bottom:22px">
+      <div>
+        <div style="display:flex;align-items:center;gap:11px;margin-bottom:14px">
+          <svg width="28" height="28" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#7C97FF" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+          <div style="font-size:24px;font-weight:800;letter-spacing:-.02em">세모<b style="color:#7C97FF">플</b></div>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7C97FF;margin-bottom:8px">Prototype Map · 화면 인덱스</div>
+        <div style="font-size:30px;font-weight:800;letter-spacing:-.02em">전체 화면 맵</div>
+        <div style="color:#97A6C8;font-size:14px;margin-top:8px;max-width:600px">세 페르소나의 진입점과 흐름. 카드를 눌러 각 화면을 엽니다.</div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;text-align:right;border:1px solid #25314C;border-radius:8px;padding:11px 14px;background:#111725;line-height:1.7">
+        <div style="color:#97A6C8">SCREENS</div>
+        <div>{{ total }} pages · 3 personas</div>
+        <div style="color:#5E6C8C">13 components synced</div>
+      </div>
+    </div>
+
+    <sc-for list="{{ lanes }}" as="lane" hint-placeholder-count="4">
+      <section style="margin-top:40px">
+        <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0 0 18px;display:flex;gap:10px;align-items:center">
+          <span style="width:8px;height:8px;border:1.5px solid {{ lane.color }};transform:rotate(45deg);display:inline-block"></span>
+          {{ lane.title }}
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:{{ lane.tint }};color:{{ lane.color }};letter-spacing:.06em">{{ lane.tag }}</span>
+          <span style="margin-left:auto;color:#5E6C8C;font-size:11px">{{ lane.caption }}</span>
+        </h2>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:stretch">
+          <sc-for list="{{ lane.screens }}" as="sc" hint-placeholder-count="4">
+            <sc-if value="{{ sc.arrow }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;align-items:center;color:#5E6C8C;font-size:20px;flex:0 0 auto">→</div>
+            </sc-if>
+            <a href="{{ sc.file }}" style="text-decoration:none;color:inherit;width:262px;background:#111725;border:1px solid #25314C;border-radius:12px;overflow:hidden;display:flex;flex-direction:column;transition:border-color .2s" style-hover="border-color:{{ lane.color }}">
+              <div style="position:relative;height:172px;background:#0A0E1A;overflow:hidden;border-bottom:1px solid #1B2334">
+                <iframe src="{{ sc.file }}" style="position:absolute;top:0;left:0;width:200%;height:200%;border:0;transform:scale(.5);transform-origin:top left;pointer-events:none"></iframe>
+                <sc-if value="{{ sc.step }}" hint-placeholder-val="{{ false }}">
+                  <div style="position:absolute;top:10px;left:10px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(10,14,26,.8);color:{{ lane.color }};border:1px solid {{ lane.color }}">STEP {{ sc.step }}</div>
+                </sc-if>
+              </div>
+              <div style="padding:13px 15px;flex:1;display:flex;flex-direction:column">
+                <div style="display:flex;align-items:center;gap:7px">
+                  <span style="font-size:15px;font-weight:700">{{ sc.name }}</span>
+                  <sc-if value="{{ sc.isNew }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:rgba(34,211,184,.15);color:#22D3B8">NEW</span></sc-if>
+                </div>
+                <div style="font-size:12.5px;color:#97A6C8;margin-top:5px;line-height:1.45;flex:1">{{ sc.note }}</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:{{ lane.color }};margin-top:10px">열기 ↗</div>
+              </div>
+            </a>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:1200}}">
+class Component extends DCLogic {
+  renderVals() {
+    const meta = {
+      user:     { color:'#7C97FF', tint:'rgba(124,151,255,.14)' },
+      admin:    { color:'#F5B544', tint:'rgba(245,181,68,.15)' },
+      operator: { color:'#22D3B8', tint:'rgba(34,211,184,.15)' },
+      metaG:    { color:'#38BDF8', tint:'rgba(56,189,248,.14)' },
+    };
+    const lanes = [
+      { title:'실사용자 여정', tag:'USER', ...meta.user, caption:'탐색 → 결정', flow:true, screens:[
+        { file:'Home.dc.html',            name:'홈',        note:'히어로 검색·분야·신규 플랫폼·디렉토리' },
+        { file:'Search Results.dc.html',  name:'검색결과+필터', note:'분야·지역·수수료·상태 필터, 정렬', isNew:true },
+        { file:'Platform Detail.dc.html', name:'플랫폼 상세', note:'수수료·정산·강점/유의점·유사 플랫폼', isNew:true },
+        { file:'Compare.dc.html',         name:'비교 뷰',    note:'최대 4개 나란히 비교', isNew:true },
+        { file:'Favorites.dc.html',       name:'즐겨찾기 관리', note:'컬렉션·메모·변경 알림·비교 선택', isNew:true },
+        { file:'Onboarding.dc.html',      name:'개인화 온보딩', note:'유형·목표 → 맞춤 플랫폼 추천', isNew:true },
+      ]},
+      { title:'관리자', tag:'ADMIN', ...meta.admin, caption:'검수·큐레이션', flow:false, screens:[
+        { file:'Admin Dashboard.dc.html',    name:'운영 대시보드', note:'KPI·검수 요약·데이터 품질·인기검색·활동', isNew:true },
+        { file:'Admin Review Queue.dc.html', name:'제보 검수 큐', note:'승인·보류·반려, 검증 배지, 라이프사이클', isNew:true },
+        { file:'Lifecycle.dc.html',          name:'라이프사이클', note:'상태머신 파이프라인·전이·감사 로그', isNew:true },
+      ]},
+      { title:'플랫폼 운영자', tag:'OPERATOR', ...meta.operator, caption:'노출·성과 관리', flow:false, screens:[
+        { file:'Operator Claim.dc.html',   name:'소유권 클레임', note:'플랫폼 확인·인증 방법·코드 인증 위저드', isNew:true },
+        { file:'Operator Console.dc.html', name:'운영자 콘솔', note:'소유권 인증·프로필 편집·성과 미리보기', isNew:true },
+        { file:'Partner Match.dc.html',    name:'제휴 매칭', note:'B2B 매칭 후보·제안·현황', isNew:true },
+        { file:'Boost.dc.html',            name:'부스트', note:'유료 노출 위치·예산·성과 예측', isNew:true },
+      ]},
+      { title:'모바일', tag:'MOBILE', ...meta.user, caption:'반응형 시안', flow:false, screens:[
+        { file:'Mobile.dc.html', name:'모바일 시안', note:'홈·검색+바텀시트·상세 폰 목업', isNew:true },
+      ]},
+      { title:'기획 · 시스템', tag:'META', ...meta.metaG, caption:'문서·컴포넌트', flow:false, screens:[
+        { file:'Product Plan.dc.html',   name:'제품 기획·UX 감사', note:'3-관점 감사·성숙도 매트릭스·로드맵' },
+        { file:'Design System.dc.html',  name:'디자인 시스템', note:'동기화된 13개 컴포넌트 갤러리' },
+      ]},
+    ].map(lane => ({
+      ...lane,
+      screens: lane.screens.map((sc, i) => ({
+        ...sc,
+        step: lane.flow ? String(i + 1) : '',
+        arrow: lane.flow && i > 0,
+      })),
+    }));
+
+    const total = lanes.reduce((n, l) => n + l.screens.length, 0);
+    return { lanes, total };
+  }
+}
+</script>
+</body>
+</html>

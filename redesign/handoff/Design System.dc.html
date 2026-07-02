@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+<style>
+  @keyframes dsFade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px;-webkit-font-smoothing:antialiased">
+  <div style="max-width:1180px;margin:0 auto;padding:44px 28px 120px">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;margin-bottom:8px">
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7C97FF;margin-bottom:10px">Blueprint Infra · Component Sync</div>
+        <div style="font-size:34px;font-weight:800;letter-spacing:-.02em;line-height:1.1">세모플 <b style="color:#7C97FF">디자인 시스템</b></div>
+        <div style="color:#97A6C8;font-size:14px;margin-top:8px">comdows/web1 · redesign/ds 에서 동기화된 <b style="color:#E8EEFC">{{ count }}</b>개 컴포넌트</div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;text-align:right;border:1px solid #25314C;border-radius:8px;padding:10px 14px;background:#111725">
+        <div style="color:#97A6C8">SOURCE</div>
+        <div style="margin-top:4px">comdows/web1@master</div>
+        <div style="margin-top:2px;color:#5E6C8C">redesign/ds/</div>
+      </div>
+    </div>
+
+    <sc-for list="{{ groups }}" as="grp" hint-placeholder-count="3">
+      <section style="margin-top:44px">
+        <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0 0 18px;padding-bottom:10px;border-bottom:1px solid #1B2334;display:flex;gap:10px;align-items:center">
+          <span style="width:8px;height:8px;border:1.5px solid #38BDF8;transform:rotate(45deg);display:inline-block"></span>
+          {{ grp.group }}
+          <span style="margin-left:auto;color:#5E6C8C;font-size:11px">{{ grp.tag }}</span>
+        </h2>
+
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:16px">
+          <sc-for list="{{ grp.items }}" as="c" hint-placeholder-count="4">
+            <div style="background:#111725;border:1px solid #25314C;border-radius:12px;overflow:hidden;position:relative;animation:dsFade .4s ease both;transition:border-color .2s" style-hover="border-color:#3D63FF;box-shadow:0 0 0 1px rgba(61,99,255,.14),0 10px 30px rgba(61,99,255,.16)">
+              <div style="display:flex;align-items:flex-start;gap:10px;padding:15px 16px 12px;border-bottom:1px solid #1B2334">
+                <div style="flex:1;min-width:0">
+                  <div style="display:flex;align-items:center;gap:8px">
+                    <span style="font-size:15px;font-weight:700">{{ c.name }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:6px;background:{{ c.tint }};color:{{ c.color }}">{{ c.group }}</span>
+                  </div>
+                  <div style="font-size:12px;color:#97A6C8;margin-top:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ c.subtitle }}</div>
+                </div>
+                <a href="{{ c.href }}" target="_blank" style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-decoration:none;border:1px solid #25314C;border-radius:6px;padding:4px 8px;flex:0 0 auto" style-hover="color:#7C97FF;border-color:#3D63FF">OPEN ↗</a>
+              </div>
+              <div style="position:relative;height:280px;background:#0A0E1A;overflow:hidden">
+                <iframe src="{{ c.href }}" style="position:absolute;top:0;left:0;width:154%;height:154%;border:0;transform:scale(.65);transform-origin:top left"></iframe>
+                <div style="position:absolute;inset:0;pointer-events:none"></div>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;padding:8px 14px;border-top:1px solid #1B2334;display:flex;justify-content:space-between">
+                <span>{{ c.file }}</span>
+                <span style="color:#5E6C8C">↑ {{ c.width }}</span>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+    </sc-for>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const raw = [
+      { file: "logo.html",              group: "Brand",       name: "Logo",              subtitle: "락업 3종 + 서브텍스트",            width: "auto" },
+      { file: "color.html",             group: "Foundation",  name: "Color",             subtitle: "Surface · Brand · Accent · Semantic", width: "auto" },
+      { file: "typography.html",        group: "Foundation",  name: "Typography",        subtitle: "Pretendard + IBM Plex Mono",       width: "auto" },
+      { file: "button.html",            group: "Components",   name: "Button",            subtitle: "Primary / Ghost / Teal · 3 sizes", width: "auto" },
+      { file: "badge.html",             group: "Components",   name: "Badge",             subtitle: "NEW / 성사 / 준비중 / 검증 / 데모", width: "auto" },
+      { file: "platformcard.html",      group: "Components",   name: "PlatformCard",      subtitle: "아바타 · NEW · 즐겨찾기 · 분야",   width: "340" },
+      { file: "stattile.html",          group: "Components",   name: "StatTile",          subtitle: "mono 수치 · 블루프린트 프레임",    width: "auto" },
+      { file: "header-nav.html",        group: "Components",   name: "Header/Nav",        subtitle: "로고 + 내비 + 준비중 배지",        width: "900" },
+      { file: "searchbar.html",         group: "Components",   name: "SearchBar",         subtitle: "히어로 검색",                      width: "640" },
+      { file: "categoryaccordion.html", group: "Components",   name: "CategoryAccordion", subtitle: "접힘/펼침 · 지연 렌더",            width: "680" },
+      { file: "groupcard.html",         group: "Components",   name: "GroupCard",         subtitle: "대분류 5장",                       width: "900" },
+      { file: "table.html",             group: "Components",   name: "Table",             subtitle: "고밀도 디렉토리 표 · 괘선",        width: "900" },
+      { file: "banner.html",            group: "Components",   name: "Banner",            subtitle: "info · 관리자 로컬",               width: "740" },
+    ];
+    const meta = {
+      Brand:      { tint: "rgba(124,151,255,.14)", color: "#7C97FF" },
+      Foundation: { tint: "rgba(56,189,248,.14)",  color: "#38BDF8" },
+      Components: { tint: "rgba(34,211,184,.15)",  color: "#22D3B8" },
+    };
+    const items = raw.map(c => ({
+      ...c,
+      href: "ds/" + c.file,
+      tint: meta[c.group].tint,
+      color: meta[c.group].color,
+    }));
+    const order = ["Brand", "Foundation", "Components"];
+    const groups = order.map(g => {
+      const gi = items.filter(c => c.group === g);
+      return { group: g, tag: gi.length + " ITEM" + (gi.length > 1 ? "S" : ""), items: gi };
+    }).filter(g => g.items.length);
+    return { groups, count: items.length };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px">
+
+  <!-- Header -->
+  <header style="position:sticky;top:0;z-index:100;background:rgba(10,14,26,.82);backdrop-filter:blur(12px);border-bottom:1px solid #1B2334">
+    <div style="max-width:1180px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;gap:16px">
+      <a href="Home.dc.html" style="display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit;flex:0 0 auto">
+        <svg width="26" height="26" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#7C97FF" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.02em">세모<b style="color:#7C97FF">플</b></div>
+      </a>
+      <div style="display:flex;align-items:center;gap:10px;background:#111725;border:1px solid #25314C;border-radius:10px;padding:10px 15px;flex:1;max-width:560px" style-focus-within="border-color:#3D63FF;box-shadow:0 0 0 3px rgba(61,99,255,.40)">
+        <span style="color:#5E6C8C;font-size:16px">⌕</span>
+        <input value="{{ query }}" onInput="{{ onQuery }}" placeholder="플랫폼·분야 검색" style="flex:1;background:none;border:none;outline:none;color:#E8EEFC;font-family:inherit;font-size:15px">
+        <sc-if value="{{ hasQuery }}" hint-placeholder-val="{{ true }}"><button onClick="{{ clearQuery }}" style="background:none;border:none;color:#5E6C8C;cursor:pointer;font-size:14px">✕</button></sc-if>
+      </div>
+      <nav style="display:flex;gap:16px;font-size:13px;align-items:center;flex:0 0 auto">
+        <a href="Compare.dc.html" style="color:#97A6C8;text-decoration:none">비교함</a>
+        <a href="Favorites.dc.html" style="color:#97A6C8;text-decoration:none">★ 즐겨찾기</a>
+      </nav>
+    </div>
+  </header>
+
+  <div style="max-width:1180px;margin:0 auto;padding:24px 24px 110px;display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+
+    <!-- Filter sidebar -->
+    <aside style="flex:1 1 220px;position:sticky;top:80px;background:#111725;border:1px solid #25314C;border-radius:12px;padding:18px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#E8EEFC;font-weight:700">필터</div>
+        <button onClick="{{ resetFilters }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7C97FF;background:none;border:none;cursor:pointer">초기화</button>
+      </div>
+
+      <sc-for list="{{ facets }}" as="grp" hint-placeholder-count="4">
+        <div style="margin-top:18px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">{{ grp.title }}</div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ grp.options }}" as="o" hint-placeholder-count="4">
+              <label style="display:flex;align-items:center;gap:9px;cursor:pointer;font-size:13px">
+                <span onClick="{{ o.onToggle }}" style="width:16px;height:16px;border-radius:{{ o.radius }};border:1.5px solid {{ o.border }};background:{{ o.fill }};flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px">{{ o.mark }}</span>
+                <span onClick="{{ o.onToggle }}" style="flex:1;color:{{ o.labelColor }}">{{ o.label }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C">{{ o.count }}</span>
+              </label>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </aside>
+
+    <!-- Results -->
+    <div style="flex:4 1 460px;min-width:0">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:14px;flex-wrap:wrap;padding-bottom:14px;border-bottom:1px solid #1B2334">
+        <div>
+          <div style="font-size:20px;font-weight:800;letter-spacing:-.02em"><span style="color:#7C97FF">{{ resultCount }}</span>개 플랫폼</div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5E6C8C;margin-top:4px">{{ resultCaption }}</div>
+        </div>
+        <div style="display:flex;gap:7px">
+          <sc-for list="{{ sorts }}" as="s" hint-placeholder-count="3">
+            <button onClick="{{ s.onClick }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;padding:6px 12px;border-radius:999px;background:{{ s.bg }};border:1px solid {{ s.border }};color:{{ s.fg }}">{{ s.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+
+      <!-- Active filter chips -->
+      <sc-if value="{{ hasActive }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:14px">
+          <sc-for list="{{ activeChips }}" as="c" hint-placeholder-count="2">
+            <button onClick="{{ c.onRemove }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;padding:4px 10px;border-radius:999px;background:rgba(61,99,255,.14);border:1px solid #3D63FF;color:#7C97FF;display:inline-flex;gap:6px;align-items:center">{{ c.label }} ✕</button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- Result list -->
+      <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+        <div style="padding:60px;text-align:center;border:1px dashed #25314C;border-radius:12px;margin-top:18px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5E6C8C">데이터 불러오는 중…</div>
+      </sc-if>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;margin-top:18px">
+        <sc-for list="{{ results }}" as="p" hint-placeholder-count="6">
+          <a href="Platform Detail.dc.html" style="text-decoration:none;color:inherit;background:#111725;border:1px solid #25314C;border-radius:10px;padding:15px;display:block;position:relative;transition:border-color .2s" style-hover="border-color:#3D63FF">
+            <div style="display:flex;align-items:flex-start;gap:11px">
+              <div style="width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex:0 0 auto;background:{{ p.grad }}">{{ p.initial }}</div>
+              <div style="flex:1;min-width:0">
+                <div style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px">{{ p.name }}
+                  <sc-if value="{{ p.isNew }}" hint-placeholder-val="{{ true }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;background:rgba(34,211,184,.15);color:#22D3B8">NEW</span></sc-if>
+                  <sc-if value="{{ p.verified }}" hint-placeholder-val="{{ true }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;background:rgba(56,189,248,.14);color:#38BDF8">✓</span></sc-if>
+                </div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-top:2px">{{ p.catLabel }} · {{ p.regionLabel }}</div>
+              </div>
+            </div>
+            <p style="margin:10px 0 0;font-size:12.5px;color:#97A6C8;line-height:1.5">{{ p.desc }}</p>
+            <div style="display:flex;gap:6px;margin-top:11px;flex-wrap:wrap">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:5px;background:{{ p.feeBg }};color:{{ p.feeColor }}">수수료 {{ p.feeLabel }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:5px;background:#1B2540;color:#97A6C8">등록 {{ p.year }}</span>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+
+      <!-- Empty state -->
+      <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;padding:60px 20px;border:1px dashed #25314C;border-radius:12px;margin-top:18px">
+          <div style="font-size:32px">🔍</div>
+          <div style="font-size:16px;font-weight:700;margin-top:12px">조건에 맞는 플랫폼이 없어요</div>
+          <div style="font-size:13px;color:#97A6C8;margin-top:6px">필터를 줄이거나 검색어를 바꿔보세요.</div>
+          <button onClick="{{ resetFilters }}" style="margin-top:16px;font-size:13px;font-weight:600;cursor:pointer;padding:9px 18px;border-radius:999px;background:linear-gradient(135deg,#3D63FF,#2445D4);border:none;color:#fff">필터 초기화</button>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:1200}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      query: '',
+      cats: {},      // category -> true
+      regions: {},   // region -> true
+      fees: {},      // fee -> true
+      status: {},    // 'new'|'verified' -> true
+      sort: 'rel',
+      pool: [],      // 데이터 단일 소스에서 로드
+      loaded: false,
+    };
+  }
+
+  // data/platforms.js 단일 소스에서 로드 (category → cat 매핑)
+  async componentDidMount() {
+    const api = await import('./data/api.js');
+    const [platforms, categories] = await Promise.all([api.fetchPlatforms(), api.getCategories()]);
+    const items = platforms.map((p) => ({ ...p, cat: p.category }));
+    this.setState({ pool: items, categories, loaded: true });
+  }
+
+  _toggle(bucket, key) {
+    this.setState(s => ({ [bucket]: { ...s[bucket], [key]: !s[bucket][key] } }));
+  }
+  _activeKeys(bucket) { return Object.keys(this.state[bucket]).filter(k => this.state[bucket][k]); }
+
+  _filtered() {
+    const q = this.state.query.trim();
+    const cats = this._activeKeys('cats');
+    const regions = this._activeKeys('regions');
+    const fees = this._activeKeys('fees');
+    const status = this._activeKeys('status');
+    return this.state.pool.filter(p => {
+      if (q && !(p.name.includes(q) || p.cat.includes(q) || p.desc.includes(q))) return false;
+      if (cats.length && !cats.includes(p.cat)) return false;
+      if (regions.length && !regions.includes(p.region)) return false;
+      if (fees.length && !fees.includes(p.fee)) return false;
+      if (status.includes('new') && !p.isNew) return false;
+      if (status.includes('verified') && !p.verified) return false;
+      return true;
+    });
+  }
+
+  renderVals() {
+    const st = this.state;
+    const feeMeta = {
+      '낮음': { bg:'rgba(44,192,138,.16)', color:'#2CC08A' },
+      '중간': { bg:'rgba(245,181,68,.15)', color:'#F5B544' },
+      '높음': { bg:'rgba(242,105,95,.15)', color:'#F2695F' },
+    };
+
+    let list = this._filtered();
+    if (st.sort === 'new') list = [...list].sort((a,b) => b.year - a.year);
+    else if (st.sort === 'name') list = [...list].sort((a,b) => a.name.localeCompare(b.name, 'ko'));
+
+    const results = list.map(p => ({
+      ...p,
+      catLabel: p.cat, regionLabel: p.region, feeLabel: p.fee,
+      feeBg: feeMeta[p.fee].bg, feeColor: feeMeta[p.fee].color,
+    }));
+
+    // facet builders
+    const uniq = (key) => [...new Set(this.state.pool.map(d => d[key]))];
+    const countBy = (key, val) => this.state.pool.filter(d => d[key] === val).length;
+
+    const checkOpt = (bucket, val, label, count) => {
+      const on = !!st[bucket][val];
+      return {
+        label, count,
+        onToggle: () => this._toggle(bucket, val),
+        radius: '4px',
+        border: on ? '#3D63FF' : '#25314C',
+        fill: on ? '#3D63FF' : 'transparent',
+        mark: on ? '✓' : '',
+        labelColor: on ? '#E8EEFC' : '#97A6C8',
+      };
+    };
+    const radioOpt = (bucket, val, label, count) => {
+      const on = !!st[bucket][val];
+      return {
+        label, count,
+        onToggle: () => this.setState(s => ({ [bucket]: on ? {} : { [val]: true } })),
+        radius: '999px',
+        border: on ? '#3D63FF' : '#25314C',
+        fill: on ? '#3D63FF' : 'transparent',
+        mark: on ? '●' : '',
+        labelColor: on ? '#E8EEFC' : '#97A6C8',
+      };
+    };
+
+    const facets = [
+      { title:'분야', options: (this.state.categories || []).map(c => checkOpt('cats', c.category, c.category, c.count)) },
+      { title:'지역', options: uniq('region').map(r => radioOpt('regions', r, r, countBy('region', r))) },
+      { title:'수수료대', options: ['낮음','중간','높음'].map(f => checkOpt('fees', f, f, countBy('fee', f))) },
+      { title:'상태', options: [
+        checkOpt('status', 'new', '신규(NEW)', this.state.pool.filter(d => d.isNew).length),
+        checkOpt('status', 'verified', '검증됨', this.state.pool.filter(d => d.verified).length),
+      ]},
+    ];
+
+    // active chips
+    const chips = [];
+    const statusLabels = { new:'신규', verified:'검증됨' };
+    ['cats','regions','fees'].forEach(b => this._activeKeys(b).forEach(k =>
+      chips.push({ label:k, onRemove: () => this._toggle(b, k) })));
+    this._activeKeys('status').forEach(k =>
+      chips.push({ label: statusLabels[k], onRemove: () => this._toggle('status', k) }));
+    if (st.query.trim()) chips.push({ label: '"' + st.query.trim() + '"', onRemove: () => this.setState({ query:'' }) });
+
+    const sortDefs = [['rel','관련도'],['new','신규순'],['name','이름순']];
+    const sorts = sortDefs.map(([k,label]) => {
+      const on = st.sort === k;
+      return { label, onClick: () => this.setState({ sort:k }),
+        bg: on ? 'rgba(61,99,255,.14)' : '#161E30', border: on ? '#3D63FF' : '#25314C', fg: on ? '#7C97FF' : '#97A6C8' };
+    });
+
+    return {
+      query: st.query,
+      hasQuery: !!st.query,
+      onQuery: (e) => this.setState({ query: e.target.value }),
+      clearQuery: () => this.setState({ query:'' }),
+      facets, sorts,
+      results,
+      resultCount: results.length,
+      resultCaption: chips.length ? '필터 ' + chips.length + '개 적용됨' : '전체 디렉토리 · 정렬 ' + (sortDefs.find(s=>s[0]===st.sort)[1]),
+      loading: !st.loaded,
+      isEmpty: st.loaded && results.length === 0,
+      hasActive: chips.length > 0,
+      activeChips: chips,
+      resetFilters: () => this.setState({ query:'', cats:{}, regions:{}, fees:{}, status:{} }),
+    };
+  }
+}
+</script>
+</body>
+</html>

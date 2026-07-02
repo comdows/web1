@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px">
+
+  <header style="position:sticky;top:0;z-index:100;background:rgba(10,14,26,.9);backdrop-filter:blur(12px);border-bottom:1px solid #1B2334">
+    <div style="max-width:1180px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div style="display:flex;align-items:center;gap:11px">
+        <svg width="24" height="24" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#7C97FF" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+        <div style="font-size:18px;font-weight:800;letter-spacing:-.02em">세모<b style="color:#7C97FF">플</b></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:#22D3B8;border:1px solid rgba(34,211,184,.4);background:rgba(34,211,184,.1);padding:3px 8px;border-radius:6px;text-transform:uppercase">운영자 콘솔</span>
+      </div>
+      <nav style="display:flex;gap:18px;font-size:13px;align-items:center">
+        <a href="Operator Console.dc.html" style="color:#97A6C8;text-decoration:none">프로필</a>
+        <a href="Partner Match.dc.html" style="color:#E8EEFC;font-weight:600;text-decoration:none">🤝 제휴 매칭</a>
+        <a href="Boost.dc.html" style="color:#97A6C8;text-decoration:none">부스트</a>
+      </nav>
+      <div style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#97A6C8"><span style="width:26px;height:26px;border-radius:999px;background:linear-gradient(135deg,#3D63FF,#2445D4);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px">쿠</span>쿠팡</div>
+    </div>
+  </header>
+
+  <div style="max-width:1180px;margin:0 auto;padding:24px 24px 90px">
+
+    <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em">제휴 매칭</h1>
+    <div style="font-size:13px;color:#97A6C8;margin-top:5px"><b style="color:#E8EEFC">쿠팡</b> 운영자님을 위한 B2B 제휴 후보입니다. 카테고리 보완·타깃 겹침·규모를 기반으로 추천됩니다.</div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:24px;margin-top:22px;align-items:flex-start">
+
+      <div style="flex:1 1 460px;min-width:0">
+        <!-- filter -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="5">
+            <button onClick="{{ f.onClick }}" style="font-size:13px;font-weight:600;cursor:pointer;padding:8px 15px;border-radius:999px;background:{{ f.bg }};border:1px solid {{ f.border }};color:{{ f.fg }}">{{ f.label }}</button>
+          </sc-for>
+        </div>
+
+        <!-- match cards -->
+        <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px">
+          <sc-for list="{{ cards }}" as="c" hint-placeholder-count="4">
+            <div style="background:#111725;border:1px solid {{ c.border }};border-radius:12px;padding:17px;position:relative;opacity:{{ c.opacity }}">
+              <div style="display:flex;align-items:flex-start;gap:12px">
+                <div style="width:44px;height:44px;border-radius:10px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:17px;background:{{ c.grad }}">{{ c.initial }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:16px;font-weight:700">{{ c.name }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-top:2px">{{ c.type }}</div>
+                </div>
+                <div style="text-align:right;flex:0 0 auto">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;letter-spacing:-.02em;color:{{ c.scoreColor }}">{{ c.score }}<span style="font-size:13px">%</span></div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C">매칭도</div>
+                </div>
+              </div>
+              <p style="margin:12px 0 0;font-size:13px;color:#97A6C8;line-height:1.5">{{ c.rationale }}</p>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:11px">
+                <sc-for list="{{ c.reasons }}" as="r" hint-placeholder-count="2">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:3px 8px;border-radius:5px;background:#1B2540;color:#97A6C8">{{ r }}</span>
+                </sc-for>
+              </div>
+              <!-- actions -->
+              <sc-if value="{{ c.isOpen }}" hint-placeholder-val="{{ true }}">
+                <div style="display:flex;gap:8px;margin-top:15px;padding-top:14px;border-top:1px solid #1B2334">
+                  <button onClick="{{ c.onPropose }}" style="flex:1;font-size:13px;font-weight:600;cursor:pointer;padding:10px;border-radius:9px;background:linear-gradient(135deg,#22D3B8,#0EA5A0);border:none;color:#04211C">제안 보내기</button>
+                  <button onClick="{{ c.onLike }}" style="width:44px;cursor:pointer;border-radius:9px;background:{{ c.likeBg }};border:1px solid {{ c.likeBorder }};color:{{ c.likeColor }};font-size:15px">{{ c.likeChar }}</button>
+                  <button onClick="{{ c.onPass }}" style="cursor:pointer;padding:0 14px;border-radius:9px;background:transparent;border:1px solid #25314C;color:#5E6C8C;font-size:13px">패스</button>
+                </div>
+              </sc-if>
+              <sc-if value="{{ c.isProposed }}" hint-placeholder-val="{{ false }}">
+                <div style="margin-top:15px;padding-top:14px;border-top:1px solid #1B2334;display:flex;align-items:center;gap:8px;font-size:13px;color:#22D3B8;font-weight:600">✓ 제안 보냄 · 상대 검토중</div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+        <sc-if value="{{ noCards }}" hint-placeholder-val="{{ false }}">
+          <div style="text-align:center;padding:50px;border:1px dashed #25314C;border-radius:12px;color:#5E6C8C;font-size:13px">이 유형의 후보를 모두 처리했습니다 ✓</div>
+        </sc-if>
+      </div>
+
+      <!-- sidebar: proposals -->
+      <aside style="flex:1 1 300px;position:sticky;top:80px;display:flex;flex-direction:column;gap:16px">
+        <div style="background:#111725;border:1px solid #25314C;border-radius:12px;padding:18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em">보낸 제안</div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#22D3B8">{{ sentCount }}</span>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:11px">
+            <sc-for list="{{ sent }}" as="s" hint-placeholder-count="3">
+              <div style="display:flex;align-items:center;gap:10px">
+                <div style="width:30px;height:30px;border-radius:7px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;background:{{ s.grad }}">{{ s.initial }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ s.name }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C">{{ s.type }}</div>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:{{ s.stBg }};color:{{ s.stColor }}">{{ s.status }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="background:#111725;border:1px solid #25314C;border-radius:12px;padding:18px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:14px">받은 제안</div>
+          <div style="display:flex;align-items:center;gap:10px">
+            <div style="width:30px;height:30px;border-radius:7px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;background:linear-gradient(135deg,#161E30,#38BDF8)">발</div>
+            <div style="flex:1"><div style="font-size:13px;font-weight:600">발란</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C">공동 마케팅</div></div>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(34,211,184,.15);color:#22D3B8">신규</span>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      filter: 'all',
+      status: {}, // id -> 'proposed' | 'passed'
+      liked: {},
+      cands: [],
+      sent: [],
+      loaded: false,
+    };
+  }
+
+  // 목 API에서 매칭 후보·제안 현황 로드 (data/api.js)
+  async componentDidMount() {
+    const { getMatches, getProposals } = await import('./data/api.js');
+    const [cands, proposals] = await Promise.all([getMatches(), getProposals()]);
+    this.setState({ cands, sent: proposals.sent, loaded: true });
+  }
+
+  renderVals() {
+    const st = this.state;
+    const scoreColor = (s) => s >= 85 ? '#22D3B8' : s >= 72 ? '#7C97FF' : '#97A6C8';
+    const stMeta = { '검토중':{bg:'rgba(245,181,68,.15)',color:'#F5B544'}, '수락':{bg:'rgba(44,192,138,.16)',color:'#2CC08A'}, '거절':{bg:'rgba(242,105,95,.15)',color:'#F2695F'} };
+
+    const filterDefs = [['all','전체'],['logi','물류·풀필먼트'],['sourcing','유통·소싱'],['mkt','공동 마케팅'],['pay','결제·금융']];
+    const filters = filterDefs.map(([k,label]) => {
+      const on = st.filter === k;
+      return { label, onClick: () => this.setState({ filter:k }),
+        bg: on ? 'rgba(34,211,184,.15)' : '#161E30', border: on ? '#22D3B8' : '#25314C', fg: on ? '#22D3B8' : '#97A6C8' };
+    });
+
+    const visible = this.state.cands.filter(c => (st.filter === 'all' || c.typeKey === st.filter) && st.status[c.id] !== 'passed');
+    const cards = visible.map(c => {
+      const status = st.status[c.id];
+      const liked = !!st.liked[c.id];
+      return { ...c,
+        scoreColor: scoreColor(c.score),
+        border: status === 'proposed' ? '#22D3B8' : '#25314C',
+        opacity: 1,
+        isOpen: status !== 'proposed',
+        isProposed: status === 'proposed',
+        likeChar: liked ? '♥' : '♡', likeBg: liked ? 'rgba(242,105,95,.15)' : '#0D1220', likeBorder: liked ? '#F2695F' : '#25314C', likeColor: liked ? '#F2695F' : '#97A6C8',
+        onLike: () => this.setState(s => ({ liked: { ...s.liked, [c.id]: !s.liked[c.id] } })),
+        onPass: () => this.setState(s => ({ status: { ...s.status, [c.id]: 'passed' } })),
+        onPropose: () => {
+          import('./data/api.js').then(a => a.sendProposal(c.id, c.type));
+          this.setState(s => ({
+            status: { ...s.status, [c.id]: 'proposed' },
+            sent: [{ initial:c.initial, name:c.name, type:c.type, status:'검토중', grad:c.grad }, ...s.sent],
+          }));
+        },
+      };
+    });
+
+    const sent = st.sent.map(s => ({ ...s, stBg: stMeta[s.status].bg, stColor: stMeta[s.status].color }));
+
+    return {
+      filters, cards, noCards: st.loaded && cards.length === 0,
+      sent, sentCount: sent.length,
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px;display:flex;flex-direction:column;align-items:center;padding:36px 24px 80px">
+
+  <div style="display:flex;align-items:center;gap:11px;margin-bottom:24px">
+    <svg width="26" height="26" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#7C97FF" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+    <div style="font-size:20px;font-weight:800;letter-spacing:-.02em">세모<b style="color:#7C97FF">플</b></div>
+    <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:#22D3B8;border:1px solid rgba(34,211,184,.4);background:rgba(34,211,184,.1);padding:3px 8px;border-radius:6px;text-transform:uppercase">운영자 인증</span>
+  </div>
+
+  <div style="width:100%;max-width:660px">
+    <!-- steps indicator -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:20px">
+      <sc-for list="{{ stepDots }}" as="s" hint-placeholder-count="4">
+        <sc-if value="{{ s.arrow }}" hint-placeholder-val="{{ false }}"><div style="flex:1;height:1px;background:{{ s.lineColor }}"></div></sc-if>
+        <div style="display:flex;align-items:center;gap:7px">
+          <span style="width:24px;height:24px;border-radius:999px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;background:{{ s.bg }};border:1px solid {{ s.border }};color:{{ s.fg }}">{{ s.mark }}</span>
+          <span style="font-size:12px;color:{{ s.labelColor }};white-space:nowrap">{{ s.label }}</span>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="background:#111725;border:1px solid #25314C;border-radius:16px;padding:28px;position:relative">
+      <div style="position:absolute;top:12px;left:12px;width:10px;height:10px;border-top:1px solid rgba(124,151,255,.28);border-left:1px solid rgba(124,151,255,.28)"></div>
+
+      <!-- Step 1: 플랫폼 확인 -->
+      <sc-if value="{{ isPlatform }}" hint-placeholder-val="{{ true }}">
+        <h2 style="margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em">어떤 플랫폼의 운영자이신가요?</h2>
+        <p style="font-size:14px;color:#97A6C8;margin:8px 0 20px">디렉토리에 등록된 플랫폼 중 소유·운영하는 곳을 선택하세요.</p>
+        <div style="display:flex;align-items:center;gap:10px;background:#0D1220;border:1px solid #25314C;border-radius:10px;padding:12px 14px;margin-bottom:14px">
+          <span style="color:#5E6C8C">⌕</span><span style="color:#5E6C8C;font-size:14px">플랫폼 이름 검색</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:13px;background:#0D1220;border:1px solid #3D63FF;border-radius:12px;padding:15px 16px;box-shadow:0 0 0 1px rgba(61,99,255,.14)">
+          <div style="width:44px;height:44px;border-radius:10px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:18px;background:linear-gradient(135deg,#3D63FF,#2445D4)">쿠</div>
+          <div style="flex:1">
+            <div style="font-size:16px;font-weight:700">쿠팡 <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(56,189,248,.14);color:#38BDF8">✓ 검증</span></div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-top:2px">오픈마켓·종합몰 · coupang.com</div>
+          </div>
+          <span style="width:22px;height:22px;border-radius:999px;background:#3D63FF;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;flex:0 0 auto">✓</span>
+        </div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-top:12px;line-height:1.5">찾는 플랫폼이 없나요? <a href="Home.dc.html" style="color:#7C97FF;text-decoration:none">플랫폼 제보 →</a></div>
+      </sc-if>
+
+      <!-- Step 2: 인증 방법 -->
+      <sc-if value="{{ isMethod }}" hint-placeholder-val="{{ false }}">
+        <h2 style="margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em">소유권을 어떻게 인증할까요?</h2>
+        <p style="font-size:14px;color:#97A6C8;margin:8px 0 20px">쿠팡의 운영 권한을 확인할 수 있는 방법을 선택하세요.</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ methods }}" as="m" hint-placeholder-count="3">
+            <button onClick="{{ m.onClick }}" style="display:flex;align-items:flex-start;gap:13px;text-align:left;cursor:pointer;background:{{ m.bg }};border:1px solid {{ m.border }};border-radius:12px;padding:16px">
+              <span style="width:20px;height:20px;border-radius:999px;border:2px solid {{ m.dot }};flex:0 0 auto;margin-top:1px;display:flex;align-items:center;justify-content:center"><span style="width:10px;height:10px;border-radius:999px;background:{{ m.dotFill }}"></span></span>
+              <div style="flex:1">
+                <div style="font-size:15px;font-weight:700">{{ m.icon }} {{ m.title }}</div>
+                <div style="font-size:12.5px;color:#97A6C8;margin-top:3px;line-height:1.5">{{ m.desc }}</div>
+              </div>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:{{ m.tagColor }};background:{{ m.tagBg }};padding:2px 8px;border-radius:5px;flex:0 0 auto">{{ m.tag }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- Step 3: 인증 진행 -->
+      <sc-if value="{{ isVerify }}" hint-placeholder-val="{{ false }}">
+        <h2 style="margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em">사업자 도메인 이메일 인증</h2>
+        <p style="font-size:14px;color:#97A6C8;margin:8px 0 20px">공식 도메인(coupang.com) 이메일로 인증 코드를 보냅니다.</p>
+        <label style="display:block;font-size:12px;color:#97A6C8;margin-bottom:6px">업무용 이메일</label>
+        <div style="display:flex;gap:10px">
+          <input value="{{ email }}" onInput="{{ onEmail }}" placeholder="name@coupang.com" style="flex:1;background:#0D1220;border:1px solid #25314C;border-radius:10px;padding:12px 14px;color:#E8EEFC;font-family:inherit;font-size:14px;outline:none" style-focus="border-color:#3D63FF"></input>
+          <button onClick="{{ sendCode }}" style="font-size:13px;font-weight:600;cursor:pointer;padding:0 16px;border-radius:10px;background:{{ sendBg }};border:1px solid {{ sendBorder }};color:{{ sendFg }};white-space:nowrap">{{ sendLabel }}</button>
+        </div>
+        <sc-if value="{{ codeSent }}" hint-placeholder-val="{{ false }}">
+          <div style="margin-top:18px">
+            <label style="display:block;font-size:12px;color:#97A6C8;margin-bottom:6px">인증 코드 (6자리)</label>
+            <input value="{{ code }}" onInput="{{ onCode }}" placeholder="● ● ● ● ● ●" style="width:100%;background:#0D1220;border:1px solid #25314C;border-radius:10px;padding:12px 14px;color:#E8EEFC;font-family:'IBM Plex Mono',monospace;font-size:18px;letter-spacing:.3em;text-align:center;outline:none" style-focus="border-color:#3D63FF"></input>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-top:8px">{{ email }} 로 코드를 보냈습니다 · 재전송</div>
+          </div>
+        </sc-if>
+        <div style="border:1px solid #25314C;border-left:3px solid #3D63FF;background:rgba(61,99,255,.14);border-radius:8px;padding:11px 14px;font-size:12.5px;color:#E8EEFC;margin-top:18px;line-height:1.5">ⓘ 인증 후 운영팀 최종 확인(영업일 1일)을 거쳐 관리 권한이 부여됩니다.</div>
+      </sc-if>
+
+      <!-- Step 4: 완료 -->
+      <sc-if value="{{ isDone }}" hint-placeholder-val="{{ false }}">
+        <div style="text-align:center;padding:14px 0 6px">
+          <div style="width:64px;height:64px;border-radius:999px;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:30px;background:rgba(44,192,138,.16);color:#2CC08A;border:1px solid #2CC08A">✓</div>
+          <h2 style="margin:18px 0 0;font-size:22px;font-weight:800;letter-spacing:-.02em">인증 요청이 접수됐어요</h2>
+          <p style="font-size:14px;color:#97A6C8;margin:8px auto 0;max-width:420px;line-height:1.55">쿠팡 소유권 인증을 접수했습니다. 운영팀 확인(영업일 1일) 후 운영자 콘솔에서 프로필·성과·제휴를 관리할 수 있습니다.</p>
+          <div style="display:flex;gap:10px;justify-content:center;margin-top:22px;flex-wrap:wrap">
+            <a href="Operator Console.dc.html" style="font-size:14px;font-weight:700;text-decoration:none;padding:12px 22px;border-radius:999px;background:linear-gradient(135deg,#3D63FF,#2445D4);color:#fff">운영자 콘솔로 →</a>
+            <a href="Platform Detail.dc.html" style="font-size:14px;font-weight:600;text-decoration:none;padding:12px 20px;border-radius:999px;background:transparent;border:1px solid #25314C;color:#E8EEFC">플랫폼 보기</a>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- nav -->
+      <sc-if value="{{ showNav }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;gap:10px;margin-top:24px;padding-top:20px;border-top:1px solid #1B2334">
+          <sc-if value="{{ canBack }}" hint-placeholder-val="{{ false }}">
+            <button onClick="{{ back }}" style="font-size:14px;font-weight:600;cursor:pointer;padding:12px 20px;border-radius:999px;background:transparent;border:1px solid #25314C;color:#E8EEFC">← 이전</button>
+          </sc-if>
+          <button onClick="{{ next }}" style="flex:1;font-size:15px;font-weight:700;cursor:pointer;padding:13px;border-radius:999px;background:{{ nextBg }};border:none;color:{{ nextFg }}">{{ nextLabel }}</button>
+        </div>
+      </sc-if>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:720,&quot;height&quot;:620}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { step: 0, method: null, email: '', code: '', codeSent: false };
+  }
+
+  renderVals() {
+    const st = this.state;
+    const steps = ['platform', 'method', 'verify', 'done'];
+    const cur = steps[st.step];
+
+    const stepLabels = ['플랫폼', '인증 방법', '인증', '완료'];
+    const stepDots = stepLabels.map((label, i) => {
+      const done = i < st.step, active = i === st.step;
+      return {
+        label, arrow: i > 0,
+        lineColor: i <= st.step ? '#3D63FF' : '#25314C',
+        mark: done ? '✓' : String(i + 1),
+        bg: done ? '#3D63FF' : active ? 'rgba(61,99,255,.14)' : '#0D1220',
+        border: (done || active) ? '#3D63FF' : '#25314C',
+        fg: done ? '#fff' : active ? '#7C97FF' : '#5E6C8C',
+        labelColor: active ? '#E8EEFC' : '#5E6C8C',
+      };
+    });
+
+    const methodDefs = [
+      { key: 'email', icon: '✉️', title: '사업자 도메인 이메일', desc: '공식 도메인 이메일로 인증 코드를 받습니다. 가장 빠릅니다.', tag: '추천', tagColor: '#22D3B8', tagBg: 'rgba(34,211,184,.15)' },
+      { key: 'meta', icon: '🔗', title: '홈페이지 메타태그 / DNS', desc: '공식 사이트에 확인용 태그를 추가해 소유권을 증명합니다.', tag: '개발 필요', tagColor: '#97A6C8', tagBg: '#1B2540' },
+      { key: 'doc', icon: '📄', title: '사업자등록증 제출', desc: '서류 검토로 인증합니다. 확인까지 영업일 2~3일.', tag: '수동', tagColor: '#F5B544', tagBg: 'rgba(245,181,68,.15)' },
+    ];
+    const methods = methodDefs.map(m => {
+      const on = st.method === m.key;
+      return { ...m, onClick: () => this.setState({ method: m.key }),
+        bg: on ? 'rgba(61,99,255,.14)' : '#0D1220', border: on ? '#3D63FF' : '#25314C',
+        dot: on ? '#3D63FF' : '#5E6C8C', dotFill: on ? '#3D63FF' : 'transparent' };
+    });
+
+    const emailValid = /.+@.+\..+/.test(st.email);
+    const canProceed = cur === 'platform' ? true
+      : cur === 'method' ? !!st.method
+      : cur === 'verify' ? (st.codeSent && st.code.length >= 4)
+      : true;
+
+    const nextLabel = cur === 'platform' ? '이 플랫폼으로 진행 →'
+      : cur === 'method' ? '다음 →'
+      : cur === 'verify' ? '인증 완료 →'
+      : '처음으로';
+
+    return {
+      stepDots,
+      isPlatform: cur === 'platform', isMethod: cur === 'method', isVerify: cur === 'verify', isDone: cur === 'done',
+      methods,
+      email: st.email, code: st.code, codeSent: st.codeSent,
+      onEmail: (e) => this.setState({ email: e.target.value }),
+      onCode: (e) => this.setState({ code: e.target.value }),
+      sendLabel: st.codeSent ? '재전송' : '코드 전송',
+      sendBg: emailValid ? 'rgba(61,99,255,.14)' : '#0D1220',
+      sendBorder: emailValid ? '#3D63FF' : '#25314C',
+      sendFg: emailValid ? '#7C97FF' : '#5E6C8C',
+      sendCode: () => { if (emailValid) this.setState({ codeSent: true }); },
+      showNav: cur !== 'done' ? true : true,
+      canBack: st.step > 0 && cur !== 'done',
+      back: () => this.setState(s => ({ step: Math.max(0, s.step - 1) })),
+      next: () => {
+        if (!canProceed) return;
+        if (cur === 'verify') import('./data/api.js').then(a => a.submitClaim({ platformId: 'coupang', method: st.method, email: st.email }));
+        this.setState(s => (s.step >= 3 ? { step: 0, method: null, email: '', code: '', codeSent: false } : { step: s.step + 1 }));
+      },
+      nextLabel,
+      nextBg: canProceed ? 'linear-gradient(135deg,#3D63FF,#2445D4)' : '#1B2334',
+      nextFg: canProceed ? '#fff' : '#5E6C8C',
+    };
+  }
+}
+</script>
+</body>
+</html>

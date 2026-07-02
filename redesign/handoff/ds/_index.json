@@ -1,0 +1,67 @@
+[
+  {
+    "file": "logo.html",
+    "group": "Brand",
+    "name": "Logo"
+  },
+  {
+    "file": "color.html",
+    "group": "Foundation",
+    "name": "Color"
+  },
+  {
+    "file": "typography.html",
+    "group": "Foundation",
+    "name": "Typography"
+  },
+  {
+    "file": "button.html",
+    "group": "Components",
+    "name": "Button"
+  },
+  {
+    "file": "badge.html",
+    "group": "Components",
+    "name": "Badge"
+  },
+  {
+    "file": "platformcard.html",
+    "group": "Components",
+    "name": "PlatformCard"
+  },
+  {
+    "file": "stattile.html",
+    "group": "Components",
+    "name": "StatTile"
+  },
+  {
+    "file": "header-nav.html",
+    "group": "Components",
+    "name": "Header/Nav"
+  },
+  {
+    "file": "searchbar.html",
+    "group": "Components",
+    "name": "SearchBar"
+  },
+  {
+    "file": "categoryaccordion.html",
+    "group": "Components",
+    "name": "CategoryAccordion"
+  },
+  {
+    "file": "groupcard.html",
+    "group": "Components",
+    "name": "GroupCard"
+  },
+  {
+    "file": "table.html",
+    "group": "Components",
+    "name": "Table"
+  },
+  {
+    "file": "banner.html",
+    "group": "Components",
+    "name": "Banner"
+  }
+]

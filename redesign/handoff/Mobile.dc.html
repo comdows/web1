@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<meta name="design_doc_mode" content="canvas">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+</helmet>
+
+<div style="min-height:100vh;background:#070A12;padding:48px;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;background-image:linear-gradient(rgba(124,151,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.045) 1px,transparent 1px);background-size:8px 8px">
+
+  <div style="display:flex;align-items:center;gap:12px;margin-bottom:32px;color:#E8EEFC">
+    <svg width="26" height="26" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#7C97FF" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+    <div style="font-size:20px;font-weight:800;letter-spacing:-.02em">세모<b style="color:#7C97FF">플</b> · 모바일 시안</div>
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-left:8px">단일 컬럼 · 바텀시트 필터 · 하단 탭바 · 터치 44px+</div>
+  </div>
+
+  <div style="display:flex;gap:40px;align-items:flex-start;flex-wrap:wrap">
+
+    <!-- ══ Screen 1: 홈 ══ -->
+    <div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#97A6C8;margin-bottom:12px">01 · 홈</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="min-height:100%;background:#0A0E1A;color:#E8EEFC;padding:56px 0 96px;display:flex;flex-direction:column;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px">
+          <!-- top -->
+          <div style="padding:8px 20px 0;display:flex;align-items:center;justify-content:space-between">
+            <div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#7C97FF">세상의 모든 플랫폼</div>
+              <div style="font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:3px">안녕하세요 👋</div>
+            </div>
+            <div style="width:40px;height:40px;border-radius:999px;background:#161E30;border:1px solid #25314C;display:flex;align-items:center;justify-content:center;position:relative">★<span style="position:absolute;top:-2px;right:-2px;width:8px;height:8px;border-radius:999px;background:#F2695F;border:2px solid #0A0E1A"></span></div>
+          </div>
+          <!-- search -->
+          <div style="padding:16px 20px 0">
+            <div style="display:flex;align-items:center;gap:10px;background:#111725;border:1px solid #25314C;border-radius:12px;padding:14px 16px;min-height:52px">
+              <span style="color:#5E6C8C;font-size:18px">⌕</span>
+              <span style="color:#5E6C8C;font-size:15px">플랫폼·분야 검색</span>
+            </div>
+          </div>
+          <!-- stat chips -->
+          <div style="display:flex;gap:8px;padding:14px 20px 0">
+            <div style="flex:1;background:#111725;border:1px solid #25314C;border-radius:10px;padding:10px 12px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:700;color:#7C97FF">1,559</div>
+              <div style="font-size:11px;color:#97A6C8">플랫폼</div>
+            </div>
+            <div style="flex:1;background:#111725;border:1px solid #25314C;border-radius:10px;padding:10px 12px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:700">35</div>
+              <div style="font-size:11px;color:#97A6C8">분야</div>
+            </div>
+            <div style="flex:1;background:#111725;border:1px solid #25314C;border-radius:10px;padding:10px 12px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:19px;font-weight:700;color:#22D3B8">98</div>
+              <div style="font-size:11px;color:#97A6C8">신규</div>
+            </div>
+          </div>
+          <!-- 대분류 scroll -->
+          <div style="padding:22px 0 0">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;padding:0 20px 10px">대분류</div>
+            <div style="display:flex;gap:10px;overflow-x:auto;padding:0 20px 4px">
+              <sc-for list="{{ groups }}" as="g" hint-placeholder-count="4">
+                <div style="flex:0 0 auto;width:120px;background:#111725;border:1px solid #25314C;border-radius:10px;padding:13px">
+                  <div style="font-size:20px">{{ g.icon }}</div>
+                  <div style="font-size:13px;font-weight:700;margin-top:7px">{{ g.name }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;margin-top:3px">{{ g.meta }}</div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <!-- 신규 플랫폼 -->
+          <div style="padding:22px 20px 0">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;padding-bottom:10px">신규·추천</div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ homeCards }}" as="p" hint-placeholder-count="3">
+                <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:14px;display:flex;gap:11px;align-items:flex-start">
+                  <div style="width:38px;height:38px;border-radius:8px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;background:{{ p.grad }}">{{ p.initial }}</div>
+                  <div style="flex:1;min-width:0">
+                    <div style="font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px">{{ p.name }}<sc-if value="{{ p.isNew }}" hint-placeholder-val="{{ true }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:rgba(34,211,184,.15);color:#22D3B8">NEW</span></sc-if></div>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-top:2px">{{ p.cat }}</div>
+                    <div style="font-size:12px;color:#97A6C8;margin-top:6px;line-height:1.45">{{ p.desc }}</div>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <!-- tab bar -->
+          <div style="position:sticky;bottom:0;margin-top:auto;background:rgba(10,14,26,.9);backdrop-filter:blur(12px);border-top:1px solid #1B2334;display:flex;padding:10px 8px 26px">
+            <sc-for list="{{ tabsHome }}" as="t" hint-placeholder-count="4">
+              <div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 0;color:{{ t.color }}">
+                <span style="font-size:19px">{{ t.icon }}</span><span style="font-size:10px;font-weight:600">{{ t.label }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ══ Screen 2: 검색 + 필터 시트 ══ -->
+    <div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#97A6C8;margin-bottom:12px">02 · 검색 + 필터 바텀시트</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="min-height:100%;background:#0A0E1A;color:#E8EEFC;padding:56px 0 96px;position:relative;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px">
+          <!-- search + filter -->
+          <div style="padding:8px 20px 0;display:flex;gap:10px;align-items:center">
+            <div style="flex:1;display:flex;align-items:center;gap:9px;background:#111725;border:1px solid #25314C;border-radius:12px;padding:12px 14px;min-height:48px">
+              <span style="color:#5E6C8C">⌕</span><span style="font-size:15px">패션</span>
+            </div>
+            <button onClick="{{ openSheet }}" style="min-width:48px;min-height:48px;border-radius:12px;background:rgba(61,99,255,.14);border:1px solid #3D63FF;color:#7C97FF;font-size:13px;font-weight:600;cursor:pointer;position:relative">필터<span style="position:absolute;top:-6px;right:-6px;font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;min-width:18px;height:18px;border-radius:999px;background:#3D63FF;color:#fff;display:flex;align-items:center;justify-content:center">{{ filterCount }}</span></button>
+          </div>
+          <!-- count + sort -->
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px 0">
+            <div style="font-size:14px;font-weight:700"><span style="color:#7C97FF">{{ resultN }}</span>개 결과</div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#97A6C8">신규순 ▾</div>
+          </div>
+          <!-- active chips -->
+          <div style="display:flex;gap:7px;padding:12px 20px 0;flex-wrap:wrap">
+            <sc-for list="{{ activeChips }}" as="c" hint-placeholder-count="2">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;padding:4px 10px;border-radius:999px;background:rgba(61,99,255,.14);border:1px solid #3D63FF;color:#7C97FF">{{ c }} ✕</span>
+            </sc-for>
+          </div>
+          <!-- results -->
+          <div style="display:flex;flex-direction:column;gap:10px;padding:16px 20px 0">
+            <sc-for list="{{ results }}" as="p" hint-placeholder-count="4">
+              <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:14px;display:flex;gap:11px;align-items:flex-start">
+                <div style="width:36px;height:36px;border-radius:8px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:15px;background:{{ p.grad }}">{{ p.initial }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:14px;font-weight:700">{{ p.name }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-top:2px">{{ p.cat }} · {{ p.region }}</div>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:5px;background:{{ p.feeBg }};color:{{ p.feeColor }};align-self:center">{{ p.fee }}</span>
+              </div>
+            </sc-for>
+          </div>
+
+          <!-- backdrop + bottom sheet -->
+          <sc-if value="{{ sheetOpen }}" hint-placeholder-val="{{ true }}">
+            <div onClick="{{ closeSheet }}" style="position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:40"></div>
+            <div style="position:absolute;left:0;right:0;bottom:0;z-index:41;background:#111725;border-top:1px solid #25314C;border-radius:22px 22px 0 0;padding:10px 20px 30px;box-shadow:0 -10px 40px rgba(0,0,0,.5)">
+              <div style="width:40px;height:5px;border-radius:999px;background:#25314C;margin:2px auto 16px"></div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+                <div style="font-size:17px;font-weight:800">필터</div>
+                <button onClick="{{ resetSheet }}" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#7C97FF;background:none;border:none;cursor:pointer">초기화</button>
+              </div>
+              <sc-for list="{{ facets }}" as="f" hint-placeholder-count="3">
+                <div style="margin-bottom:16px">
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:9px">{{ f.title }}</div>
+                  <div style="display:flex;gap:8px;flex-wrap:wrap">
+                    <sc-for list="{{ f.options }}" as="o" hint-placeholder-count="4">
+                      <button onClick="{{ o.onToggle }}" style="font-size:13px;font-weight:600;cursor:pointer;padding:9px 15px;border-radius:999px;background:{{ o.bg }};border:1px solid {{ o.border }};color:{{ o.fg }};min-height:40px">{{ o.label }}</button>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+              <button onClick="{{ closeSheet }}" style="width:100%;font-size:15px;font-weight:700;cursor:pointer;padding:15px;border-radius:14px;background:linear-gradient(135deg,#3D63FF,#2445D4);border:none;color:#fff;margin-top:6px;min-height:52px">{{ resultN }}개 결과 보기</button>
+            </div>
+          </sc-if>
+        </div>
+      </x-import>
+    </div>
+
+    <!-- ══ Screen 3: 상세 ══ -->
+    <div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#97A6C8;margin-bottom:12px">03 · 플랫폼 상세</div>
+      <x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" dark="{{ true }}" hint-size="402px,874px">
+        <div style="min-height:100%;background:#0A0E1A;color:#E8EEFC;padding:52px 0 0;display:flex;flex-direction:column;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px">
+          <!-- back -->
+          <div style="padding:6px 20px 0;font-size:15px;color:#97A6C8">‹ 오픈마켓·종합몰</div>
+          <!-- hero -->
+          <div style="padding:16px 20px 0;display:flex;gap:14px;align-items:flex-start">
+            <div style="width:56px;height:56px;border-radius:13px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:24px;background:linear-gradient(135deg,#3D63FF,#2445D4)">쿠</div>
+            <div style="flex:1">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span style="font-size:22px;font-weight:800">쿠팡</span><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(56,189,248,.14);color:#38BDF8">✓ 검증</span></div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#97A6C8;margin-top:5px">🏬 오픈마켓·종합몰 · 국내</div>
+            </div>
+          </div>
+          <p style="margin:14px 20px 0;font-size:14px;color:#E8EEFC;line-height:1.55">로켓배송 기반 국내 최대 규모의 오픈마켓·종합 이커머스 판매채널.</p>
+          <!-- key facts 2col -->
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:18px 20px 0">
+            <sc-for list="{{ facts }}" as="f" hint-placeholder-count="4">
+              <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:11px 13px">
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase">{{ f.k }}</div>
+                <div style="font-size:14px;font-weight:700;margin-top:4px;color:{{ f.color }}">{{ f.v }}</div>
+              </div>
+            </sc-for>
+          </div>
+          <!-- fee rows -->
+          <div style="padding:22px 20px 0">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">수수료 (개략)</div>
+            <div style="background:#111725;border:1px solid #25314C;border-radius:10px;overflow:hidden">
+              <sc-for list="{{ feeRows }}" as="r" hint-placeholder-count="3">
+                <div style="display:flex;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #1B2334">
+                  <span style="font-size:13px">{{ r.cat }}</span><span style="font-family:'IBM Plex Mono',monospace;font-size:13px;color:#E8EEFC">{{ r.fee }}</span>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          <!-- 강점 -->
+          <div style="padding:22px 20px 0">
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px">강점</div>
+            <div style="display:flex;flex-direction:column;gap:9px">
+              <sc-for list="{{ pros }}" as="x" hint-placeholder-count="3">
+                <div style="font-size:13.5px;color:#E8EEFC;padding-left:16px;position:relative;line-height:1.5"><span style="position:absolute;left:0;top:6px;width:5px;height:5px;background:#2CC08A;transform:rotate(45deg)"></span>{{ x }}</div>
+              </sc-for>
+            </div>
+          </div>
+          <div style="height:24px"></div>
+          <!-- sticky bottom CTA -->
+          <div style="position:sticky;bottom:0;margin-top:auto;background:rgba(10,14,26,.92);backdrop-filter:blur(12px);border-top:1px solid #1B2334;display:flex;gap:10px;padding:12px 20px 28px">
+            <button onClick="{{ toggleFav }}" style="width:52px;height:52px;border-radius:14px;flex:0 0 auto;cursor:pointer;font-size:20px;background:{{ favBg }};border:1px solid {{ favBorder }};color:{{ favColor }}">{{ favChar }}</button>
+            <button style="flex:1;height:52px;border-radius:14px;cursor:pointer;font-size:15px;font-weight:700;color:#fff;background:linear-gradient(135deg,#3D63FF,#2445D4);border:none">공식 사이트 방문 ↗</button>
+          </div>
+        </div>
+      </x-import>
+    </div>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1400,&quot;height&quot;:1050}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      sheetOpen: true,
+      cats: { '패션·편집샵': true },
+      regions: { '국내': true },
+      fees: {},
+      fav: true,
+    };
+  }
+  _toggle(bucket, key) { this.setState(s => ({ [bucket]: { ...s[bucket], [key]: !s[bucket][key] } })); }
+  _active(b) { return Object.keys(this.state[b]).filter(k => this.state[b][k]); }
+
+  renderVals() {
+    const feeMeta = {
+      '낮음': { bg:'rgba(44,192,138,.16)', color:'#2CC08A' },
+      '중간': { bg:'rgba(245,181,68,.15)', color:'#F5B544' },
+      '높음': { bg:'rgba(242,105,95,.15)', color:'#F2695F' },
+    };
+    const results = [
+      { initial:'무', name:'무신사', cat:'패션·편집샵', region:'국내', fee:'중간', grad:'linear-gradient(135deg,#7C97FF,#3D63FF)' },
+      { initial:'2', name:'29CM',   cat:'패션·편집샵', region:'국내', fee:'중간', grad:'linear-gradient(135deg,#161E30,#38BDF8)' },
+      { initial:'에', name:'에이블리', cat:'패션·편집샵', region:'국내', fee:'중간', grad:'linear-gradient(135deg,#F2695F,#F5B544)' },
+      { initial:'지', name:'지그재그', cat:'패션·편집샵', region:'국내', fee:'낮음', grad:'linear-gradient(135deg,#22D3B8,#0EA5A0)' },
+    ].map(p => ({ ...p, feeBg: feeMeta[p.fee].bg, feeColor: feeMeta[p.fee].color, fee: '수수료 ' + p.fee }));
+
+    const chipBtn = (bucket, val) => {
+      const on = !!this.state[bucket][val];
+      return { label: val, onToggle: () => this._toggle(bucket, val),
+        bg: on ? 'rgba(61,99,255,.14)' : '#0D1220', border: on ? '#3D63FF' : '#25314C', fg: on ? '#7C97FF' : '#97A6C8' };
+    };
+    const facets = [
+      { title:'분야', options: ['오픈마켓','패션·편집샵','크라우드펀딩','수출·무역'].map(v => chipBtn('cats', v)) },
+      { title:'지역', options: ['국내','해외'].map(v => chipBtn('regions', v)) },
+      { title:'수수료대', options: ['낮음','중간','높음'].map(v => chipBtn('fees', v)) },
+    ];
+    const filterCount = this._active('cats').length + this._active('regions').length + this._active('fees').length;
+    const activeChips = [...this._active('cats'), ...this._active('regions'), ...this._active('fees')];
+
+    const fav = this.state.fav;
+    return {
+      groups: [
+        { icon:'🛒', name:'커머스', meta:'620 플랫폼' },
+        { icon:'🚢', name:'해외·B2B', meta:'210 플랫폼' },
+        { icon:'🧑‍💼', name:'서비스', meta:'180 플랫폼' },
+        { icon:'💳', name:'금융·핀테크', meta:'240 플랫폼' },
+      ],
+      homeCards: [
+        { initial:'쿠', name:'쿠팡', isNew:true, cat:'🏬 오픈마켓·종합몰', desc:'로켓배송 기반 국내 최대 오픈마켓.', grad:'linear-gradient(135deg,#3D63FF,#2445D4)' },
+        { initial:'이', name:'이음(I:UM)', isNew:true, cat:'🖇️ 사무·MRO·B2B', desc:'지식산업센터 하이퍼로컬 B2B 네트워킹.', grad:'linear-gradient(135deg,#22D3B8,#0EA5A0)' },
+        { initial:'와', name:'와디즈', isNew:false, cat:'🎯 크라우드펀딩', desc:'리워드·투자형 크라우드펀딩.', grad:'linear-gradient(135deg,#38BDF8,#2445D4)' },
+      ],
+      tabsHome: [
+        { icon:'⌂', label:'홈', color:'#7C97FF' },
+        { icon:'⌕', label:'검색', color:'#5E6C8C' },
+        { icon:'★', label:'즐겨찾기', color:'#5E6C8C' },
+        { icon:'☰', label:'MY', color:'#5E6C8C' },
+      ],
+      results, resultN: results.length,
+      facets, filterCount, activeChips,
+      sheetOpen: this.state.sheetOpen,
+      openSheet: () => this.setState({ sheetOpen: true }),
+      closeSheet: () => this.setState({ sheetOpen: false }),
+      resetSheet: () => this.setState({ cats:{}, regions:{}, fees:{} }),
+      facts: [
+        { k:'판매수수료', v:'~4–10.8%', color:'#F5B544' },
+        { k:'정산주기', v:'주 / 월', color:'#E8EEFC' },
+        { k:'입점조건', v:'사업자등록', color:'#E8EEFC' },
+        { k:'지역', v:'국내', color:'#E8EEFC' },
+      ],
+      feeRows: [
+        { cat:'가전·디지털', fee:'~5–8%' },
+        { cat:'패션·잡화', fee:'~10–10.8%' },
+        { cat:'식품·생필품', fee:'~4–6%' },
+      ],
+      pros: ['국내 최대 트래픽·높은 전환', '로켓배송 물류 인프라', '주정산 등 빠른 정산'],
+      toggleFav: () => this.setState(s => ({ fav: !s.fav })),
+      favChar: fav ? '★' : '☆',
+      favBg: fav ? 'rgba(245,181,68,.15)' : '#111725',
+      favBorder: fav ? '#F5B544' : '#25314C',
+      favColor: fav ? '#F5B544' : '#97A6C8',
+    };
+  }
+}
+</script>
+</body>
+</html>

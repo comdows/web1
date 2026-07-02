@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px;display:flex;flex-direction:column;align-items:center;padding:40px 24px 80px">
+
+  <div style="display:flex;align-items:center;gap:11px;margin-bottom:28px">
+    <svg width="26" height="26" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#7C97FF" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+    <div style="font-size:20px;font-weight:800;letter-spacing:-.02em">세모<b style="color:#7C97FF">플</b></div>
+  </div>
+
+  <div style="width:100%;max-width:640px">
+    <!-- progress -->
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7C97FF;text-transform:uppercase;letter-spacing:.1em">{{ stepBadge }}</span>
+      <a href="Home.dc.html" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;text-decoration:none">건너뛰기</a>
+    </div>
+    <div style="height:5px;background:#1B2334;border-radius:999px;overflow:hidden">
+      <div style="height:100%;background:linear-gradient(90deg,#3D63FF,#7C97FF);border-radius:999px;width:{{ progress }};transition:width .3s"></div>
+    </div>
+
+    <div style="background:#111725;border:1px solid #25314C;border-radius:16px;padding:30px;margin-top:20px;position:relative">
+      <div style="position:absolute;top:12px;left:12px;width:10px;height:10px;border-top:1px solid rgba(124,151,255,.28);border-left:1px solid rgba(124,151,255,.28)"></div>
+
+      <!-- Q1 type -->
+      <sc-if value="{{ isType }}" hint-placeholder-val="{{ true }}">
+        <h2 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em">무엇을 판매하시나요?</h2>
+        <p style="font-size:14px;color:#97A6C8;margin:8px 0 22px">가장 가까운 유형을 선택하세요.</p>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <sc-for list="{{ typeOpts }}" as="o" hint-placeholder-count="4">
+            <button onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;background:{{ o.bg }};border:1px solid {{ o.border }};border-radius:12px;padding:16px">
+              <span style="font-size:24px">{{ o.icon }}</span>
+              <div><div style="font-size:15px;font-weight:700;color:{{ o.fg }}">{{ o.label }}</div><div style="font-size:12px;color:#97A6C8;margin-top:1px">{{ o.sub }}</div></div>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- Q2 category -->
+      <sc-if value="{{ isCat }}" hint-placeholder-val="{{ false }}">
+        <h2 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em">어떤 카테고리인가요?</h2>
+        <p style="font-size:14px;color:#97A6C8;margin:8px 0 22px">복수 선택 가능합니다.</p>
+        <div style="display:flex;gap:9px;flex-wrap:wrap">
+          <sc-for list="{{ catOpts }}" as="o" hint-placeholder-count="6">
+            <button onClick="{{ o.onClick }}" style="font-size:14px;font-weight:600;cursor:pointer;padding:11px 17px;border-radius:999px;background:{{ o.bg }};border:1px solid {{ o.border }};color:{{ o.fg }}">{{ o.label }}</button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- Q3 size -->
+      <sc-if value="{{ isSize }}" hint-placeholder-val="{{ false }}">
+        <h2 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em">사업 규모는요?</h2>
+        <p style="font-size:14px;color:#97A6C8;margin:8px 0 22px">추천 정확도를 높이는 데 쓰여요.</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ sizeOpts }}" as="o" hint-placeholder-count="4">
+            <button onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:12px;text-align:left;cursor:pointer;background:{{ o.bg }};border:1px solid {{ o.border }};border-radius:12px;padding:15px 17px">
+              <span style="width:18px;height:18px;border-radius:999px;border:2px solid {{ o.dot }};flex:0 0 auto;display:flex;align-items:center;justify-content:center"><span style="width:9px;height:9px;border-radius:999px;background:{{ o.dotFill }}"></span></span>
+              <div style="flex:1"><span style="font-size:15px;font-weight:700;color:{{ o.fg }}">{{ o.label }}</span> <span style="font-size:12px;color:#97A6C8">· {{ o.sub }}</span></div>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- Q4 goals -->
+      <sc-if value="{{ isGoals }}" hint-placeholder-val="{{ false }}">
+        <h2 style="margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em">무엇이 가장 중요한가요?</h2>
+        <p style="font-size:14px;color:#97A6C8;margin:8px 0 22px">우선순위를 최대 3개까지 선택하세요.</p>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{ goalOpts }}" as="o" hint-placeholder-count="5">
+            <button onClick="{{ o.onClick }}" style="display:flex;align-items:center;gap:13px;text-align:left;cursor:pointer;background:{{ o.bg }};border:1px solid {{ o.border }};border-radius:12px;padding:15px 17px">
+              <span style="font-size:20px">{{ o.icon }}</span>
+              <span style="flex:1;font-size:15px;font-weight:700;color:{{ o.fg }}">{{ o.label }}</span>
+              <span style="width:22px;height:22px;border-radius:6px;border:1.5px solid {{ o.checkBorder }};background:{{ o.checkFill }};color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center">{{ o.check }}</span>
+            </button>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- Result -->
+      <sc-if value="{{ isResult }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#22D3B8;text-transform:uppercase;letter-spacing:.1em">맞춤 추천</div>
+        <h2 style="margin:8px 0 0;font-size:24px;font-weight:800;letter-spacing:-.02em">이 플랫폼이 잘 맞아요</h2>
+        <p style="font-size:14px;color:#97A6C8;margin:8px 0 20px">{{ resultSummary }}</p>
+        <div style="display:flex;flex-direction:column;gap:12px">
+          <sc-for list="{{ recs }}" as="r" hint-placeholder-count="3">
+            <a href="Platform Detail.dc.html" style="text-decoration:none;color:inherit;background:#0D1220;border:1px solid #25314C;border-radius:12px;padding:16px;display:block;transition:border-color .2s" style-hover="border-color:#3D63FF">
+              <div style="display:flex;align-items:flex-start;gap:12px">
+                <div style="width:42px;height:42px;border-radius:10px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:17px;background:{{ r.grad }}">{{ r.initial }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:16px;font-weight:700">{{ r.name }}</div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-top:1px">{{ r.cat }}</div>
+                  <div style="font-size:13px;color:#97A6C8;margin-top:7px;line-height:1.5">{{ r.blurb }}</div>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px">
+                    <sc-for list="{{ r.reasons }}" as="rs" hint-placeholder-count="2">
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 8px;border-radius:5px;background:rgba(34,211,184,.15);color:#22D3B8">✓ {{ rs }}</span>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="text-align:right;flex:0 0 auto"><div style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;color:#7C97FF">{{ r.match }}%</div><div style="font-family:'IBM Plex Mono',monospace;font-size:9px;color:#5E6C8C">적합도</div></div>
+              </div>
+            </a>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <!-- nav -->
+      <div style="display:flex;gap:10px;margin-top:26px;padding-top:20px;border-top:1px solid #1B2334">
+        <sc-if value="{{ canBack }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ back }}" style="font-size:14px;font-weight:600;cursor:pointer;padding:12px 20px;border-radius:999px;background:transparent;border:1px solid #25314C;color:#E8EEFC">← 이전</button>
+        </sc-if>
+        <button onClick="{{ next }}" style="flex:1;font-size:15px;font-weight:700;cursor:pointer;padding:13px;border-radius:999px;background:{{ nextBg }};border:none;color:{{ nextFg }}">{{ nextLabel }}</button>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:760,&quot;height&quot;:720}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { step: 0, type: null, cats: {}, size: null, goals: {}, recs: [] };
+    this._goalLabels = { fee:'낮은 수수료', settle:'빠른 정산', traffic:'대규모 트래픽', global:'해외 진출', validate:'신제품 검증' };
+  }
+
+  // 목 API에서 맞춤 추천 로드 (data/api.js → getRecommendations)
+  async _loadRecs() {
+    const { getRecommendations } = await import('./data/api.js');
+    const goals = Object.keys(this.state.goals).filter(g => this.state.goals[g]);
+    const { items } = await getRecommendations({ goals });
+    const recs = items.map((x) => ({
+      initial: x.initial, name: x.name, cat: x.category, grad: x.grad, blurb: x.desc,
+      reasons: x.reasons.length ? x.reasons.map(k => this._goalLabels[k]) : ['균형 잡힌 시작점'],
+      match: x.matchScore,
+    }));
+    this.setState({ recs });
+  }
+
+  _toggleMax(bucket, key, max) {
+    this.setState(s => {
+      const cur = { ...s[bucket] };
+      if (cur[key]) { delete cur[key]; }
+      else { if (max && Object.keys(cur).length >= max) return {}; cur[key] = true; }
+      return { [bucket]: cur };
+    });
+  }
+
+  renderVals() {
+    const st = this.state;
+    const selStyle = (on) => ({ bg: on ? 'rgba(61,99,255,.14)' : '#0D1220', border: on ? '#3D63FF' : '#25314C', fg: on ? '#E8EEFC' : '#E8EEFC' });
+
+    const typeDefs = [['physical','실물 상품','가전·패션·식품 등','📦'],['digital','디지털·콘텐츠','구독·강의·창작물','💾'],['service','서비스·전문성','용역·컨설팅','🧑‍💻'],['export','해외·수출','B2B·글로벌','🌏']];
+    const typeOpts = typeDefs.map(([k,label,sub,icon]) => { const on = st.type===k; const s=selStyle(on);
+      return { label, sub, icon, ...s, border: on?'#3D63FF':'#25314C', onClick: () => this.setState({ type:k }) }; });
+
+    const catDefs = ['패션','식품','가전·디지털','뷰티','리빙','수공예','B2B·산업재','서비스'];
+    const catOpts = catDefs.map(c => { const on=!!st.cats[c]; const s=selStyle(on);
+      return { label:c, ...s, fg: on?'#7C97FF':'#97A6C8', onClick: () => this._toggleMax('cats', c) }; });
+
+    const sizeDefs = [['solo','개인·창작자','1인'],['smb','소상공인','~10인'],['mid','중소기업','~100인'],['brand','브랜드사','자체 브랜드']];
+    const sizeOpts = sizeDefs.map(([k,label,sub]) => { const on=st.size===k;
+      return { label, sub, ...selStyle(on), border: on?'#3D63FF':'#25314C', dot: on?'#3D63FF':'#5E6C8C', dotFill: on?'#3D63FF':'transparent', onClick: () => this.setState({ size:k }) }; });
+
+    const goalDefs = [['fee','낮은 수수료','💰'],['settle','빠른 정산','⚡'],['traffic','대규모 트래픽','📈'],['global','해외 진출','🌏'],['validate','신제품 검증','🎯']];
+    const goalOpts = goalDefs.map(([k,label,icon]) => { const on=!!st.goals[k];
+      return { label, icon, ...selStyle(on), border: on?'#3D63FF':'#25314C', checkBorder: on?'#3D63FF':'#25314C', checkFill: on?'#3D63FF':'transparent', check: on?'✓':'', onClick: () => this._toggleMax('goals', k, 3) }; });
+
+    const goals = Object.keys(st.goals).filter(g => st.goals[g]);
+    const steps = ['type','cat','size','goals','result'];
+    const cur = steps[st.step];
+    const canProceed = cur==='type' ? !!st.type : cur==='cat' ? Object.keys(st.cats).length>0 : cur==='size' ? !!st.size : cur==='goals' ? Object.keys(st.goals).length>0 : true;
+
+    const stepBadges = ['Step 1 / 4 · 판매 유형','Step 2 / 4 · 카테고리','Step 3 / 4 · 규모','Step 4 / 4 · 우선순위','완료'];
+
+    return {
+      stepBadge: stepBadges[st.step],
+      progress: (Math.min(st.step,4) / 4 * 100) + '%',
+      isType: cur==='type', isCat: cur==='cat', isSize: cur==='size', isGoals: cur==='goals', isResult: cur==='result',
+      typeOpts, catOpts, sizeOpts, goalOpts,
+      recs: st.recs,
+      resultSummary: goals.length ? ('선택하신 우선순위(' + goals.map(g=>this._goalLabels[g]).join(' · ') + ')에 맞춰 정렬했어요.') : '입력을 바탕으로 균형 잡힌 시작점을 추천해요.',
+      canBack: st.step > 0,
+      back: () => this.setState(s => ({ step: Math.max(0, s.step - 1) })),
+      next: () => { if (!canProceed) return; if (cur === 'goals') this._loadRecs(); this.setState(s => ({ step: s.step >= 4 ? 0 : s.step + 1, recs: s.step >= 4 ? [] : s.recs })); },
+      nextLabel: cur==='goals' ? '추천 받기 →' : cur==='result' ? '처음부터 다시' : '다음 →',
+      nextBg: canProceed ? 'linear-gradient(135deg,#3D63FF,#2445D4)' : '#1B2334',
+      nextFg: canProceed ? '#fff' : '#5E6C8C',
+    };
+  }
+}
+</script>
+</body>
+</html>

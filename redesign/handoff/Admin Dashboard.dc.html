@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px">
+
+  <header style="position:sticky;top:0;z-index:100;background:rgba(10,14,26,.9);backdrop-filter:blur(12px);border-bottom:1px solid #1B2334">
+    <div style="max-width:1240px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:11px">
+        <svg width="24" height="24" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#7C97FF" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+        <div style="font-size:18px;font-weight:800;letter-spacing:-.02em">세모<b style="color:#7C97FF">플</b></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:#F5B544;border:1px solid rgba(245,181,68,.4);background:rgba(245,181,68,.1);padding:3px 8px;border-radius:6px;text-transform:uppercase">Admin · 로컬 열람</span>
+      </div>
+      <nav style="display:flex;gap:16px;font-size:13px;align-items:center;flex-wrap:wrap">
+        <a href="Admin Dashboard.dc.html" style="color:#E8EEFC;font-weight:600;text-decoration:none">대시보드</a>
+        <a href="Admin Review Queue.dc.html" style="color:#97A6C8;text-decoration:none">제보 검수</a>
+        <a href="Lifecycle.dc.html" style="color:#97A6C8;text-decoration:none">라이프사이클</a>
+        <a href="#" style="color:#97A6C8;text-decoration:none">플랫폼 편집</a>
+        <a href="#" style="color:#97A6C8;text-decoration:none">데이터 품질</a>
+      </nav>
+      <div style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#97A6C8"><span style="width:26px;height:26px;border-radius:999px;background:linear-gradient(135deg,#3D63FF,#2445D4);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px">운</span>ops@semopl</div>
+    </div>
+  </header>
+
+  <div style="max-width:1240px;margin:0 auto;padding:24px 24px 90px">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em">운영 대시보드</h1>
+        <div style="font-size:13px;color:#97A6C8;margin-top:5px">제보·데이터 품질·트래픽을 한눈에 확인하고 조치합니다.</div>
+      </div>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        <a href="Admin Review Queue.dc.html" style="font-size:13px;font-weight:600;text-decoration:none;padding:9px 16px;border-radius:999px;background:linear-gradient(135deg,#3D63FF,#2445D4);color:#fff">검수 큐 열기 →</a>
+        <a href="#" style="font-size:13px;font-weight:600;text-decoration:none;padding:9px 15px;border-radius:999px;background:#161E30;border:1px solid #25314C;color:#E8EEFC">＋ 플랫폼 추가</a>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-top:18px">
+      <sc-for list="{{ kpis }}" as="k" hint-placeholder-count="4">
+        <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:15px 16px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:9px;right:9px;width:7px;height:7px;border-top:1px solid rgba(124,151,255,.28);border-right:1px solid rgba(124,151,255,.28)"></div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;letter-spacing:-.02em;color:{{ k.color }}">{{ k.n }}</div>
+          <div style="font-size:12px;color:#97A6C8;margin-top:2px">{{ k.l }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="display:flex;flex-wrap:wrap;gap:16px;margin-top:16px;align-items:flex-start">
+
+      <!-- Left column -->
+      <div style="flex:2 1 520px;min-width:0;display:flex;flex-direction:column;gap:16px">
+        <!-- Review queue summary -->
+        <div style="background:#111725;border:1px solid #25314C;border-radius:12px;padding:18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5E6C8C;margin:0;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #7C97FF;transform:rotate(45deg);display:inline-block"></span>검수 대기</h2>
+            <a href="Admin Review Queue.dc.html" style="font-size:12px;color:#7C97FF;text-decoration:none">전체 검수 →</a>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:9px">
+            <sc-for list="{{ pending }}" as="p" hint-placeholder-count="3">
+              <a href="Admin Review Queue.dc.html" style="text-decoration:none;color:inherit;display:flex;align-items:center;gap:11px;padding:10px 12px;border:1px solid #1B2334;border-radius:9px;background:#0D1220" style-hover="border-color:#3D63FF">
+                <div style="width:30px;height:30px;border-radius:7px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;background:{{ p.grad }}">{{ p.initial }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px">{{ p.name }}<sc-if value="{{ p.dupSuspect }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:rgba(242,105,95,.15);color:#F2695F">중복?</span></sc-if></div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C">{{ p.cat }} · {{ p.submitter }}</div>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C">{{ p.date }}</span>
+              </a>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- Data quality -->
+        <div style="background:#111725;border:1px solid #25314C;border-radius:12px;padding:18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+            <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5E6C8C;margin:0;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #F2695F;transform:rotate(45deg);display:inline-block"></span>데이터 품질</h2>
+            <a href="#" style="font-size:12px;color:#7C97FF;text-decoration:none">리포트 →</a>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px">
+            <sc-for list="{{ qualityGroups }}" as="g" hint-placeholder-count="3">
+              <div style="border:1px solid #1B2334;border-radius:9px;padding:13px;background:#0D1220">
+                <div style="display:flex;align-items:center;gap:7px;margin-bottom:9px">
+                  <span style="width:7px;height:7px;border-radius:999px;background:{{ g.color }}"></span>
+                  <span style="font-size:13px;font-weight:700">{{ g.title }}</span>
+                  <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:{{ g.color }}">{{ g.count }}</span>
+                </div>
+                <div style="display:flex;flex-direction:column;gap:7px">
+                  <sc-for list="{{ g.items }}" as="it" hint-placeholder-count="2">
+                    <div style="font-size:12px"><span style="font-weight:600">{{ it.name }}</span> <span style="color:#5E6C8C">· {{ it.hint }}</span></div>
+                  </sc-for>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right column -->
+      <div style="flex:1 1 300px;min-width:0;display:flex;flex-direction:column;gap:16px">
+        <!-- popular searches -->
+        <div style="background:#111725;border:1px solid #25314C;border-radius:12px;padding:18px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5E6C8C;margin-bottom:14px;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #38BDF8;transform:rotate(45deg);display:inline-block"></span>인기 검색어</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <sc-for list="{{ searches }}" as="s" hint-placeholder-count="5">
+              <div style="display:flex;align-items:center;gap:10px;font-size:13px">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;width:16px">{{ s.rank }}</span>
+                <span style="flex:1;font-weight:600">{{ s.q }}</span>
+                <span style="color:{{ s.trendColor }};font-size:11px">{{ s.trend }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#97A6C8">{{ s.n }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <!-- recent activity -->
+        <div style="background:#111725;border:1px solid #25314C;border-radius:12px;padding:18px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:#5E6C8C;margin-bottom:14px;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #22D3B8;transform:rotate(45deg);display:inline-block"></span>최근 활동</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <sc-for list="{{ activity }}" as="a" hint-placeholder-count="4">
+              <div style="display:flex;gap:10px;font-size:12px">
+                <span style="width:6px;height:6px;border-radius:999px;background:{{ a.dot }};flex:0 0 auto;margin-top:5px"></span>
+                <div style="flex:1"><div style="color:#E8EEFC">{{ a.what }}</div><div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;margin-top:1px">{{ a.who }} · {{ a.when }}</div></div>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+        <div style="border:1px solid #25314C;border-left:3px solid #22D3B8;background:rgba(34,211,184,.15);border-radius:8px;padding:13px 15px;font-size:12.5px;color:#E8EEFC;line-height:1.5">🔒 <b>관리자 로컬 열람 모드</b> — 정식 오픈은 <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:#1B2540;padding:1px 5px;border-radius:4px">config.stage2=true</code></div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { data: null };
+  }
+  async componentDidMount() {
+    const [{ getAdminDashboard }, { getSubmissions }] = await Promise.all([
+      import('./data/api.js'), import('./data/api.js'),
+    ]);
+    const [data, subs] = await Promise.all([getAdminDashboard(), getSubmissions('pending')]);
+    this.setState({ data, subs });
+  }
+
+  renderVals() {
+    const d = this.state.data;
+    if (!d) {
+      return { kpis: [], pending: [], qualityGroups: [], searches: [], activity: [] };
+    }
+    const pending = (this.state.subs || []).slice(0, 4).map(s => ({
+      initial: s.initial, name: s.name, cat: s.cat, submitter: s.submitter, date: s.date, dupSuspect: s.dupSuspect, grad: s.grad,
+    }));
+    const qualityGroups = [
+      { title: '중복 의심', color: '#F2695F', count: d.quality.duplicates.length, items: d.quality.duplicates },
+      { title: '죽은 링크', color: '#F5B544', count: d.quality.deadLinks.length, items: d.quality.deadLinks },
+      { title: '노후 항목', color: '#97A6C8', count: d.quality.stale.length, items: d.quality.stale },
+    ];
+    const searches = d.popularSearches.map((s, i) => ({
+      rank: i + 1, q: s.q, n: s.n.toLocaleString('en-US'),
+      trend: s.up ? '▲' : '▼', trendColor: s.up ? '#2CC08A' : '#F2695F',
+    }));
+    return { kpis: d.kpis, pending, qualityGroups, searches, activity: d.activity };
+  }
+}
+</script>
+</body>
+</html>

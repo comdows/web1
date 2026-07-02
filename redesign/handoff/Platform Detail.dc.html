@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px">
+
+  <!-- Header -->
+  <header style="position:sticky;top:0;z-index:100;background:rgba(10,14,26,.82);backdrop-filter:blur(12px);border-bottom:1px solid #1B2334">
+    <div style="max-width:1120px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:20px">
+      <a href="Home.dc.html" style="display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit">
+        <svg width="26" height="26" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#7C97FF" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.02em">세모<b style="color:#7C97FF">플</b></div>
+      </a>
+      <div style="display:flex;align-items:center;gap:10px;background:#111725;border:1px solid #25314C;border-radius:10px;padding:9px 14px;flex:1;max-width:440px">
+        <span style="color:#5E6C8C;font-size:15px">⌕</span>
+        <input placeholder="플랫폼·분야 검색" style="flex:1;background:none;border:none;outline:none;color:#E8EEFC;font-family:inherit;font-size:14px">
+      </div>
+      <nav style="display:flex;gap:16px;font-size:13px;align-items:center;flex:0 0 auto">
+        <a href="Compare.dc.html" style="color:#97A6C8;text-decoration:none">비교함</a>
+        <a href="Favorites.dc.html" style="color:#97A6C8;text-decoration:none">★ 즐겨찾기</a>
+        <a href="Search Results.dc.html" style="color:#97A6C8;text-decoration:none">← 검색</a>
+      </nav>
+    </div>
+  </header>
+
+  <div style="max-width:1120px;margin:0 auto;padding:24px 24px 110px">
+
+    <!-- Breadcrumb -->
+    <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5E6C8C;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <a href="Home.dc.html" style="color:#5E6C8C;text-decoration:none">홈</a><span>/</span>
+      <span>커머스·판매채널</span><span>/</span>
+      <a href="Search Results.dc.html" style="color:#7C97FF;text-decoration:none">오픈마켓·종합몰</a><span>/</span>
+      <span style="color:#E8EEFC">쿠팡</span>
+    </div>
+
+    <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+      <div style="padding:80px;text-align:center;border:1px dashed #25314C;border-radius:12px;margin-top:16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5E6C8C">데이터 불러오는 중…</div>
+    </sc-if>
+    <sc-if value="{{ loaded }}" hint-placeholder-val="{{ true }}">
+
+    <!-- Hero -->
+    <div style="background:#111725;border:1px solid #25314C;border-radius:12px;padding:24px;margin-top:16px;position:relative">
+      <div style="position:absolute;top:10px;left:10px;width:10px;height:10px;border-top:1px solid rgba(124,151,255,.28);border-left:1px solid rgba(124,151,255,.28)"></div>
+      <div style="position:absolute;bottom:10px;right:10px;width:10px;height:10px;border-bottom:1px solid rgba(124,151,255,.28);border-right:1px solid rgba(124,151,255,.28)"></div>
+      <div style="display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap">
+        <div style="width:64px;height:64px;border-radius:14px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:28px;flex:0 0 auto;background:{{ heroGrad }}">{{ heroInitial }}</div>
+        <div style="flex:1;min-width:240px">
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <h1 style="margin:0;font-size:28px;font-weight:800;letter-spacing:-.02em">{{ heroName }}</h1>
+            <sc-if value="{{ heroVerified }}" hint-placeholder-val="{{ true }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(56,189,248,.14);color:#38BDF8">✓ 검증</span></sc-if>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;background:rgba(44,192,138,.16);color:#2CC08A">성사 {{ heroMatched }}</span>
+          </div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#97A6C8;margin-top:7px">{{ heroMeta }}</div>
+          <p style="margin:12px 0 0;font-size:15px;color:#E8EEFC;line-height:1.6;max-width:600px">{{ heroDesc }}</p>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:9px;min-width:180px">
+          <a href="#" target="_blank" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:14px;font-weight:600;color:#fff;text-decoration:none;padding:11px 18px;border-radius:999px;background:linear-gradient(135deg,#3D63FF,#2445D4);box-shadow:0 0 0 1px rgba(61,99,255,.14),0 10px 30px rgba(61,99,255,.16)">공식 사이트 방문 ↗</a>
+          <button onClick="{{ toggleFav }}" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:14px;font-weight:600;cursor:pointer;padding:10px 18px;border-radius:999px;background:{{ favBg }};border:1px solid {{ favBorder }};color:{{ favColor }}">{{ favChar }} {{ favLabel }}</button>
+          <button onClick="{{ toggleCompare }}" style="display:inline-flex;align-items:center;justify-content:center;gap:7px;font-size:14px;font-weight:600;cursor:pointer;padding:10px 18px;border-radius:999px;background:transparent;border:1px solid #25314C;color:#E8EEFC">{{ cmpLabel }}</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key facts -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(168px,1fr));gap:12px;margin-top:16px">
+      <sc-for list="{{ facts }}" as="f" hint-placeholder-count="6">
+        <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:14px 15px;position:relative">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.06em">{{ f.k }}</div>
+          <div style="font-size:15px;font-weight:700;margin-top:6px;color:{{ f.color }}">{{ f.v }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- 2-col -->
+    <div style="display:flex;flex-wrap:wrap;gap:24px;margin-top:24px;align-items:flex-start">
+      <div style="flex:1 1 460px;min-width:0">
+        <!-- 개요 disclaimer -->
+        <div style="border:1px solid #25314C;border-left:3px solid #3D63FF;background:rgba(61,99,255,.14);border-radius:8px;padding:12px 15px;font-size:13px;color:#E8EEFC">ⓘ 아래 수수료·조건은 <b>개략 정보</b>입니다. 정확한 최신 조건은 <b>공식 셀러센터</b>에서 확인하세요.</div>
+
+        <!-- 수수료·정산 표 -->
+        <section style="margin-top:24px">
+          <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid #1B2334;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #38BDF8;transform:rotate(45deg);display:inline-block"></span>수수료 · 정산 (개략)</h2>
+          <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:4px 6px">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead><tr>
+                <th style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5E6C8C;text-align:left;padding:10px 14px;border-bottom:1px solid #25314C">카테고리</th>
+                <th style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5E6C8C;text-align:right;padding:10px 14px;border-bottom:1px solid #25314C">판매수수료</th>
+                <th style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5E6C8C;text-align:left;padding:10px 14px;border-bottom:1px solid #25314C">비고</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ feeRows }}" as="r" hint-placeholder-count="4">
+                  <tr style="cursor:default" style-hover="background:#161E30">
+                    <td style="padding:10px 14px;border-bottom:1px solid #1B2334;font-weight:600">{{ r.cat }}</td>
+                    <td style="padding:10px 14px;border-bottom:1px solid #1B2334;font-family:'IBM Plex Mono',monospace;text-align:right;color:#E8EEFC">{{ r.fee }}</td>
+                    <td style="padding:10px 14px;border-bottom:1px solid #1B2334;color:#97A6C8">{{ r.note }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:12px">
+            <div style="flex:1;min-width:200px;background:#111725;border:1px solid #25314C;border-radius:10px;padding:14px 15px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.06em">정산주기</div>
+              <div style="font-size:14px;font-weight:600;margin-top:6px">주정산 / 월정산 선택 · 영업일 기준</div>
+            </div>
+            <div style="flex:1;min-width:200px;background:#111725;border:1px solid #25314C;border-radius:10px;padding:14px 15px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.06em">입점 조건</div>
+              <div style="font-size:14px;font-weight:600;margin-top:6px">사업자등록 필수 · 통신판매업 신고</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 장단점 -->
+        <section style="margin-top:28px">
+          <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid #1B2334;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #22D3B8;transform:rotate(45deg);display:inline-block"></span>강점 · 유의점</h2>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:16px">
+              <div style="font-size:13px;font-weight:700;color:#2CC08A;margin-bottom:10px">＋ 강점</div>
+              <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px">
+                <sc-for list="{{ pros }}" as="x" hint-placeholder-count="3">
+                  <li style="font-size:13px;color:#E8EEFC;padding-left:15px;position:relative;line-height:1.5"><span style="position:absolute;left:0;top:7px;width:5px;height:5px;background:#2CC08A;transform:rotate(45deg)"></span>{{ x }}</li>
+                </sc-for>
+              </ul>
+            </div>
+            <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:16px">
+              <div style="font-size:13px;font-weight:700;color:#F5B544;margin-bottom:10px">△ 유의점</div>
+              <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:9px">
+                <sc-for list="{{ cons }}" as="x" hint-placeholder-count="3">
+                  <li style="font-size:13px;color:#E8EEFC;padding-left:15px;position:relative;line-height:1.5"><span style="position:absolute;left:0;top:7px;width:5px;height:5px;background:#F5B544;transform:rotate(45deg)"></span>{{ x }}</li>
+                </sc-for>
+              </ul>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <!-- Sidebar -->
+      <aside style="flex:1 1 300px;display:flex;flex-direction:column;gap:16px;position:sticky;top:80px">
+        <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:16px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;margin-bottom:12px">신뢰 · 검증</div>
+          <sc-for list="{{ trust }}" as="t" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:8px;font-size:13px;padding:7px 0;border-bottom:1px solid #1B2334">
+              <span style="flex:1;color:#97A6C8">{{ t.k }}</span>
+              <span style="font-weight:600;color:{{ t.color }}">{{ t.v }}</span>
+            </div>
+          </sc-for>
+          <div style="font-size:12px;color:#5E6C8C;margin-top:10px;line-height:1.5">데이터 출처: 공식 셀러센터 · 운영팀 직접 확인</div>
+        </div>
+
+        <div style="border:1px solid #25314C;border-left:3px solid #22D3B8;background:rgba(34,211,184,.15);border-radius:8px;padding:15px">
+          <div style="font-size:13.5px;font-weight:700;color:#E8EEFC">🏷️ 이 플랫폼 운영자이신가요?</div>
+          <div style="font-size:12.5px;color:#97A6C8;margin-top:6px;line-height:1.5">정보를 직접 관리하고 노출·클릭 성과를 확인하세요.</div>
+          <a href="#" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#22D3B8;text-decoration:none;margin-top:11px;border:1px solid #22D3B8;border-radius:999px;padding:7px 14px">소유권 클레임 →</a>
+        </div>
+      </aside>
+    </div>
+
+    <!-- 유사 플랫폼 -->
+    <section style="margin-top:44px">
+      <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0 0 16px;padding-bottom:10px;border-bottom:1px solid #1B2334;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #7C97FF;transform:rotate(45deg);display:inline-block"></span>같은 분야 · 오픈마켓·종합몰</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px">
+        <sc-for list="{{ similar }}" as="p" hint-placeholder-count="3">
+          <a href="Platform Detail.dc.html" style="text-decoration:none;color:inherit;background:#111725;border:1px solid #25314C;border-radius:10px;padding:15px;display:block;transition:border-color .2s" style-hover="border-color:#3D63FF">
+            <div style="display:flex;align-items:center;gap:11px">
+              <div style="width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex:0 0 auto;background:{{ p.grad }}">{{ p.initial }}</div>
+              <div>
+                <div style="font-size:15px;font-weight:700">{{ p.name }}</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-top:2px">{{ p.fee }}</div>
+              </div>
+            </div>
+          </a>
+        </sc-for>
+      </div>
+    </section>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1120,&quot;height&quot;:1400}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { fav: true, compare: false, platform: null, loaded: false };
+  }
+
+  // 목 API에서 플랫폼 상세 로드 (data/api.js → getPlatform)
+  async componentDidMount() {
+    const { getPlatform } = await import('./data/api.js');
+    this.setState({ platform: await getPlatform('coupang'), loaded: true });
+  }
+
+  renderVals() {
+    const fav = this.state.fav, cmp = this.state.compare;
+    const favCtrl = {
+      toggleFav: () => { if (!this.state.fav) import('./data/api.js').then(a => a.addFavorite('coupang', 'interest')); this.setState(s => ({ fav: !s.fav })); },
+      favChar: fav ? '★' : '☆',
+      favLabel: fav ? '즐겨찾기됨' : '즐겨찾기',
+      favBg: fav ? 'rgba(245,181,68,.15)' : '#161E30',
+      favBorder: fav ? '#F5B544' : '#25314C',
+      favColor: fav ? '#F5B544' : '#E8EEFC',
+      toggleCompare: () => this.setState(s => ({ compare: !s.compare })),
+      cmpLabel: cmp ? '✓ 비교함에 담김' : '＋ 비교함에 담기',
+    };
+
+    const p = this.state.platform;
+    if (!p) {
+      return { ...favCtrl, loading: true, loaded: false,
+        heroGrad: '', heroInitial: '', heroName: '', heroVerified: false, heroMatched: '', heroMeta: '', heroDesc: '',
+        facts: [], feeRows: [], pros: [], cons: [], trust: [], similar: [] };
+    }
+
+    const feeLevelLabel = { '낮음': '수수료 낮음', '중간': '수수료 중간', '높음': '수수료 높음' };
+    return {
+      ...favCtrl,
+      loading: false, loaded: true,
+      heroGrad: p.grad, heroInitial: p.initial, heroName: p.name,
+      heroVerified: p.verified, heroMatched: p.matchedDeals,
+      heroMeta: '🏬 ' + p.category + ' · ' + p.region + ' · ' + p.url,
+      heroDesc: p.desc,
+      facts: [
+        { k:'판매수수료', v:p.feeText, color:'#F5B544' },
+        { k:'정산주기',   v:p.settle, color:'#E8EEFC' },
+        { k:'입점조건',   v:p.enter, color:'#E8EEFC' },
+        { k:'지역',       v:p.region, color:'#E8EEFC' },
+        { k:'카테고리',   v:p.category, color:'#7C97FF' },
+        { k:'디렉토리 등록', v:String(p.year), color:'#E8EEFC' },
+      ],
+      feeRows: p.fees || [],
+      pros: p.pros || [],
+      cons: p.cons || [],
+      trust: [
+        { k:'검증 상태', v: p.verified ? '✓ 검증됨' : '미검증', color: p.verified ? '#38BDF8' : '#5E6C8C' },
+        { k:'최종 수정', v:p.updatedAt, color:'#E8EEFC' },
+        { k:'제휴 성사', v:p.matchedDeals + '건', color:'#2CC08A' },
+      ],
+      similar: (p.similar || []).map(s => ({ initial:s.initial, name:s.name, grad:s.grad, fee: feeLevelLabel[s.fee] || s.fee })),
+    };
+  }
+}
+</script>
+</body>
+</html>
