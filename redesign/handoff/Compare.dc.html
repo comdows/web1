@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px">
+
+  <!-- Header -->
+  <header style="position:sticky;top:0;z-index:100;background:rgba(10,14,26,.82);backdrop-filter:blur(12px);border-bottom:1px solid #1B2334">
+    <div style="max-width:1180px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <a href="Home.dc.html" style="display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit">
+        <svg width="26" height="26" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#7C97FF" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.02em">세모<b style="color:#7C97FF">플</b></div>
+      </a>
+      <nav style="display:flex;gap:20px;font-size:14px;align-items:center">
+        <a href="Search Results.dc.html" style="color:#97A6C8;text-decoration:none">분야별 플랫폼</a>
+        <a href="Compare.dc.html" style="color:#E8EEFC;font-weight:600;text-decoration:none">비교함 <span style="font-family:'IBM Plex Mono',monospace;color:#7C97FF">{{ colCount }}</span></a>
+      </nav>
+      <a href="Search Results.dc.html" style="font-size:13px;color:#97A6C8;text-decoration:none">← 검색으로</a>
+    </div>
+  </header>
+
+  <div style="max-width:1180px;margin:0 auto;padding:24px 24px 110px">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;position:relative">
+      <div>
+        <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em">플랫폼 비교</h1>
+        <div style="font-size:13px;color:#97A6C8;margin-top:5px">최대 4개까지 나란히 비교해 수수료·조건을 한눈에 확인하세요.</div>
+      </div>
+      <div style="position:relative">
+        <button onClick="{{ togglePicker }}" style="font-size:13px;font-weight:600;cursor:pointer;padding:9px 16px;border-radius:999px;background:{{ pickerBtnBg }};border:1px solid {{ pickerBtnBorder }};color:{{ pickerBtnColor }}">＋ 플랫폼 추가</button>
+        <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="position:absolute;right:0;top:44px;z-index:20;background:#111725;border:1px solid #25314C;border-radius:10px;padding:6px;width:230px;box-shadow:0 8px 24px rgba(0,0,0,.4)">
+            <sc-for list="{{ addable }}" as="a" hint-placeholder-count="4">
+              <button onClick="{{ a.onAdd }}" style="width:100%;display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;background:none;border:none;cursor:pointer;color:#E8EEFC;text-align:left" style-hover="background:#161E30">
+                <span style="width:26px;height:26px;border-radius:6px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;background:{{ a.grad }}">{{ a.initial }}</span>
+                <span style="flex:1;font-size:13px;font-weight:600">{{ a.name }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C">{{ a.cat }}</span>
+              </button>
+            </sc-for>
+            <sc-if value="{{ noneAddable }}" hint-placeholder-val="{{ false }}">
+              <div style="padding:14px;text-align:center;font-size:12px;color:#5E6C8C">추가할 플랫폼이 없습니다</div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+
+    <!-- Comparison matrix -->
+    <sc-if value="{{ loading }}" hint-placeholder-val="{{ false }}">
+      <div style="margin-top:22px;padding:60px;text-align:center;border:1px dashed #25314C;border-radius:12px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5E6C8C">데이터 불러오는 중…</div>
+    </sc-if>
+    <div style="margin-top:22px;overflow-x:auto;border:1px solid #25314C;border-radius:12px;background:#111725">
+      <!-- Column headers -->
+      <div style="display:grid;grid-template-columns:{{ gridCols }};min-width:640px;border-bottom:1px solid #25314C">
+        <div style="padding:16px 16px 14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.06em;align-self:end">비교 항목</div>
+        <sc-for list="{{ columns }}" as="c" hint-placeholder-count="3">
+          <div style="padding:16px 16px 14px;border-left:1px solid #1B2334;position:relative">
+            <button onClick="{{ c.onRemove }}" style="position:absolute;top:11px;right:11px;background:none;border:none;color:#5E6C8C;cursor:pointer;font-size:13px" style-hover="color:#F2695F">✕</button>
+            <div style="width:40px;height:40px;border-radius:9px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:17px;background:{{ c.grad }}">{{ c.initial }}</div>
+            <div style="font-size:16px;font-weight:800;margin-top:10px">{{ c.name }}</div>
+            <a href="Platform Detail.dc.html" style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#7C97FF;text-decoration:none">상세 →</a>
+          </div>
+        </sc-for>
+      </div>
+
+      <!-- Attribute rows -->
+      <sc-for list="{{ rows }}" as="r" hint-placeholder-count="8">
+        <div style="display:grid;grid-template-columns:{{ gridCols }};min-width:640px;border-bottom:1px solid #1B2334;background:{{ r.zebra }}">
+          <div style="padding:13px 16px;font-size:12.5px;color:#97A6C8;display:flex;align-items:center;gap:7px"><span style="font-size:14px">{{ r.icon }}</span>{{ r.label }}</div>
+          <sc-for list="{{ r.cells }}" as="cell" hint-placeholder-count="3">
+            <div style="padding:13px 16px;border-left:1px solid #1B2334;font-size:13.5px;font-weight:{{ cell.weight }};color:{{ cell.color }};display:flex;align-items:center;gap:7px">
+              <sc-if value="{{ cell.chip }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;background:{{ cell.chipBg }};color:{{ cell.color }}">{{ cell.text }}</span></sc-if>
+              <sc-if value="{{ cell.plain }}" hint-placeholder-val="{{ true }}"><span>{{ cell.text }}</span></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-for>
+    </div>
+
+    <div style="border:1px solid #25314C;border-left:3px solid #3D63FF;background:rgba(61,99,255,.14);border-radius:8px;padding:12px 15px;font-size:13px;color:#E8EEFC;margin-top:16px">ⓘ 수수료·정산 등은 <b>개략 정보</b>입니다. 실제 조건은 각 플랫폼 공식 셀러센터에서 확인하세요.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:820}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { selected: ['coupang','smartstore','wadiz'], pickerOpen: false, pool: null };
+  }
+
+  // 데이터 단일 소스(data/platforms.js)에서 로드 → state로 렌더
+  async componentDidMount() {
+    const { PLATFORMS } = await import('./data/api.js');
+    const pool = {};
+    PLATFORMS.forEach((p) => {
+      pool[p.id] = { id: p.id, initial: p.initial, name: p.name, cat: p.category, grad: p.grad,
+        v: { cat: p.category, region: p.region, fee: p.fee, feeText: p.feeText, settle: p.settle,
+             enter: p.enter, verified: p.verified, year: String(p.year), strength: p.strength } };
+    });
+    this.setState({ pool });
+  }
+
+  renderVals() {
+    const sel = this.state.selected;
+    const pool = this.state.pool;
+    if (!pool) return { loading:true, columns:[], rows:[], addable:[], noneAddable:true, colCount:0, gridCols:'170px', pickerOpen:false, togglePicker:()=>{}, pickerBtnBg:'#0D1220', pickerBtnBorder:'#25314C', pickerBtnColor:'#5E6C8C' };
+    const feeMeta = {
+      '낮음': { bg:'rgba(44,192,138,.16)', color:'#2CC08A' },
+      '중간': { bg:'rgba(245,181,68,.15)', color:'#F5B544' },
+      '높음': { bg:'rgba(242,105,95,.15)', color:'#F2695F' },
+    };
+    const columns = sel.map(id => {
+      const p = pool[id];
+      return { id, initial:p.initial, name:p.name, grad:p.grad,
+        onRemove: () => this.setState(s => ({ selected: s.selected.length > 2 ? s.selected.filter(x => x !== id) : s.selected })) };
+    });
+
+    const plain = (text) => ({ text, plain:true, chip:false, color:'#E8EEFC', weight:600 });
+    const rowDefs = [
+      { icon:'🗂️', label:'분야',       get:(v)=>plain(v.cat) },
+      { icon:'📍', label:'지역',        get:(v)=>plain(v.region) },
+      { icon:'💰', label:'판매수수료',   get:(v)=>({ text:v.feeText+' · '+v.fee, chip:true, plain:false, chipBg:feeMeta[v.fee].bg, color:feeMeta[v.fee].color, weight:700 }) },
+      { icon:'🗓️', label:'정산주기',    get:(v)=>plain(v.settle) },
+      { icon:'📝', label:'입점조건',     get:(v)=>plain(v.enter) },
+      { icon:'✓',  label:'검증 상태',    get:(v)=> v.verified ? { text:'검증됨', chip:true, plain:false, chipBg:'rgba(56,189,248,.14)', color:'#38BDF8', weight:700 } : { text:'미검증', plain:true, chip:false, color:'#5E6C8C', weight:600 } },
+      { icon:'🔧', label:'디렉토리 등록', get:(v)=>({ text:v.year, plain:true, chip:false, color:'#97A6C8', weight:600 }) },
+      { icon:'⭐', label:'대표 강점',    get:(v)=>({ text:v.strength, plain:true, chip:false, color:'#E8EEFC', weight:600 }) },
+    ];
+    const rows = rowDefs.map((rd, i) => ({
+      icon: rd.icon, label: rd.label,
+      zebra: i % 2 ? 'rgba(255,255,255,.012)' : 'transparent',
+      cells: sel.map(id => rd.get(pool[id].v)),
+    }));
+
+    const addable = Object.values(pool).filter(p => !sel.includes(p.id)).map(p => ({
+      initial:p.initial, name:p.name, cat:p.cat, grad:p.grad,
+      onAdd: () => this.setState(s => ({ selected: s.selected.length < 4 ? [...s.selected, p.id] : s.selected, pickerOpen: s.selected.length < 4 ? false : true })),
+    }));
+    const full = sel.length >= 4;
+
+    return {
+      loading: false,
+      colCount: sel.length,
+      columns, rows, addable,
+      noneAddable: addable.length === 0,
+      gridCols: '170px repeat(' + sel.length + ',minmax(150px,1fr))',
+      togglePicker: () => this.setState(s => ({ pickerOpen: !s.pickerOpen })),
+      pickerOpen: this.state.pickerOpen,
+      pickerBtnBg: full ? '#0D1220' : 'rgba(61,99,255,.14)',
+      pickerBtnBorder: full ? '#25314C' : '#3D63FF',
+      pickerBtnColor: full ? '#5E6C8C' : '#7C97FF',
+    };
+  }
+}
+</script>
+</body>
+</html>

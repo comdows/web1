@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px">
+
+  <header style="position:sticky;top:0;z-index:100;background:rgba(10,14,26,.82);backdrop-filter:blur(12px);border-bottom:1px solid #1B2334">
+    <div style="max-width:1120px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <a href="Home.dc.html" style="display:flex;align-items:center;gap:11px;text-decoration:none;color:inherit">
+        <svg width="26" height="26" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#7C97FF" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.02em">세모<b style="color:#7C97FF">플</b></div>
+      </a>
+      <nav style="display:flex;gap:20px;font-size:14px;align-items:center">
+        <a href="Search Results.dc.html" style="color:#97A6C8;text-decoration:none">분야별 플랫폼</a>
+        <a href="Favorites.dc.html" style="color:#E8EEFC;font-weight:600;text-decoration:none">★ 즐겨찾기</a>
+      </nav>
+      <a href="Compare.dc.html" style="font-size:13px;color:#97A6C8;text-decoration:none">비교함 →</a>
+    </div>
+  </header>
+
+  <div style="max-width:1120px;margin:0 auto;padding:24px 24px 110px">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;border-bottom:1px solid #1B2334;padding-bottom:18px">
+      <div>
+        <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em">즐겨찾기 관리</h1>
+        <div style="font-size:13px;color:#97A6C8;margin-top:5px">저장한 플랫폼을 컬렉션으로 정리하고 메모·알림을 관리하세요.</div>
+      </div>
+      <sc-if value="{{ hasSelection }}" hint-placeholder-val="{{ false }}">
+        <a href="Compare.dc.html" style="display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;color:#fff;text-decoration:none;padding:10px 18px;border-radius:999px;background:linear-gradient(135deg,#3D63FF,#2445D4)">{{ selectionCount }}개 비교하기 →</a>
+      </sc-if>
+    </div>
+
+    <!-- Collection tabs -->
+    <div style="display:flex;gap:8px;margin-top:18px;flex-wrap:wrap">
+      <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+        <button onClick="{{ t.onClick }}" style="font-size:13px;font-weight:600;cursor:pointer;padding:8px 15px;border-radius:999px;background:{{ t.bg }};border:1px solid {{ t.border }};color:{{ t.fg }}">{{ t.label }} <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;opacity:.8">{{ t.count }}</span></button>
+      </sc-for>
+    </div>
+
+    <!-- Fav list -->
+    <div style="display:flex;flex-direction:column;gap:12px;margin-top:20px">
+      <sc-for list="{{ items }}" as="f" hint-placeholder-count="4">
+        <div style="background:#111725;border:1px solid {{ f.cardBorder }};border-radius:12px;padding:16px 18px">
+          <div style="display:flex;align-items:flex-start;gap:13px">
+            <button onClick="{{ f.onSelect }}" title="비교 선택" style="width:22px;height:22px;border-radius:6px;flex:0 0 auto;margin-top:8px;cursor:pointer;border:1.5px solid {{ f.checkBorder }};background:{{ f.checkFill }};color:#fff;font-size:13px;display:flex;align-items:center;justify-content:center">{{ f.checkMark }}</button>
+            <div style="width:44px;height:44px;border-radius:10px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:18px;background:{{ f.grad }}">{{ f.initial }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+                <a href="Platform Detail.dc.html" style="font-size:16px;font-weight:700;color:#E8EEFC;text-decoration:none">{{ f.name }}</a>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C">{{ f.cat }}</span>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:{{ f.feeBg }};color:{{ f.feeColor }}">수수료 {{ f.fee }}</span>
+              </div>
+              <!-- memo -->
+              <textarea value="{{ f.memo }}" onInput="{{ f.onMemo }}" rows="2" placeholder="메모 추가 (예: 입점 조건, 담당자, 검토 포인트)" style="width:100%;margin-top:10px;background:#0D1220;border:1px solid #1B2334;border-radius:8px;padding:9px 12px;color:#E8EEFC;font-family:inherit;font-size:13px;outline:none;resize:vertical;line-height:1.5" style-focus="border-color:#3D63FF"></textarea>
+              <!-- controls -->
+              <div style="display:flex;align-items:center;gap:14px;margin-top:11px;flex-wrap:wrap">
+                <div style="display:flex;gap:6px;align-items:center">
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase">컬렉션</span>
+                  <sc-for list="{{ f.collectionOpts }}" as="c" hint-placeholder-count="3">
+                    <button onClick="{{ c.onClick }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;padding:4px 10px;border-radius:999px;background:{{ c.bg }};border:1px solid {{ c.border }};color:{{ c.fg }}">{{ c.label }}</button>
+                  </sc-for>
+                </div>
+                <button onClick="{{ f.onAlert }}" style="display:inline-flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;background:none;border:none;color:{{ f.alertColor }}">{{ f.alertIcon }} 수수료·조건 변경 알림</button>
+                <button onClick="{{ f.onRemove }}" style="margin-left:auto;font-size:12px;cursor:pointer;background:none;border:none;color:#5E6C8C" style-hover="color:#F2695F">✕ 제거</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- Empty -->
+    <sc-if value="{{ isEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;padding:64px 20px;border:1px dashed #25314C;border-radius:12px;margin-top:20px">
+        <div style="font-size:32px">★</div>
+        <div style="font-size:16px;font-weight:700;margin-top:12px">이 컬렉션이 비어 있어요</div>
+        <div style="font-size:13px;color:#97A6C8;margin-top:6px">플랫폼 카드의 별을 눌러 저장하면 여기 모입니다.</div>
+        <a href="Search Results.dc.html" style="display:inline-block;margin-top:16px;font-size:13px;font-weight:600;text-decoration:none;padding:9px 18px;border-radius:999px;background:linear-gradient(135deg,#3D63FF,#2445D4);color:#fff">플랫폼 둘러보기</a>
+      </div>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1120,&quot;height&quot;:900}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      tab: 'all',
+      selected: {},
+      items: [],
+      loaded: false,
+    };
+  }
+
+  // 목 API에서 즐겨찾기 로드 (data/api.js → listFavorites)
+  async componentDidMount() {
+    const { listFavorites } = await import('./data/api.js');
+    this.setState({ items: await listFavorites(), loaded: true });
+  }
+  _upd(id, patch) { this.setState(s => ({ items: s.items.map(x => x.id===id ? {...x, ...patch} : x) })); }
+  // 낙관적 업데이트 후 목 API 호출 (data/api.js)
+  async _mut(name, ...args) { const a = await import('./data/api.js'); return a[name](...args); }
+
+  renderVals() {
+    const st = this.state;
+    const collDefs = [['interest','관심'],['review','검토중'],['plan','입점예정']];
+    const collMap = { interest:'관심', review:'검토중', plan:'입점예정' };
+    const feeMeta = { '낮음':{bg:'rgba(44,192,138,.16)',color:'#2CC08A'}, '중간':{bg:'rgba(245,181,68,.15)',color:'#F5B544'}, '높음':{bg:'rgba(242,105,95,.15)',color:'#F2695F'} };
+
+    const countAll = st.items.length;
+    const countColl = (c) => st.items.filter(i => i.collection === c).length;
+    const tabDefs = [['all','전체',countAll],['interest','관심',countColl('interest')],['review','검토중',countColl('review')],['plan','입점예정',countColl('plan')]];
+    const tabs = tabDefs.map(([k,label,count]) => {
+      const on = st.tab === k;
+      return { label, count, onClick: () => this.setState({ tab:k }),
+        bg: on ? 'rgba(61,99,255,.14)' : '#161E30', border: on ? '#3D63FF' : '#25314C', fg: on ? '#7C97FF' : '#97A6C8' };
+    });
+
+    const visible = st.tab === 'all' ? st.items : st.items.filter(i => i.collection === st.tab);
+    const items = visible.map(f => {
+      const sel = !!st.selected[f.id];
+      return {
+        ...f,
+        feeBg: feeMeta[f.fee].bg, feeColor: feeMeta[f.fee].color,
+        cardBorder: sel ? '#3D63FF' : '#25314C',
+        checkBorder: sel ? '#3D63FF' : '#25314C', checkFill: sel ? '#3D63FF' : 'transparent', checkMark: sel ? '✓' : '',
+        onSelect: () => this.setState(s => ({ selected: { ...s.selected, [f.id]: !s.selected[f.id] } })),
+        onMemo: (e) => { this._upd(f.id, { memo: e.target.value }); this._mut('updateFavorite', f.favId, { memo: e.target.value }); },
+        onRemove: () => { this._mut('removeFavorite', f.favId); this.setState(s => ({ items: s.items.filter(x => x.id !== f.id) })); },
+        onAlert: () => { this._upd(f.id, { alert: !f.alert }); this._mut('updateFavorite', f.favId, { alert: !f.alert }); },
+        alertIcon: f.alert ? '🔔' : '🔕',
+        alertColor: f.alert ? '#F5B544' : '#5E6C8C',
+        collectionOpts: collDefs.map(([ck,clabel]) => {
+          const on = f.collection === ck;
+          return { label: clabel, onClick: () => { this._upd(f.id, { collection: ck }); this._mut('updateFavorite', f.favId, { collection: ck }); },
+            bg: on ? 'rgba(124,151,255,.14)' : '#0D1220', border: on ? '#7C97FF' : '#25314C', fg: on ? '#7C97FF' : '#97A6C8' };
+        }),
+      };
+    });
+
+    const selCount = Object.values(st.selected).filter(Boolean).length;
+    return {
+      tabs, items,
+      isEmpty: st.loaded && items.length === 0,
+      hasSelection: selCount >= 2,
+      selectionCount: selCount,
+    };
+  }
+}
+</script>
+</body>
+</html>

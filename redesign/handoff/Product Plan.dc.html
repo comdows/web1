@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px">
+  <div style="max-width:1180px;margin:0 auto;padding:44px 28px 120px">
+
+    <!-- Title -->
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;border-bottom:1px solid #1B2334;padding-bottom:22px">
+      <div>
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#7C97FF;margin-bottom:10px">Product Plan · UX Audit</div>
+        <div style="font-size:32px;font-weight:800;letter-spacing:-.02em;line-height:1.12">세모플 홈 시안 <b style="color:#7C97FF">3-관점 감사</b></div>
+        <div style="color:#97A6C8;font-size:14px;margin-top:8px;max-width:640px">실사용자 · 관리자 · 플랫폼 운영자 세 입장에서 현재 홈 시안을 점검하고, 리뷰 포드가 보완 지점과 우선순위를 도출했습니다.</div>
+      </div>
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;text-align:right;border:1px solid #25314C;border-radius:8px;padding:11px 14px;background:#111725;line-height:1.7">
+        <div style="color:#97A6C8">AUDIT SCOPE</div>
+        <div>Home.dc.html · v0.9</div>
+        <div style="color:#5E6C8C">13 components synced</div>
+      </div>
+    </div>
+
+    <!-- Review pod -->
+    <section style="margin-top:32px">
+      <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0 0 16px;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #38BDF8;transform:rotate(45deg);display:inline-block"></span>리뷰 포드 · 크로스펑셔널 4</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px">
+        <sc-for list="{{ pod }}" as="m" hint-placeholder-count="4">
+          <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:14px 15px;display:flex;gap:12px;align-items:flex-start">
+            <div style="width:36px;height:36px;border-radius:8px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;font-family:'IBM Plex Mono',monospace;font-weight:700;font-size:12px;color:{{ m.color }};background:{{ m.tint }};border:1px solid {{ m.color }}">{{ m.tag }}</div>
+            <div>
+              <div style="font-size:14px;font-weight:700">{{ m.name }}</div>
+              <div style="font-size:12px;color:#97A6C8;margin-top:3px;line-height:1.45">{{ m.focus }}</div>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- Personas -->
+    <section style="margin-top:40px">
+      <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0 0 16px;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #7C97FF;transform:rotate(45deg);display:inline-block"></span>3 관점 · 목표 → 커버리지 → 갭 → 제안 화면</h2>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-items:start">
+        <sc-for list="{{ personas }}" as="p" hint-placeholder-count="3">
+          <div style="background:#111725;border:1px solid #25314C;border-top:3px solid {{ p.color }};border-radius:10px;padding:18px;position:relative">
+            <div style="position:absolute;top:12px;right:12px;width:9px;height:9px;border-top:1px solid rgba(124,151,255,.28);border-right:1px solid rgba(124,151,255,.28)"></div>
+            <div style="display:flex;align-items:center;gap:9px">
+              <span style="font-size:22px">{{ p.icon }}</span>
+              <div>
+                <div style="font-size:16px;font-weight:800">{{ p.name }}</div>
+                <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.06em">{{ p.role }}</div>
+              </div>
+            </div>
+            <div style="font-size:13px;color:#E8EEFC;margin-top:12px;padding:10px 12px;background:#0D1220;border-radius:8px;border:1px solid #1B2334;line-height:1.5">🎯 {{ p.goal }}</div>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px">현재 커버리지</div>
+            <div style="display:flex;flex-direction:column;gap:6px">
+              <sc-for list="{{ p.coverage }}" as="c" hint-placeholder-count="5">
+                <div style="display:flex;align-items:center;gap:8px;font-size:12.5px">
+                  <span style="flex:1;color:#97A6C8">{{ c.label }}</span>
+                  <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:{{ c.bg }};color:{{ c.fg }}">{{ c.text }}</span>
+                </div>
+              </sc-for>
+            </div>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px">핵심 갭</div>
+            <ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:7px">
+              <sc-for list="{{ p.gaps }}" as="g" hint-placeholder-count="4">
+                <li style="font-size:12.5px;color:#E8EEFC;padding-left:15px;position:relative;line-height:1.5"><span style="position:absolute;left:0;top:7px;width:5px;height:5px;background:#F2695F;transform:rotate(45deg)"></span>{{ g }}</li>
+              </sc-for>
+            </ul>
+
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;margin:16px 0 8px">제안 화면</div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap">
+              <sc-for list="{{ p.screens }}" as="s" hint-placeholder-count="4">
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:{{ p.color }};background:{{ p.tint }};border:1px solid {{ p.color }};padding:3px 9px;border-radius:6px">{{ s }}</span>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- Maturity matrix -->
+    <section style="margin-top:40px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px">
+        <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #22D3B8;transform:rotate(45deg);display:inline-block"></span>기능 성숙도 매트릭스</h2>
+        <div style="display:flex;gap:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#97A6C8">
+          <span style="color:#22D3B8">● 있음</span><span style="color:#F5B544">◐ 부분</span><span style="color:#5E6C8C">○ 없음</span>
+        </div>
+      </div>
+      <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:4px 6px">
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+          <thead><tr>
+            <th style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5E6C8C;text-align:left;padding:11px 14px;border-bottom:1px solid #25314C">기능 영역</th>
+            <th style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#7C97FF;text-align:center;padding:11px 14px;border-bottom:1px solid #25314C">실사용자</th>
+            <th style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#F5B544;text-align:center;padding:11px 14px;border-bottom:1px solid #25314C">관리자</th>
+            <th style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#22D3B8;text-align:center;padding:11px 14px;border-bottom:1px solid #25314C">운영자</th>
+          </tr></thead>
+          <tbody>
+            <sc-for list="{{ matrix }}" as="row" hint-placeholder-count="8">
+              <tr>
+                <td style="padding:11px 14px;border-bottom:1px solid #1B2334;font-weight:600">{{ row.cap }}</td>
+                <td style="padding:11px 14px;border-bottom:1px solid #1B2334;text-align:center;font-size:16px;color:{{ row.u.color }}">{{ row.u.dot }}</td>
+                <td style="padding:11px 14px;border-bottom:1px solid #1B2334;text-align:center;font-size:16px;color:{{ row.a.color }}">{{ row.a.dot }}</td>
+                <td style="padding:11px 14px;border-bottom:1px solid #1B2334;text-align:center;font-size:16px;color:{{ row.o.color }}">{{ row.o.dot }}</td>
+              </tr>
+            </sc-for>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Roadmap -->
+    <section style="margin-top:40px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;gap:14px;flex-wrap:wrap">
+        <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #3D63FF;transform:rotate(45deg);display:inline-block"></span>보완 로드맵 · 우선순위</h2>
+        <div style="display:flex;gap:7px">
+          <sc-for list="{{ filters }}" as="f" hint-placeholder-count="4">
+            <button onClick="{{ f.onClick }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;padding:5px 11px;border-radius:999px;background:{{ f.bg }};border:1px solid {{ f.border }};color:{{ f.fg }}">{{ f.label }}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-items:start">
+        <sc-for list="{{ roadmap }}" as="col" hint-placeholder-count="3">
+          <div>
+            <div style="display:flex;align-items:center;gap:9px;margin-bottom:12px">
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:800;color:{{ col.color }}">{{ col.tier }}</span>
+              <span style="font-size:12px;color:#97A6C8">{{ col.label }}</span>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:10px">
+              <sc-for list="{{ col.items }}" as="it" hint-placeholder-count="4">
+                <div style="background:#111725;border:1px solid #25314C;border-left:3px solid {{ col.color }};border-radius:8px;padding:13px 14px;opacity:{{ it.opacity }};transition:opacity .2s">
+                  <div style="font-size:14px;font-weight:700">{{ it.title }}</div>
+                  <div style="font-size:12px;color:#97A6C8;margin-top:5px;line-height:1.5">{{ it.note }}</div>
+                  <div style="display:flex;gap:5px;margin-top:9px;flex-wrap:wrap">
+                    <sc-for list="{{ it.tags }}" as="t" hint-placeholder-count="2">
+                      <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:{{ t.tint }};color:{{ t.color }}">{{ t.label }}</span>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- Verdict -->
+    <section style="margin-top:40px">
+      <div style="border:1px solid #25314C;border-left:3px solid #3D63FF;background:rgba(61,99,255,.14);border-radius:8px;padding:16px 18px;font-size:14px;color:#E8EEFC;line-height:1.6">
+        <b>종합 진단.</b> 현재 홈 시안은 <b>'탐색·브라우즈 셸'</b>로서는 완성도가 높습니다 — 검색·분야·카드·디렉토리 구조가 명확합니다. 그러나 세 관점 모두 <b>결정을 내리는 층(상세·비교), 운영하는 층(검수·CRUD), 노출을 관리하는 층(클레임·성과)</b>이 비어 있습니다. 아래 P0 4개를 먼저 채우면 "구경하는 보드"에서 "행동하는 제품"으로 전환됩니다.
+      </div>
+    </section>
+
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:1600}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { filter: null }; // null = 전체, 'user' | 'admin' | 'operator'
+  }
+
+  _ptag(key) {
+    const map = {
+      user:     { label: '사용자', color: '#7C97FF', tint: 'rgba(124,151,255,.14)' },
+      admin:    { label: '관리자', color: '#F5B544', tint: 'rgba(245,181,68,.15)' },
+      operator: { label: '운영자', color: '#22D3B8', tint: 'rgba(34,211,184,.15)' },
+      all:      { label: '전체',   color: '#97A6C8', tint: '#1B2540' },
+    };
+    return map[key];
+  }
+  _cov(text) {
+    const m = {
+      '있음': { text:'있음', fg:'#22D3B8', bg:'rgba(34,211,184,.15)' },
+      '부분': { text:'부분', fg:'#F5B544', bg:'rgba(245,181,68,.15)' },
+      '없음': { text:'없음', fg:'#5E6C8C', bg:'#1B2540' },
+      '해당없음': { text:'해당없음', fg:'#5E6C8C', bg:'#1B2540' },
+    };
+    return m[text];
+  }
+  _dot(s) {
+    const m = { yes:{dot:'●',color:'#22D3B8'}, part:{dot:'◐',color:'#F5B544'}, no:{dot:'○',color:'#5E6C8C'} };
+    return m[s];
+  }
+
+  renderVals() {
+    const pod = [
+      { tag:'PM',  name:'제품 전략',     focus:'전환·수익모델·우선순위 판단',        color:'#7C97FF', tint:'rgba(124,151,255,.14)' },
+      { tag:'UX',  name:'플로우·정보구조', focus:'탐색 → 비교 → 결정 여정 설계',       color:'#38BDF8', tint:'rgba(56,189,248,.14)' },
+      { tag:'TR',  name:'신뢰·콘텐츠',    focus:'데이터 정합성·검증·리뷰 신호',        color:'#22D3B8', tint:'rgba(34,211,184,.15)' },
+      { tag:'OPS', name:'운영·어드민',    focus:'검수·라이프사이클·권한/감사',         color:'#F5B544', tint:'rgba(245,181,68,.15)' },
+    ];
+
+    const mk = (arr) => arr.map(([label, s]) => ({ label, ...this._cov(s) }));
+
+    const personas = [
+      {
+        icon:'🔍', name:'실사용자', role:'셀러 · 예비 입점자', color:'#7C97FF', tint:'rgba(124,151,255,.14)',
+        goal:'내 상품·서비스를 어디서 팔지 빠르게 찾아 비교하고 결정한다.',
+        coverage: mk([['검색 진입','부분'],['분야 탐색·아코디언','있음'],['플랫폼 카드','있음'],['즐겨찾기','부분'],['상세·비교','없음'],['필터·정렬','없음']]),
+        gaps: [
+          '플랫폼 상세(수수료·정산주기·입점조건·공식링크)가 없어 카드에서 결정으로 이어지지 못함',
+          '2~3개 플랫폼 나란히 비교하는 뷰 부재 — 핵심 결정 도구 누락',
+          '검색결과 페이지·필터(수수료·지역·정산)·빈결과 상태 없음',
+          '신뢰 신호(리뷰·평점·최종 수정일·검증 배지) 노출 약함',
+          '모바일 반응형 레이아웃 없음(현재 데스크톱 2단 고정)',
+        ],
+        screens:['플랫폼 상세','비교 뷰','검색결과+필터','즐겨찾기 관리','온보딩 추천'],
+      },
+      {
+        icon:'🛠️', name:'관리자', role:'운영 · 큐레이션 팀', color:'#F5B544', tint:'rgba(245,181,68,.15)',
+        goal:'제보를 검수하고 1,559개 데이터의 정합성·최신성을 유지한다.',
+        coverage: mk([['로컬 열람 모드','있음'],['제보 접수','부분'],['검수 큐','없음'],['플랫폼 CRUD','없음'],['통계·대시보드','없음'],['권한·감사','없음']]),
+        gaps: [
+          '제보 검수 큐와 승인/반려·배지 부여 워크플로우가 통째로 없음',
+          '플랫폼·분야 편집(CRUD), 다중 카테고리·수수료 스키마 관리 UI 부재',
+          '중복 탐지·죽은 링크·노후 항목 등 데이터 품질 점검 없음',
+          '제보량·인기 검색어·즐겨찾기 상위 등 운영 대시보드 없음',
+          'stage2 정식 오픈 게이팅이 코드 플래그로만 존재, 관리 UI 없음',
+        ],
+        screens:['어드민 대시보드','제보 검수 큐','플랫폼 편집기','데이터 품질 리포트','권한·감사'],
+      },
+      {
+        icon:'🏷️', name:'플랫폼 운영자', role:'리스팅사 담당자', color:'#22D3B8', tint:'rgba(34,211,184,.15)',
+        goal:'자사 플랫폼을 정확·매력적으로 노출하고 입점 리드를 얻는다.',
+        coverage: mk([['디렉토리 노출','있음'],['프로필 편집','없음'],['소유권 클레임','없음'],['성과 지표','없음'],['프로모션(NEW·성사)','부분'],['제휴 매칭','없음']]),
+        gaps: [
+          '"이 플랫폼 운영자이신가요?" 소유권 클레임/인증 플로우 없음',
+          '셀프서비스 프로필 편집(설명·혜택·CTA·로고) 부재',
+          '노출·클릭·즐겨찾기 성과 대시보드 없음',
+          '입점 이벤트·프로모션 게시, 라이프사이클(준비중→검증→성사) 관리 없음',
+          '제휴 매칭(B2B)·검증 배지 신청·유료 부스트 등 수익/성장 레버 미구현',
+        ],
+        screens:['운영자 클레임','프로필 편집기','성과 대시보드','프로모션 게시','제휴 매칭'],
+      },
+    ];
+
+    const matrix = [
+      ['탐색 & 검색',                'part','no','no'],
+      ['상세 & 비교 결정',           'no','no','no'],
+      ['개인화 & 저장(즐겨찾기)',     'part','no','no'],
+      ['신뢰 & 검증(리뷰·배지·최신성)','no','part','no'],
+      ['콘텐츠 관리(CRUD·검수)',      'no','no','no'],
+      ['성과 & 분석',                'no','no','no'],
+      ['라이프사이클(준비중→성사)',   'part','no','part'],
+      ['수익화(부스트·제휴)',         'no','no','no'],
+    ].map(([cap,u,a,o]) => ({ cap, u:this._dot(u), a:this._dot(a), o:this._dot(o) }));
+
+    const tag = (k) => ({ ...this._ptag(k) });
+    const filter = this.state.filter;
+    const dim = (tags) => (filter && !tags.includes(filter)) ? 0.28 : 1;
+    const enrichItem = (it) => ({ ...it, opacity: dim(it.keys), tags: it.keys.map(k => tag(k)) });
+
+    const roadmap = [
+      { tier:'P0', label:'결정을 막는 병목', color:'#F2695F', items:[
+        { title:'플랫폼 상세 페이지', note:'수수료·정산주기·입점조건·공식링크·검증 배지. 카드 → 결정 연결.', keys:['user','operator'] },
+        { title:'검색결과 + 필터·정렬', note:'수수료·지역·정산·카테고리 필터, 빈결과·로딩 상태.', keys:['user'] },
+        { title:'어드민 제보 검수 큐', note:'승인/반려·배지 부여·중복 병합 워크플로우.', keys:['admin'] },
+        { title:'운영자 클레임 + 프로필 편집', note:'소유권 인증 후 셀프서비스 정보 갱신.', keys:['operator'] },
+      ]},
+      { tier:'P1', label:'경험 심화', color:'#F5B544', items:[
+        { title:'비교 뷰 (2~3개)', note:'수수료·조건 나란히 비교하는 결정 도구.', keys:['user'] },
+        { title:'즐겨찾기 관리·메모', note:'저장 목록, 태그·메모, 알림.', keys:['user'] },
+        { title:'반응형·모바일', note:'단일 컬럼·바텀시트 검색·터치 타깃 44px.', keys:['user','admin','operator'] },
+        { title:'라이프사이클 상태머신', note:'준비중 → 검증 → 성사 전이 UI·감사.', keys:['admin','operator'] },
+        { title:'어드민 대시보드·데이터 품질', note:'제보량·인기검색·죽은링크·노후 항목.', keys:['admin'] },
+      ]},
+      { tier:'P2', label:'성장 · 수익', color:'#22D3B8', items:[
+        { title:'제휴 매칭 (B2B)', note:'준비중 nav 항목의 정식화 — 운영자 간 매칭.', keys:['operator'] },
+        { title:'부스트·검증 배지 신청', note:'유료 노출·검증 신청 — 수익 모델.', keys:['operator','admin'] },
+        { title:'개인화 추천·온보딩', note:'"무엇을 파나요?" → 맞춤 분야 추천.', keys:['user'] },
+        { title:'공개 통계·인기 검색', note:'트렌드·신규 스포트라이트로 재방문 유도.', keys:['user','operator'] },
+      ]},
+    ].map(col => ({ ...col, items: col.items.map(enrichItem) }));
+
+    const fkeys = [['all','전체'],['user','사용자'],['admin','관리자'],['operator','운영자']];
+    const filters = fkeys.map(([k,label]) => {
+      const active = (k === 'all' && !filter) || filter === k;
+      const t = this._ptag(k);
+      return {
+        label,
+        onClick: () => this.setState({ filter: k === 'all' ? null : k }),
+        bg: active ? t.tint : '#161E30',
+        border: active ? t.color : '#25314C',
+        fg: active ? t.color : '#97A6C8',
+      };
+    });
+
+    return { pod, personas, matrix, roadmap, filters };
+  }
+}
+</script>
+</body>
+</html>

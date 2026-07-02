@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+<style>
+  @keyframes dsUp { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:none; } }
+  .ds-scroll::-webkit-scrollbar{width:8px;height:8px}
+  .ds-scroll::-webkit-scrollbar-thumb{background:#25314C;border-radius:8px}
+</style>
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;position:relative">
+
+  <sc-if value="{{ showGrid }}" hint-placeholder-val="{{ true }}">
+    <div style="position:absolute;inset:0;pointer-events:none;z-index:0;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px"></div>
+  </sc-if>
+
+  <!-- ── Header / Nav ── -->
+  <header style="position:sticky;top:0;z-index:100;background:rgba(10,14,26,.82);backdrop-filter:blur(12px);border-bottom:1px solid #1B2334">
+    <div style="max-width:1180px;margin:0 auto;padding:12px 24px;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px 20px">
+      <div style="display:flex;align-items:center;gap:11px">
+        <svg width="26" height="26" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#7C97FF" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+        <div style="font-size:20px;font-weight:800;letter-spacing:-.02em">세모<b style="color:#7C97FF">플</b></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:9px;letter-spacing:.1em;color:#5E6C8C;text-transform:uppercase;border-left:1px solid #25314C;padding-left:11px;margin-left:3px">Blueprint<br>Infra</span>
+      </div>
+      <nav style="display:flex;flex-wrap:wrap;gap:14px 22px;align-items:center;font-size:14px">
+        <a href="Search Results.dc.html" style="color:#E8EEFC;font-weight:600;text-decoration:none;cursor:pointer">분야별 플랫폼</a>
+        <a href="Onboarding.dc.html" style="color:#97A6C8;text-decoration:none;cursor:pointer">✨ 맞춤 추천</a>
+        <a style="color:#97A6C8;text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px">🤝 제휴 매칭<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#F5B544">준비중</span></a>
+        <a style="color:#97A6C8;text-decoration:none;cursor:pointer;display:inline-flex;align-items:center;gap:4px">🏦 거래소<span style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#F5B544">준비중</span></a>
+      </nav>
+      <div style="display:flex;gap:10px;align-items:center">
+        <a href="Favorites.dc.html" style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#E8EEFC;text-decoration:none;padding:8px 13px;border:1px solid #25314C;border-radius:999px;cursor:pointer" style-hover="background:#161E30">★ 즐겨찾기 <span style="font-family:'IBM Plex Mono',monospace;color:#7C97FF">{{ favCount }}</span></a>
+        <a style="display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:#fff;text-decoration:none;padding:9px 15px;border-radius:999px;cursor:pointer;background:linear-gradient(135deg,#3D63FF,#2445D4);box-shadow:0 0 0 1px rgba(61,99,255,.14),0 10px 30px rgba(61,99,255,.16)">플랫폼 제보 →</a>
+      </div>
+    </div>
+  </header>
+
+  <div style="max-width:1180px;margin:0 auto;padding:0 24px 110px;position:relative;z-index:1">
+
+    <!-- ── Hero ── -->
+    <section style="padding:64px 0 40px;text-align:center">
+      <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:#7C97FF;margin-bottom:18px">세상의 모든 판매·거래 채널을 한곳에서</div>
+      <h1 style="font-size:52px;font-weight:800;letter-spacing:-.03em;line-height:1.08;margin:0 0 16px">세상의 모든 플랫폼,<br><span style="color:#7C97FF">세모플</span>에서 찾다</h1>
+      <p style="font-size:16px;color:#97A6C8;max-width:560px;margin:0 auto 30px">오픈마켓부터 크라우드펀딩·수출·B2B까지 — <b style="color:#E8EEFC">1,559개</b> 판매·거래 플랫폼을 분야별로 정리한 디렉토리.</p>
+
+      <div style="display:flex;align-items:center;gap:10px;background:#111725;border:1px solid #25314C;border-radius:12px;padding:15px 18px;max-width:600px;margin:0 auto" style-focus-within="border-color:#3D63FF;box-shadow:0 0 0 3px rgba(61,99,255,.40)">
+        <span style="color:#5E6C8C;font-size:18px">⌕</span>
+        <input placeholder="플랫폼·분야 검색 (예: 쿠팡, 크라우드펀딩, 수출)" style="flex:1;background:none;border:none;outline:none;color:#E8EEFC;font-family:inherit;font-size:16px">
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;border:1px solid #25314C;border-radius:6px;padding:3px 7px">↵</span>
+      </div>
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:16px">
+        <sc-for list="{{ chips }}" as="chip" hint-placeholder-count="6">
+          <a href="Search Results.dc.html" style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#97A6C8;background:#161E30;border:1px solid #25314C;padding:5px 11px;border-radius:999px;cursor:pointer;text-decoration:none" style-hover="border-color:#3D63FF;color:#E8EEFC">{{ chip }}</a>
+        </sc-for>
+      </div>
+
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:12px;max-width:600px;margin:34px auto 0">
+        <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+          <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:15px 14px;position:relative;overflow:hidden">
+            <div style="position:absolute;top:9px;right:9px;width:7px;height:7px;border-top:1px solid rgba(124,151,255,.28);border-right:1px solid rgba(124,151,255,.28)"></div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:24px;font-weight:700;letter-spacing:-.02em;color:{{ s.color }}">{{ s.n }}</div>
+            <div style="font-size:12px;color:#97A6C8;margin-top:2px">{{ s.l }}</div>
+          </div>
+        </sc-for>
+      </div>
+    </section>
+
+    <sc-if value="{{ showDisclaimer }}" hint-placeholder-val="{{ true }}">
+      <div style="border:1px solid #25314C;border-left:3px solid #3D63FF;background:rgba(61,99,255,.14);border-radius:8px;padding:12px 15px;font-size:13.5px;color:#E8EEFC;margin-bottom:8px">ⓘ 각 설명은 <b>개략 소개</b>입니다. 수수료·조건 등 상세는 각 <b>공식 사이트</b>에서 확인하세요.</div>
+    </sc-if>
+
+    <!-- ── 대분류 Group cards ── -->
+    <section style="margin-top:44px">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid #1B2334">
+        <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #38BDF8;transform:rotate(45deg);display:inline-block"></span>대분류 · 5 GROUPS</h2>
+        <a href="Search Results.dc.html" style="font-size:13px;color:#7C97FF;text-decoration:none;cursor:pointer">전체 분야 보기 →</a>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px">
+        <sc-for list="{{ groups }}" as="g" hint-placeholder-count="5">
+          <a href="Search Results.dc.html" style="text-decoration:none;color:inherit;display:block;background:#111725;border:1px solid #25314C;border-radius:10px;padding:16px;cursor:pointer;transition:border-color .2s,transform .2s" style-hover="border-color:#3D63FF;transform:translateY(-2px)">
+            <div style="font-size:22px">{{ g.icon }}</div>
+            <h4 style="margin:8px 0 4px;font-size:16px;font-weight:700">{{ g.name }}</h4>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C">{{ g.meta }}</div>
+            <div style="font-size:12px;color:#97A6C8;margin-top:8px;line-height:1.5">{{ g.cats }}</div>
+          </a>
+        </sc-for>
+      </div>
+    </section>
+
+    <!-- ── 2-col: platforms + directory / accordion sidebar ── -->
+    <div style="display:flex;flex-wrap:wrap;gap:24px;margin-top:44px;align-items:flex-start">
+
+      <div style="flex:1 1 460px;min-width:0">
+        <!-- Platform cards -->
+        <section>
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:18px;padding-bottom:10px;border-bottom:1px solid #1B2334">
+            <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #22D3B8;transform:rotate(45deg);display:inline-block"></span>신규·추천 플랫폼</h2>
+            <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C">98 신규</span>
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px">
+            <sc-for list="{{ platforms }}" as="p" hint-placeholder-count="6">
+              <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:15px;position:relative;transition:border-color .2s" style-hover="border-color:#3D63FF">
+                <div style="display:flex;align-items:flex-start;gap:11px">
+                  <div style="width:38px;height:38px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:16px;flex:0 0 auto;background:{{ p.grad }}">{{ p.initial }}</div>
+                  <div style="flex:1;min-width:0">
+                    <h4 style="margin:0;font-size:15px;font-weight:700;display:flex;align-items:center;gap:6px"><a href="Platform Detail.dc.html" style="color:inherit;text-decoration:none">{{ p.name }}</a>
+                      <sc-if value="{{ p.isNew }}" hint-placeholder-val="{{ true }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;letter-spacing:.04em;padding:2px 7px;border-radius:6px;background:rgba(34,211,184,.15);color:#22D3B8">NEW</span></sc-if>
+                    </h4>
+                    <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-top:2px">{{ p.cat }}</div>
+                  </div>
+                  <button onClick="{{ p.onStar }}" title="즐겨찾기" style="margin-left:auto;cursor:pointer;font-size:16px;background:none;border:none;color:{{ p.starColor }};flex:0 0 auto;padding:0">{{ p.starChar }}</button>
+                </div>
+                <p style="margin:11px 0 0;font-size:13px;color:#97A6C8;line-height:1.5">{{ p.desc }}</p>
+              </div>
+            </sc-for>
+          </div>
+        </section>
+
+        <!-- Directory table -->
+        <sc-if value="{{ showDirectory }}" hint-placeholder-val="{{ true }}">
+        <section style="margin-top:36px">
+          <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #1B2334">
+            <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #38BDF8;transform:rotate(45deg);display:inline-block"></span>최근 등록 디렉토리</h2>
+            <a href="Search Results.dc.html" style="font-size:13px;color:#7C97FF;text-decoration:none;cursor:pointer">전체 표 보기 →</a>
+          </div>
+          <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:6px 4px;overflow-x:auto" class="ds-scroll">
+            <table style="width:100%;border-collapse:collapse;font-size:13px">
+              <thead><tr>
+                <th style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5E6C8C;text-align:left;padding:9px 14px;border-bottom:1px solid #25314C">플랫폼</th>
+                <th style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5E6C8C;text-align:left;padding:9px 14px;border-bottom:1px solid #25314C">분야</th>
+                <th style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5E6C8C;text-align:left;padding:9px 14px;border-bottom:1px solid #25314C">지역</th>
+                <th style="font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#5E6C8C;text-align:right;padding:9px 14px;border-bottom:1px solid #25314C">등록</th>
+              </tr></thead>
+              <tbody>
+                <sc-for list="{{ tableRows }}" as="r" hint-placeholder-count="5">
+                  <tr style="cursor:pointer" style-hover="background:#161E30">
+                    <td style="padding:10px 14px;border-bottom:1px solid #1B2334"><span style="font-weight:600">{{ r.name }}</span> <sc-if value="{{ r.isNew }}" hint-placeholder-val="{{ true }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:1px 6px;border-radius:5px;background:rgba(34,211,184,.15);color:#22D3B8">NEW</span></sc-if></td>
+                    <td style="padding:10px 14px;border-bottom:1px solid #1B2334;color:#97A6C8">{{ r.cat }}</td>
+                    <td style="padding:10px 14px;border-bottom:1px solid #1B2334;color:#97A6C8">{{ r.region }}</td>
+                    <td style="padding:10px 14px;border-bottom:1px solid #1B2334;font-family:'IBM Plex Mono',monospace;text-align:right;color:#97A6C8">{{ r.year }}</td>
+                  </tr>
+                </sc-for>
+              </tbody>
+            </table>
+          </div>
+        </section>
+        </sc-if>
+      </div>
+
+      <!-- Sidebar: 분야 아코디언 -->
+      <aside style="flex:1 1 300px;position:sticky;top:80px">
+        <div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #1B2334">
+          <h2 style="font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#5E6C8C;margin:0;display:flex;gap:10px;align-items:center"><span style="width:8px;height:8px;border:1.5px solid #7C97FF;transform:rotate(45deg);display:inline-block"></span>분야 탐색</h2>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <sc-for list="{{ acc }}" as="a" hint-placeholder-count="5">
+            <div style="border:1px solid #25314C;border-radius:10px;overflow:hidden">
+              <div onClick="{{ a.onToggle }}" style="display:flex;align-items:center;gap:10px;padding:12px 14px;background:#111725;cursor:pointer">
+                <span style="font-size:15px">{{ a.icon }}</span>
+                <span style="font-weight:600;font-size:14px">{{ a.name }}</span>
+                <span style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#5E6C8C">{{ a.count }}</span>
+                <span style="color:#5E6C8C;transition:transform .2s;transform:{{ a.chev }}">▸</span>
+              </div>
+              <sc-if value="{{ a.open }}" hint-placeholder-val="{{ true }}">
+                <div style="padding:12px 14px;border-top:1px solid #1B2334;display:flex;gap:8px;flex-wrap:wrap;background:#0D1220">
+                  <sc-for list="{{ a.items }}" as="it" hint-placeholder-count="4">
+                    <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;background:#1B2540;color:#97A6C8">{{ it }}</span>
+                  </sc-for>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="border:1px solid #25314C;border-left:3px solid #22D3B8;background:rgba(34,211,184,.15);border-radius:8px;padding:12px 14px;font-size:12.5px;color:#E8EEFC;margin-top:16px;line-height:1.5">🔒 <b>관리자 로컬 열람 모드</b> — 이 보드는 내 PC(localhost)에서만 보입니다. 정식 오픈은 <code style="font-family:'IBM Plex Mono',monospace;font-size:11px;background:#1B2540;padding:1px 5px;border-radius:4px">config.stage2=true</code>.</div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer style="border-top:1px solid #1B2334;position:relative;z-index:1">
+    <div style="max-width:1180px;margin:0 auto;padding:26px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div style="display:flex;align-items:center;gap:10px">
+        <svg width="20" height="20" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#5E6C8C" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C">세모플 · 세상의 모든 플랫폼 · Blueprint Infra</span>
+      </div>
+      <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C">1,559 platforms · 35 categories · v0.9 preview</span>
+    </div>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1180,&quot;height&quot;:1400},&quot;showGrid&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;레이아웃&quot;},&quot;showDisclaimer&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;레이아웃&quot;},&quot;showDirectory&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;,&quot;section&quot;:&quot;레이아웃&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this._acc = [
+      { icon:'🏬', name:'오픈마켓·종합몰', count:42, items:['쿠팡','스마트스토어','11번가','G마켓','옥션','…'] },
+      { icon:'🎯', name:'크라우드펀딩',   count:18, items:['와디즈','텀블벅','오마이컴퍼니','…'] },
+      { icon:'👗', name:'패션·편집샵',    count:24, items:['무신사','29CM','에이블리','지그재그','…'] },
+      { icon:'🚢', name:'수출입·무역',    count:15, items:['알리바바','EC21','고비즈코리아','…'] },
+      { icon:'🧑‍💻', name:'프리랜서·전문가', count:31, items:['크몽','숨고','위시켓','탤런트뱅크','…'] },
+    ];
+    this.state = { favs: { coupang: true, smartstore: true }, accOpen: { 0: true }, pool: [], statsRaw: null, groups: [], loaded: false };
+  }
+
+  // 목 API에서 플랫폼·스탯·대분류 로드 (data/api.js)
+  async componentDidMount() {
+    const api = await import('./data/api.js');
+    const [pool, statsRaw, groups] = await Promise.all([api.fetchPlatforms(), api.getStats(), api.getGroups()]);
+    this.setState({ pool, statsRaw, groups, loaded: true });
+  }
+
+  renderVals() {
+    const favs = this.state.favs;
+    const catIcon = { '오픈마켓·종합몰':'🏬', '크라우드펀딩':'🎯', '패션·편집샵':'👗', '수출입·도매':'🚢', '사무·MRO·B2B':'🖇️', '프리랜서·전문가':'🧑‍💻' };
+    const featured = ['coupang','ium','wadiz','smartstore','musinsa','alibaba'];
+    const byId = {};
+    this.state.pool.forEach(p => { byId[p.id] = p; });
+    const platforms = featured.filter(id => byId[id]).map(id => {
+      const p = byId[id];
+      return {
+        id, initial: p.initial, grad: p.grad, name: p.name, isNew: p.isNew,
+        cat: (catIcon[p.category] || '') + ' ' + p.category, desc: p.desc,
+        starOn: !!favs[id],
+        starChar: favs[id] ? '★' : '☆',
+        starColor: favs[id] ? '#F5B544' : '#5E6C8C',
+        onStar: () => { if (!favs[id]) import('./data/api.js').then(a => a.addFavorite(id, 'interest')); this.setState(s => ({ favs: { ...s.favs, [id]: !s.favs[id] } })); },
+      };
+    });
+    const favCount = platforms.filter(p => p.starOn).length + 1;
+
+    const acc = this._acc.map((a, i) => ({
+      ...a,
+      open: !!this.state.accOpen[i],
+      chev: this.state.accOpen[i] ? 'rotate(90deg)' : 'rotate(0deg)',
+      onToggle: () => this.setState(s => ({ accOpen: { ...s.accOpen, [i]: !s.accOpen[i] } })),
+    }));
+
+    return {
+      platforms, favCount, acc,
+      showGrid: this.props.showGrid ?? true,
+      showDisclaimer: this.props.showDisclaimer ?? true,
+      showDirectory: this.props.showDirectory ?? true,
+      chips: ['오픈마켓','크라우드펀딩','수출·무역','프리랜서','물류·풀필먼트','패션·편집샵'],
+      stats: this.state.statsRaw ? [
+        { n: this.state.statsRaw.platforms.toLocaleString('en-US'), l:'플랫폼', color:'#7C97FF' },
+        { n: String(this.state.statsRaw.categories), l:'분야', color:'#E8EEFC' },
+        { n: String(this.state.statsRaw.newThisMonth), l:'신규', color:'#22D3B8' },
+        { n: String(this.state.statsRaw.commerce), l:'커머스', color:'#38BDF8' },
+      ] : [],
+      groups: this.state.groups,
+      tableRows: [
+        { name:'쿠팡',       isNew:false, cat:'오픈마켓·종합몰', region:'국내', year:'2024' },
+        { name:'이음(I:UM)', isNew:true,  cat:'사무·MRO·B2B',   region:'국내', year:'2026' },
+        { name:'무신사',     isNew:false, cat:'패션·편집샵',     region:'국내', year:'2022' },
+        { name:'와디즈',     isNew:false, cat:'크라우드펀딩',     region:'국내', year:'2023' },
+        { name:'알리바바',   isNew:false, cat:'수출입·도매',     region:'해외', year:'2021' },
+      ],
+    };
+  }
+}
+</script>
+</body>
+</html>

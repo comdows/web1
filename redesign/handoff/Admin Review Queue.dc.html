@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/ibm-plex-mono@5.0.8/index.min.css">
+</helmet>
+
+<div style="min-height:100vh;background:#0A0E1A;color:#E8EEFC;font-family:'Pretendard Variable',Pretendard,-apple-system,system-ui,sans-serif;line-height:1.55;-webkit-font-smoothing:antialiased;background-image:linear-gradient(rgba(124,151,255,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(124,151,255,.05) 1px,transparent 1px);background-size:8px 8px">
+
+  <!-- Admin header -->
+  <header style="position:sticky;top:0;z-index:100;background:rgba(10,14,26,.9);backdrop-filter:blur(12px);border-bottom:1px solid #1B2334">
+    <div style="max-width:1240px;margin:0 auto;padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:16px">
+      <div style="display:flex;align-items:center;gap:11px">
+        <svg width="24" height="24" viewBox="0 0 48 48"><path d="M24 7 L41 37 H7 Z" stroke="#7C97FF" stroke-width="3" fill="none" stroke-linejoin="round"></path></svg>
+        <div style="font-size:18px;font-weight:800;letter-spacing:-.02em">세모<b style="color:#7C97FF">플</b></div>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;letter-spacing:.1em;color:#F5B544;border:1px solid rgba(245,181,68,.4);background:rgba(245,181,68,.1);padding:3px 8px;border-radius:6px;text-transform:uppercase">Admin · 로컬 열람</span>
+      </div>
+      <nav style="display:flex;gap:18px;font-size:13px;align-items:center">
+        <a style="color:#97A6C8;text-decoration:none;cursor:pointer">대시보드</a>
+        <a href="Admin Review Queue.dc.html" style="color:#E8EEFC;font-weight:600;text-decoration:none;cursor:pointer">제보 검수</a>
+        <a href="Lifecycle.dc.html" style="color:#97A6C8;text-decoration:none;cursor:pointer">라이프사이클</a>
+        <a style="color:#97A6C8;text-decoration:none;cursor:pointer">데이터 품질</a>
+      </nav>
+      <div style="display:flex;align-items:center;gap:8px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:#97A6C8"><span style="width:26px;height:26px;border-radius:999px;background:linear-gradient(135deg,#3D63FF,#2445D4);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:11px">운</span>ops@semopl</div>
+    </div>
+  </header>
+
+  <div style="max-width:1240px;margin:0 auto;padding:24px 24px 90px">
+
+    <div style="display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap">
+      <div>
+        <h1 style="margin:0;font-size:26px;font-weight:800;letter-spacing:-.02em">제보 검수 큐</h1>
+        <div style="font-size:13px;color:#97A6C8;margin-top:5px">사용자 제보를 검토하고 승인·반려·보류합니다. 승인 시 디렉토리에 게시됩니다.</div>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:18px">
+      <sc-for list="{{ stats }}" as="s" hint-placeholder-count="4">
+        <div style="background:#111725;border:1px solid #25314C;border-radius:10px;padding:15px 16px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:9px;right:9px;width:7px;height:7px;border-top:1px solid rgba(124,151,255,.28);border-right:1px solid rgba(124,151,255,.28)"></div>
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:26px;font-weight:700;letter-spacing:-.02em;color:{{ s.color }}">{{ s.n }}</div>
+          <div style="font-size:12px;color:#97A6C8;margin-top:2px">{{ s.l }}</div>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- Master-detail -->
+    <div style="display:flex;flex-wrap:wrap;gap:20px;margin-top:24px;align-items:flex-start">
+
+      <!-- Queue list -->
+      <div style="flex:1 1 340px;min-width:0;background:#111725;border:1px solid #25314C;border-radius:12px;overflow:hidden">
+        <div style="display:flex;gap:4px;padding:12px 12px 0;flex-wrap:wrap">
+          <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+            <button onClick="{{ t.onClick }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;padding:6px 11px;border-radius:8px 8px 0 0;background:{{ t.bg }};border:1px solid {{ t.border }};border-bottom:none;color:{{ t.fg }}">{{ t.label }} {{ t.count }}</button>
+          </sc-for>
+        </div>
+        <div style="border-top:1px solid #25314C;max-height:640px;overflow-y:auto">
+          <sc-for list="{{ queue }}" as="q" hint-placeholder-count="5">
+            <div onClick="{{ q.onSelect }}" style="padding:14px 16px;border-bottom:1px solid #1B2334;cursor:pointer;background:{{ q.rowBg }};border-left:3px solid {{ q.accent }}">
+              <div style="display:flex;align-items:center;gap:9px">
+                <div style="width:32px;height:32px;border-radius:7px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px;background:{{ q.grad }}">{{ q.initial }}</div>
+                <div style="flex:1;min-width:0">
+                  <div style="font-size:14px;font-weight:700;display:flex;align-items:center;gap:6px">{{ q.name }}
+                    <sc-if value="{{ q.dupSuspect }}" hint-placeholder-val="{{ true }}"><span style="font-family:'IBM Plex Mono',monospace;font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;background:rgba(242,105,95,.15);color:#F2695F">중복?</span></sc-if>
+                  </div>
+                  <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-top:1px">{{ q.cat }}</div>
+                </div>
+                <span style="font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:{{ q.statusBg }};color:{{ q.statusColor }}">{{ q.statusLabel }}</span>
+              </div>
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;margin-top:8px;display:flex;justify-content:space-between">
+                <span>{{ q.submitter }}</span><span>{{ q.date }}</span>
+              </div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ queueEmpty }}" hint-placeholder-val="{{ false }}">
+            <div style="padding:44px 20px;text-align:center;color:#5E6C8C;font-size:13px">이 탭에 항목이 없습니다 ✓</div>
+          </sc-if>
+        </div>
+      </div>
+
+      <!-- Detail panel -->
+      <div style="flex:2 1 460px;min-width:0;background:#111725;border:1px solid #25314C;border-radius:12px;padding:22px;position:relative">
+        <div style="position:absolute;top:10px;left:10px;width:10px;height:10px;border-top:1px solid rgba(124,151,255,.28);border-left:1px solid rgba(124,151,255,.28)"></div>
+        <div style="position:absolute;bottom:10px;right:10px;width:10px;height:10px;border-bottom:1px solid rgba(124,151,255,.28);border-right:1px solid rgba(124,151,255,.28)"></div>
+
+        <div style="display:flex;align-items:flex-start;gap:14px">
+          <div style="width:48px;height:48px;border-radius:11px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:20px;background:{{ sel.grad }}">{{ sel.initial }}</div>
+          <div style="flex:1">
+            <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap">
+              <h2 style="margin:0;font-size:21px;font-weight:800">{{ sel.name }}</h2>
+              <span style="font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px;background:{{ sel.statusBg }};color:{{ sel.statusColor }}">{{ sel.statusLabel }}</span>
+            </div>
+            <div style="font-family:'IBM Plex Mono',monospace;font-size:12px;color:#97A6C8;margin-top:5px">{{ sel.cat }} · {{ sel.region }} · {{ sel.url }}</div>
+          </div>
+        </div>
+
+        <!-- Duplicate warn -->
+        <sc-if value="{{ sel.dupSuspect }}" hint-placeholder-val="{{ false }}">
+          <div style="border:1px solid rgba(242,105,95,.4);border-left:3px solid #F2695F;background:rgba(242,105,95,.12);border-radius:8px;padding:11px 14px;font-size:13px;color:#E8EEFC;margin-top:16px">⚠ <b>중복 의심</b> — 기존 항목 <b>{{ sel.dupName }}</b> 과 유사. 병합 또는 반려를 검토하세요. <a href="#" style="color:#F2695F;text-decoration:none">비교 →</a></div>
+        </sc-if>
+
+        <!-- Submitted fields -->
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;margin:20px 0 10px">제보된 정보</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <sc-for list="{{ sel.fields }}" as="f" hint-placeholder-count="4">
+            <div style="background:#0D1220;border:1px solid #1B2334;border-radius:8px;padding:11px 13px">
+              <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase">{{ f.k }}</div>
+              <div style="font-size:13.5px;font-weight:600;margin-top:4px">{{ f.v }}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="background:#0D1220;border:1px solid #1B2334;border-radius:8px;padding:12px 14px;margin-top:10px">
+          <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase">제보 설명</div>
+          <div style="font-size:13.5px;margin-top:5px;line-height:1.55;color:#E8EEFC">{{ sel.desc }}</div>
+        </div>
+
+        <!-- Curation controls -->
+        <div style="font-family:'IBM Plex Mono',monospace;font-size:10px;color:#5E6C8C;text-transform:uppercase;letter-spacing:.08em;margin:22px 0 10px">큐레이션 · 게시 설정</div>
+        <div style="display:flex;gap:20px;flex-wrap:wrap">
+          <div>
+            <div style="font-size:12px;color:#97A6C8;margin-bottom:8px">라이프사이클 상태</div>
+            <div style="display:flex;gap:6px">
+              <sc-for list="{{ lifecycle }}" as="l" hint-placeholder-count="3">
+                <button onClick="{{ l.onClick }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;padding:6px 12px;border-radius:999px;background:{{ l.bg }};border:1px solid {{ l.border }};color:{{ l.fg }}">{{ l.label }}</button>
+              </sc-for>
+            </div>
+          </div>
+          <div>
+            <div style="font-size:12px;color:#97A6C8;margin-bottom:8px">검증 배지</div>
+            <button onClick="{{ toggleBadge }}" style="font-family:'IBM Plex Mono',monospace;font-size:11px;cursor:pointer;padding:6px 14px;border-radius:999px;background:{{ badgeBg }};border:1px solid {{ badgeBorder }};color:{{ badgeColor }}">{{ badgeLabel }}</button>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div style="display:flex;gap:10px;margin-top:24px;padding-top:18px;border-top:1px solid #1B2334;flex-wrap:wrap">
+          <button onClick="{{ approve }}" style="display:inline-flex;align-items:center;gap:7px;font-size:14px;font-weight:600;cursor:pointer;padding:11px 20px;border-radius:999px;background:linear-gradient(135deg,#2CC08A,#1F8A5B);border:none;color:#fff;box-shadow:0 8px 24px rgba(44,192,138,.24)">✓ 승인 · 게시</button>
+          <button onClick="{{ hold }}" style="font-size:14px;font-weight:600;cursor:pointer;padding:11px 18px;border-radius:999px;background:rgba(245,181,68,.15);border:1px solid #F5B544;color:#F5B544">⏸ 보류</button>
+          <button onClick="{{ reject }}" style="font-size:14px;font-weight:600;cursor:pointer;padding:11px 18px;border-radius:999px;background:transparent;border:1px solid #25314C;color:#F2695F" style-hover="background:rgba(242,105,95,.12)">✕ 반려</button>
+          <div style="margin-left:auto;font-family:'IBM Plex Mono',monospace;font-size:11px;color:#5E6C8C;align-self:center">최근 처리: {{ lastAction }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1240,&quot;height&quot;:1100}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      subs: [],
+      loaded: false,
+      selectedId: 'ohouse',
+      filter: 'pending',
+      lastAction: '—',
+    };
+  }
+
+  // 목 API에서 제보 큐 로드 (data/api.js → getSubmissions)
+  async componentDidMount() {
+    const { getSubmissions } = await import('./data/api.js');
+    const subs = (await getSubmissions()).map(s => ({ ...s, lifecycle: 'review', badge: false }));
+    this.setState({ subs, loaded: true });
+  }
+
+  _set(id, patch) {
+    this.setState(s => ({ subs: s.subs.map(x => x.id === id ? { ...x, ...patch } : x) }));
+  }
+  async _decide(status, verb) {
+    const id = this.state.selectedId;
+    const sub = this.state.subs.find(x => x.id === id);
+    this._set(id, { status });
+    this.setState({ lastAction: (sub ? sub.name : '') + ' ' + verb });
+    // 목 API에 검수 결과 반영 (낙관적)
+    const action = { approved:'approve', hold:'hold', rejected:'reject' }[status];
+    const a = await import('./data/api.js');
+    a.updateSubmission(id, { action });
+  }
+
+  renderVals() {
+    const st = this.state;
+    const subs = st.subs;
+    if (!st.loaded) return { loading:true, stats:[{n:0,l:'검수 대기',color:'#7C97FF'},{n:0,l:'승인·게시',color:'#2CC08A'},{n:0,l:'보류',color:'#F5B544'},{n:0,l:'중복 의심',color:'#F2695F'}], tabs:[], queue:[], queueEmpty:false, sel:{ initial:'', name:'', cat:'', grad:'', statusLabel:'', statusBg:'#0D1220', statusColor:'#5E6C8C', dupSuspect:false, fields:[] }, lifecycle:[], toggleBadge:()=>{}, badgeLabel:'', badgeBg:'#0D1220', badgeBorder:'#25314C', badgeColor:'#97A6C8', approve:()=>{}, hold:()=>{}, reject:()=>{}, lastAction:'—' };
+    const statusMeta = {
+      pending:  { label:'대기',   bg:'rgba(124,151,255,.14)', color:'#7C97FF', accent:'#3D63FF' },
+      hold:     { label:'보류',   bg:'rgba(245,181,68,.15)',  color:'#F5B544', accent:'#F5B544' },
+      approved: { label:'승인',   bg:'rgba(44,192,138,.16)',  color:'#2CC08A', accent:'#2CC08A' },
+      rejected: { label:'반려',   bg:'rgba(242,105,95,.15)',  color:'#F2695F', accent:'#F2695F' },
+    };
+    const count = (f) => f === 'all' ? subs.length : subs.filter(s => s.status === f).length;
+
+    const tabDefs = [['pending','대기중'],['hold','보류'],['approved','승인'],['rejected','반려'],['all','전체']];
+    const tabs = tabDefs.map(([k,label]) => {
+      const on = st.filter === k;
+      return { label, count: count(k), onClick: () => this.setState({ filter:k }),
+        bg: on ? '#111725' : '#0D1220', border: on ? '#25314C' : '#1B2334', fg: on ? '#E8EEFC' : '#5E6C8C' };
+    });
+
+    const visible = st.filter === 'all' ? subs : subs.filter(s => s.status === st.filter);
+    const queue = visible.map(q => {
+      const m = statusMeta[q.status];
+      const isSel = q.id === st.selectedId;
+      return { ...q,
+        onSelect: () => this.setState({ selectedId: q.id }),
+        rowBg: isSel ? '#1B2540' : 'transparent',
+        accent: isSel ? m.accent : 'transparent',
+        statusLabel: m.label, statusBg: m.bg, statusColor: m.color };
+    });
+
+    let sel = subs.find(s => s.id === st.selectedId) || subs[0];
+    // if selected filtered out, keep showing it anyway
+    const selM = statusMeta[sel.status];
+
+    const lcDefs = [['review','검토중'],['soon','준비중'],['verified','검증됨']];
+    const lifecycle = lcDefs.map(([k,label]) => {
+      const on = sel.lifecycle === k;
+      return { label, onClick: () => this._set(sel.id, { lifecycle:k }),
+        bg: on ? 'rgba(61,99,255,.14)' : '#0D1220', border: on ? '#3D63FF' : '#25314C', fg: on ? '#7C97FF' : '#97A6C8' };
+    });
+
+    return {
+      stats: [
+        { n: count('pending'), l:'검수 대기', color:'#7C97FF' },
+        { n: count('approved'), l:'승인·게시', color:'#2CC08A' },
+        { n: count('hold'), l:'보류', color:'#F5B544' },
+        { n: subs.filter(s => s.dupSuspect && s.status==='pending').length, l:'중복 의심', color:'#F2695F' },
+      ],
+      tabs, queue,
+      queueEmpty: queue.length === 0,
+      sel: {
+        ...sel,
+        statusLabel: selM.label, statusBg: selM.bg, statusColor: selM.color,
+        fields: [
+          { k:'분야', v: sel.cat },
+          { k:'지역', v: sel.region },
+          { k:'수수료대(제보)', v: sel.fee },
+          { k:'제보자', v: sel.submitter },
+        ],
+      },
+      lifecycle,
+      toggleBadge: () => this._set(sel.id, { badge: !sel.badge }),
+      badgeLabel: sel.badge ? '✓ 검증 배지 부여됨' : '＋ 검증 배지 부여',
+      badgeBg: sel.badge ? 'rgba(56,189,248,.14)' : '#0D1220',
+      badgeBorder: sel.badge ? '#38BDF8' : '#25314C',
+      badgeColor: sel.badge ? '#38BDF8' : '#97A6C8',
+      approve: () => this._decide('approved', '승인·게시됨'),
+      hold: () => this._decide('hold', '보류됨'),
+      reject: () => this._decide('rejected', '반려됨'),
+      lastAction: st.lastAction,
+    };
+  }
+}
+</script>
+</body>
+</html>
