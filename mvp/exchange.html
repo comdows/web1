@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>플랫폼 거래소 — 플랫폼올</title>
+<meta name="description" content="플랫폼을 사고팔거나 엑시트하려는 수요를 익명 리스팅으로 연결하는 게시판.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site"><div class="container">
+  <div class="logo">플랫폼<b>올</b></div>
+  <nav class="top">
+    <a href="index.html">분야별 플랫폼</a>
+    <a href="partners.html">🤝 제휴 매칭<span class="soon" id="soon-badge2"></span></a>
+    <a href="exchange.html">🏦 거래소<span class="soon" id="soon-badge"></span></a>
+  </nav>
+</div></header>
+
+<main class="container">
+  <section class="hero" style="padding-bottom:16px">
+    <h1>🏦 플랫폼 거래소</h1>
+    <p>운영하던 플랫폼을 <b>매각·엑시트</b>하려는 분과, 동종 플랫폼을 <b>인수·투자</b>하려는 분을
+       익명 리스팅으로 연결합니다.</p>
+  </section>
+
+  <div class="banner">
+    ⚖️ <b>법적 고지</b> — 플랫폼올 거래소는 <b>익명 매물 정보의 게시와 당사자 연결만</b> 제공합니다.
+    M&amp;A 중개·자문·가치평가·실사를 수행하지 않으며, 계약·실사·정산은 당사자와 전문 자문사(로펌·회계법인 등)를 통해 직접 진행해야 합니다.
+    게시 정보의 사실 여부는 등록자 책임이며, 실명·식별정보는 상호 동의 후 당사자 간에만 공유됩니다.
+  </div>
+
+  <!-- 준비 중(티저) 모드 -->
+  <section id="teaser" style="display:none">
+    <div class="empty" style="text-align:left">
+      <h2 style="margin-top:0">🚧 오픈 준비 중입니다</h2>
+      <p class="muted">거래소는 매물·인수 수요가 일정 수 모이면 오픈합니다. 사전등록 시 오픈 알림과 첫 매물 리스트를 먼저 받습니다.</p>
+      <p class="muted">이렇게 운영됩니다: ① 매물은 익명 코드명으로만 게시(분야·규모밴드·희망형태) ② 인수 희망자가 관심 등록 ③ 양측 의사 확인 후 소개 ④ 이후 협상·실사·계약은 당사자 직접</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+        <a class="btn primary" target="_blank" rel="noopener"
+           href="https://github.com/comdows/web1/issues/new?title=%5B%EA%B1%B0%EB%9E%98%EC%86%8C%20%EC%82%AC%EC%A0%84%EB%93%B1%EB%A1%9D%5D&body=%EA%B5%AC%EB%B6%84%3A%20(%EB%A7%A4%EA%B0%81%20%ED%9D%AC%EB%A7%9D%20%2F%20%EC%9D%B8%EC%88%98%C2%B7%ED%88%AC%EC%9E%90%20%ED%9D%AC%EB%A7%9D)%0A%EB%B6%84%EC%95%BC%3A%0A%EA%B7%9C%EB%AA%A8(%EC%97%B0%EB%A7%A4%EC%B6%9C%20%EB%B0%B4%EB%93%9C)%3A%0A%EC%97%B0%EB%9D%BD%EC%B2%98%3A">✋ 사전등록하기</a>
+        <a class="btn ghost" href="index.html">← 디렉토리로</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 활성화 모드: 매물 보드 -->
+  <section id="board" style="display:none">
+    <div class="toolbar2">
+      <span class="muted" id="deal-count"></span>
+      <a class="btn primary" style="margin-left:auto" target="_blank" rel="noopener"
+         href="https://github.com/comdows/web1/issues/new?title=%5B%EB%A7%A4%EB%AC%BC%20%EB%93%B1%EB%A1%9D%20%EB%AC%B8%EC%9D%98%5D&body=%EB%B6%84%EC%95%BC%3A%0A%EC%A7%80%EC%97%AD%3A%0A%EC%97%B0%EB%A7%A4%EC%B6%9C%20%EB%B0%B4%EB%93%9C%3A%0A%ED%9D%AC%EB%A7%9D%20%ED%98%95%ED%83%9C(%EC%A7%80%EB%B6%84%EB%A7%A4%EA%B0%81%2F%EC%9E%90%EC%82%B0%EC%96%91%EC%88%98%EB%8F%84%20%EB%93%B1)%3A%0A%EC%9D%B5%EB%AA%85%20%EC%9A%94%EC%95%BD(1~2%EC%A4%84)%3A%0A%EC%97%B0%EB%9D%BD%EC%B2%98%3A">➕ 매물 등록 문의</a>
+    </div>
+    <div class="plist" id="dlist"></div>
+    <p class="sub" style="margin-top:16px">절차: 관심 등록 → 플랫폼올이 양측 의사 확인 후 소개 → 이후 <b>협상·실사·계약은 당사자와 전문 자문사가 직접</b> 진행합니다.</p>
+  </section>
+</main>
+
+<footer class="site"><div class="container">
+  플랫폼올 (가칭) · 거래소는 정보 게시·연결 서비스이며 M&amp;A 중개·자문·실사를 수행하지 않습니다.
+</div></footer>
+
+<script src="data/config.js"></script>
+<script src="data/listings.js"></script>
+<script src="data/platforms.js"></script>
+<script src="assets/app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const preview = new URLSearchParams(location.search).get("preview") === "1";
+  const on = (window.SITE_FLAGS && SITE_FLAGS.stage3) || preview;
+  document.getElementById(on ? "board" : "teaser").style.display = "";
+  document.getElementById("soon-badge").textContent = (window.SITE_FLAGS && SITE_FLAGS.stage3) ? "" : " 준비중";
+  document.getElementById("soon-badge2").textContent = (window.SITE_FLAGS && SITE_FLAGS.stage2) ? "" : " 준비중";
+  if (!on) { window.__track("stage3_teaser_view", {}); return; }
+
+  const catName = (id) => { const c = App.categoryById(id); return c ? c.icon + " " + c.name : id; };
+  const deals = LISTINGS.deals || [];
+  document.getElementById("deal-count").textContent = `매물 ${deals.length}건 (익명 리스팅)`;
+  document.getElementById("dlist").innerHTML = deals.map(d => `
+    <div class="pcard">
+      <div class="row">
+        <h3>${App.esc(d.id)} <span class="muted" style="font-weight:400;font-size:13px">· ${catName(d.category)}</span></h3>
+        <span class="badge ${d.status === "open" ? "good" : d.status === "진행중" ? "warn" : "muted-badge"}">${d.status === "open" ? "모집 중" : App.esc(d.status)}</span>
+      </div>
+      <p class="blurb">${App.esc(d.summary)}</p>
+      <div class="chips">
+        <span class="chip">${App.esc(d.region)}</span>
+        <span class="chip">${App.esc(d.revenue)}</span>
+        <span class="chip">${App.esc(d.mode)}</span>
+        ${d.demo ? '<span class="badge muted-badge">데모 예시</span>' : ""}
+      </div>
+      <div class="actions" style="margin-top:8px">
+        ${d.status === "open" ? `<a class="btn ghost" target="_blank" rel="noopener"
+          href="https://github.com/comdows/web1/issues/new?title=%5B%EC%9D%B8%EC%88%98%20%EA%B4%80%EC%8B%AC%5D%20${encodeURIComponent(d.id)}&body=%EA%B4%80%EC%8B%AC%20%EB%A7%A4%EB%AC%BC%3A%20${encodeURIComponent(d.id)}%0A%EC%9D%B8%EC%88%98%20%EC%A3%BC%EC%B2%B4(%EA%B0%9C%EC%9D%B8%2F%EB%B2%95%EC%9D%B8)%3A%0A%EA%B0%84%EB%8B%A8%ED%95%9C%20%EC%86%8C%EA%B0%9C%3A%0A%EC%97%B0%EB%9D%BD%EC%B2%98%3A"
+          onclick="__track('stage3_interest',{id:'${d.id}'})">이 매물에 관심 등록</a>` : ""}
+      </div>
+    </div>`).join("");
+  window.__track("stage3_board_view", { preview });
+});
+</script>
+</body>
+</html>

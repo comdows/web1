@@ -12,6 +12,8 @@
   <div class="logo">플랫폼<b>올</b></div>
   <nav class="top">
     <a href="index.html">분야별 플랫폼</a>
+    <a href="partners.html">🤝 제휴 매칭<span class="soon" data-soon="stage2"></span></a>
+    <a href="exchange.html">🏦 거래소<span class="soon" data-soon="stage3"></span></a>
     <a href="#" id="nav-fav">⭐ 즐겨찾기 (<span id="fav-count">0</span>)</a>
   </nav>
 </div></header>
@@ -72,12 +74,18 @@
 
 <div class="toast" id="toast"></div>
 
+<script src="data/config.js"></script>
 <script src="data/platforms.js"></script>
 <script src="assets/app.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const $ = (id) => document.getElementById(id);
   const params = new URLSearchParams(location.search);
+
+  // 2·3단계 준비중 배지 (config.js 플래그)
+  document.querySelectorAll("[data-soon]").forEach(s => {
+    if (!(window.SITE_FLAGS && SITE_FLAGS[s.dataset.soon])) s.textContent = " 준비중";
+  });
 
   // ── 단일 상태 (URL 파라미터로 초기화) ──
   const state = {

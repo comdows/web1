@@ -111,6 +111,9 @@ input.search{flex:1; min-width:200px; padding:10px 14px; background:var(--surfac
 
 /* ═══ 리디자인 v2 ═══ */
 
+/* 2·3단계 준비중 배지 */
+.soon{color:var(--muted); font-size:10px; vertical-align:super}
+
 /* Hero stat tiles — label + value (값은 비례숫자·세미볼드, 색은 텍스트 토큰) */
 .stats{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:22px 0 6px; max-width:560px}
 .stat{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px}

@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>제휴 매칭 — 플랫폼올</title>
+<meta name="description" content="플랫폼끼리 회원 상호송출·교차 프로모션·공동 이벤트 파트너를 찾는 제휴 매칭 보드.">
+<link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+<header class="site"><div class="container">
+  <div class="logo">플랫폼<b>올</b></div>
+  <nav class="top">
+    <a href="index.html">분야별 플랫폼</a>
+    <a href="partners.html">🤝 제휴 매칭<span class="soon" id="soon-badge"></span></a>
+    <a href="exchange.html">🏦 거래소<span class="soon" id="soon-badge3"></span></a>
+  </nav>
+</div></header>
+
+<main class="container">
+  <section class="hero" style="padding-bottom:16px">
+    <h1>🤝 플랫폼 제휴 매칭</h1>
+    <p>혼자 광고비 태우지 말고, <b>타깃이 겹치는 다른 플랫폼과 회원을 교환</b>하세요.
+       상호송출·교차 프로모션·공동 이벤트 파트너를 찾아드립니다.</p>
+  </section>
+
+  <div class="banner">
+    ⚖️ <b>자금 미보유 원칙</b> — 플랫폼올은 파트너 <b>발견과 소개(매칭)</b>만 제공합니다.
+    정산·결제·회원정보 이관은 양사가 직접 계약하고 직접 처리하며, 플랫폼올은 결제망·정산금에 일절 접근하지 않습니다.
+  </div>
+
+  <!-- 준비 중(티저) 모드 -->
+  <section id="teaser" style="display:none">
+    <div class="empty" style="text-align:left">
+      <h2 style="margin-top:0">🚧 오픈 준비 중입니다</h2>
+      <p class="muted">제휴 매칭 보드는 참여 희망 플랫폼이 일정 수 모이면 오픈합니다. 지금 사전등록하시면 오픈 시 가장 먼저 매칭 제안을 받습니다.</p>
+      <p class="muted">이런 걸 하게 됩니다: ① 우리 플랫폼과 타깃이 겹치는 파트너 후보 제안 ② 회원 상호송출·교차쿠폰·공동 이벤트 중개 ③ 성사 시 조건 협의 자리 연결</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+        <a class="btn primary" target="_blank" rel="noopener" id="prereg"
+           href="https://github.com/comdows/web1/issues/new?title=%5B%EC%A0%9C%ED%9C%B4%20%EC%82%AC%EC%A0%84%EB%93%B1%EB%A1%9D%5D&body=%ED%94%8C%EB%9E%AB%ED%8F%BC%20%EC%9D%B4%EB%A6%84%3A%0A%EB%B6%84%EC%95%BC%3A%0A%EC%9B%90%ED%95%98%EB%8A%94%20%EC%A0%9C%ED%9C%B4%20%EC%9C%A0%ED%98%95%3A%20(%EC%83%81%ED%98%B8%EC%86%A1%EC%B6%9C%2F%EA%B5%90%EC%B0%A8%ED%94%84%EB%A1%9C%EB%AA%A8%EC%85%98%2F%EA%B3%B5%EB%8F%99%EC%9D%B4%EB%B2%A4%ED%8A%B8)%0A%EC%97%B0%EB%9D%BD%EC%B2%98%3A">✋ 사전등록하기</a>
+        <a class="btn ghost" href="index.html">← 디렉토리로</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 활성화 모드: 매칭 보드 -->
+  <section id="board" style="display:none">
+    <div class="toolbar2">
+      <span class="fchip" data-f="" aria-pressed="true">전체</span>
+      <span class="fchip" data-f="회원 상호송출" aria-pressed="false">회원 상호송출</span>
+      <span class="fchip" data-f="교차 프로모션" aria-pressed="false">교차 프로모션</span>
+      <span class="fchip" data-f="공동 이벤트" aria-pressed="false">공동 이벤트</span>
+      <a class="btn primary" style="margin-left:auto" target="_blank" rel="noopener"
+         href="https://github.com/comdows/web1/issues/new?title=%5B%EC%A0%9C%ED%9C%B4%20%EC%A0%9C%EC%95%88%20%EB%93%B1%EB%A1%9D%5D&body=%ED%94%8C%EB%9E%AB%ED%8F%BC%20%EC%9D%B4%EB%A6%84%3A%0A%EB%B6%84%EC%95%BC%3A%0A%EC%A0%9C%ED%9C%B4%20%EC%9C%A0%ED%98%95%3A%0A%EC%9B%90%ED%95%98%EB%8A%94%20%EC%83%81%EB%8C%80%20%EB%B6%84%EC%95%BC%3A%0A%EC%A0%9C%EC%95%88%20%EC%9A%94%EC%95%BD%3A%0A%EC%97%B0%EB%9D%BD%EC%B2%98%3A">➕ 제휴 제안 등록</a>
+    </div>
+    <div class="plist" id="plist"></div>
+    <p class="sub" style="margin-top:16px">매칭 신청 후 절차: 플랫폼올이 양측 의사를 확인하고 소개 → 조건·정산은 <b>양사 직접 계약</b>.
+       성사 시 정액 중개료 안내(오픈 초기 무료). </p>
+  </section>
+</main>
+
+<footer class="site"><div class="container">
+  플랫폼올 (가칭) · 제휴 매칭은 소개·연결 서비스이며 정산·결제에 관여하지 않습니다.
+</div></footer>
+
+<script src="data/config.js"></script>
+<script src="data/listings.js"></script>
+<script src="data/platforms.js"></script>
+<script src="assets/app.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const preview = new URLSearchParams(location.search).get("preview") === "1";
+  const on = (window.SITE_FLAGS && SITE_FLAGS.stage2) || preview;
+  document.getElementById(on ? "board" : "teaser").style.display = "";
+  document.getElementById("soon-badge").textContent = (window.SITE_FLAGS && SITE_FLAGS.stage2) ? "" : " 준비중";
+  document.getElementById("soon-badge3").textContent = (window.SITE_FLAGS && SITE_FLAGS.stage3) ? "" : " 준비중";
+  if (!on) { window.__track("stage2_teaser_view", {}); return; }
+
+  const catName = (id) => { const c = App.categoryById(id); return c ? c.icon + " " + c.name : id; };
+  let filter = "";
+  function render() {
+    const list = (LISTINGS.partnerships || []).filter(l => !filter || l.type === filter);
+    document.getElementById("plist").innerHTML = list.map(l => `
+      <div class="pcard">
+        <div class="row">
+          <h3>${App.esc(l.title)}</h3>
+          <span class="chip">${App.esc(l.type)}</span>
+        </div>
+        <p class="blurb">${App.esc(l.detail)}</p>
+        <div class="chips">
+          <span class="chip">제안: ${catName(l.from)}</span>
+          <span class="chip">희망 상대: ${(l.want || []).map(catName).join(" · ")}</span>
+          <span class="chip">${App.esc(l.size || "")}</span>
+          ${l.demo ? '<span class="badge muted-badge">데모 예시</span>' : ""}
+          <span class="badge ${l.status === "open" ? "good" : "warn"}">${l.status === "open" ? "매칭 모집 중" : "매칭 완료"}</span>
+        </div>
+        <div class="actions" style="margin-top:8px">
+          ${l.status === "open" ? `<a class="btn ghost" target="_blank" rel="noopener"
+            href="https://github.com/comdows/web1/issues/new?title=%5B%EB%A7%A4%EC%B9%AD%20%EC%8B%A0%EC%B2%AD%5D%20${encodeURIComponent(l.id)}&body=%EC%8B%A0%EC%B2%AD%20%EB%8C%80%EC%83%81%3A%20${encodeURIComponent(l.id + " " + l.title)}%0A%EC%9A%B0%EB%A6%AC%20%ED%94%8C%EB%9E%AB%ED%8F%BC%3A%0A%EB%B6%84%EC%95%BC%3A%0A%EC%97%B0%EB%9D%BD%EC%B2%98%3A"
+            onclick="__track('stage2_apply',{id:'${l.id}'})">이 제안에 매칭 신청</a>` : ""}
+        </div>
+      </div>`).join("") || '<div class="empty">해당 유형의 제안이 아직 없습니다.</div>';
+  }
+  document.querySelector(".toolbar2").addEventListener("click", (e) => {
+    const c = e.target.closest(".fchip"); if (!c) return;
+    filter = c.dataset.f || "";
+    document.querySelectorAll(".toolbar2 .fchip").forEach(x => x.setAttribute("aria-pressed", x === c));
+    render();
+  });
+  render();
+  window.__track("stage2_board_view", { preview });
+});
+</script>
+</body>
+</html>

@@ -11,6 +11,7 @@
 const fs = require("fs");
 const path = require("path");
 const CFG = require("./data/platforms.js");
+const FLAGS = require("./data/config.js");
 
 const ROOT = __dirname;
 const SITE = "https://platformall.example"; // 실제 도메인으로 교체
@@ -56,7 +57,11 @@ ${jsonld ? `<script type="application/ld+json">${JSON.stringify(jsonld)}</script
 <body>
 <header class="site"><div class="container">
   <div class="logo">플랫폼<b>올</b></div>
-  <nav class="top"><a href="${home}">분야별 플랫폼</a></nav>
+  <nav class="top">
+    <a href="${home}">분야별 플랫폼</a>
+    <a href="${depth ? "../" : ""}partners.html">🤝 제휴 매칭${FLAGS.stage2 ? "" : '<span class="soon"> 준비중</span>'}</a>
+    <a href="${depth ? "../" : ""}exchange.html">🏦 거래소${FLAGS.stage3 ? "" : '<span class="soon"> 준비중</span>'}</a>
+  </nav>
 </div></header>
 <main class="container">${body}</main>
 <footer class="site"><div class="container">

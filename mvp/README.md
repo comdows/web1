@@ -29,6 +29,18 @@ python3 -m http.server 8000      # → http://localhost:8000
 - **정렬**: 기본 / 신규 우선 / 가나다 · **딥링크**: `?q=` `?cat=` `?group=` `?fav=1` `?new=1`
 - **플랫폼 제보**: GitHub Issue 템플릿 링크
 
+## 2·3단계 (코드 준비 완료, 플래그로 대기 중)
+기획서의 2단계(제휴 매칭)·3단계(M&A 거래소)가 **완성된 코드로 대기** 상태입니다.
+- `partners.html` 🤝 제휴 매칭 — 상호송출·교차프로모션·공동이벤트 매칭 보드 (자금 미보유 원칙 고지 포함)
+- `exchange.html` 🏦 거래소 — 익명 매물 리스팅 보드 (중개·자문·실사 아님 법적 고지 포함)
+- 꺼져 있는 동안: 두 페이지는 "준비 중 + **사전등록**"으로 동작해 수요 신호를 모읍니다. 내비게이션에 "준비중" 배지.
+- **미리보기**: URL에 `?preview=1` (예: `partners.html?preview=1`) — 플래그와 무관하게 완성 화면 확인.
+
+### 활성화 방법 (명령 한 번)
+1. `data/config.js`에서 `stage2: true`(또는 `stage3: true`)로 변경
+2. `node build.js` (내비 배지 갱신) → 커밋·푸시
+- 실제 리스팅은 `data/listings.js`에 추가(접수된 제안/매물 검수 후). 현재 항목은 "데모 예시" 표시가 붙어 있습니다.
+
 ## 커뮤니티·락인 로드맵
 1. **(준비됨) giscus 분야별 게시판** — GitHub Discussions 기반 무료 댓글. `build.js`의 주석 슬롯에
    저장소 Discussions 활성화 후 [giscus.app](https://giscus.app)에서 발급한 `data-repo-id`/`data-category-id`를
