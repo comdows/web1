@@ -40,6 +40,9 @@ python3 -m http.server 8000      # → http://localhost:8000
 1. `data/config.js`에서 `stage2: true`(또는 `stage3: true`)로 변경
 2. `node build.js` (내비 배지 갱신) → 커밋·푸시
 - 실제 리스팅은 `data/listings.js`에 추가(접수된 제안/매물 검수 후). 현재 항목은 "데모 예시" 표시가 붙어 있습니다.
+- **운영 절차·검수 기준·지표: [`docs/stage2-ops.md`](docs/stage2-ops.md)** (관리자용 SOP)
+- `data/config.js`의 `contactEmail`에 운영 이메일을 넣으면 접수 기본 버튼이 **비공개 이메일 접수**로 바뀝니다.
+  (GitHub 이슈는 공개 게시판이라, 페이지가 개인정보 기재 금지를 안내하고 빌드가 리스팅 내 개인정보 패턴을 차단합니다)
 
 ## 커뮤니티·락인 로드맵
 1. **(준비됨) giscus 분야별 게시판** — GitHub Discussions 기반 무료 댓글. `build.js`의 주석 슬롯에

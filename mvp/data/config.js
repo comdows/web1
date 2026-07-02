@@ -14,7 +14,10 @@
 (function () {
   var FLAGS = {
     stage2: false,
-    stage3: false
+    stage3: false,
+    // 비공개 접수 채널: 운영 이메일을 넣으면 등록·신청 기본 버튼이 "이메일 접수"로 바뀐다.
+    // 비워두면 GitHub 이슈 접수만 노출된다(이슈는 공개 게시판 — 페이지가 개인정보 기재 금지를 안내함).
+    contactEmail: ""
   };
   if (typeof window !== "undefined") window.SITE_FLAGS = FLAGS;
   if (typeof module !== "undefined" && module.exports) module.exports = FLAGS;

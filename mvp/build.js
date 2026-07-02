@@ -12,6 +12,31 @@ const fs = require("fs");
 const path = require("path");
 const CFG = require("./data/platforms.js");
 const FLAGS = require("./data/config.js");
+const LISTINGS = require("./data/listings.js");
+
+// 2·3단계 리스팅 검증 — 스키마 오류·개인정보 유입을 빌드에서 차단
+function validateListings() {
+  const errors = [];
+  const catIds = new Set(CFG.categories.map((c) => c.id));
+  const pii = /(01[016789][-\s]?\d{3,4}[-\s]?\d{4})|@(gmail|naver|daum|kakao|hanmail)\./i;
+  for (const l of LISTINGS.partnerships || []) {
+    for (const f of ["id", "type", "from", "want", "title", "detail", "give", "get", "posted", "status"])
+      if (l[f] == null || l[f] === "") errors.push(`[제휴 ${l.id || "?"}] ${f} 누락`);
+    if (l.from && !catIds.has(l.from)) errors.push(`[제휴 ${l.id}] from 분야 오류: ${l.from}`);
+    (l.want || []).forEach((w) => { if (!catIds.has(w)) errors.push(`[제휴 ${l.id}] want 분야 오류: ${w}`); });
+    if (!["open", "matched", "paused", "closed"].includes(l.status)) errors.push(`[제휴 ${l.id}] status 오류: ${l.status}`);
+    if (!(LISTINGS.partnerTypes || []).includes(l.type)) errors.push(`[제휴 ${l.id}] type 오류: ${l.type}`);
+    if (pii.test(JSON.stringify(l))) errors.push(`[제휴 ${l.id}] 연락처/개인정보 의심 문자열 포함 — 리스팅에 개인정보 금지`);
+  }
+  for (const d of LISTINGS.deals || []) {
+    for (const f of ["id", "category", "region", "revenue", "mode", "summary", "posted", "status"])
+      if (d[f] == null || d[f] === "") errors.push(`[매물 ${d.id || "?"}] ${f} 누락`);
+    if (d.category && !catIds.has(d.category)) errors.push(`[매물 ${d.id}] 분야 오류: ${d.category}`);
+    if (pii.test(JSON.stringify(d))) errors.push(`[매물 ${d.id}] 연락처/개인정보 의심 문자열 포함 — 익명 원칙 위반`);
+  }
+  if (errors.length) { console.error("❌ 리스팅 검증 실패:\n" + errors.map((e) => "  - " + e).join("\n")); process.exit(1); }
+  console.log(`✅ 리스팅 검증 통과 (제휴 ${(LISTINGS.partnerships || []).length}, 매물 ${(LISTINGS.deals || []).length})`);
+}
 
 const ROOT = __dirname;
 const SITE = "https://platformall.example"; // 실제 도메인으로 교체
@@ -142,6 +167,7 @@ function categoryPage(cat, platforms) {
 // ── 실행 ──
 const cats = CFG.categories, platforms = CFG.platforms;
 validate(CFG.groups, cats, platforms);
+validateListings();
 
 const cDir = path.join(ROOT, "c");
 fs.mkdirSync(cDir, { recursive: true });
