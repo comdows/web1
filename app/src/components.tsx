@@ -4,6 +4,7 @@ import type { Platform } from "./data";
 import { categoryById } from "./data";
 import { useFavs, useCompare, Recent } from "./lib/store";
 import { avatarHue, faviconUrl } from "./lib/util";
+import { trackEvent } from "./lib/api";
 import { useNav } from "./nav";
 
 export function LogoMark({ size = 26 }: { size?: number }) {
@@ -62,7 +63,8 @@ export function PlatformCard({ p, showCat = true }: { p: Platform; showCat?: boo
       </div>
       <p>{p.blurb}</p>
       <div className="pcard-actions">
-        <a className="ext" href={p.url} target="_blank" rel="noopener noreferrer" onClick={() => Recent.push(p.id)}>공식 사이트 ↗</a>
+        <a className="ext" href={p.url} target="_blank" rel="noopener noreferrer"
+          onClick={() => { Recent.push(p.id); trackEvent("outbound", p.id); }}>공식 사이트 ↗</a>
         <button className="linklike" onClick={() => go("detail", { id: p.id })}>상세</button>
         <button className={`cmp-btn ${inCmp ? "on" : ""}`} disabled={!inCmp && cmp.full}
           onClick={() => cmp.toggle(p.id)} title={cmp.full && !inCmp ? "최대 4개" : "비교 담기"}>

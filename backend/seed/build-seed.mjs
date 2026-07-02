@@ -1,0 +1,58 @@
+/* 현행 앱 데이터(app/src/data/*.json) → backend/migrations/0003_seed.sql 생성
+ * 데이터가 갱신되면 재실행: node backend/seed/build-seed.mjs */
+import fs from "node:fs";
+import path from "node:path";
+
+const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
+const P = JSON.parse(fs.readFileSync(path.join(ROOT, "app/src/data/platforms.json"), "utf8"));
+const L = JSON.parse(fs.readFileSync(path.join(ROOT, "app/src/data/listings.json"), "utf8"));
+
+const q = (s) => s == null ? "null" : `'${String(s).replace(/'/g, "''")}'`;
+const region = (r) => (r === "해외" ? "overseas" : "domestic");
+const rows = [];
+const push = (s) => rows.push(s);
+
+push(`-- ============================================================
+-- 세모플 시드 v1 — build-seed.mjs 생성물 (직접 수정 금지)
+-- 그룹 ${P.groups.length} · 분야 ${P.categories.length} · 플랫폼 ${P.platforms.length}
+-- ============================================================
+`);
+
+push(`insert into public.groups (id, name, icon, description, sort) values`);
+push(P.groups.map((g, i) => `  (${q(g.id)}, ${q(g.name)}, ${q(g.icon)}, ${q(g.desc)}, ${i})`).join(",\n") + "\non conflict (id) do nothing;\n");
+
+push(`insert into public.categories (id, group_id, name, icon, description, sort) values`);
+push(P.categories.map((c, i) => `  (${q(c.id)}, ${q(c.group)}, ${q(c.name)}, ${q(c.icon)}, ${q(c.desc)}, ${i})`).join(",\n") + "\non conflict (id) do nothing;\n");
+
+// 플랫폼: 1,559건 — 500건 단위 배치
+const chunks = [];
+for (let i = 0; i < P.platforms.length; i += 500) chunks.push(P.platforms.slice(i, i + 500));
+for (const chunk of chunks) {
+  push(`insert into public.platforms (id, name, category_id, region, url, blurb, is_new) values`);
+  push(chunk.map((p) =>
+    `  (${q(p.id)}, ${q(p.name)}, ${q(p.category)}, '${region(p.region)}', ${q(p.url)}, ${q(p.blurb)}, ${p.new ? "true" : "false"})`
+  ).join(",\n") + "\non conflict (id) do nothing;\n");
+}
+
+// 제휴 유형(현행 listings.partnerTypes 라벨 유지)
+const typeSlugs = ["cross_send", "cross_promo", "joint_event", "ad_swap", "bundle"];
+push(`insert into public.partner_types (id, label, sort) values`);
+push((L.partnerTypes || []).map((t, i) => `  (${q(typeSlugs[i] ?? "type_" + i)}, ${q(t)}, ${i})`).join(",\n") + "\non conflict (id) do nothing;\n");
+
+// 거래소 데모 매물(익명 필드만)
+const dealStatus = (s) => (s === "open" ? "open" : s === "진행중" ? "in_progress" : "closed");
+push(`insert into public.deals (id, category_id, region, revenue_band, mode, summary, status, is_demo, posted) values`);
+push((L.deals || []).map((d) =>
+  `  (${q(d.id)}, ${q(d.category)}, '${region(d.region)}', ${q(d.revenue)}, ${q(d.mode)}, ${q(d.summary)}, '${dealStatus(d.status)}', ${d.demo ? "true" : "false"}, ${q(d.posted)})`
+).join(",\n") + "\non conflict (id) do nothing;\n");
+
+// 부스트 상품(초기 3종 — 단가는 오픈 전 조정)
+push(`insert into public.boost_tiers (id, name, placement, cpm, est_ctr, sort) values
+  ('home_hero',   '홈 상단 고정',     '홈 히어로 아래 첫 카드 슬롯', 8000, 0.0200, 0),
+  ('cat_top',     '분야 상단 노출',   '해당 분야 목록 최상단',       5000, 0.0150, 1),
+  ('search_boost','검색 상위 노출',   '관련 검색결과 상단(AD 표기)', 6000, 0.0180, 2)
+on conflict (id) do nothing;\n`);
+
+const out = path.join(ROOT, "backend/migrations/0003_seed.sql");
+fs.writeFileSync(out, rows.join("\n"));
+console.log(`생성: ${out} (${(fs.statSync(out).size / 1024).toFixed(0)}KB)`);
