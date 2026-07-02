@@ -6,6 +6,7 @@ import path from "node:path";
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
 const P = JSON.parse(fs.readFileSync(path.join(ROOT, "app/src/data/platforms.json"), "utf8"));
 const L = JSON.parse(fs.readFileSync(path.join(ROOT, "app/src/data/listings.json"), "utf8"));
+const PT = JSON.parse(fs.readFileSync(path.join(ROOT, "app/src/data/partnerTypes.json"), "utf8"));
 
 const q = (s) => s == null ? "null" : `'${String(s).replace(/'/g, "''")}'`;
 const region = (r) => (r === "해외" ? "overseas" : "domestic");
@@ -34,10 +35,15 @@ for (const chunk of chunks) {
   ).join(",\n") + "\non conflict (id) do nothing;\n");
 }
 
-// 제휴 유형(현행 listings.partnerTypes 라벨 유지)
-const typeSlugs = ["cross_send", "cross_promo", "joint_event", "ad_swap", "bundle"];
-push(`insert into public.partner_types (id, label, sort) values`);
-push((L.partnerTypes || []).map((t, i) => `  (${q(typeSlugs[i] ?? "type_" + i)}, ${q(t)}, ${i})`).join(",\n") + "\non conflict (id) do nothing;\n");
+// 제휴 방식 카탈로그(app/src/data/partnerTypes.json — 21종·6그룹)
+push(`insert into public.partner_type_groups (id, label, descr, sort) values`);
+push(PT.groups.map((g, i) => `  (${q(g.id)}, ${q(g.label)}, ${q(g.desc)}, ${i})`).join(",\n") + "\non conflict (id) do nothing;\n");
+
+const arr = (a) => `'{${(a || []).map((x) => `"${x}"`).join(",")}}'`;
+push(`insert into public.partner_types (id, group_id, label, descr, mechanics, example, settlement, effort, goals, sort) values`);
+push(PT.types.map((t, i) =>
+  `  (${q(t.id)}, ${q(t.group)}, ${q(t.label)}, ${q(t.desc)}, ${q(t.mechanics)}, ${q(t.example)}, '${t.settlement}', '${t.effort}', ${arr(t.goals)}, ${i})`
+).join(",\n") + "\non conflict (id) do nothing;\n");
 
 // 거래소 데모 매물(익명 필드만)
 const dealStatus = (s) => (s === "open" ? "open" : s === "진행중" ? "in_progress" : "closed");

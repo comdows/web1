@@ -21,6 +21,7 @@ alter table public.groups         enable row level security;
 alter table public.categories     enable row level security;
 alter table public.platforms      enable row level security;
 alter table public.platform_fees  enable row level security;
+alter table public.partner_type_groups enable row level security;
 alter table public.partner_types  enable row level security;
 alter table public.boost_tiers    enable row level security;
 
@@ -29,6 +30,7 @@ create policy "public read categories" on public.categories for select using (tr
 create policy "public read platforms"  on public.platforms  for select
   using (archived_at is null and lifecycle <> 'rejected' or public.is_admin());
 create policy "public read fees"       on public.platform_fees for select using (true);
+create policy "public read ptype groups" on public.partner_type_groups for select using (true);
 create policy "public read ptypes"     on public.partner_types for select using (true);
 create policy "public read tiers"      on public.boost_tiers   for select using (active or public.is_admin());
 
@@ -40,6 +42,8 @@ create policy "admin write fees" on public.platform_fees for all
 create policy "admin write taxonomy g" on public.groups for all
   using (public.is_admin()) with check (public.is_admin());
 create policy "admin write taxonomy c" on public.categories for all
+  using (public.is_admin()) with check (public.is_admin());
+create policy "admin write ptype groups" on public.partner_type_groups for all
   using (public.is_admin()) with check (public.is_admin());
 create policy "admin write ptypes" on public.partner_types for all
   using (public.is_admin()) with check (public.is_admin());
