@@ -1620,12 +1620,38 @@ insert into public.platforms (id, name, category_id, region, url, blurb, is_new)
   ('incheoneum2', '인천e음', 'social', 'domestic', 'https://incheoneum.or.kr/', '인천시 지역화폐, 동네 가맹점 캐시백 카드.', false)
 on conflict (id) do nothing;
 
-insert into public.partner_types (id, label, sort) values
-  ('cross_send', '회원 상호송출', 0),
-  ('cross_promo', '교차 프로모션', 1),
-  ('joint_event', '공동 이벤트', 2),
-  ('ad_swap', '광고 지면 교환', 3),
-  ('bundle', '공동구매·번들', 4)
+insert into public.partner_type_groups (id, label, descr, sort) values
+  ('traffic', '트래픽·노출 교환', '돈 없이 서로의 지면과 채널을 맞바꾼다 — 가장 쉬운 시작점', 0),
+  ('growth', '회원 성장', '상대의 회원을 내 회원으로 — 상호송출·레퍼럴·간편입점', 1),
+  ('commerce', '판매·상품 결합', '상품과 혜택을 묶어 양쪽 거래를 함께 키운다', 2),
+  ('comarketing', '공동 마케팅', '이벤트·세미나·리포트를 함께 만들어 비용은 반, 도달은 두 배', 3),
+  ('infra', '기능·데이터 연동', '서로의 기능·데이터·인프라를 연결하는 깊은 제휴', 4),
+  ('trust', '신뢰·소개', '검증 배지와 리드 소개로 신뢰를 주고받는다', 5)
+on conflict (id) do nothing;
+
+insert into public.partner_types (id, group_id, label, descr, mechanics, example, settlement, effort, goals, sort) values
+  ('banner_swap', 'traffic', '배너 맞교환', '서로의 홈·주요 지면에 배너를 동일 가치로 상호 게재', '노출량(또는 기간)을 동일 기준으로 정하고 각자 배너를 게재. 월 단위로 노출 수치를 상호 공유', 'B2B 네트워킹 플랫폼 ↔ MRO몰이 메인 배너를 한 달간 맞교환', 'none', 'light', '{"growth","awareness","cost"}', 0),
+  ('newsletter_swap', 'traffic', '뉴스레터·푸시 스왑', '각자의 뉴스레터·앱 푸시에서 상대 플랫폼을 소개', '발송 리스트 규모를 맞춰 회당 교환. 서로의 회원 DB는 넘기지 않고 각자 발송(개인정보 이관 없음)', '직무 뉴스레터 하단 배너 ↔ 커리어 플랫폼 앱 푸시 1회', 'none', 'light', '{"growth","content"}', 1),
+  ('content_exchange', 'traffic', '콘텐츠 교차 게재', '블로그·가이드 기고를 맞교환하고 상호 백링크', '상대 고객에게 유용한 실무 콘텐츠를 서로의 블로그에 기고. SEO 백링크 효과 덤', '물류 플랫폼이 커머스 블로그에 ''풀필먼트 고르는 법'' 기고', 'none', 'light', '{"content","awareness"}', 2),
+  ('partner_zone', 'traffic', '파트너관 상호 입점', '앱·웹의 ''추천 서비스'' 코너에 서로를 상시 노출', '각자 서비스 내 파트너 코너를 만들고 상대 서비스 카드를 상시 게재(딥링크)', '쇼핑몰 빌더의 ''추천 도구''에 마케팅 SaaS 입점, 반대 방향도 동일', 'none', 'mid', '{"growth","awareness"}', 3),
+  ('cross_signup', 'growth', '회원 상호송출', '가입 완료·핵심 액션 시점에 상대 플랫폼을 추천', '가입 완료 화면·온보딩 메일에 ''함께 쓰면 좋은 서비스''로 상대를 노출. 전환 수치 상호 공유', '펀딩 종료 메이커에게 상시 판매채널을, 판매채널 셀러에게 펀딩 개설을 안내', 'none', 'light', '{"growth"}', 4),
+  ('referral_fee', 'growth', '레퍼럴 제휴 (성과 수수료)', '추천 링크·코드로 발생한 가입·거래에 성과 수수료 지급', '고유 추천 코드/UTM 링크 발급 → 전환 발생 시 건당·비율 수수료. 정산은 두 플랫폼이 직접(세모플은 연결만)', '회원모집 중인 플랫폼이 추천 가입 1건당 정액 지급, 파트너는 자기 회원에게 안내', 'direct', 'mid', '{"growth","revenue"}', 5),
+  ('cross_onboarding', 'growth', '크로스 온보딩 (간편 입점)', '내 회원이 상대 플랫폼에 서류 재활용·우대 심사로 쉽게 입점', '입점 서류·검증 결과를 회원 동의하에 재활용하거나 전용 입점 링크로 심사 우대', '오픈마켓 우수 셀러가 물류 플랫폼에 원클릭 가입 + 첫 달 우대가', 'none', 'mid', '{"growth"}', 6),
+  ('member_benefit', 'growth', '멤버십 상호 혜택', 'A 회원에게 B의 상시 할인·우대를 제공 (양방향)', '회원 등급·인증 기준으로 상대 서비스 상시 혜택 부여. 혜택 코드 방식이면 개인정보 이관 없음', '지식산업센터 입주사 인증 회원에게 사무용품몰 상시 할인', 'none', 'mid', '{"growth","awareness"}', 7),
+  ('coupon_exchange', 'commerce', '쿠폰 상호 제공', '구매완료·예약확정 화면에 상대 플랫폼 쿠폰을 노출', '전환이 끝난 시점(구매완료)에 상대 쿠폰 노출 — 자기 전환을 깎지 않으면서 상대에게 고객 전달', '반려동물 커머스 주문완료 화면 ↔ 애견동반 숙소 예약확정 화면 쿠폰 맞교환', 'none', 'light', '{"revenue","growth"}', 8),
+  ('bundle', 'commerce', '번들·패키지', '두 플랫폼의 상품·서비스를 묶어 패키지로 판매', '묶음 구성만 공동으로 하고 결제·배송·정산은 각자 자기 상품만 처리(교차 정산 없음)', '이유식 구독 첫 결제에 육아용품 할인권 동봉, 반대 방향도 동일', 'none', 'mid', '{"revenue"}', 9),
+  ('joint_gongu', 'commerce', '공동구매 합동 진행', '양쪽 회원을 모아 한 번의 공동구매를 함께 연다', '모집 인원·물량을 합산해 단가를 낮추고, 주문·정산은 각 플랫폼이 자기 회원 몫만 처리', '두 지역 커머스가 제철 과일 공구를 합동 진행해 최소물량 돌파', 'none', 'mid', '{"revenue","growth"}', 10),
+  ('affiliate_listing', 'commerce', '위탁·어필리에이트 입점', '상대 플랫폼의 상품·서비스를 내 지면에서 판매·중개', '링크·API로 상대 상품을 내 카탈로그에 노출, 판매 발생 시 수수료(당사자 직접 정산)', '인테리어 플랫폼이 가구 렌탈 상품을 자기 앱에서 판매 중개', 'direct', 'heavy', '{"revenue"}', 11),
+  ('joint_event', 'comarketing', '공동 이벤트·챌린지', '참가형 이벤트를 공동 개최해 양쪽 브랜드를 함께 노출', '기획·경품·홍보를 분담하고 참가 접수는 각자 채널로. 성과(참가자 수) 상호 공유', '러닝 플랫폼 대회 완주자에게 건강식단 구독 체험권 리워드', 'share', 'mid', '{"awareness","growth"}', 12),
+  ('joint_webinar', 'comarketing', '공동 웨비나·교육', 'B2B 실무 세미나를 공동 개최해 참가 리드를 나눈다', '주제·연사를 나눠 맡고 신청 페이지 공동 운영. 참가자 동의 기반으로 리드 공유', 'B2B 네트워킹 플랫폼 × 제조 견적 플랫폼의 ''공장 세일즈'' 웨비나', 'share', 'mid', '{"awareness","growth","content"}', 13),
+  ('joint_report', 'comarketing', '공동 리서치·리포트', '업계 데이터 리포트를 공동 발행해 다운로드 리드를 수집', '각자 보유한 (비개인) 데이터·인사이트를 합쳐 리포트 발행, 다운로드 신청 리드는 동의 기반 공유', '물류 플랫폼 × 커머스 플랫폼의 ''이커머스 배송 트렌드'' 리포트', 'share', 'mid', '{"content","awareness"}', 14),
+  ('offline_popup', 'comarketing', '오프라인 팝업·부스 공동 운영', '박람회 부스·팝업스토어를 함께 열어 비용을 나눈다', '부스 임차·운영 인력을 분담하고 서로의 고객층에 함께 노출', '창업 박람회에서 쇼핑몰 빌더 × 풀필먼트가 공동 부스', 'share', 'heavy', '{"awareness","cost"}', 15),
+  ('api_embed', 'infra', 'API·위젯 연동', '상대 플랫폼의 기능을 내 서비스 안에 임베드', 'API·위젯으로 상대 기능(견적·예약·검색)을 내 화면에 통합. 발생 거래는 성과 기준 정산 가능', '커머스 셀러센터 안에 물류 플랫폼 견적 위젯 임베드', 'direct', 'heavy', '{"revenue","growth"}', 16),
+  ('data_partnership', 'infra', '데이터 제휴', '상품·시세·카탈로그 데이터를 상호 제공 (개인정보 제외)', '비개인 데이터(시세·재고·카탈로그)만 API로 교환. 회원 DB 이관은 하지 않는다', '수산물 시세 플랫폼 데이터를 식자재 발주 앱에 제공, 반대로 수요 데이터 공유', 'direct', 'heavy', '{"revenue","content"}', 17),
+  ('infra_deal', 'infra', '인프라 우대 제휴', '물류·결제·풀필먼트 등 인프라를 파트너 회원에게 우대 조건으로', '파트너 플랫폼 회원 대상 전용 요금·우선 처리 제공, 상대는 자기 채널에서 안내', '풀필먼트가 특정 오픈마켓 셀러에게 첫 3개월 보관비 우대', 'direct', 'mid', '{"growth","revenue"}', 18),
+  ('trust_badge', 'trust', '파트너 인증 배지', '상호 검증을 마친 파트너임을 배지로 표시해 신뢰를 이전', '상호 실사·검증 후 서로의 지면에 ''공식 파트너'' 배지와 소개 페이지 게재', '세무 플랫폼 × 법인설립 플랫폼이 상호 공식 파트너 표기', 'none', 'light', '{"awareness"}', 19),
+  ('lead_exchange', 'trust', 'B2B 리드 상호 소개', '내게 맞지 않는 문의를 맞는 파트너에게 소개 (동의 기반)', '고객 동의를 받은 문의만 소개. 개인정보 최소화 원칙 — 소개 성사 시 정액 사례 가능(당사자 간)', '인테리어 견적 문의 중 상업공간 건은 상업 전문 플랫폼으로 소개', 'direct', 'light', '{"revenue","awareness"}', 20),
+  ('group_alliance', 'trust', '버티컬 연합 (3사 이상)', '같은 고객군의 플랫폼 여럿이 혜택·마케팅 연합을 결성', '동일 타깃(예: 1인 셀러)의 비경쟁 플랫폼 3~5곳이 공동 혜택 패키지·공동 캠페인 운영', '쇼핑몰 빌더 + 풀필먼트 + 세무 + 마케팅 SaaS의 ''창업 스타터 연합''', 'share', 'heavy', '{"growth","awareness","cost"}', 21)
 on conflict (id) do nothing;
 
 insert into public.deals (id, category_id, region, revenue_band, mode, summary, status, is_demo, posted) values

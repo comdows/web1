@@ -230,10 +230,27 @@ $$;
 -- ============================================================
 -- 7) 제휴 매칭 (stage2 — 유형·제안)
 -- ============================================================
-create table public.partner_types (
-  id    text primary key,      -- 'cross_send' 등
-  label text not null,         -- '회원 상호송출'
+create type settlement_t as enum ('none','direct','share');   -- 정산 없음/당사자 직접/비용 분담
+create type effort_t     as enum ('light','mid','heavy');
+
+create table public.partner_type_groups (   -- 제휴 방식 대분류(트래픽 교환·회원 성장 등)
+  id    text primary key,
+  label text not null,
+  descr text not null default '',
   sort  int not null default 0
+);
+
+create table public.partner_types (          -- 제휴 방식 카탈로그(배너 맞교환·레퍼럴 등)
+  id         text primary key,               -- 'banner_swap','referral_fee' 등
+  group_id   text not null references public.partner_type_groups(id),
+  label      text not null,
+  descr      text not null default '',       -- 한 줄 정의
+  mechanics  text not null default '',       -- 작동 방식
+  example    text not null default '',       -- 예시
+  settlement settlement_t not null default 'none',
+  effort     effort_t not null default 'light',
+  goals      text[] not null default '{}',   -- growth/revenue/awareness/content/cost
+  sort       int not null default 0
 );
 
 create table public.proposals (

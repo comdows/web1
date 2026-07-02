@@ -192,6 +192,11 @@ button{font-family:inherit}
   margin:16px auto;padding:10px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--sh-2);max-width:var(--maxw)}
 .cmp-bar .names{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
+/* Partner type catalog */
+.type-card h4{font-size:15px}
+.type-detail{margin-top:10px;border-top:1px dashed var(--line-soft);padding-top:10px;display:flex;flex-direction:column;gap:8px;font-size:12.5px;color:var(--muted);line-height:1.55}
+.type-detail .k{display:block;font-family:var(--font-mono);font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--cyan);margin-bottom:2px}
+
 /* Onboarding */
 .ob-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:22px}
 .ob-step{font-size:13px;color:var(--faint);display:flex;align-items:center;gap:6px;padding:6px 12px;border-radius:var(--r-pill);border:1px solid var(--line-soft)}
