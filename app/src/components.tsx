@@ -2,8 +2,9 @@ import { useState } from "react";
 import type { ReactNode } from "react";
 import type { Platform } from "./data";
 import { categoryById } from "./data";
-import { useFavs, Recent } from "./lib/store";
+import { useFavs, useCompare, Recent } from "./lib/store";
 import { avatarHue, faviconUrl } from "./lib/util";
+import { useNav } from "./nav";
 
 export function LogoMark({ size = 26 }: { size?: number }) {
   return (
@@ -43,22 +44,31 @@ export function StatTile({ n, l, tone }: { n: string; l: string; tone?: "b" | "t
 
 export function PlatformCard({ p, showCat = true }: { p: Platform; showCat?: boolean }) {
   const favs = useFavs();
+  const cmp = useCompare();
+  const go = useNav();
   const on = favs.has(p.id);
+  const inCmp = cmp.has(p.id);
   const cat = categoryById(p.category);
   return (
     <div className="pcard">
       <div className="top">
         <Avatar name={p.name} url={p.url} />
         <div style={{ minWidth: 0 }}>
-          <h4>{p.name}{p.new && <Badge kind="new">NEW</Badge>}</h4>
+          <h4><span className="pname" onClick={() => go("detail", { id: p.id })}>{p.name}</span>{p.new && <Badge kind="new">NEW</Badge>}</h4>
           {showCat && cat && <div className="cat">{cat.icon} {cat.name}</div>}
         </div>
         <button className={`star ${on ? "on" : ""}`} aria-label="즐겨찾기"
           onClick={() => favs.toggle(p.id)}>{on ? "★" : "☆"}</button>
       </div>
       <p>{p.blurb}</p>
-      <a className="ext" href={p.url} target="_blank" rel="noopener noreferrer"
-        onClick={() => Recent.push(p.id)}>공식 사이트 ↗</a>
+      <div className="pcard-actions">
+        <a className="ext" href={p.url} target="_blank" rel="noopener noreferrer" onClick={() => Recent.push(p.id)}>공식 사이트 ↗</a>
+        <button className="linklike" onClick={() => go("detail", { id: p.id })}>상세</button>
+        <button className={`cmp-btn ${inCmp ? "on" : ""}`} disabled={!inCmp && cmp.full}
+          onClick={() => cmp.toggle(p.id)} title={cmp.full && !inCmp ? "최대 4개" : "비교 담기"}>
+          {inCmp ? "✓ 비교" : "+ 비교"}
+        </button>
+      </div>
     </div>
   );
 }

@@ -11,7 +11,9 @@ function lsSet(k: string, v: string) {
 
 const FAV_KEY = "sm.favs.v1";
 const RECENT_KEY = "sm.recent.v1";
+const CMP_KEY = "sm.compare.v1";
 const MAX_RECENT = 20;
+const MAX_COMPARE = 4;
 
 const listeners = new Set<() => void>();
 function emit() { listeners.forEach((l) => l()); }
@@ -40,6 +42,20 @@ export const Recent = {
   },
 };
 
+export const Compare = {
+  all(): string[] { return readSet(CMP_KEY); },
+  has(id: string): boolean { return readSet(CMP_KEY).includes(id); },
+  full(): boolean { return readSet(CMP_KEY).length >= MAX_COMPARE; },
+  toggle(id: string) {
+    const cur = readSet(CMP_KEY);
+    if (cur.includes(id)) { lsSet(CMP_KEY, JSON.stringify(cur.filter((x) => x !== id))); emit(); return; }
+    if (cur.length >= MAX_COMPARE) return; // 4개 초과 무시
+    lsSet(CMP_KEY, JSON.stringify([...cur, id])); emit();
+  },
+  clear() { lsSet(CMP_KEY, JSON.stringify([])); emit(); },
+};
+export const MAX_CMP = MAX_COMPARE;
+
 /* React hooks */
 export function useFavs() {
   const [, force] = useState(0);
@@ -53,5 +69,22 @@ export function useFavs() {
     toggle: (id: string) => Favs.toggle(id),
     all: () => Favs.all(),
     count: Favs.all().length,
+  };
+}
+
+export function useCompare() {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const l = () => force((n) => n + 1);
+    listeners.add(l);
+    return () => { listeners.delete(l); };
+  }, []);
+  return {
+    has: (id: string) => Compare.has(id),
+    toggle: (id: string) => Compare.toggle(id),
+    all: () => Compare.all(),
+    clear: () => Compare.clear(),
+    count: Compare.all().length,
+    full: Compare.full(),
   };
 }
