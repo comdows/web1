@@ -38,6 +38,14 @@
 - **개인정보 최소화**: 연락처는 우리 손을 거치는 순간을 최소화하고, 리스팅·이슈 등 공개 지면에 절대 게시하지 않는다.
 - **거래소(3단계) 추가 원칙**: 매물은 익명 코드명만 게시, 중개·자문·실사·가치평가를 하지 않는다는 고지를 임의로 완화하지 않는다.
 
-## 6. 활성화·요금 전환
-- 오픈: `data/config.js` `stage2: true` → `node build.js` → 커밋·푸시
+## 6. 오픈 전 로컬 검수 · 활성화 · 요금 전환
+- **오픈 전 관리자 열람(비공개)**: 공개 사이트는 "준비 중"만 노출된다. 관리자는 실제 접수 건을
+  `data/listings.local.js`(`.gitignore`, 저장소·배포 미포함)에 넣고 **본인 PC에서 localhost로만** 검수한다.
+  ```
+  cp data/listings.local.example.js data/listings.local.js   # 최초 1회
+  cd mvp && python3 -m http.server 8000                       # → http://localhost:8000/partners.html
+  ```
+  공개 URL에서는 보드가 열리지 않는다(우회 파라미터 없음).
+- **정식 오픈(공개 전환)**: `data/config.js` `stage2: true` → 공개용 `data/listings.js`에 게시 승인분만 이동
+  (개인정보·비공개 정보 없는지 재확인) → `node build.js` → 커밋·푸시. 그때부터 공개 방문자에게 보드가 보인다.
 - 유료 전환 시: partners.html "비용" 섹션 문구 갱신 + 기존 진행 건은 무료 마감 고지

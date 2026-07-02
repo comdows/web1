@@ -33,8 +33,14 @@ python3 -m http.server 8000      # → http://localhost:8000
 기획서의 2단계(제휴 매칭)·3단계(M&A 거래소)가 **완성된 코드로 대기** 상태입니다.
 - `partners.html` 🤝 제휴 매칭 — 상호송출·교차프로모션·공동이벤트 매칭 보드 (자금 미보유 원칙 고지 포함)
 - `exchange.html` 🏦 거래소 — 익명 매물 리스팅 보드 (중개·자문·실사 아님 법적 고지 포함)
-- 꺼져 있는 동안: 두 페이지는 "준비 중 + **사전등록**"으로 동작해 수요 신호를 모읍니다. 내비게이션에 "준비중" 배지.
-- **미리보기**: URL에 `?preview=1` (예: `partners.html?preview=1`) — 플래그와 무관하게 완성 화면 확인.
+- 꺼져 있는 동안: 두 페이지는 **공개 방문자에게 "준비 중 + 사전등록"**만 보입니다. 내비게이션에 "준비중" 배지.
+- **관리자 로컬 열람(비공개):** 오픈 전에도 관리자는 **본인 PC에서 localhost로 실행**하면 실제 매칭/매물 보드를 볼 수 있습니다.
+  ```
+  cd mvp && python3 -m http.server 8000   # → http://localhost:8000/partners.html
+  ```
+  공개 URL(`comdows.github.io/...`)에서는 보드가 열리지 않습니다(우회 파라미터 없음). 이것이 "관리자만 열람"의 구현입니다.
+- **비공개 실데이터:** 실제 접수 건은 `data/listings.local.js`(=`.gitignore`, 저장소·배포에 안 올라감)에 담습니다.
+  템플릿은 [`data/listings.local.example.js`](data/listings.local.example.js) 복사해서 사용. 공개용 `listings.js`는 데모 예시만 둡니다.
 
 ### 활성화 방법 (명령 한 번)
 1. `data/config.js`에서 `stage2: true`(또는 `stage3: true`)로 변경

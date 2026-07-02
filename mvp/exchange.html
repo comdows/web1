@@ -63,13 +63,26 @@
 
 <script src="data/config.js"></script>
 <script src="data/listings.js"></script>
+<!-- 관리자 실데이터(비공개): data/listings.local.js 는 .gitignore 처리되어 배포/저장소에 올라가지 않는다.
+     로컬에 있으면 window.LISTINGS 를 실제 매물 데이터로 덮어쓴다. 공개 배포에선 404(무해)로 무시된다. -->
+<script src="data/listings.local.js" onerror="void 0"></script>
 <script src="data/platforms.js"></script>
 <script src="assets/app.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const preview = new URLSearchParams(location.search).get("preview") === "1";
-  const on = (window.SITE_FLAGS && SITE_FLAGS.stage3) || preview;
+  // 관리자 전용(로컬 열람): 공개 배포에서는 stage3 플래그가 켜질 때만 보드가 보인다.
+  // 오픈 전까지 거래소 보드는 관리자가 localhost로 띄울 때만 열린다(공개 URL 우회 불가).
+  const h = location.hostname;
+  const isLocalAdmin = h === "localhost" || h === "127.0.0.1" || h === "0.0.0.0" || h === "";
+  const on = (window.SITE_FLAGS && SITE_FLAGS.stage3) || isLocalAdmin;
   document.getElementById(on ? "board" : "teaser").style.display = "";
+  if (on && isLocalAdmin && !(window.SITE_FLAGS && SITE_FLAGS.stage3)) {
+    const bn = document.createElement("div");
+    bn.className = "banner";
+    bn.innerHTML = "🔒 <b>관리자 로컬 열람 모드</b> — 이 매물 보드는 <b>내 PC(localhost)에서만</b> 보입니다. 공개 사이트에는 '준비 중'만 노출됩니다.";
+    const bd = document.getElementById("board");
+    bd.insertBefore(bn, bd.firstChild);
+  }
   document.getElementById("soon-badge").textContent = (window.SITE_FLAGS && SITE_FLAGS.stage3) ? "" : " 준비중";
   document.getElementById("soon-badge2").textContent = (window.SITE_FLAGS && SITE_FLAGS.stage2) ? "" : " 준비중";
   if (!on) { window.__track("stage3_teaser_view", {}); return; }
@@ -96,7 +109,7 @@ document.addEventListener("DOMContentLoaded", () => {
           onclick="__track('stage3_interest',{id:'${d.id}'})">이 매물에 관심 등록</a>` : ""}
       </div>
     </div>`).join("");
-  window.__track("stage3_board_view", { preview });
+  window.__track("stage3_board_view", { local: isLocalAdmin });
 });
 </script>
 </body>
