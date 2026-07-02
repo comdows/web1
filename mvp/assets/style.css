@@ -88,7 +88,7 @@ table.cmp td{background:var(--surface)}
 
 /* Search + filter chips */
 .toolbar{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:8px 0 18px}
-.toolbar input.search{flex:1; min-width:200px; padding:10px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:15px}
+input.search{flex:1; min-width:200px; padding:10px 14px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:15px; width:100%}
 .filters{display:flex; flex-wrap:wrap; gap:8px}
 .fchip{background:var(--chip); border:1px solid var(--border); color:var(--muted); font-size:12px; padding:6px 12px; border-radius:999px; cursor:pointer; user-select:none}
 .fchip[aria-pressed=true]{background:rgba(91,141,239,.18); border-color:var(--brand); color:var(--text)}
@@ -108,6 +108,71 @@ table.cmp td{background:var(--surface)}
 .stickybar .btn{margin-left:auto}
 .toast{position:fixed; left:50%; bottom:80px; transform:translateX(-50%) translateY(20px); background:var(--surface2); border:1px solid var(--border); color:var(--text); padding:10px 16px; border-radius:10px; font-size:13px; opacity:0; transition:.2s; z-index:40; pointer-events:none}
 .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+/* ═══ 리디자인 v2 ═══ */
+
+/* Hero stat tiles — label + value (값은 비례숫자·세미볼드, 색은 텍스트 토큰) */
+.stats{display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:22px 0 6px; max-width:560px}
+.stat{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px}
+.stat .label{font-size:12.5px; color:var(--muted)}
+.stat .value{font-size:26px; font-weight:650; letter-spacing:-.01em; margin-top:2px}
+.hero input.search{max-width:560px; font-size:16px; padding:13px 16px}
+
+/* Toolbar: 정렬 + 즐겨찾기 + 제보 */
+.toolbar2{display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin:14px 0 6px}
+.toolbar2 select{padding:8px 10px; background:var(--surface2); border:1px solid var(--border); border-radius:10px; color:var(--text); font-size:13px}
+
+/* 가로 스크롤 스트립 (신규·최근 본) */
+.hstrip{display:flex; gap:12px; overflow-x:auto; padding:4px 2px 12px; scroll-snap-type:x proximity; scrollbar-width:thin}
+.hstrip .pcard{min-width:230px; max-width:230px; scroll-snap-align:start; flex-shrink:0}
+
+/* 대분류 그룹 카드 */
+.groups{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:12px; margin:8px 0 20px}
+.gcard{background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:16px; cursor:pointer; transition:border-color .15s, transform .15s}
+.gcard:hover{border-color:#3a4150; transform:translateY(-2px)}
+.gcard .gicon{font-size:24px}
+.gcard h3{margin:8px 0 2px; font-size:15px}
+.gcard p{color:var(--muted); font-size:12px; margin:0 0 8px}
+.gcard .gmeta{font-size:12px; color:var(--muted)}
+.gcard .gmeta b{color:var(--text)}
+
+/* 그룹 구간 헤더 */
+.ghead{display:flex; align-items:baseline; gap:10px; margin:30px 0 6px; padding-bottom:8px; border-bottom:1px solid var(--border); scroll-margin-top:72px}
+.ghead h2{margin:0; font-size:19px}
+.ghead .muted{font-size:13px}
+
+/* 접이식 분야 섹션 */
+.cathead{display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:13px 16px; cursor:pointer; color:var(--text); font:inherit; margin-top:10px}
+.cathead:hover{border-color:#3a4150}
+.cathead .cicon{font-size:19px}
+.cathead .cname{font-weight:650; font-size:15px}
+.cathead .cdesc{color:var(--muted); font-size:12.5px; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.cathead .ccount{background:var(--chip); border:1px solid var(--border); color:var(--muted); font-size:12px; padding:3px 9px; border-radius:999px; white-space:nowrap}
+.cathead .caret{color:var(--muted); transition:transform .15s}
+.cathead[aria-expanded="true"] .caret{transform:rotate(90deg)}
+.catbody{padding:12px 2px 4px}
+.catblock.collapsed .catbody{display:none}
+
+/* 카드: 아바타 + 별 */
+.avatar{position:relative; width:38px; height:38px; min-width:38px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; color:#fff; font-weight:700; font-size:16px; overflow:hidden}
+.avatar img.favicon{position:absolute; inset:0; width:100%; height:100%; border-radius:50%; object-fit:cover}
+.pcard .row h3{flex:1; min-width:0; font-size:15px}
+.star{background:none; border:none; color:var(--muted); font-size:19px; cursor:pointer; padding:2px 4px; line-height:1}
+.star:hover{color:var(--warn)}
+.star.on{color:var(--warn)}
+.cardfoot{display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+.cardfoot .gosite{margin-left:auto; padding:5px 10px; font-size:12px}
+
+/* 검색 평면 결과 */
+.results-note{color:var(--muted); font-size:13px; margin:10px 0}
+
+@media(max-width:720px){
+  .stats{grid-template-columns:repeat(3,1fr); gap:8px}
+  .stat{padding:10px 12px}
+  .stat .value{font-size:20px}
+  .cathead .cdesc{display:none}
+  .hstrip .pcard{min-width:200px; max-width:200px}
+}
 
 /* Calculator */
 .calc{display:grid; grid-template-columns:1fr 1fr; gap:24px}

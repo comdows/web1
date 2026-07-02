@@ -13,13 +13,28 @@ python3 -m http.server 8000      # → http://localhost:8000
 #  Windows: python -m http.server 8000  /  또는 그냥 index.html 더블클릭
 ```
 
-## 구성
+## 구성 (리디자인 v2)
 | 파일 | 역할 |
 |---|---|
-| `index.html` | 디렉토리 홈 — 검색 + 분야 필터칩 + 분야별 카드(이름·개략설명·지역·공식링크) |
-| `data/platforms.js` | 분야(12) + 플랫폼(60) 데이터. 각 플랫폼은 `blurb`(한 줄 소개) |
-| `build.js` | 분야별 정적 페이지 `c/{분야}.html`(색인용, JSON-LD ItemList) + sitemap 생성 |
-| `assets/style.css`, `assets/app.js` | 스타일 · 공용 로직 |
+| `index.html` | 홈 — 대형 검색 + 스탯 타일 + 🆕 신규 스트립 + 🕘 최근 본 + 대분류 그룹 카드 5장 + 분야 아코디언(기본 접힘·지연 렌더) |
+| `data/platforms.js` | `groups`(대분류 5) + `categories`(35, group 매핑) + `platforms`(1,171, `new:true`=신규) |
+| `build.js` | 분야별 정적 페이지 `c/{분야}.html`(그룹 브레드크럼·형제 분야 칩·JSON-LD) + sitemap. giscus 게시판 슬롯(주석) 포함 |
+| `assets/app.js` | 공용 모듈 — localStorage(⭐즐겨찾기 `pa.favs.v1`·최근본 `pa.recent.v1`·정렬·펼침상태), 카드 템플릿, 별 하이드레이션 |
+| `assets/style.css` | 다크 테마 · 스탯타일 · 가로 스트립 · 아코디언 · 이니셜 아바타(+파비콘 오버레이, 오프라인 폴백) |
+
+## 유저 기능
+- **⭐ 즐겨찾기**: 카드 별 토글 → localStorage 저장, 헤더 카운트·"내 즐겨찾기" 보기 (c/ 분야 페이지에서도 동작)
+- **🕘 최근 본**: "공식 ↗" 클릭 기록, 홈 상단 스트립
+- **🆕 신규 하이라이트**: 최근 출시 스타트업 가로 스크롤 + "신규만" 필터
+- **정렬**: 기본 / 신규 우선 / 가나다 · **딥링크**: `?q=` `?cat=` `?group=` `?fav=1` `?new=1`
+- **플랫폼 제보**: GitHub Issue 템플릿 링크
+
+## 커뮤니티·락인 로드맵
+1. **(준비됨) giscus 분야별 게시판** — GitHub Discussions 기반 무료 댓글. `build.js`의 주석 슬롯에
+   저장소 Discussions 활성화 후 [giscus.app](https://giscus.app)에서 발급한 `data-repo-id`/`data-category-id`를
+   채우고 주석 해제 → 35개 분야 페이지마다 독립 게시판이 생김. (댓글 작성엔 GitHub 로그인 필요)
+2. **(외부 서비스) 뉴스레터** — 신규 플랫폼 주간 정리, Stibee/Maily 폼 임베드
+3. **(백엔드 필요) 리뷰·평점 / 분야별 Q&A / 운영자 인증·정보 정정 / 관심 분야 신규 알림 / 클릭 기반 인기 랭킹**
 
 ## 수록 규모: 35개 분야 · 865개 플랫폼
 (법률·세무·전문서비스 / 금융·대출·보험 비교 / 렌탈·구독 / 사무·MRO·산업재 B2B 분야 추가,
