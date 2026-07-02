@@ -92,12 +92,19 @@
 
 <script src="data/config.js"></script>
 <script src="data/listings.js"></script>
+<!-- 관리자 실데이터(비공개): data/listings.local.js 는 .gitignore 처리되어 배포/저장소에 올라가지 않는다.
+     로컬에 있으면 window.LISTINGS 를 실제 접수 데이터로 덮어쓴다. 공개 배포에선 404(무해)로 무시된다. -->
+<script src="data/listings.local.js" onerror="void 0"></script>
 <script src="data/platforms.js"></script>
 <script src="assets/app.js"></script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  const preview = new URLSearchParams(location.search).get("preview") === "1";
-  const on = (window.SITE_FLAGS && SITE_FLAGS.stage2) || preview;
+  // 관리자 전용(로컬 열람): 공개 배포에서는 stage2 플래그가 켜질 때만(정식 오픈) 보드가 보인다.
+  // 오픈 전까지 매칭 보드는 관리자가 본인 PC에서 localhost로 띄울 때만 열려 검수·관리할 수 있다.
+  // (공개 URL에서는 ?preview 같은 우회로 열리지 않는다.)
+  const h = location.hostname;
+  const isLocalAdmin = h === "localhost" || h === "127.0.0.1" || h === "0.0.0.0" || h === "";
+  const on = (window.SITE_FLAGS && SITE_FLAGS.stage2) || isLocalAdmin;
   document.querySelectorAll("[data-soon]").forEach(s => {
     if (!(window.SITE_FLAGS && SITE_FLAGS[s.dataset.soon])) s.textContent = " 준비중";
   });
@@ -128,6 +135,13 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   document.getElementById("board").style.display = "";
+  if (isLocalAdmin && !(window.SITE_FLAGS && SITE_FLAGS.stage2)) {
+    const b = document.createElement("div");
+    b.className = "banner";
+    b.innerHTML = "🔒 <b>관리자 로컬 열람 모드</b> — 이 보드는 지금 <b>내 PC(localhost)에서만</b> 보입니다. 공개 사이트 방문자에게는 '준비 중'만 노출됩니다. 정식 오픈하려면 <code>data/config.js</code>의 <code>stage2</code>를 <code>true</code>로 바꾸세요.";
+    const board = document.getElementById("board");
+    board.insertBefore(b, board.firstChild);
+  }
   document.getElementById("register-cta").innerHTML = ctaPair("[제휴 제안 등록]", regBody, "stage2,제휴제안");
 
   const catName = (id) => { const c = App.categoryById(id); return c ? c.icon + " " + c.name : id; };
@@ -197,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
   window.addEventListener("hashchange", highlightHash);
   highlightHash();
-  window.__track("stage2_board_view", { preview });
+  window.__track("stage2_board_view", { local: isLocalAdmin });
 });
 </script>
 </body>
