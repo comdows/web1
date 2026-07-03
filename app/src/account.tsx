@@ -86,6 +86,8 @@ export function Account() {
   const { session, profile, isAdmin } = useSession();
   const [name, setName] = useState("");
   const [saved, setSaved] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [err, setErr] = useState("");
   const [subs, setSubs] = useState<Submission[] | null>(null);
 
   useEffect(() => { setName(profile?.display_name ?? ""); }, [profile?.display_name]);
@@ -108,32 +110,42 @@ export function Account() {
     );
   }
 
+  const role = profile?.role ?? "user";
+  const roleInfo = role === "admin" ? { kind: "verify" as const, label: "관리자" }
+    : role === "operator" ? { kind: "good" as const, label: "운영자" }
+    : { kind: "muted" as const, label: "일반 회원" };
+
   const saveName = async (e: FormEvent) => {
     e.preventDefault();
-    try { await updateDisplayName(name.trim()); setSaved(true); refreshProfile(); setTimeout(() => setSaved(false), 2000); } catch { /* noop */ }
+    setErr("");
+    try { await updateDisplayName(name.trim()); setSaved(true); refreshProfile(); }
+    catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
   };
 
   return (
     <main className="page container">
       <h1>계정</h1>
       <div className="auth-card">
-        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
           <span className="mono" style={{ fontSize: 13 }}>{session.user.email}</span>
-          {isAdmin && <Badge kind="verify">관리자</Badge>}
+          <Badge kind={roleInfo.kind}>{roleInfo.label}</Badge>
         </div>
         <form className="frm" onSubmit={saveName}>
           <label>표시 이름
-            <input value={name} onChange={(e) => setName(e.target.value)} placeholder="예: 이음 운영자" maxLength={40} />
+            <input value={name} onChange={(e) => { setName(e.target.value); setSaved(false); }} placeholder="예: 이음 운영자" maxLength={40} />
           </label>
           <div style={{ display: "flex", gap: 8 }}>
             <button className="btn primary sm" type="submit">저장</button>
-            {saved && <span className="ok" style={{ alignSelf: "center" }}>저장됨 ✓</span>}
+            {saved && <span className="ok" style={{ alignSelf: "center" }}>저장됐어요 ✓</span>}
+            {err && <span className="err" style={{ alignSelf: "center" }}>{err}</span>}
           </div>
         </form>
         <div className="frm-note" style={{ marginTop: 12 }}>★ 즐겨찾기는 로그인 중 자동으로 계정에 동기화됩니다.</div>
-        <div style={{ marginTop: 16, display: "flex", gap: 8 }}>
-          {isAdmin && <button className="btn ghost sm" onClick={() => go("admin")}>🛠 관리 콘솔</button>}
+        <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {isAdmin && <button className="btn primary sm" onClick={() => go("admin")}>🛠 관리 콘솔</button>}
+          <button className="btn ghost sm" onClick={() => { refreshProfile(); setChecked(true); setTimeout(() => setChecked(false), 2500); }}>권한 새로고침</button>
           <button className="btn ghost sm" onClick={() => signOut()}>로그아웃</button>
+          {checked && !isAdmin && <span className="frm-note" style={{ alignSelf: "center" }}>아직 일반 회원이에요. Supabase에서 admin 지정 후 눌러보세요.</span>}
         </div>
       </div>
 
