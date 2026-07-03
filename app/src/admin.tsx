@@ -101,6 +101,7 @@ function LifecyclePanel() {
   const [lc, setLc] = useState<Lifecycle | null>(null);
   const [reason, setReason] = useState("");
   const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
   const cands = useMemo(() => {
     const n = q.trim().toLowerCase();
     if (!n) return [];
@@ -113,10 +114,11 @@ function LifecyclePanel() {
     catch { setMsg("상태 조회 실패"); }
   };
   const move = async (to: Lifecycle) => {
-    if (!picked) return;
-    setMsg("");
+    if (!picked || busy) return;
+    setMsg(""); setBusy(true);
     try { await transitionPlatform(picked.id, to, reason); setLc(to); setReason(""); setMsg(`✓ ${LC_LABEL[to]}(으)로 전이됨 — 감사로그 기록`); }
     catch (ex) { setMsg(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(false); }
   };
 
   return (
@@ -146,7 +148,7 @@ function LifecyclePanel() {
               </div>
               <div style={{ display: "flex", gap: 8, marginTop: 8, flexWrap: "wrap" }}>
                 {LIFECYCLE_NEXT[lc].map((to) => (
-                  <button key={to} className="btn ghost sm" onClick={() => move(to)}>→ {LC_LABEL[to]}</button>
+                  <button key={to} className="btn ghost sm" disabled={busy} onClick={() => move(to)}>→ {LC_LABEL[to]}</button>
                 ))}
               </div>
             </>

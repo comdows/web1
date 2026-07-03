@@ -2,11 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { categories, groups, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
-import { Badge, PlatformCard } from "./components";
+import { Avatar, Badge, PlatformCard } from "./components";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
 import { getPlatform, remoteEnabled } from "./lib/api";
 import { useFavs, useCompare, Recent } from "./lib/store";
-import { avatarHue, faviconUrl } from "./lib/util";
 import { useNav } from "./nav";
 
 /* ─────────────── Platform Detail ─────────────── */
@@ -39,18 +38,15 @@ export function PlatformDetail({ id }: { id?: string }) {
   const cat = categoryById(p.category);
   const on = favs.has(p.id);
   const inCmp = cmp.has(p.id);
-  const fav = faviconUrl(p.url);
   const related = (local ? list : (remote?.similar ?? [])).filter((x) => x.category === p.category && x.id !== p.id).slice(0, 6);
   return (
     <div className="page container">
       <button className="linklike" onClick={() => history.length > 1 ? history.back() : go("home")}>← 뒤로</button>
       <div className="detail-hero">
-        <span className="avatar lg" style={{ background: `hsl(${avatarHue(p.name)} 45% 40%)` }}>
-          {fav ? <img src={fav} alt="" /> : p.name.charAt(0)}
-        </span>
+        <Avatar name={p.name} url={p.url} size="lg" />
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1>{p.name} {p.new && <Badge kind="new">NEW</Badge>}</h1>
-          <div className="cat">{cat?.icon} <span className="linklike" onClick={() => go("search", { q: "" })}>{cat?.name}</span> · {p.region}</div>
+          <div className="cat">{cat?.icon} <span className="linklike" onClick={() => go("search", { q: cat?.name ?? "" })}>{cat?.name}</span> · {p.region}</div>
           <div className="detail-cta">
             <a className="btn primary" href={p.url} target="_blank" rel="noopener noreferrer" onClick={() => Recent.push(p.id)}>공식 사이트 방문 ↗</a>
             <button className={`btn ghost ${on ? "on" : ""}`} onClick={() => favs.toggle(p.id)}>{on ? "★ 저장됨" : "☆ 즐겨찾기"}</button>
