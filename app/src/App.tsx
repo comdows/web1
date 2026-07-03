@@ -4,6 +4,7 @@ import { groups, categories, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import { Logo, StatTile, PlatformCard, Footer } from "./components";
 import { usePlatforms, usePlatformStats, usePlatformIndex } from "./lib/platforms";
+import { sortByRelevance } from "./lib/search";
 import { useFavs, useCompare } from "./lib/store";
 import { FLAGS } from "./config";
 import { Partners, Exchange } from "./pages";
@@ -113,7 +114,9 @@ export default function App() {
     let list = query ? searchIndex.filter((x) => query.split(/\s+/).every((t) => x.hay.includes(t))).map((x) => x.p) : platforms.slice();
     if (fav) { const set = new Set(favs.all()); list = list.filter((p) => set.has(p.id)); }
     if (onlyNew) list = list.filter((p) => p.new);
-    return sortPlatforms(list, sort).slice(0, 200);
+    if (sort === "default" && query) list = sortByRelevance(list, query);
+    else list = sortPlatforms(list, sort);
+    return list.slice(0, 200);
   }, [flatMode, query, fav, onlyNew, sort, favs, platforms, searchIndex]);
   const newPlatforms = useMemo(() => platforms.filter((p) => p.new).slice(0, 24), [platforms]);
   const shownGroups = group ? groups.filter((g) => g.id === group) : groups;
