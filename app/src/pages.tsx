@@ -14,6 +14,8 @@ import {
 import type { PartnerPost, PublicDeal } from "./lib/api";
 import { checkAnonymity, hasBlocking, hasContact } from "./lib/anonymity";
 import type { AnonFinding } from "./lib/anonymity";
+import { estimateValue, fmtRange, VAL_YEARS } from "./lib/valuation";
+import type { ValueResult } from "./lib/valuation";
 
 const ISSUE = (title: string, body: string, labels?: string) =>
   `https://github.com/comdows/web1/issues/new?title=${encodeURIComponent(title)}` +
@@ -448,6 +450,7 @@ export function Partners() {
 /* 매각 접수 폼 → deal_submissions(비공개, 검수·익명화 후 코드명 게시)
  * 지분 트랙 선택 시 접수 대신 전문 자문 안내(1차 방어선 — 2차는 admin 게시 가드) */
 function SellForm({ onDone }: { onDone: () => void }) {
+  const go = useNav();
   const [track, setTrack] = useState<"asset" | "equity">("asset");
   const [cat, setCat] = useState("");
   const [region, setRegion] = useState<"domestic" | "overseas">("domestic");
@@ -573,7 +576,10 @@ function SellForm({ onDone }: { onDone: () => void }) {
           <button className="btn primary" disabled={busy} type="submit">
             {busy ? "접수 중…" : warnAck && findings.length > 0 ? "확인했어요 — 그대로 접수" : "매각 접수(비공개)"}
           </button>
-          <div className="frm-note">검수는 보통 <b>3영업일 이내</b>예요(1인 운영 · 순차 검수). 진행 상태는 계정 → 내 활동에서 확인할 수 있어요.</div>
+          <div className="frm-note">
+            검수는 보통 <b>3영업일 이내</b>예요(1인 운영 · 순차 검수). 진행 상태는 계정 → 내 활동에서 확인할 수 있어요.
+            기대 가격대가 궁금하면 <button type="button" className="linklike" onClick={() => go("value-check")}>가치 자가 진단(참고용)</button>을 먼저 해보세요.
+          </div>
         </>
       )}
     </form>
@@ -702,6 +708,7 @@ export function Exchange() {
           <a key={id} className="fchip" href={`#${id}`}>{l}</a>
         ))}
         <button className="fchip" onClick={() => go("deal-guide")}>양수도 가이드 →</button>
+        <button className="fchip" onClick={() => go("value-check")}>가치 자가 진단 →</button>
       </div>
 
       <ProcessStrip steps={[
@@ -881,6 +888,85 @@ export function DealGuide() {
         <button className="btn primary sm" onClick={() => go("exchange")}>← 거래소로 돌아가기</button>
         <button className="btn ghost sm" onClick={() => go("search", { q: "법률" })}>법률·세무·전문서비스 분야 →</button>
       </div>
+    </main>
+  );
+}
+
+/* ─────────────── 가치 자가 진단 (참고용 밴드 추정 — 감정·자문 아님) ───────────────
+ * 밴드 입력 → 밴드 출력, 단말 내 연산·미저장·게시물과 분리(patent-plan.md 발명 4).
+ * 세모플이 특정 매물의 가치를 평가·보증하는 것이 아니며, 결과는 어디에도 기록되지 않는다. */
+export function ValueCheck() {
+  const go = useNav();
+  const [group, setGroup] = useState(groups[0]?.id ?? "commerce");
+  const [band, setBand] = useState(REVENUE_BANDS[1]);
+  const [assets, setAssets] = useState<Set<string>>(new Set());
+  const [handover, setHandover] = useState(HANDOVER_OPTS[1]);
+  const [years, setYears] = useState(VAL_YEARS[2]);
+  const [result, setResult] = useState<ValueResult | null>(null);
+  const toggleAsset = (a: string) => setAssets((s) => { const n = new Set(s); if (n.has(a)) n.delete(a); else n.add(a); setResult(null); return n; });
+  return (
+    <main className="page container">
+      <h1>📐 플랫폼 가치 자가 진단 <Badge kind="muted">참고용</Badge></h1>
+      <p className="lead" style={{ maxWidth: 640 }}>
+        매각을 고민할 때 기대치를 잡아보는 <b>참고용 도구</b>입니다. 밴드(범위)만 입력받아 밴드로만 답하고,
+        입력·결과는 <b>브라우저 안에서만 계산되며 저장·전송되지 않고 게시물에도 표시되지 않습니다</b>.
+        감정평가·투자자문·가격 보증이 아니며, 실제 가격은 당사자 협상과 전문 자문으로 정해집니다.
+      </p>
+      <form className="frm auth-card" style={{ maxWidth: 620 }} onSubmit={(e) => { e.preventDefault(); setResult(estimateValue({ group, revenueBand: band, assets: [...assets], handover, years })); }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <label style={{ flex: 1, minWidth: 180 }}>분야 그룹
+            <select value={group} onChange={(e) => { setGroup(e.target.value); setResult(null); }}>
+              {groups.map((g) => <option key={g.id} value={g.id}>{g.icon} {g.name}</option>)}
+            </select>
+          </label>
+          <label style={{ flex: 1, minWidth: 180 }}>연매출 밴드
+            <select value={band} onChange={(e) => { setBand(e.target.value); setResult(null); }}>
+              {REVENUE_BANDS.map((b) => <option key={b} value={b}>{b}</option>)}
+            </select>
+          </label>
+        </div>
+        <div>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>이전 가능한 자산 <span style={{ fontWeight: 400, color: "var(--faint)" }}>(많이 체크할수록 구간이 올라가요)</span></div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {ASSET_ITEMS.map((a) => (
+              <label key={a} className="facet-opt" style={{ fontSize: 12.5 }}>
+                <input type="checkbox" checked={assets.has(a)} onChange={() => toggleAsset(a)} /> {a}
+              </label>
+            ))}
+          </div>
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <label style={{ flex: 1, minWidth: 160 }}>운영 인수인계 계획
+            <select value={handover} onChange={(e) => { setHandover(e.target.value); setResult(null); }}>
+              {HANDOVER_OPTS.map((h) => <option key={h} value={h}>{h}</option>)}
+            </select>
+          </label>
+          <label style={{ flex: 1, minWidth: 160 }}>운영 연차
+            <select value={years} onChange={(e) => { setYears(e.target.value); setResult(null); }}>
+              {VAL_YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
+            </select>
+          </label>
+        </div>
+        <button className="btn primary" type="submit">참고 구간 계산해 보기</button>
+      </form>
+      {result && (
+        <div className="auth-card" style={{ maxWidth: 620, marginTop: 14 }}>
+          <div style={{ fontSize: 13, color: "var(--muted)" }}>참고 구간 (연매출 대비 {result.multLow}~{result.multHigh}배 적용 · 신뢰도 {result.confidence})</div>
+          <div style={{ fontSize: 26, fontWeight: 800, margin: "6px 0 10px" }}>{fmtRange(result.low, result.high)}</div>
+          <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>적용된 가정(전부 공개)</div>
+          <ul style={{ margin: "0 0 10px", paddingLeft: 18, fontSize: 13, lineHeight: 1.8 }}>
+            {result.factors.map((f) => <li key={f}>{f}</li>)}
+          </ul>
+          <div className="frm-note">
+            ⚠️ 공개 시장 통례를 단순화한 참고 가정이에요. 수익성·성장률·경쟁 상황에 따라 실제 범위는 크게 다를 수 있고,
+            정확한 판단은 회계법인 등 전문 자문의 영역입니다. 이 결과는 저장되지 않으며 매물 게시물에 표시되지 않아요.
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
+            <button className="btn primary sm" onClick={() => go("exchange")}>거래소에서 매각 접수하기 →</button>
+            <button className="btn ghost sm" onClick={() => go("deal-guide")}>양수도 가이드 →</button>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
