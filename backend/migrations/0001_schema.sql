@@ -280,7 +280,10 @@ create table public.deals (
   region       region_t not null default 'domestic',
   revenue_band text not null,                            -- '연매출 1~5억'
   mode         text not null,                            -- '지분 전량 매각' 등
-  summary      text not null,                            -- 익명 요약
+  summary      text not null,                            -- 익명 요약(익명성 규칙 검수 통과분)
+  highlights   text[] not null default '{}',             -- 범주·밴드 표현만 ("작가 풀 보유" 등)
+  sale_reason  text,                                     -- 매각 사유(선택, 신뢰 재료)
+  -- 희망 가격 컬럼은 의도적으로 없음: 가격은 소개 후 당사자 협상(가격 개입 = 중개 인상 → 금지)
   status       deal_status_t not null default 'open',
   is_demo      boolean not null default false,
   owner_id     uuid references public.profiles(id),      -- 등록자(비공개; RLS로 보호)
@@ -288,6 +291,19 @@ create table public.deals (
   created_at   timestamptz not null default now()
 );
 create index idx_deals_status on public.deals(status, posted desc);
+
+create table public.buyer_briefs (                       -- 인수 희망 브리프(수요 풀)
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references public.profiles(id) on delete cascade,
+  categories  text[] not null default '{}',              -- 관심 분야(category id)
+  budget_band text not null,                             -- 예산 밴드('~1억','1~5억'…)
+  mode        text not null default '',                  -- 희망 형태(지분/자산 등)
+  entity      text not null default '',                  -- 주체(개인/법인)
+  note        text not null default '',                  -- 소개(연락처 금지)
+  active      boolean not null default true,             -- 신규 매물 알림 대상
+  created_at  timestamptz not null default now()
+);
+create index idx_briefs_active on public.buyer_briefs(active) where active;
 
 create table public.deal_interests (                     -- 인수 관심(소개 요청)
   id         uuid primary key default gen_random_uuid(),
