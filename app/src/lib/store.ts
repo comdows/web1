@@ -57,6 +57,27 @@ export const Recent = {
   },
 };
 
+/* 관심 분야 프로필 — 온보딩 선택을 영속화(홈 추천·주간 필터의 업종 신호) */
+const INTERESTS_KEY = "sm.interests.v1";
+export interface InterestsState { groups: string[]; cats: string[]; newPref: boolean }
+export const Interests = {
+  get(): InterestsState | null {
+    try { const v = lsGet(INTERESTS_KEY); return v ? JSON.parse(v) : null; } catch { return null; }
+  },
+  set(s: InterestsState) { lsSet(INTERESTS_KEY, JSON.stringify(s)); emit(); },
+};
+
+/* 직전 방문 시각 — 세션당 1회, 직전 값을 읽은 뒤에 갱신(재방문 델타 배지용) */
+const LASTVISIT_KEY = "sm.lastvisit.v1";
+let lastVisitCache: string | null | undefined;
+export function consumeLastVisit(): string | null {
+  if (lastVisitCache === undefined) {
+    lastVisitCache = lsGet(LASTVISIT_KEY);
+    lsSet(LASTVISIT_KEY, new Date().toISOString());
+  }
+  return lastVisitCache;
+}
+
 export const Compare = {
   all(): string[] { return readSet(CMP_KEY); },
   has(id: string): boolean { return readSet(CMP_KEY).includes(id); },
@@ -85,6 +106,26 @@ export function useFavs() {
     all: () => Favs.all(),
     count: Favs.all().length,
   };
+}
+
+export function useRecent(): string[] {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const l = () => force((n) => n + 1);
+    listeners.add(l);
+    return () => { listeners.delete(l); };
+  }, []);
+  return Recent.list();
+}
+
+export function useInterests(): InterestsState | null {
+  const [, force] = useState(0);
+  useEffect(() => {
+    const l = () => force((n) => n + 1);
+    listeners.add(l);
+    return () => { listeners.delete(l); };
+  }, []);
+  return Interests.get();
 }
 
 export function useCompare() {

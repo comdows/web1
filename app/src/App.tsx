@@ -4,8 +4,8 @@ import { groups, categories, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import { Logo, LogoMark, StatTile, PlatformCard, Footer } from "./components";
 import { usePlatforms, usePlatformStats, usePlatformIndex } from "./lib/platforms";
-import { sortByRelevance } from "./lib/search";
-import { useFavs, useCompare } from "./lib/store";
+import { pickRecommended, sortByRelevance } from "./lib/search";
+import { consumeLastVisit, useFavs, useCompare, useInterests, useRecent } from "./lib/store";
 import { FLAGS } from "./config";
 import { Partners, Exchange, DealGuide, ValueCheck } from "./pages";
 import { NavContext } from "./nav";
@@ -17,7 +17,7 @@ import { AiFinder } from "./ai";
 import { Weekly, Packs } from "./growth";
 import { Terms, Privacy } from "./legal";
 import { useSession } from "./lib/auth";
-import { remoteEnabled, trackEvent } from "./lib/api";
+import { fetchRecentPlatforms, remoteEnabled, trackEvent } from "./lib/api";
 
 type Sort = "default" | "new" | "name";
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
@@ -135,6 +135,26 @@ export default function App() {
 
   const cmpNames = cmp.all().map((id) => index.get(id)?.name).filter(Boolean).join(", ");
 
+  // ★ 저장 넛지 — 비로그인 + 즐겨찾기 2개 이상, 1회 닫으면 끝(비교 바와 동시 노출 안 함)
+  const [nudgeClosed, setNudgeClosed] = useState<boolean>(() => { try { return !!localStorage.getItem("sm.nudge.fav.v1"); } catch { return true; } });
+  const showNudge = remoteEnabled && !session && favs.count >= 2 && !nudgeClosed && cmp.count === 0 && view !== "account";
+  const closeNudge = () => { try { localStorage.setItem("sm.nudge.fav.v1", "1"); } catch { /* noop */ } setNudgeClosed(true); };
+
+  // 🕘 최근 본 / ✨ 관심 분야 / 🆕 재방문 델타
+  const recentIds = useRecent();
+  const recentPlatforms = useMemo(() => recentIds.map((x) => index.get(x)).filter(Boolean).slice(0, 12) as Platform[], [recentIds, index]);
+  const interests = useInterests();
+  const interestRecs = useMemo(
+    () => interests ? pickRecommended(platforms, interests.groups, interests.cats, interests.newPref, 12) : [],
+    [interests, platforms]
+  );
+  const [sinceCount, setSinceCount] = useState(0);
+  useEffect(() => {
+    const last = consumeLastVisit();
+    if (!last || !remoteEnabled) return;
+    fetchRecentPlatforms(60).then((rows) => setSinceCount(rows.filter((r) => r.created && r.created > last).length)).catch(() => { /* noop */ });
+  }, []);
+
   return (
     <NavContext.Provider value={go}>
       <header className="site-header"><div className="container inner">
@@ -179,6 +199,11 @@ export default function App() {
             <div className="eyebrow">SEMOPL · 세상의 모든 플랫폼</div>
             <h1>어떤 분야에 어떤 플랫폼이 있을까?</h1>
             <p className="sub">사업자가 나가서 붙을 수 있는 플랫폼과 <b>일을 도와주는 AI 도구</b>까지, 같은 기준으로 정리했습니다. 빠르게 훑고 ★로 저장하세요.</p>
+            {sinceCount > 0 && (
+              <button className="fchip on" style={{ marginBottom: 10 }} onClick={() => go("weekly")}>
+                🆕 다녀간 사이 새 플랫폼·AI {sinceCount}개 →
+              </button>
+            )}
             <div className="search">
               <button type="button" className="ico" aria-label="검색" onClick={() => { if (q.trim()) { trackEvent("search", undefined, q.trim()); go("search", { q }); } }}>⌕</button>
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="플랫폼·분야 검색 (예: 쿠팡, 크라우드펀딩, 수출)"
@@ -221,11 +246,32 @@ export default function App() {
             <>
               <div className="result-meta">{fav ? "내 즐겨찾기" : onlyNew ? "신규 플랫폼" : `"${q}" 검색결과`} · {flatResults.length}개{flatResults.length >= 200 ? " (상위 200)" : ""}</div>
               {flatResults.length === 0
-                ? <div className="empty">{fav ? "아직 즐겨찾기한 플랫폼이 없어요. 카드의 ☆를 눌러 저장하세요." : "결과가 없습니다."}</div>
+                ? (
+                  <div className="empty">
+                    {fav ? "아직 즐겨찾기한 플랫폼이 없어요. 카드의 ☆를 눌러 저장하세요." : (
+                      <>
+                        "{q}" 결과가 없습니다 — 이렇게 해보세요.
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginTop: 10 }}>
+                          <button className="btn ghost sm" onClick={() => go("search", { q })}>상세 검색(필터) →</button>
+                          <button className="btn ghost sm" onClick={() => go("ai-finder")}>AI 도구 찾기 →</button>
+                          <button className="btn primary sm" onClick={() => go("submit")}>+ 이 플랫폼 제보</button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )
                 : <div className="card-grid">{flatResults.map((p) => <PlatformCard key={p.id} p={p} />)}</div>}
             </>
           ) : (
             <>
+              {recentPlatforms.length >= 2 && (<>
+                <div className="sec-title">🕘 최근 본 플랫폼</div>
+                <div className="hstrip">{recentPlatforms.map((p) => <PlatformCard key={p.id} p={p} />)}</div>
+              </>)}
+              {interestRecs.length > 0 && (<>
+                <div className="sec-title">✨ 내 관심 분야 추천 <button className="linklike" style={{ textTransform: "none", letterSpacing: 0 }} onClick={() => go("onboarding")}>조건 다시 고르기 →</button></div>
+                <div className="hstrip">{interestRecs.map((p) => <PlatformCard key={p.id} p={p} />)}</div>
+              </>)}
               {newPlatforms.length > 0 && (<>
                 <div className="sec-title">🆕 새로 나온 플랫폼 <button className="linklike" style={{ textTransform: "none", letterSpacing: 0 }} onClick={() => go("weekly")}>주간 아카이브 →</button></div>
                 <div className="hstrip">{newPlatforms.map((p) => <PlatformCard key={p.id} p={p} />)}</div>
@@ -283,6 +329,13 @@ export default function App() {
         </main>
       )}
 
+      {showNudge && (
+        <div className="container"><div className="cmp-bar">
+          <span>★ {favs.count}개 저장됨 — 지금은 이 브라우저에만 있어요.</span>
+          <button className="btn primary sm" onClick={() => go("account")}>가입하고 계정에 지키기 →</button>
+          <button className="btn ghost sm" onClick={closeNudge}>닫기</button>
+        </div></div>
+      )}
       {cmp.count > 0 && view !== "compare" && (
         <div className="container"><div className="cmp-bar">
           <span className="mono" style={{ color: "var(--brand-soft)" }}>비교 {cmp.count}/4</span>
