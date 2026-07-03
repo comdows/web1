@@ -3,6 +3,7 @@ import type { FormEvent, ReactNode } from "react";
 import { listings, categoryById, groups, categoriesByGroup, partnerGoals, partnerGroups, partnerTypes } from "./data";
 import type { PartnerType } from "./data";
 import { Badge } from "./components";
+import { FLAGS } from "./config";
 import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
 import {
@@ -294,6 +295,7 @@ export function Partners() {
       ) : posted ? (
         <div className="empty" style={{ borderColor: "var(--success)", padding: 24 }}>
           접수됐어요 ✓ 검수(중복·연락처 확인) 후 보드에 게시됩니다. 진행 상태는 세모플이 계정 이메일로 안내드려요.
+          {FLAGS.contactEmail && <div className="frm-note" style={{ marginTop: 6 }}>문의: <a href={`mailto:${FLAGS.contactEmail}`}>{FLAGS.contactEmail}</a></div>}
           <div style={{ marginTop: 10 }}><button className="btn ghost sm" onClick={() => setPosted(false)}>하나 더 등록</button></div>
         </div>
       ) : !session ? (
@@ -400,6 +402,7 @@ function SellForm({ onDone }: { onDone: () => void }) {
   const [summary, setSummary] = useState("");
   const [highlights, setHighlights] = useState("");
   const [reason, setReason] = useState("");
+  const [ack, setAck] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const submit = async (e: FormEvent) => {
@@ -408,7 +411,7 @@ function SellForm({ onDone }: { onDone: () => void }) {
     try {
       await createDealSubmission({
         category_id: cat, region, revenue_band: band, mode,
-        summary: summary.trim(), highlights: highlights.trim(), sale_reason: reason.trim(),
+        summary: summary.trim(), highlights: highlights.trim(), sale_reason: reason.trim(), ack,
       });
       onDone();
     } catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
@@ -445,6 +448,10 @@ function SellForm({ onDone }: { onDone: () => void }) {
         <input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={100} placeholder="예: 운영자 이직 — 신뢰 재료가 됩니다" />
       </label>
       <div className="frm-note">⚠️ 연락처·정확한 수치·희망 가격은 적지 마세요. 게시는 검수·익명화 후 코드명(D-1xx)으로만 됩니다.</div>
+      <label className="facet-opt" style={{ fontSize: 13 }}>
+        <input type="checkbox" required checked={ack} onChange={() => setAck((v) => !v)} />
+        세모플은 <b>정보 게시와 소개만</b> 하며 중개·자문·가치평가를 하지 않음을 확인했습니다. *
+      </label>
       {err && <div className="err">{err}</div>}
       <button className="btn primary" disabled={busy} type="submit">{busy ? "접수 중…" : "매각 접수(비공개)"}</button>
     </form>
@@ -598,6 +605,7 @@ export function Exchange() {
           {done === "sell"
             ? "접수됐어요 ✓ 검수·익명화 후 코드명(D-1xx)으로 게시됩니다. 진행 상태는 계정 이메일로 안내드려요."
             : "브리프 등록 완료 ✓ 조건에 맞는 신규 매물이 올라오면 우선 안내드립니다."}
+          {FLAGS.contactEmail && <div className="frm-note" style={{ marginTop: 6 }}>문의: <a href={`mailto:${FLAGS.contactEmail}`}>{FLAGS.contactEmail}</a></div>}
           <div style={{ marginTop: 10 }}><button className="btn ghost sm" onClick={() => { setDone(""); setForm(""); }}>확인</button></div>
         </div>
       ) : !session ? (

@@ -280,6 +280,7 @@ export async function fetchDeals(): Promise<PublicDeal[]> {
 export interface DealSubPayload {
   category_id: string; region: "domestic" | "overseas"; revenue_band: string;
   mode: string; summary: string; highlights: string; sale_reason: string;
+  ack?: boolean; // 비중개(정보 게시·소개만) 확인 체크 — 오인 접수 방지 기록
 }
 export async function createDealSubmission(payload: DealSubPayload): Promise<void> {
   const uid = getSession()?.user.id;

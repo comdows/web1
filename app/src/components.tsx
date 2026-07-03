@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 import type { Platform } from "./data";
 import { categoryById } from "./data";
 import { useFavs, useCompare, Recent } from "./lib/store";
+import { usePlatformStats } from "./lib/platforms";
 import { avatarHue, faviconUrl } from "./lib/util";
 import { trackEvent } from "./lib/api";
+import { FLAGS } from "./config";
 import { useNav } from "./nav";
 
 export function LogoMark({ size = 26 }: { size?: number }) {
@@ -76,9 +78,36 @@ export function PlatformCard({ p, showCat = true }: { p: Platform; showCat?: boo
 }
 
 export function Footer() {
+  const go = useNav();
+  const { total } = usePlatformStats();
   return (
     <footer className="site-footer"><div className="container">
-      세모플 (SEMOPL) · 세상의 모든 플랫폼 · 분야별 플랫폼 디렉토리 — 각 설명은 개략 소개이며 상세는 공식 사이트에서 확인하세요.
+      <div className="foot-grid">
+        <div>
+          <span className="logo" style={{ marginBottom: 8 }}><LogoMark size={20} /><span className="word" style={{ fontSize: 16 }}>세모<b>플</b></span></span>
+          <p className="foot-desc">세상의 모든 플랫폼 — 발견하고, 제휴하고, 거래하는 사업자 채널 인프라.
+            각 설명은 개략 소개이며 상세는 공식 사이트에서 확인하세요.</p>
+        </div>
+        <div>
+          <div className="foot-h">바로가기</div>
+          <button className="foot-link" onClick={() => go("home")}>분야별 디렉토리</button>
+          <button className="foot-link" onClick={() => go("search")}>검색</button>
+          <button className="foot-link" onClick={() => go("partners")}>제휴 매칭</button>
+          <button className="foot-link" onClick={() => go("exchange")}>플랫폼 거래소</button>
+          <button className="foot-link" onClick={() => go("submit")}>플랫폼 제보</button>
+        </div>
+        <div>
+          <div className="foot-h">안내</div>
+          <p className="foot-desc">세모플은 제휴·거래의 <b>당사자가 아니며</b>, 정보 게시와 쌍방 동의에 따른 소개만 제공합니다.
+            계약·정산·실사는 당사자와 전문 자문사가 직접 진행합니다.</p>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+            <button className="foot-link" onClick={() => go("terms")}>이용약관</button>
+            <button className="foot-link" onClick={() => go("privacy")}>개인정보처리방침</button>
+            {FLAGS.contactEmail && <a className="foot-link" href={`mailto:${FLAGS.contactEmail}`}>문의</a>}
+          </div>
+        </div>
+      </div>
+      <div className="foot-cap mono">© 2026 SEMOPL · {total.toLocaleString()} PLATFORMS · GRID 8PX</div>
     </div></footer>
   );
 }

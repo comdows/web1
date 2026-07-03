@@ -67,9 +67,13 @@ function toSession(d: TokenResponse): Session | null {
 const redirectQ = REDIRECT_URL ? `?redirect_to=${encodeURIComponent(REDIRECT_URL)}` : "";
 
 /* 가입 — Supabase의 "Confirm email" 설정이 켜져 있으면 세션 없이 확인 메일만 발송된다.
- * redirect_to로 확인 링크가 우리 앱(/web1/)으로 돌아오게 한다. */
-export async function signUp(email: string, password: string): Promise<{ needsConfirm: boolean }> {
-  const s = toSession(await gotrue(`signup${redirectQ}`, { email, password }));
+ * redirect_to로 확인 링크가 우리 앱(/web1/)으로 돌아오게 한다.
+ * termsVersion: 가입 시 동의한 약관 버전을 user_metadata에 기록(분쟁 시 동의 근거). */
+export async function signUp(email: string, password: string, termsVersion?: string): Promise<{ needsConfirm: boolean }> {
+  const s = toSession(await gotrue(`signup${redirectQ}`, {
+    email, password,
+    ...(termsVersion ? { data: { terms_version: termsVersion, terms_agreed_at: new Date().toISOString() } } : {}),
+  }));
   if (s) { save(s); return { needsConfirm: false }; }
   return { needsConfirm: true };
 }
