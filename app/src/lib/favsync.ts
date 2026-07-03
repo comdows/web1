@@ -28,7 +28,11 @@ export function startFavSync(): void {
   const onChange = () => {
     const uid = getSession()?.user.id ?? null;
     if (uid === lastUid) return; // 프로필 로드 등 무관한 emit 무시
+    const prev = lastUid;
     lastUid = uid;
+    // 로그아웃·계정 전환 시 이전 사용자의 로컬 즐겨찾기 제거(공용 PC 오염 방지).
+    // 최초 로그인(prev=null)은 비우지 않는다 — 비로그인 때 담은 즐겨찾기를 계정에 병합.
+    if (prev && prev !== uid) Favs.clear();
     if (uid) void pullAndPush();
   };
   onAuth(onChange);
