@@ -290,6 +290,10 @@ export interface DealSubPayload {
   category_id: string; region: "domestic" | "overseas"; revenue_band: string;
   mode: string; summary: string; highlights: string; sale_reason: string;
   ack?: boolean; // 비중개(정보 게시·소개만) 확인 체크 — 오인 접수 방지 기록
+  assets?: string[];             // 이전할 자산 체크리스트 — 게시 시 하이라이트 칩으로 합류
+  handover?: string;             // 운영 인수인계(없음/1개월/3개월 동행)
+  verify_note?: string;          // 비공개 검증 자료(URL·도메인 이메일) — 게시·공유 금지, 운영자 확인 전용
+  contact_consent_at?: string;   // 매도자 이메일 공유 동의 시각(쌍방 확인 시 상대에게 공유)
 }
 export async function createDealSubmission(payload: DealSubPayload): Promise<void> {
   const uid = getSession()?.user.id;
@@ -436,8 +440,18 @@ export async function updateDealStatus(id: string, status: "open" | "in_progress
     method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status }),
   });
 }
-export async function listDealsAdmin(): Promise<{ id: string; status: string; summary: string; is_demo: boolean }[]> {
-  return rest("deals?select=id,status,summary,is_demo&order=posted.desc&limit=100");
+export async function listDealsAdmin(): Promise<{ id: string; status: string; summary: string; is_demo: boolean; category_id: string; mode: string }[]> {
+  return rest("deals?select=id,status,summary,is_demo,category_id,mode&order=posted.desc&limit=100");
+}
+
+/* 브리프 ↔ 매물 조건 대조(클라이언트 매칭 — 분야 + 형태) */
+export function briefMatchesDeal(
+  b: { categories: string[]; mode: string },
+  d: { category_id: string; mode: string }
+): boolean {
+  const catOk = b.categories.length === 0 || b.categories.includes(d.category_id);
+  const modeOk = /무관/.test(b.mode) || b.mode === d.mode || (/자산/.test(b.mode) && /자산/.test(d.mode));
+  return catOk && modeOk;
 }
 /* 브리프 안내 완료 처리(active=false — 0005 admin update 정책 필요) */
 export async function deactivateBrief(id: string): Promise<void> {
