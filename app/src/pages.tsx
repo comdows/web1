@@ -180,6 +180,10 @@ function ApplyForm({ postId, onDone }: { postId: string; onDone: () => void }) {
         </label>
       </div>
       <label>제안 요지 * <textarea required rows={2} value={pitch} onChange={(e) => setPitch(e.target.value)} maxLength={200} placeholder="무엇을 주고받을지 (연락처 금지)" /></label>
+      <label className="facet-opt" style={{ fontSize: 12.5 }}>
+        <input type="checkbox" required />
+        매칭 확인 시 상대에게 <b>내 계정 이메일이 공유</b>되는 데 동의합니다. *
+      </label>
       {err && <div className="err">{err}</div>}
       <button className="btn primary sm" disabled={busy} type="submit">{busy ? "신청 중…" : "매칭 신청"}</button>
     </form>
@@ -518,6 +522,10 @@ function InterestForm({ dealId, onDone }: { dealId: string; onDone: () => void }
     <form className="frm" style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line-soft)" }} onSubmit={submit}>
       <label>간단한 소개 * <textarea required rows={2} value={intro} onChange={(e) => setIntro(e.target.value)} maxLength={200}
         placeholder="인수 주체(개인/법인)와 관심 이유 (연락처 금지)" /></label>
+      <label className="facet-opt" style={{ fontSize: 12.5 }}>
+        <input type="checkbox" required />
+        매칭 확인 시 상대에게 <b>내 계정 이메일이 공유</b>되는 데 동의합니다. *
+      </label>
       {err && <div className="err">{err}</div>}
       <button className="btn primary sm" disabled={busy} type="submit">{busy ? "등록 중…" : "관심 등록"}</button>
     </form>

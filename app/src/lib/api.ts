@@ -261,7 +261,8 @@ export async function applyToPartnerPost(postId: string, input: {
   try {
     await rest("partner_post_interests", {
       method: "POST", headers: { Prefer: "return=minimal" },
-      body: JSON.stringify({ ...input, post_id: postId, user_id: uid }),
+      // contact_consent_at: 신청 폼의 필수 동의(매칭 확인 시 이메일 상호 공유) 시각
+      body: JSON.stringify({ ...input, post_id: postId, user_id: uid, contact_consent_at: new Date().toISOString() }),
     });
   } catch (e) {
     if ((e as { status?: number }).status === 409) throw new Error("이미 이 제안에 신청했어요. 접수 후 세모플이 안내드립니다.");
@@ -306,7 +307,7 @@ export async function registerDealInterest(dealId: string, intro: string): Promi
   try {
     await rest("deal_interests", {
       method: "POST", headers: { Prefer: "return=minimal" },
-      body: JSON.stringify({ deal_id: dealId, user_id: uid, intro }),
+      body: JSON.stringify({ deal_id: dealId, user_id: uid, intro, contact_consent_at: new Date().toISOString() }),
     });
   } catch (e) {
     if ((e as { status?: number }).status === 409) throw new Error("이미 이 매물에 관심 등록했어요. 접수 후 세모플이 안내드립니다.");
@@ -367,8 +368,20 @@ export async function listDealInterests(): Promise<InterestRow[]> {
 export async function markIntroduced(table: "partner_post_interests" | "deal_interests", id: string): Promise<void> {
   await rest(`${table}?id=eq.${id}`, {
     method: "PATCH", headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({ status: "introduced" }),
+    // 이행 시각·주체 기록 — 향후 과금·'미이행 환불' 판정의 근거
+    body: JSON.stringify({ status: "introduced", introduced_at: new Date().toISOString(), introduced_by: getSession()?.user.id ?? null }),
   });
+}
+
+/* 관리자 소개 큐(v_admin_intro_queue — is_admin만 행 반환): 양측 이메일 포함 */
+export interface IntroQueueRow {
+  kind: "partner" | "deal"; id: string; created_at: string; status: string;
+  message: string; platform_name: string; target_title: string;
+  applicant_email: string | null; counterpart_email: string | null;
+  contact_consent_at: string | null;
+}
+export async function listAdminIntroQueue(): Promise<IntroQueueRow[]> {
+  return rest<IntroQueueRow[]>("v_admin_intro_queue?status=eq.pending&select=*&order=created_at.asc&limit=100");
 }
 export interface BuyerBriefRow {
   id: string; categories: string[]; budget_band: string; mode: string; entity: string; note: string; active: boolean; created_at: string;
