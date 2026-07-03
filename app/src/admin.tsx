@@ -72,8 +72,12 @@ function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
         <b>{s.payload.name}</b>
         <a href={s.payload.url} target="_blank" rel="noopener noreferrer" className="mono" style={{ fontSize: 12 }}>{s.payload.url} ↗</a>
         <Badge kind={s.status === "hold" ? "muted" : "soon"}>{s.status === "hold" ? "보류" : "대기"}</Badge>
+        {s.payload.note?.startsWith("auto:") && <Badge kind="verify">🤖 자동 수집</Badge>}
         <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: "auto" }}>{s.created_at.slice(0, 10)}</span>
       </div>
+      {s.payload.note?.startsWith("auto:") && (
+        <div className="frm-note">출처: {s.payload.note.slice(5)} — 이름·분야·소개를 다듬은 뒤 승인하세요(자동 등재 없음).</div>
+      )}
       {s.payload.desc && <p style={{ margin: "6px 0", fontSize: 14, color: "var(--muted)" }}>{s.payload.desc}</p>}
       {dups.length > 0 && <div className="err" style={{ fontSize: 12 }}>⚠ 중복 의심: {dups.join(", ")}</div>}
       <div className="admin-form">
