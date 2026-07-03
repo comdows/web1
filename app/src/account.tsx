@@ -103,17 +103,23 @@ export function Account() {
   const { session, profile, isAdmin } = useSession();
   const [name, setName] = useState("");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [checked, setChecked] = useState(false);
   const [err, setErr] = useState("");
   const [subs, setSubs] = useState<Submission[] | null>(null);
+  const [subsError, setSubsError] = useState(false);
+  const [reload, setReload] = useState(0);
 
   useEffect(() => { setName(profile?.display_name ?? ""); }, [profile?.display_name]);
   useEffect(() => {
     if (!session) { setSubs(null); return; }
     let alive = true;
-    listMySubmissions().then((s) => { if (alive) setSubs(s); }).catch(() => { if (alive) setSubs([]); });
+    setSubsError(false); setSubs(null);
+    listMySubmissions()
+      .then((s) => { if (alive) setSubs(s); })
+      .catch(() => { if (alive) { setSubsError(true); setSubs(null); } });
     return () => { alive = false; };
-  }, [session]);
+  }, [session, reload]);
 
   if (!remoteEnabled) return <main className="page container"><h1>계정</h1><RemoteOffNotice /></main>;
 
@@ -134,9 +140,11 @@ export function Account() {
 
   const saveName = async (e: FormEvent) => {
     e.preventDefault();
-    setErr("");
+    if (saving) return;
+    setErr(""); setSaving(true);
     try { await updateDisplayName(name.trim()); setSaved(true); refreshProfile(); }
     catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setSaving(false); }
   };
 
   return (
@@ -152,7 +160,7 @@ export function Account() {
             <input value={name} onChange={(e) => { setName(e.target.value); setSaved(false); }} placeholder="예: 이음 운영자" maxLength={40} />
           </label>
           <div style={{ display: "flex", gap: 8 }}>
-            <button className="btn primary sm" type="submit">저장</button>
+            <button className="btn primary sm" type="submit" disabled={saving}>{saving ? "저장 중…" : "저장"}</button>
             {saved && <span className="ok" style={{ alignSelf: "center" }}>저장됐어요 ✓</span>}
             {err && <span className="err" style={{ alignSelf: "center" }}>{err}</span>}
           </div>
@@ -167,7 +175,9 @@ export function Account() {
       </div>
 
       <div className="sec-title" style={{ marginTop: 28 }}>내 제보</div>
-      {subs === null ? <div className="empty">불러오는 중…</div>
+      {subsError ? (
+          <div className="empty">목록을 불러오지 못했어요. <button className="linklike" onClick={() => setReload((n) => n + 1)}>다시 시도</button></div>
+        ) : subs === null ? <div className="empty">불러오는 중…</div>
         : subs.length === 0 ? (
           <div className="empty">아직 제보한 플랫폼이 없어요. <a onClick={() => go("submit")} style={{ cursor: "pointer" }}>+ 플랫폼 제보하기</a></div>
         ) : (

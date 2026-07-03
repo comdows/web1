@@ -25,11 +25,11 @@ export function Badge({ kind, children }: { kind: "new" | "good" | "soon" | "mut
   return <span className={`badge ${kind}`}>{children}</span>;
 }
 
-function Avatar({ name, url }: { name: string; url: string }) {
+export function Avatar({ name, url, size }: { name: string; url: string; size?: "lg" }) {
   const [imgOk, setImgOk] = useState(true);
   const fav = faviconUrl(url);
   return (
-    <span className="avatar" style={{ background: `hsl(${avatarHue(name)} 45% 40%)` }}>
+    <span className={`avatar${size === "lg" ? " lg" : ""}`} style={{ background: `hsl(${avatarHue(name)} 45% 40%)` }}>
       {fav && imgOk
         ? <img src={fav} alt="" loading="lazy" onError={() => setImgOk(false)} />
         : name.charAt(0)}
