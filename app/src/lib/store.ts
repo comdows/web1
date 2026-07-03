@@ -22,12 +22,25 @@ function readSet(key: string): string[] {
   try { const v = lsGet(key); return v ? JSON.parse(v) : []; } catch { return []; }
 }
 
+/* 로그인 시 서버 동기화 콜백(lib/favsync.ts가 주입 — store는 백엔드를 모른다) */
+let favSync: ((id: string, on: boolean) => void) | null = null;
+export function setFavSync(fn: ((id: string, on: boolean) => void) | null) { favSync = fn; }
+
 export const Favs = {
   all(): string[] { return readSet(FAV_KEY); },
   has(id: string): boolean { return readSet(FAV_KEY).includes(id); },
   toggle(id: string) {
     const cur = readSet(FAV_KEY);
-    const next = cur.includes(id) ? cur.filter((x) => x !== id) : [...cur, id];
+    const on = !cur.includes(id);
+    const next = on ? [...cur, id] : cur.filter((x) => x !== id);
+    lsSet(FAV_KEY, JSON.stringify(next));
+    emit();
+    favSync?.(id, on);
+  },
+  /* 서버 → 로컬 합집합 병합(동기화 pull) */
+  merge(ids: string[]) {
+    if (!ids.length) return;
+    const next = [...new Set([...readSet(FAV_KEY), ...ids])];
     lsSet(FAV_KEY, JSON.stringify(next));
     emit();
   },

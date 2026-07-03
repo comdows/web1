@@ -3,23 +3,30 @@
  * 없으면 로컬(JSON) 모드. 원격 실패 시 로컬로 폴백 → 백엔드 장애에도 발견 기능 유지. */
 import { platforms, categories, categoryById } from "../data";
 import type { Platform } from "../data";
+import { getAccessToken, getSession } from "./auth";
 
 const SB_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 export const remoteEnabled = Boolean(SB_URL && SB_KEY);
 
+/* 로그인 상태면 사용자 JWT, 아니면 anon 키로 호출(권한은 전적으로 RLS가 판정) */
 async function rest<T>(pathAndQuery: string, init?: RequestInit): Promise<T> {
+  const token = (await getAccessToken()) ?? SB_KEY;
   const res = await fetch(`${SB_URL}/rest/v1/${pathAndQuery}`, {
     ...init,
     headers: {
       apikey: SB_KEY!,
-      Authorization: `Bearer ${SB_KEY}`,
+      Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
       ...(init?.headers ?? {}),
     },
   });
-  if (!res.ok) throw new Error(`API ${res.status}`);
-  return res.json() as Promise<T>;
+  if (!res.ok) {
+    const detail = await res.text().catch(() => "");
+    throw new Error(`API ${res.status}${detail ? `: ${detail.slice(0, 200)}` : ""}`);
+  }
+  const text = await res.text();
+  return (text ? JSON.parse(text) : undefined) as T; // return=minimal은 빈 본문
 }
 
 /* DB 행(region enum 영문) → 앱 Platform 형태로 변환 */
@@ -93,6 +100,109 @@ export async function getStats(): Promise<{ platforms: number; categories: numbe
     const rows = await rest<{ platforms: number; categories: number; new_count: number }[]>("v_stats?select=*");
     return rows[0] ? { platforms: rows[0].platforms, categories: rows[0].categories, newCount: rows[0].new_count } : local;
   } catch { return local; }
+}
+
+/* ============================================================
+ * P2 — 참여: 즐겨찾기 서버 동기화 · 플랫폼 제보 · 프로필
+ * (모두 로그인 필요 — RLS가 user_id = auth.uid()를 강제)
+ * ============================================================ */
+
+export async function fetchServerFavs(): Promise<string[]> {
+  const rows = await rest<{ platform_id: string }[]>("favorites?select=platform_id");
+  return rows.map((r) => r.platform_id);
+}
+export async function upsertFavorite(platformId: string): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) return;
+  await rest("favorites?on_conflict=user_id,platform_id", {
+    method: "POST",
+    headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({ user_id: uid, platform_id: platformId }),
+  });
+}
+export async function removeFavorite(platformId: string): Promise<void> {
+  await rest(`favorites?platform_id=eq.${encodeURIComponent(platformId)}`, {
+    method: "DELETE", headers: { Prefer: "return=minimal" },
+  });
+}
+
+export interface SubmissionPayload {
+  name: string; url: string; category_id: string; region: "domestic" | "overseas"; desc: string; note?: string;
+}
+export interface Submission {
+  id: string; payload: SubmissionPayload; status: "pending" | "hold" | "approved" | "rejected";
+  review_reason: string | null; approved_platform_id: string | null; created_at: string;
+}
+export async function createSubmission(payload: SubmissionPayload): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  await rest("submissions", {
+    method: "POST", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ payload, submitter_id: uid }),
+  });
+}
+export async function listMySubmissions(): Promise<Submission[]> {
+  return rest<Submission[]>("submissions?select=id,payload,status,review_reason,approved_platform_id,created_at&order=created_at.desc&limit=50");
+}
+export async function updateDisplayName(name: string): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  await rest(`profiles?id=eq.${uid}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ display_name: name }),
+  });
+}
+
+/* ============================================================
+ * P3 — 운영(관리자 전용 — RLS is_admin()이 강제, UI 노출은 편의일 뿐)
+ * ============================================================ */
+
+export async function listSubmissions(statuses: string[]): Promise<Submission[]> {
+  return rest<Submission[]>(`submissions?status=in.(${statuses.join(",")})&select=id,payload,status,review_reason,approved_platform_id,created_at&order=created_at.asc&limit=100`);
+}
+export async function reviewSubmission(id: string, patch: {
+  status: "approved" | "rejected" | "hold"; review_reason?: string; approved_platform_id?: string;
+}): Promise<void> {
+  const uid = getSession()?.user.id;
+  await rest(`submissions?id=eq.${id}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ ...patch, reviewed_by: uid, reviewed_at: new Date().toISOString() }),
+  });
+}
+export async function createPlatform(row: {
+  id: string; name: string; category_id: string; region: "domestic" | "overseas"; url: string; blurb: string;
+}): Promise<void> {
+  await rest("platforms", {
+    method: "POST", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ ...row, is_new: true, created_by: getSession()?.user.id ?? null }),
+  });
+}
+
+export type Lifecycle = "soon" | "review" | "verified" | "matched" | "rejected";
+/* 0001_schema.sql lifecycle_allowed()와 동일한 전이 맵(UI 표시용 — 서버가 재검증) */
+export const LIFECYCLE_NEXT: Record<Lifecycle, Lifecycle[]> = {
+  soon: ["review", "rejected"],
+  review: ["verified", "soon", "rejected"],
+  verified: ["matched", "review"],
+  matched: ["verified"],
+  rejected: ["soon"],
+};
+export async function getPlatformLifecycle(id: string): Promise<{ lifecycle: Lifecycle; verified: boolean } | null> {
+  const rows = await rest<{ lifecycle: Lifecycle; verified: boolean }[]>(`platforms?id=eq.${encodeURIComponent(id)}&select=lifecycle,verified`);
+  return rows[0] ?? null;
+}
+export async function transitionPlatform(id: string, to: Lifecycle, reason: string): Promise<void> {
+  await rest("rpc/transition_platform", {
+    method: "POST",
+    body: JSON.stringify({ p_platform: id, p_to: to, p_reason: reason || null }),
+  });
+}
+export async function getPopularSearches(): Promise<{ query: string; cnt: number }[]> {
+  return rest<{ query: string; cnt: number }[]>("v_popular_searches?select=*");
+}
+export async function getPendingCount(): Promise<number> {
+  const rows = await rest<{ id: string }[]>("submissions?status=eq.pending&select=id");
+  return rows.length;
 }
 
 /* 분석 이벤트(fire-and-forget) — 원격 모드에서만 기록. 실패 무시. */
