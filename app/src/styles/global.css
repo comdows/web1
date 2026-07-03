@@ -2,6 +2,7 @@
 *{box-sizing:border-box}
 html,body,#root{height:100%}
 body{margin:0;font-family:var(--font-sans);background:var(--bg);color:var(--text);line-height:var(--lh-body);
+  word-break:keep-all;overflow-wrap:break-word;
   background-image:linear-gradient(var(--grid-line) 1px,transparent 1px),linear-gradient(90deg,var(--grid-line) 1px,transparent 1px);
   background-size:var(--grid-size) var(--grid-size);-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
@@ -15,7 +16,7 @@ button{font-family:inherit}
   background:color-mix(in srgb,var(--bg) 82%,transparent);border-bottom:1px solid var(--line)}
 .site-header .inner{display:flex;align-items:center;justify-content:space-between;height:60px}
 .logo{display:inline-flex;align-items:center;gap:10px}
-.logo .word{font-size:20px;font-weight:var(--w-black);letter-spacing:var(--tracking-tight)}
+.logo .word{font-size:20px;font-weight:var(--w-black);letter-spacing:var(--tracking-tight);white-space:nowrap}
 .logo .word b{color:var(--brand-soft)}
 .site-header nav{display:flex;gap:18px;align-items:center;font-size:14px}
 .site-header nav a{color:var(--muted);cursor:pointer;display:inline-flex;align-items:center;gap:4px}
@@ -214,11 +215,11 @@ button{font-family:inherit}
   /* 헤더: 로고는 유지, 내비는 아이콘만 남기고 가로 스크롤 가능하게 —
      항목이 넘쳐도 페이지 전체가 가로로 밀리지 않게 방어 */
   .site-header .inner{gap:8px}
-  .site-header nav{gap:14px;font-size:13px;min-width:0;flex-shrink:1;
+  .site-header nav{gap:12px;font-size:12.5px;min-width:0;flex-shrink:1;
     overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
   .site-header nav::-webkit-scrollbar{display:none}
-  .site-header nav>*{flex:0 0 auto}
-  .site-header nav .navlbl{display:none}
+  .site-header nav>*{flex:0 0 auto;white-space:nowrap}
+  /* 라벨은 유지(아이콘만으로는 의미 전달 안 됨) — 넘치면 nav 안에서 가로 스크롤 */
   .site-header nav .soon{display:none}      /* 준비중·admin 배지: 좁은 화면에선 숨김 */
   .detail-hero{flex-direction:column}
 }
@@ -296,6 +297,6 @@ a.foot-link{display:inline-block}
 
 /* 배치10: 히어로 브랜드 워터마크 + 앵커 스크롤 여백 */
 .hero{position:relative;overflow:visible}
-.hero-bp{position:absolute;right:-30px;top:-20px;opacity:.09;pointer-events:none}
-@media(max-width:640px){.hero-bp{display:none}}
+.hero-bp{position:absolute;right:0;top:-10px;opacity:.09;pointer-events:none}
+@media(max-width:900px){.hero-bp{display:none}}
 .sec-title{scroll-margin-top:76px}
