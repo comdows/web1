@@ -5,6 +5,7 @@ import type { Platform } from "./data";
 import { Avatar, Badge, PlatformCard } from "./components";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
 import { getPlatform, remoteEnabled, trackEvent } from "./lib/api";
+import { sortByRelevance } from "./lib/search";
 import { useFavs, useCompare, Recent } from "./lib/store";
 import { useNav } from "./nav";
 
@@ -80,11 +81,25 @@ export function PlatformDetail({ id }: { id?: string }) {
 /* ─────────────── Search Results ─────────────── */
 type Sort = "relevance" | "new" | "name";
 export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
-  const [q, setQ] = useState(initialQ);
-  const [cats, setCats] = useState<Set<string>>(new Set());
-  const [region, setRegion] = useState<string>("all");
-  const [onlyNew, setOnlyNew] = useState(false);
-  const [sort, setSort] = useState<Sort>("relevance");
+  // URL에서 필터 복원(새로고침·공유·뒤로가기에 필터 유지)
+  const sp0 = new URLSearchParams(location.search);
+  const [q, setQ] = useState(initialQ || sp0.get("q") || "");
+  const [cats, setCats] = useState<Set<string>>(() => new Set((sp0.get("cats") ?? "").split(",").filter(Boolean)));
+  const [region, setRegion] = useState<string>(sp0.get("region") ?? "all");
+  const [onlyNew, setOnlyNew] = useState(sp0.get("new") === "1");
+  const [sort, setSort] = useState<Sort>((sp0.get("sort") as Sort) || "relevance");
+
+  // 필터 상태 → URL(replaceState — 홈과 동일 패턴)
+  useEffect(() => {
+    const p = new URLSearchParams();
+    p.set("view", "search");
+    if (q.trim()) p.set("q", q.trim());
+    if (cats.size) p.set("cats", [...cats].join(","));
+    if (region !== "all") p.set("region", region);
+    if (onlyNew) p.set("new", "1");
+    if (sort !== "relevance") p.set("sort", sort);
+    history.replaceState(null, "", `?${p}`);
+  }, [q, cats, region, onlyNew, sort]);
   const platforms = usePlatforms();
   const stats = usePlatformStats();
 
@@ -112,6 +127,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
     });
     if (sort === "new") list = [...list].sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0));
     else if (sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name, "ko"));
+    else if (query) list = sortByRelevance(list, query); // 관련도: 이름 정확 > 시작 > 포함 > 분야 > 소개
     return list;
   }, [q, cats, region, onlyNew, sort, platforms]);
 

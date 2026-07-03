@@ -4,6 +4,7 @@
 import { platforms, categories, categoryById } from "../data";
 import type { Platform } from "../data";
 import { getAccessToken, getSession } from "./auth";
+import { sortByRelevance } from "./search";
 
 const SB_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
@@ -67,6 +68,7 @@ function searchLocal(p: SearchParams): Platform[] {
   });
   if (p.sort === "new") list = [...list].sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0));
   else if (p.sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name, "ko"));
+  else if (query) list = sortByRelevance(list, query);
   return list.slice(0, p.limit ?? 300);
 }
 
