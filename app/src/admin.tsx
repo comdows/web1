@@ -8,10 +8,11 @@ import { useSession } from "./lib/auth";
 import {
   briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
-  listAdminIntroQueue, listBuyerBriefs, listDealsAdmin, listDealSubmissions, listOperatorClaims,
+  fetchOutboundCounts, getPlatformFull, listAdminIntroQueue, listBuyerBriefs, listDealsAdmin,
+  listDealSubmissions, listOperatorClaims,
   listPartnerPosts, listSubmissions, markIntroduced, publishDeal, remoteEnabled,
   reviewDealSubmission, reviewOperatorClaim, reviewPartnerPost, reviewSubmission,
-  transitionPlatform, updateDealStatus,
+  transitionPlatform, updateDealStatus, updatePlatform,
 } from "./lib/api";
 import type {
   BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin, Submission,
@@ -111,6 +112,106 @@ function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
         <button className="btn ghost sm" disabled={busy}
           onClick={() => act(() => reviewSubmission(s.id, { status: "rejected", review_reason: reason || "기준 미충족" }))}>반려</button>
       </div>
+    </div>
+  );
+}
+
+/* ── 플랫폼 편집기 + 정보 보강 큐 — 수수료·정산 등 리치 필드 축적, 죽은 링크 정정 ── */
+const EDIT_FIELDS = [
+  ["fee_text", "수수료 표기", "예: ~4–10.8%"], ["settle_text", "정산 주기", "예: 월 2회, D+7"],
+  ["enter_text", "입점 조건", "예: 사업자등록 필요"], ["strength", "강점 한 줄", "예: 신선식품 새벽배송망"],
+  ["url", "대표 URL", "https://…"], ["blurb", "한 줄 소개", "중립·사실 위주"],
+] as const;
+function PlatformEditor() {
+  const [q, setQ] = useState("");
+  const [picked, setPicked] = useState<string | null>(null);
+  const [form, setForm] = useState<Record<string, string>>({});
+  const [feeBand, setFeeBand] = useState("");
+  const [msg, setMsg] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [enrich, setEnrich] = useState<{ id: string; name: string; clicks: number }[]>([]);
+  // 보강 큐: 최근 30일 클릭 상위 ∩ 수수료 미기재 TOP 20
+  useEffect(() => {
+    fetchOutboundCounts().then((counts) => {
+      const rows = localPlatforms
+        .filter((p) => !p.fee_text)
+        .map((p) => ({ id: p.id, name: p.name, clicks: counts.get(p.id) ?? 0 }))
+        .filter((r) => r.clicks > 0)
+        .sort((a, b) => b.clicks - a.clicks).slice(0, 20);
+      setEnrich(rows);
+    }).catch(() => setEnrich([]));
+  }, []);
+  const cands = useMemo(() => {
+    const n = q.trim().toLowerCase();
+    if (!n) return [];
+    return localPlatforms.filter((p) => p.name.toLowerCase().includes(n) || p.id.includes(n)).slice(0, 8);
+  }, [q]);
+  const pick = async (id: string) => {
+    setPicked(id); setMsg("");
+    try {
+      const p = await getPlatformFull(id);
+      if (!p) { setMsg("원격에서 찾지 못했어요(정적 전용?)"); return; }
+      setForm({ url: p.url, blurb: p.blurb, fee_text: p.fee_text ?? "", settle_text: p.settle_text ?? "", enter_text: p.enter_text ?? "", strength: p.strength ?? "" });
+      setFeeBand(p.fee_band ?? "");
+    } catch (ex) { setMsg(ex instanceof Error ? ex.message : String(ex)); }
+  };
+  const save = async () => {
+    if (!picked || busy) return;
+    setBusy(true); setMsg("");
+    try {
+      await updatePlatform(picked, {
+        url: form.url, blurb: form.blurb,
+        fee_band: (feeBand || null) as "low" | "mid" | "high" | null,
+        fee_text: form.fee_text || null, settle_text: form.settle_text || null,
+        enter_text: form.enter_text || null, strength: form.strength || null,
+      });
+      setMsg("✓ 저장됨 — 라이브에 즉시 반영. 정적 시드(platforms.json)·프리렌더 반영은 별도 커밋이 필요해요.");
+    } catch (ex) { setMsg(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(false); }
+  };
+  return (
+    <div className="admin-card">
+      {enrich.length > 0 && (
+        <div style={{ marginBottom: 10 }}>
+          <div className="frm-note">📈 보강 우선순위 — 최근 30일 클릭 상위인데 수수료 미기재:</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 6 }}>
+            {enrich.map((r) => <button key={r.id} className="fchip" onClick={() => pick(r.id)}>{r.name} <b className="mono">{r.clicks}</b></button>)}
+          </div>
+        </div>
+      )}
+      <div className="admin-form" style={{ marginTop: 0 }}>
+        <label style={{ flex: 1 }}>플랫폼 찾기 <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="이름 또는 id" /></label>
+      </div>
+      {cands.length > 0 && !picked && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+          {cands.map((p) => <button key={p.id} className="fchip" onClick={() => pick(p.id)}>{p.name}</button>)}
+        </div>
+      )}
+      {picked && (
+        <div style={{ marginTop: 10 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            <b>{localPlatforms.find((p) => p.id === picked)?.name ?? picked}</b>
+            <span className="mono" style={{ fontSize: 12, color: "var(--faint)" }}>{picked}</span>
+            <button className="btn ghost sm" onClick={() => { setPicked(null); setQ(""); setMsg(""); }}>다른 플랫폼</button>
+          </div>
+          <div className="admin-form">
+            <label>수수료대
+              <select value={feeBand} onChange={(e) => setFeeBand(e.target.value)}>
+                <option value="">모름</option><option value="low">낮음</option><option value="mid">중간</option><option value="high">높음</option>
+              </select>
+            </label>
+            {EDIT_FIELDS.map(([k, label, ph]) => (
+              <label key={k} style={{ flex: 1, minWidth: 180 }}>{label}
+                <input value={form[k] ?? ""} onChange={(e) => setForm((f) => ({ ...f, [k]: e.target.value }))} placeholder={ph} />
+              </label>
+            ))}
+          </div>
+          {msg && <div className={msg.startsWith("✓") ? "ok" : "err"} style={{ marginTop: 8 }}>{msg}</div>}
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button className="btn primary sm" disabled={busy} onClick={save}>저장</button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -623,6 +724,9 @@ export function Admin() {
 
       <div className="sec-title">📡 게시 중 (상태 전이 — 성사·진행·마감)</div>
       <LivePanel />
+
+      <div className="sec-title">✏️ 플랫폼 정보 편집 · 보강 큐</div>
+      <PlatformEditor />
 
       <div className="sec-title">라이프사이클 전이</div>
       <p className="lead" style={{ maxWidth: 620, marginTop: -6 }}>

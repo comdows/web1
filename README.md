@@ -43,6 +43,8 @@ backend/
 
 - [x] Supabase 마이그레이션 0001~0006 (신규 SQL은 `backend/migrations/`에 추가 후 SQL Editor에서 실행)
 - [ ] 자동 수집 Secrets: `SUPABASE_URL` `SUPABASE_ANON_KEY` `BOT_EMAIL` `BOT_PASSWORD` + 봇 계정 가입 (auto-collect-plan.md §2)
+- [ ] 일일 다이제스트 Secrets: `ADMIN_BOT_EMAIL` `ADMIN_BOT_PASSWORD` — admin 롤 전용 봇 계정(가입 후 backend/README.md §4-F로 admin 지정)
+- [ ] (선택) Google 로그인: Supabase 대시보드 Authentication → Providers → Google 설정 후 `app/src/config.ts`의 `googleAuth: true`
 - [ ] Google Search Console 등록 + `sitemap.xml` 제출 (선택 — SEO 가속)
 - [ ] 특허 출원 — 발명 4건, 공지예외 12개월 시한 (patent-plan.md)
 - [ ] 유료화 게이트 도달 시: 통신판매업 신고 → PG → 세금계산서 자동발행 → 약관 개정 → 전문가 검토 (pricing-policy.md §6)

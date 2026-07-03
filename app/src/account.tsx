@@ -6,7 +6,7 @@ import { Badge } from "./components";
 import { useNav } from "./nav";
 import {
   consumeHashNotice, consumeRecoveryPending, requestPasswordReset, resendConfirmation,
-  signIn, signOut, signUp, updatePassword, useSession, refreshProfile,
+  signIn, signInWithGoogle, signOut, signUp, updatePassword, useSession, refreshProfile,
 } from "./lib/auth";
 import { TERMS_VERSION } from "./legal";
 import { FLAGS } from "./config";
@@ -83,6 +83,14 @@ export function AuthPanel({ compact = false }: { compact?: boolean }) {
         <div className="tabbar">
           <button className={`btn ghost sm ${mode === "in" ? "on" : ""}`} onClick={() => { setMode("in"); setErr(""); }}>로그인</button>
           <button className={`btn ghost sm ${mode === "up" ? "on" : ""}`} onClick={() => { setMode("up"); setErr(""); }}>회원가입</button>
+        </div>
+      )}
+      {FLAGS.googleAuth && (
+        <div style={{ marginBottom: 14 }}>
+          <button type="button" className="btn ghost" style={{ width: "100%" }} onClick={() => signInWithGoogle()}>
+            G · Google로 계속하기
+          </button>
+          <div className="frm-note" style={{ textAlign: "center", marginTop: 8 }}>또는 이메일로</div>
         </div>
       )}
       <form className="frm" onSubmit={submit}>

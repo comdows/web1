@@ -467,6 +467,29 @@ export async function listBuyerBriefs(): Promise<BuyerBriefRow[]> {
   return rest<BuyerBriefRow[]>("buyer_briefs?active=is.true&select=id,categories,budget_band,mode,entity,note,active,created_at&order=created_at.desc&limit=100");
 }
 
+/* ── 관리자: 플랫폼 인라인 편집 + 정보 보강 큐 (admin write platforms RLS) ── */
+export async function getPlatformFull(id: string): Promise<Platform | null> {
+  const rows = await rest<DbPlatform[]>(`platforms?id=eq.${encodeURIComponent(id)}&select=${PLATFORM_COLS}`);
+  return rows[0] ? fromDb(rows[0]) : null;
+}
+export async function updatePlatform(id: string, patch: {
+  name?: string; url?: string; blurb?: string; fee_band?: "low" | "mid" | "high" | null;
+  fee_text?: string | null; settle_text?: string | null; enter_text?: string | null; strength?: string | null;
+}): Promise<void> {
+  await rest(`platforms?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(patch),
+  });
+}
+/* 최근 30일 외부클릭 상위 — 수수료 미기재와 교차해 "보강 우선순위" 산출(admin read events RLS) */
+export async function fetchOutboundCounts(days = 30): Promise<Map<string, number>> {
+  const since = new Date(Date.now() - days * 86400000).toISOString();
+  const rows = await rest<{ platform_id: string | null }[]>(
+    `events?type=eq.outbound&created_at=gte.${since}&select=platform_id&limit=5000`);
+  const m = new Map<string, number>();
+  for (const r of rows) { if (r.platform_id) m.set(r.platform_id, (m.get(r.platform_id) ?? 0) + 1); }
+  return m;
+}
+
 /* 최근 등재(주간 다이제스트) — created_at 포함, 실패 시 정적 신규 폴백 */
 export async function fetchRecentPlatforms(limit = 60): Promise<{ p: Platform; created: string }[]> {
   const local = () => platforms.filter((x) => x.new).slice(0, limit).map((p) => ({ p, created: "" }));

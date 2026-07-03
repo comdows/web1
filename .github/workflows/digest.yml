@@ -1,0 +1,31 @@
+# 대기건 일일 다이제스트 — 매일 06:30 KST(전일 21:30 UTC) + 수동 실행
+# 검수·소개 대기 건수를 GitHub 이슈(ops-digest)로 갱신, 0건이면 이슈 자동 닫힘
+# 필요 Secrets: SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_BOT_EMAIL, ADMIN_BOT_PASSWORD
+name: ops-digest
+
+on:
+  schedule:
+    - cron: "30 21 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Count pending queues and update issue
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          ADMIN_BOT_EMAIL: ${{ secrets.ADMIN_BOT_EMAIL }}
+          ADMIN_BOT_PASSWORD: ${{ secrets.ADMIN_BOT_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node backend/collect/digest.mjs
