@@ -166,6 +166,10 @@ function consumeAuthHash(): void {
       if (h.get("type") === "recovery") {
         recoveryPending = true;
         hashNotice = "본인 확인 완료 — 아래에서 새 비밀번호를 설정해 주세요.";
+      } else if (h.get("provider_token")) {
+        hashNotice = "소셜 계정으로 로그인됐어요.";
+        // OAuth 첫 로그인엔 가입 폼이 없으므로 약관 동의 버전을 메타데이터로 기록(멱등)
+        void recordTermsMeta(at);
       } else {
         hashNotice = "이메일 확인이 완료됐어요. 로그인된 상태입니다.";
       }
@@ -178,6 +182,21 @@ function consumeAuthHash(): void {
     history.replaceState(null, "", location.pathname + location.search);
   }
 }
+async function recordTermsMeta(token: string): Promise<void> {
+  try {
+    await fetch(`${SB_URL}/auth/v1/user`, {
+      method: "PUT",
+      headers: { apikey: SB_KEY!, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ data: { terms_version: "oauth", terms_agreed_at: new Date().toISOString() } }),
+    });
+  } catch { /* noop */ }
+}
+
+/* Google OAuth — Supabase 대시보드에서 provider 활성화 필요(FLAGS.googleAuth로 노출 제어) */
+export function signInWithGoogle(): void {
+  location.href = `${SB_URL}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(REDIRECT_URL)}`;
+}
+
 /* AuthPanel이 1회 소비(표시 후 비움) */
 export function consumeHashNotice(): string | null { const n = hashNotice; hashNotice = null; return n; }
 
