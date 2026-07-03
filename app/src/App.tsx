@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { groups, categories, platforms, categoriesByGroup, countByCategory, newCount, categoryById } from "./data";
+import { groups, categories, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import { Logo, StatTile, PlatformCard, Footer } from "./components";
+import { usePlatforms, usePlatformStats, usePlatformIndex } from "./lib/platforms";
 import { useFavs, useCompare } from "./lib/store";
 import { FLAGS } from "./config";
 import { Partners, Exchange } from "./pages";
@@ -29,10 +30,6 @@ function readParams() {
   };
 }
 
-const searchIndex = platforms.map((p) => ({
-  p,
-  hay: (p.name + " " + p.blurb + " " + (categoryById(p.category)?.name ?? "")).toLowerCase(),
-}));
 function sortPlatforms(list: Platform[], sort: Sort): Platform[] {
   if (sort === "new") return [...list].sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0));
   if (sort === "name") return [...list].sort((a, b) => a.name.localeCompare(b.name, "ko"));
@@ -60,6 +57,13 @@ export default function App() {
   const cmp = useCompare();
   const theme = useTheme();
   const { session, profile, isAdmin } = useSession();
+  const platforms = usePlatforms();
+  const stats = usePlatformStats();
+  const index = usePlatformIndex();
+  const searchIndex = useMemo(
+    () => platforms.map((p) => ({ p, hay: (p.name + " " + p.blurb + " " + (categoryById(p.category)?.name ?? "")).toLowerCase() })),
+    [platforms]
+  );
 
   const go = useCallback<(v: ViewName, params?: { id?: string; q?: string }) => void>((v, params) => {
     setView(v);
@@ -98,11 +102,11 @@ export default function App() {
     if (fav) { const set = new Set(favs.all()); list = list.filter((p) => set.has(p.id)); }
     if (onlyNew) list = list.filter((p) => p.new);
     return sortPlatforms(list, sort).slice(0, 200);
-  }, [flatMode, query, fav, onlyNew, sort, favs]);
-  const newPlatforms = useMemo(() => platforms.filter((p) => p.new).slice(0, 24), []);
+  }, [flatMode, query, fav, onlyNew, sort, favs, platforms, searchIndex]);
+  const newPlatforms = useMemo(() => platforms.filter((p) => p.new).slice(0, 24), [platforms]);
   const shownGroups = group ? groups.filter((g) => g.id === group) : groups;
 
-  const cmpNames = cmp.all().map((id) => platforms.find((p) => p.id === id)?.name).filter(Boolean).join(", ");
+  const cmpNames = cmp.all().map((id) => index.get(id)?.name).filter(Boolean).join(", ");
 
   return (
     <NavContext.Provider value={go}>
@@ -158,9 +162,9 @@ export default function App() {
                 : <a className="btn primary" href={REPORT_URL} target="_blank" rel="noopener noreferrer">+ 플랫폼 제보</a>}
             </div>
             <div className="stats">
-              <StatTile n={platforms.length.toLocaleString()} l="플랫폼" tone="b" />
+              <StatTile n={stats.total.toLocaleString()} l="플랫폼" tone="b" />
               <StatTile n={String(categories.length)} l="분야" />
-              <StatTile n={String(newCount)} l="신규" tone="t" />
+              <StatTile n={String(stats.newCount)} l="신규" tone="t" />
             </div>
           </section>
 
@@ -181,7 +185,7 @@ export default function App() {
               <div className="groups">
                 {groups.map((g) => {
                   const cats = categoriesByGroup(g.id);
-                  const cnt = cats.reduce((s, c) => s + countByCategory(c.id), 0);
+                  const cnt = cats.reduce((s, c) => s + (stats.counts.get(c.id) ?? 0), 0);
                   return (
                     <button className="gcard" key={g.id} onClick={() => { setGroup(g.id); window.scrollTo({ top: 420, behavior: "smooth" }); }}>
                       <div className="g-ic">{g.icon}</div><h4>{g.name}</h4>
@@ -201,7 +205,7 @@ export default function App() {
                       <div className={`acc ${isOpen ? "open" : ""}`} key={c.id}>
                         <button className="acc-h" onClick={() => toggleCat(c.id)}>
                           <span className="ic">{c.icon}</span><span className="nm">{c.name}</span>
-                          <span className="ct">{countByCategory(c.id)}</span><span className="chev">▸</span>
+                          <span className="ct">{stats.counts.get(c.id) ?? 0}</span><span className="chev">▸</span>
                         </button>
                         {isOpen && <div className="acc-b"><div className="card-grid">{platforms.filter((p) => p.category === c.id).map((p) => <PlatformCard key={p.id} p={p} showCat={false} />)}</div></div>}
                       </div>

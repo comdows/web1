@@ -1,26 +1,46 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { platforms, categories, groups, categoriesByGroup, categoryById, countByCategory } from "./data";
+import { categories, groups, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import { Badge, PlatformCard } from "./components";
+import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
+import { getPlatform, remoteEnabled } from "./lib/api";
 import { useFavs, useCompare, Recent } from "./lib/store";
 import { avatarHue, faviconUrl } from "./lib/util";
 import { useNav } from "./nav";
-
-const byId = new Map(platforms.map((p) => [p.id, p]));
 
 /* ─────────────── Platform Detail ─────────────── */
 export function PlatformDetail({ id }: { id?: string }) {
   const go = useNav();
   const favs = useFavs();
   const cmp = useCompare();
-  const p = id ? byId.get(id) : undefined;
-  if (!p) return <div className="page container"><div className="empty">플랫폼을 찾을 수 없습니다. <button className="linklike" onClick={() => go("home")}>← 홈으로</button></div></div>;
+  const list = usePlatforms();
+  const index = usePlatformIndex();
+  const loaded = usePlatformsLoaded();
+  const local = id ? index.get(id) : undefined;
+
+  // 목록에 없으면(원격 전용 신규 등) 개별 원격 조회 폴백
+  const [remote, setRemote] = useState<(Platform & { similar?: Platform[] }) | null>(null);
+  const [fetching, setFetching] = useState(false);
+  useEffect(() => {
+    setRemote(null);
+    if (!id || local || !remoteEnabled) return;
+    let alive = true;
+    setFetching(true);
+    getPlatform(id).then((r) => { if (alive) setRemote(r); }).finally(() => { if (alive) setFetching(false); });
+    return () => { alive = false; };
+  }, [id, local]);
+
+  const p = local ?? remote ?? undefined;
+  if (!p) {
+    if (fetching || (!loaded && remoteEnabled)) return <div className="page container"><div className="empty">불러오는 중…</div></div>;
+    return <div className="page container"><div className="empty">플랫폼을 찾을 수 없습니다. <button className="linklike" onClick={() => go("home")}>← 홈으로</button></div></div>;
+  }
   const cat = categoryById(p.category);
   const on = favs.has(p.id);
   const inCmp = cmp.has(p.id);
   const fav = faviconUrl(p.url);
-  const related = platforms.filter((x) => x.category === p.category && x.id !== p.id).slice(0, 6);
+  const related = (local ? list : (remote?.similar ?? [])).filter((x) => x.category === p.category && x.id !== p.id).slice(0, 6);
   return (
     <div className="page container">
       <button className="linklike" onClick={() => history.length > 1 ? history.back() : go("home")}>← 뒤로</button>
@@ -69,6 +89,8 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
   const [region, setRegion] = useState<string>("all");
   const [onlyNew, setOnlyNew] = useState(false);
   const [sort, setSort] = useState<Sort>("relevance");
+  const platforms = usePlatforms();
+  const stats = usePlatformStats();
 
   const toggleCat = (id: string) => setCats((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
@@ -87,7 +109,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
     if (sort === "new") list = [...list].sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0));
     else if (sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name, "ko"));
     return list;
-  }, [q, cats, region, onlyNew, sort]);
+  }, [q, cats, region, onlyNew, sort, platforms]);
 
   const activeChips: { label: string; clear: () => void }[] = [];
   cats.forEach((c) => activeChips.push({ label: categoryById(c)?.name ?? c, clear: () => toggleCat(c) }));
@@ -120,7 +142,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
                 {categoriesByGroup(g.id).map((c) => (
                   <label key={c.id} className="facet-opt sm">
                     <input type="checkbox" checked={cats.has(c.id)} onChange={() => toggleCat(c.id)} /> {c.name}
-                    <span className="facet-ct">{countByCategory(c.id)}</span>
+                    <span className="facet-ct">{stats.counts.get(c.id) ?? 0}</span>
                   </label>
                 ))}
               </div>
@@ -156,7 +178,8 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
 export function Compare() {
   const go = useNav();
   const cmp = useCompare();
-  const items = cmp.all().map((id) => byId.get(id)).filter(Boolean) as Platform[];
+  const index = usePlatformIndex();
+  const items = cmp.all().map((id) => index.get(id)).filter(Boolean) as Platform[];
   if (items.length === 0) return (
     <div className="page container"><h1>비교</h1>
       <div className="empty">비교할 플랫폼이 없습니다. 카드의 <b>+ 비교</b>로 최대 4개까지 담아보세요. <button className="linklike" onClick={() => go("search")}>검색하러 가기</button></div>
@@ -195,6 +218,7 @@ export function Compare() {
 /* ─────────────── Onboarding ─────────────── */
 export function Onboarding() {
   const go = useNav();
+  const platforms = usePlatforms();
   const [step, setStep] = useState(0);
   const [gsel, setGsel] = useState<Set<string>>(new Set());
   const [csel, setCsel] = useState<Set<string>>(new Set());
@@ -207,7 +231,7 @@ export function Onboarding() {
     let list = platforms.filter((p) => (csel.size ? csel.has(p.category) : gsel.size ? gsel.has(categoryById(p.category)?.group ?? "") : false));
     if (newPref) list = [...list].sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0));
     return list.slice(0, 12);
-  }, [gsel, csel, newPref]);
+  }, [gsel, csel, newPref, platforms]);
 
   const steps = ["관심 영역", "세부 분야", "선호", "추천"];
   return (

@@ -93,6 +93,22 @@ export async function getPlatform(id: string): Promise<(Platform & { similar: Pl
   } catch { return local(); }
 }
 
+/* 전체 플랫폼을 원격에서 로드(RLS로 archived/rejected 제외됨).
+ * PostgREST 기본 max-rows(1000) 상한 → limit/offset 페이지네이션. 실패 시 정적 폴백. */
+export async function fetchAllPlatforms(): Promise<Platform[]> {
+  if (!remoteEnabled) return platforms;
+  const pageSize = 1000;
+  const out: Platform[] = [];
+  for (let offset = 0; ; offset += pageSize) {
+    const rows = await rest<DbPlatform[]>(
+      `platforms?select=id,name,category_id,region,url,blurb,is_new&order=name.asc&limit=${pageSize}&offset=${offset}`
+    );
+    out.push(...rows.map(fromDb));
+    if (rows.length < pageSize) break;
+  }
+  return out;
+}
+
 export async function getStats(): Promise<{ platforms: number; categories: number; newCount: number }> {
   const local = { platforms: platforms.length, categories: categories.length, newCount: platforms.filter((p) => p.new).length };
   if (!remoteEnabled) return local;
