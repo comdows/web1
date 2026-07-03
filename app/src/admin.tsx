@@ -15,6 +15,7 @@ import {
 import type {
   BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin, Submission,
 } from "./lib/api";
+import { checkAnonymity } from "./lib/anonymity";
 import { partnerTypes } from "./data";
 
 const LC_LABEL: Record<Lifecycle, string> = {
@@ -305,6 +306,8 @@ function DealSubQueue() {
         const d = drafts[s.id] ?? { code: "", summary: "", highlights: "", reason: "" };
         const set = (patch: Partial<typeof d>) => setDrafts((r) => ({ ...r, [s.id]: { ...d, ...patch } }));
         const equity = isEquitySub(s.payload.mode);
+        // 익명성 자동 점검 — 원문과 게시 초안 양쪽의 누출 위험을 검수자에게 하이라이트
+        const anon = checkAnonymity(s.payload.summary, s.payload.sale_reason, d.summary, d.highlights);
         return (
           <div className="admin-card" key={s.id}>
             <div className="admin-card-h">
@@ -334,6 +337,11 @@ function DealSubQueue() {
             {equity && (
               <div className="err" style={{ fontSize: 12.5 }}>
                 지분·투자유치 접수 건 — 게시하면 무인가 투자중개 리스크가 있어 게시 버튼이 잠깁니다. 아래 프리셋 사유로 반려하세요.
+              </div>
+            )}
+            {anon.length > 0 && (
+              <div className="frm-note" style={{ marginBottom: 6 }}>
+                🕶️ 익명성 점검: {anon.map((f) => `"${f.snippet}" (${f.hint})`).join(" · ")}
               </div>
             )}
             <div className="admin-form">
