@@ -190,7 +190,7 @@ button{font-family:inherit}
 /* Compare bar (floating) */
 .cmp-bar{position:sticky;bottom:0;z-index:50;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
   margin:16px auto;padding:10px 16px;display:flex;align-items:center;gap:12px;box-shadow:var(--sh-2);max-width:var(--maxw)}
-.cmp-bar .names{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-bar .names{flex:1;min-width:0;font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Partner type catalog */
 .type-card h4{font-size:15px}
@@ -247,3 +247,16 @@ button{font-family:inherit}
 .admin-form input,.admin-form select{background:var(--surface-2);border:1px solid var(--line);color:var(--text);
   border-radius:8px;padding:7px 10px;font-family:inherit;font-size:13px;outline:none}
 .admin-form input:focus,.admin-form select:focus{border-color:var(--brand)}
+
+/* ── 모바일·접근성(감사 #10) ─────────────────────────────── */
+/* 터치 기기: 폼 입력 16px로 iOS 포커스 자동 확대(줌) 방지 — 시각 크기는 padding 유지 */
+@media(pointer:coarse){
+  .frm input,.frm textarea,.frm select,
+  .admin-form input,.admin-form select,
+  .select{font-size:16px}
+  /* 터치 타깃 최소 44px 확보 */
+  .theme-btn{min-width:44px;min-height:44px}
+  .pcard .star{min-width:44px;min-height:44px}
+  .site-header nav a,.site-header nav button{min-height:44px}
+  .cmp-bar{flex-wrap:wrap}
+}
