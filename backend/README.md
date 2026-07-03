@@ -61,16 +61,21 @@
    - `Project URL` (예: `https://xxxx.supabase.co`)
    - `anon` `public` 키 (`eyJ...` — **anon 키만**, `service_role` 키는 절대 쓰지 말 것)
 
-**E. 프론트에 연결 — GitHub Secrets** *(배포 워크플로우가 자동 주입하도록 이미 배선됨)*
-5. GitHub 저장소 → **Settings → Secrets and variables → Actions → New repository secret** 로 2개 등록:
+**E. 프론트에 연결 — `app/.env.production`** *(이미 배선됨 · 기본 방식)*
+5. 연결값은 **`app/.env.production`** 에 커밋해 둔다(anon 키는 공개 키라 안전 — §아래 박스):
    ```
-   VITE_SUPABASE_URL        = https://xxxx.supabase.co
-   VITE_SUPABASE_ANON_KEY   = eyJ...
+   VITE_SUPABASE_URL=https://xxxx.supabase.co
+   VITE_SUPABASE_ANON_KEY=eyJ...
    ```
-   - `.github/workflows/pages.yml`의 빌드 단계가 이 시크릿을 읽어 번들에 넣는다(코드 수정 불필요)
-   - 시크릿이 없으면 앱은 지금처럼 **로컬 JSON 모드**로 동작(안전한 기본값)
-6. `master`에 push하거나 Actions에서 워크플로우를 **Run workflow**로 재배포 → 앱이 원격 모드로 전환
+   - Vite가 빌드 시 이 파일을 읽어 번들에 넣는다(코드 수정 불필요). 파일이 없으면 **로컬 JSON 모드**.
+   - **본인 프로젝트로 바꾸려면** 이 두 값을 본인 것으로 교체 후 커밋하면 된다.
+6. `master`에 push(또는 Actions에서 **Run workflow**) → 배포 워크플로우가 빌드·게시 → 앱이 원격 모드로 전환
    - 확인: 브라우저 콘솔에 API 호출(`/rest/v1/platforms...`)이 보이면 연결 성공. 실패 시 자동 로컬 폴백.
+
+> **대안 — 키를 git에 두기 싫으면 GitHub Secrets 사용**: `app/.env.production`을 삭제하고,
+> 저장소 **Settings → Secrets and variables → Actions**에 `VITE_SUPABASE_URL`·`VITE_SUPABASE_ANON_KEY`를
+> 등록한 뒤 `.github/workflows/pages.yml` 빌드 스텝의 주석 처리된 `env:` 블록을 활성화한다.
+> (두 방식은 **택일** — `.env.production`이 있으면 빈 Secrets가 이를 덮어써 깨지므로 동시에 쓰지 말 것.)
 
 **F. 나를 관리자로 지정** *(로그인 1회 후)*
 7. 앱에서 한 번 로그인 → SQL Editor에서:

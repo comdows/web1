@@ -99,6 +99,10 @@ create policy "receiver respond proposal" on public.proposals for update
 -- 익명 컬럼만 담은 v_deals_public 뷰(소유자 권한 실행 → base RLS 우회)를 공개 창구로 쓴다.
 alter table public.deals          enable row level security;
 alter table public.deal_interests enable row level security;
+-- 구버전(0002) 정책이 남아 있으면 permissive SELECT 정책이 OR로 병합돼 익명성 누수가
+-- 되살아난다. 업그레이드/재실행 시에도 안전하도록 먼저 삭제한 뒤 재생성.
+drop policy if exists "public read open deals" on public.deals;
+drop policy if exists "own or admin read deal" on public.deals;
 create policy "own or admin read deal" on public.deals for select
   using (owner_id = auth.uid() or public.is_admin());
 create policy "insert own deal" on public.deals for insert
