@@ -229,6 +229,153 @@ export async function getPendingCount(): Promise<number> {
   return rows.length;
 }
 
+/* ============================================================
+ * 2·3단계 오픈 — 제휴 보드 · 거래소 (0004_open.sql)
+ * 공개 읽기는 익명 뷰(v_partner_posts_public / v_deals_public)로만.
+ * ============================================================ */
+
+export interface PartnerPost {
+  id: string; title: string; category_id: string; type_id: string;
+  give_text: string; get_text: string; want_categories: string[];
+  size_text: string; detail: string; status: "published" | "matched"; posted: string | null;
+}
+export async function fetchPartnerPosts(): Promise<PartnerPost[]> {
+  return rest<PartnerPost[]>("v_partner_posts_public?select=*&order=posted.desc.nullslast&limit=100");
+}
+export async function createPartnerPost(input: {
+  title: string; category_id: string; type_id: string; give_text: string;
+  get_text: string; want_categories: string[]; size_text: string; detail: string;
+}): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  await rest("partner_posts", {
+    method: "POST", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ ...input, created_by: uid }),
+  });
+}
+export async function applyToPartnerPost(postId: string, input: {
+  platform_name: string; category_id?: string; size_text: string; pitch: string;
+}): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  try {
+    await rest("partner_post_interests", {
+      method: "POST", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ ...input, post_id: postId, user_id: uid }),
+    });
+  } catch (e) {
+    if ((e as { status?: number }).status === 409) throw new Error("이미 이 제안에 신청했어요. 접수 후 세모플이 안내드립니다.");
+    throw e;
+  }
+}
+
+export interface PublicDeal {
+  id: string; category_id: string; region: "domestic" | "overseas"; revenue_band: string;
+  mode: string; summary: string; highlights: string[]; sale_reason: string | null;
+  status: "open" | "in_progress"; is_demo: boolean; posted: string;
+}
+export async function fetchDeals(): Promise<PublicDeal[]> {
+  return rest<PublicDeal[]>("v_deals_public?select=*&order=posted.desc&limit=100");
+}
+export interface DealSubPayload {
+  category_id: string; region: "domestic" | "overseas"; revenue_band: string;
+  mode: string; summary: string; highlights: string; sale_reason: string;
+}
+export async function createDealSubmission(payload: DealSubPayload): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  await rest("deal_submissions", {
+    method: "POST", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ payload, submitter_id: uid }),
+  });
+}
+export async function createBuyerBrief(input: {
+  categories: string[]; budget_band: string; mode: string; entity: string; note: string;
+}): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  await rest("buyer_briefs", {
+    method: "POST", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ ...input, user_id: uid }),
+  });
+}
+export async function registerDealInterest(dealId: string, intro: string): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  try {
+    await rest("deal_interests", {
+      method: "POST", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ deal_id: dealId, user_id: uid, intro }),
+    });
+  } catch (e) {
+    if ((e as { status?: number }).status === 409) throw new Error("이미 이 매물에 관심 등록했어요. 접수 후 세모플이 안내드립니다.");
+    throw e;
+  }
+}
+
+/* ── 관리자: 제휴·거래소 검수 큐 (RLS is_admin이 강제) ── */
+export interface PartnerPostAdmin {
+  id: string; title: string; category_id: string; type_id: string; give_text: string;
+  get_text: string; want_categories: string[]; size_text: string; detail: string;
+  status: "pending" | "published" | "matched" | "rejected" | "closed";
+  review_reason: string | null; created_at: string;
+}
+export async function listPartnerPosts(statuses: string[]): Promise<PartnerPostAdmin[]> {
+  return rest<PartnerPostAdmin[]>(`partner_posts?status=in.(${statuses.join(",")})&select=id,title,category_id,type_id,give_text,get_text,want_categories,size_text,detail,status,review_reason,created_at&order=created_at.asc&limit=100`);
+}
+export async function reviewPartnerPost(id: string, patch: { status: string; review_reason?: string }): Promise<void> {
+  const uid = getSession()?.user.id;
+  await rest(`partner_posts?id=eq.${id}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ ...patch, reviewed_by: uid, ...(patch.status === "published" ? { published_at: new Date().toISOString() } : {}) }),
+  });
+}
+export interface DealSubmissionRow {
+  id: string; payload: Partial<DealSubPayload>; status: "pending" | "hold" | "approved" | "rejected";
+  review_reason: string | null; submitter_id: string; created_at: string;
+}
+export async function listDealSubmissions(statuses: string[]): Promise<DealSubmissionRow[]> {
+  return rest<DealSubmissionRow[]>(`deal_submissions?status=in.(${statuses.join(",")})&select=id,payload,status,review_reason,submitter_id,created_at&order=created_at.asc&limit=100`);
+}
+export async function publishDeal(row: {
+  id: string; category_id: string; region: "domestic" | "overseas"; revenue_band: string;
+  mode: string; summary: string; highlights: string[]; sale_reason: string | null; owner_id: string;
+}): Promise<void> {
+  await rest("deals", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(row) });
+}
+export async function reviewDealSubmission(id: string, patch: {
+  status: "approved" | "rejected" | "hold"; review_reason?: string; approved_deal_id?: string;
+}): Promise<void> {
+  const uid = getSession()?.user.id;
+  await rest(`deal_submissions?id=eq.${id}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ ...patch, reviewed_by: uid, reviewed_at: new Date().toISOString() }),
+  });
+}
+export interface InterestRow {
+  id: string; status: string; created_at: string; pitch?: string; intro?: string;
+  platform_name?: string; size_text?: string; post_id?: string; deal_id?: string;
+  partner_posts?: { title: string } | null;
+}
+export async function listPartnerInterests(): Promise<InterestRow[]> {
+  return rest<InterestRow[]>("partner_post_interests?status=eq.pending&select=id,status,created_at,pitch,platform_name,size_text,post_id,partner_posts(title)&order=created_at.asc&limit=100");
+}
+export async function listDealInterests(): Promise<InterestRow[]> {
+  return rest<InterestRow[]>("deal_interests?status=eq.pending&select=id,status,created_at,intro,deal_id&order=created_at.asc&limit=100");
+}
+export async function markIntroduced(table: "partner_post_interests" | "deal_interests", id: string): Promise<void> {
+  await rest(`${table}?id=eq.${id}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ status: "introduced" }),
+  });
+}
+export interface BuyerBriefRow {
+  id: string; categories: string[]; budget_band: string; mode: string; entity: string; note: string; active: boolean; created_at: string;
+}
+export async function listBuyerBriefs(): Promise<BuyerBriefRow[]> {
+  return rest<BuyerBriefRow[]>("buyer_briefs?active=is.true&select=id,categories,budget_band,mode,entity,note,active,created_at&order=created_at.desc&limit=100");
+}
+
 /* 분석 이벤트(fire-and-forget) — 원격 모드에서만 기록. 실패 무시. */
 let sessionId = "";
 export function trackEvent(type: "impression" | "click" | "outbound" | "favorite" | "search", platformId?: string, query?: string): void {

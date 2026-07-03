@@ -30,7 +30,8 @@
 | `migrations/0001_schema.sql` | 전체 스키마(enum·테이블·인덱스·트리거·상태머신 검증·뷰) |
 | `migrations/0002_policies.sql` | RLS 정책 + 역할 헬퍼 함수 |
 | `migrations/0003_seed.sql` | 현행 데이터 시드(그룹 5·분야 35·플랫폼 1,559 + 제휴 유형·부스트 상품·데모 매물) — `seed/build-seed.mjs`가 생성 |
-| `migrations/ALL.sql` | **0001+0002+0003 합본** — SQL Editor에 한 번에 붙여넣고 Run 하는 용도(아래 절차 2번) |
+| `migrations/0004_open.sql` | **2·3단계 오픈**: 제휴 보드(partner_posts+interests), 매각 접수(deal_submissions), admin 매물 게시 정책, 익명 공개 뷰 — **이미 0001~0003을 실행한 DB는 이 파일만 추가 실행** |
+| `migrations/ALL.sql` | **0001~0004 합본** — 새 DB에 한 번에 붙여넣고 Run 하는 용도(아래 절차 2번) |
 | `seed/build-seed.mjs` | `app/src/data/*.json` → 시드 SQL 생성기(데이터 갱신 시 재실행) |
 
 > **검증 완료**: 세 마이그레이션(및 합본 `ALL.sql`)을 로컬 Postgres 16에서 실제 실행해 무오류를 확인했다.

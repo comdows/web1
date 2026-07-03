@@ -1,7 +1,7 @@
 /* 서비스 단계 플래그 — 정식 오픈 시 true로. */
 export const FLAGS = {
-  stage2: false, // 🤝 제휴 매칭
-  stage3: false, // 🏦 플랫폼 거래소
+  stage2: true,  // 🤝 제휴 매칭 — 오픈(무료 베타)
+  stage3: true,  // 🏦 플랫폼 거래소 — 오픈(무료 베타)
   contactEmail: "", // 비공개 접수 이메일(선택)
 };
 
