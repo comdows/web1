@@ -86,6 +86,22 @@ export async function signIn(email: string, password: string): Promise<void> {
 export async function resendConfirmation(email: string): Promise<void> {
   await gotrue(`resend${redirectQ}`, { type: "signup", email });
 }
+/* 비밀번호 재설정 메일 — 링크는 #type=recovery 해시로 앱에 돌아온다 */
+export async function requestPasswordReset(email: string): Promise<void> {
+  await gotrue(`recover${redirectQ}`, { email });
+}
+/* 비밀번호 변경(로그인/recovery 세션 필요) */
+export async function updatePassword(password: string): Promise<void> {
+  const token = await getAccessToken();
+  if (!token) throw new Error("로그인이 필요합니다");
+  const res = await fetch(`${SB_URL}/auth/v1/user`, {
+    method: "PUT",
+    headers: { apikey: SB_KEY!, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+  });
+  const data = (await res.json().catch(() => ({}))) as { msg?: string; error_description?: string };
+  if (!res.ok) throw new Error(data.msg || data.error_description || `AUTH ${res.status}`);
+}
 export function signOut(): void { save(null); }
 
 /* 유효한 액세스 토큰 — 만료 임박 시 갱신, 갱신 실패 시 로그아웃 처리 */
@@ -131,6 +147,8 @@ function decodeJwt(token: string): { sub?: string; email?: string; exp?: number 
 /* 확인 메일 링크 복귀 처리 — GoTrue는 #access_token=… 또는 #error_description=… 해시로 돌아온다.
  * 토큰이면 세션 주입, 오류면 안내 메시지 저장. 처리 후 해시 제거(새로고침 시 재실행 방지). */
 let hashNotice: string | null = null;
+let recoveryPending = false; // 비밀번호 재설정 링크로 복귀 — 새 비밀번호 입력 필요
+export function consumeRecoveryPending(): boolean { const v = recoveryPending; recoveryPending = false; return v; }
 function consumeAuthHash(): void {
   if (typeof location === "undefined" || !location.hash) return;
   const h = new URLSearchParams(location.hash.slice(1));
@@ -145,7 +163,12 @@ function consumeAuthHash(): void {
         expires_at: c.exp ?? Math.floor(Date.now() / 1000) + Number(h.get("expires_in") ?? 3600),
         user: { id: c.sub, email: c.email },
       });
-      hashNotice = "이메일 확인이 완료됐어요. 로그인된 상태입니다.";
+      if (h.get("type") === "recovery") {
+        recoveryPending = true;
+        hashNotice = "본인 확인 완료 — 아래에서 새 비밀번호를 설정해 주세요.";
+      } else {
+        hashNotice = "이메일 확인이 완료됐어요. 로그인된 상태입니다.";
+      }
     }
     history.replaceState(null, "", location.pathname + location.search);
   } else if (err) {

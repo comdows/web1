@@ -4,7 +4,10 @@ import type { FormEvent } from "react";
 import { groups, categoriesByGroup } from "./data";
 import { Badge } from "./components";
 import { useNav } from "./nav";
-import { consumeHashNotice, resendConfirmation, signIn, signOut, signUp, useSession, refreshProfile } from "./lib/auth";
+import {
+  consumeHashNotice, consumeRecoveryPending, requestPasswordReset, resendConfirmation,
+  signIn, signOut, signUp, updatePassword, useSession, refreshProfile,
+} from "./lib/auth";
 import { TERMS_VERSION } from "./legal";
 import { FLAGS } from "./config";
 import { createSubmission, listMySubmissions, remoteEnabled, updateDisplayName } from "./lib/api";
@@ -30,7 +33,7 @@ function RemoteOffNotice() {
 
 /* ── 로그인 / 회원가입 ─────────────────────────────────────── */
 export function AuthPanel({ compact = false }: { compact?: boolean }) {
-  const [mode, setMode] = useState<"in" | "up">("in");
+  const [mode, setMode] = useState<"in" | "up" | "forgot">("in");
   const [email, setEmail] = useState("");
   const [pw, setPw] = useState("");
   const [busy, setBusy] = useState(false);
@@ -45,7 +48,10 @@ export function AuthPanel({ compact = false }: { compact?: boolean }) {
     e.preventDefault();
     setErr(""); setOk(""); setNeedsConfirm(false); setBusy(true);
     try {
-      if (mode === "in") {
+      if (mode === "forgot") {
+        await requestPasswordReset(email.trim());
+        setOk("재설정 메일을 보냈어요. 메일의 링크를 누르면 새 비밀번호를 설정할 수 있어요.");
+      } else if (mode === "in") {
         await signIn(email.trim(), pw);
       } else {
         const r = await signUp(email.trim(), pw, TERMS_VERSION);
@@ -79,15 +85,23 @@ export function AuthPanel({ compact = false }: { compact?: boolean }) {
         <label>이메일
           <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
         </label>
-        <label>비밀번호
-          <input type="password" required minLength={6} autoComplete={mode === "in" ? "current-password" : "new-password"}
-            value={pw} onChange={(e) => setPw(e.target.value)} placeholder="6자 이상" />
-        </label>
+        {mode !== "forgot" && (
+          <label>비밀번호
+            <input type="password" required minLength={6} autoComplete={mode === "in" ? "current-password" : "new-password"}
+              value={pw} onChange={(e) => setPw(e.target.value)} placeholder="6자 이상" />
+          </label>
+        )}
         {err && <div className="err">{err}</div>}
         {ok && <div className="ok">{ok}</div>}
         <button className="btn primary" disabled={busy} type="submit">
-          {busy ? "처리 중…" : mode === "in" ? "로그인" : "가입하기"}
+          {busy ? "처리 중…" : mode === "in" ? "로그인" : mode === "up" ? "가입하기" : "재설정 메일 보내기"}
         </button>
+        {mode === "in" && (
+          <button type="button" className="linklike" onClick={() => { setMode("forgot"); setErr(""); setOk(""); }}>비밀번호를 잊으셨나요?</button>
+        )}
+        {mode === "forgot" && (
+          <button type="button" className="linklike" onClick={() => { setMode("in"); setErr(""); setOk(""); }}>← 로그인으로 돌아가기</button>
+        )}
         {needsConfirm && (
           <button type="button" className="btn ghost sm" disabled={busy || !email.trim()} onClick={resend}>
             확인 메일 재발송
@@ -128,6 +142,10 @@ export function Account() {
   const [subs, setSubs] = useState<Submission[] | null>(null);
   const [subsError, setSubsError] = useState(false);
   const [reload, setReload] = useState(0);
+  const [newPw, setNewPw] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ ok?: string; err?: string }>({});
+  const [recovery] = useState(() => consumeRecoveryPending()); // 재설정 링크로 복귀한 경우
 
   useEffect(() => { setName(profile?.display_name ?? ""); }, [profile?.display_name]);
   useEffect(() => {
@@ -182,6 +200,26 @@ export function Account() {
             <button className="btn primary sm" type="submit" disabled={saving}>{saving ? "저장 중…" : "저장"}</button>
             {saved && <span className="ok" style={{ alignSelf: "center" }}>저장됐어요 ✓</span>}
             {err && <span className="err" style={{ alignSelf: "center" }}>{err}</span>}
+          </div>
+        </form>
+        <form className="frm" style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line-soft)" }}
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (pwBusy) return;
+            setPwMsg({}); setPwBusy(true);
+            try { await updatePassword(newPw); setPwMsg({ ok: "비밀번호가 변경됐어요 ✓" }); setNewPw(""); }
+            catch (ex) { setPwMsg({ err: ex instanceof Error ? ex.message : String(ex) }); }
+            finally { setPwBusy(false); }
+          }}>
+          {recovery && <div className="ok">본인 확인 완료 — 새 비밀번호를 설정해 주세요.</div>}
+          <label>비밀번호 변경
+            <input type="password" required minLength={6} autoComplete="new-password"
+              value={newPw} onChange={(e) => setNewPw(e.target.value)} placeholder="새 비밀번호 (6자 이상)" />
+          </label>
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn ghost sm" type="submit" disabled={pwBusy}>{pwBusy ? "변경 중…" : "비밀번호 변경"}</button>
+            {pwMsg.ok && <span className="ok" style={{ alignSelf: "center" }}>{pwMsg.ok}</span>}
+            {pwMsg.err && <span className="err" style={{ alignSelf: "center" }}>{pwMsg.err}</span>}
           </div>
         </form>
         <div className="frm-note" style={{ marginTop: 12 }}>★ 즐겨찾기는 로그인 중 자동으로 계정에 동기화됩니다.</div>
