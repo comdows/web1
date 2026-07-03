@@ -8,6 +8,10 @@ import { Partners, Exchange } from "./pages";
 import { NavContext } from "./nav";
 import type { ViewName } from "./nav";
 import { PlatformDetail, SearchResults, Compare, Onboarding } from "./discovery";
+import { Account, Submit } from "./account";
+import { Admin } from "./admin";
+import { useSession } from "./lib/auth";
+import { remoteEnabled } from "./lib/api";
 
 type Sort = "default" | "new" | "name";
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
@@ -55,6 +59,7 @@ export default function App() {
   const favs = useFavs();
   const cmp = useCompare();
   const theme = useTheme();
+  const { session, profile, isAdmin } = useSession();
 
   const go = useCallback<(v: ViewName, params?: { id?: string; q?: string }) => void>((v, params) => {
     setView(v);
@@ -110,6 +115,12 @@ export default function App() {
           <a className={view === "partners" ? "active" : ""} onClick={() => go("partners")}>🤝 <span className="navlbl">제휴</span>{!FLAGS.stage2 && <span className="soon">준비중</span>}</a>
           <a className={view === "exchange" ? "active" : ""} onClick={() => go("exchange")}>🏦 <span className="navlbl">거래소</span>{!FLAGS.stage3 && <span className="soon">준비중</span>}</a>
           <a onClick={() => { setFav(true); go("home"); }}>★ {favs.count}</a>
+          {remoteEnabled && (
+            <a className={view === "account" || view === "admin" ? "active" : ""} onClick={() => go("account")}>
+              👤 <span className="navlbl">{session ? (profile?.display_name || "내 계정") : "로그인"}</span>
+              {isAdmin && <span className="soon" style={{ background: "var(--teal-tint)", color: "var(--teal)" }}>admin</span>}
+            </a>
+          )}
           <button className="theme-btn" onClick={theme.toggle} aria-label="테마">◐</button>
         </nav>
       </div></header>
@@ -120,6 +131,9 @@ export default function App() {
         : view === "search" ? <SearchResults initialQ={searchQ} />
         : view === "compare" ? <Compare />
         : view === "onboarding" ? <Onboarding />
+        : view === "account" ? <Account />
+        : view === "submit" ? <Submit />
+        : view === "admin" ? <Admin />
         : (
         <main className="container">
           <section className="hero">
@@ -139,7 +153,9 @@ export default function App() {
               <button className={`btn ghost ${fav ? "on" : ""}`} onClick={() => setFav((v) => !v)}>★ 내 즐겨찾기</button>
               <button className="btn ghost" onClick={() => go("onboarding")}>✨ 추천받기</button>
               {group && <button className="btn ghost" onClick={() => setGroup("")}>✕ {groups.find((g) => g.id === group)?.name}</button>}
-              <a className="btn primary" href={REPORT_URL} target="_blank" rel="noopener noreferrer">+ 플랫폼 제보</a>
+              {remoteEnabled
+                ? <button className="btn primary" onClick={() => go("submit")}>+ 플랫폼 제보</button>
+                : <a className="btn primary" href={REPORT_URL} target="_blank" rel="noopener noreferrer">+ 플랫폼 제보</a>}
             </div>
             <div className="stats">
               <StatTile n={platforms.length.toLocaleString()} l="플랫폼" tone="b" />
