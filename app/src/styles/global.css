@@ -303,3 +303,15 @@ a.foot-link{display:inline-block}
 .hero-bp{position:absolute;right:0;top:-10px;opacity:.09;pointer-events:none}
 @media(max-width:900px){.hero-bp{display:none}}
 .sec-title{scroll-margin-top:76px}
+
+/* 모바일 검색: 45개 분야 필터 벽 대신 결과 먼저 — 필터는 접이식 토글 */
+.filters-toggle{display:none;margin-bottom:12px}
+@media (max-width: 760px){
+  .filters-toggle{display:inline-flex}
+  .search-layout .facets{display:none}
+  .search-layout.filters-open .facets{display:block}
+}
+/* 모바일 헤더: 스크롤 메뉴 우측 페이드(더 있음 단서) — 로그인·테마는 우측 고정 */
+@media (max-width: 640px){
+  .site-header nav{mask-image:linear-gradient(90deg,#000 85%,transparent)}
+}

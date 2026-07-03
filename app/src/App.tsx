@@ -24,10 +24,11 @@ const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeU
 
 function readParams() {
   const p = new URLSearchParams(location.search);
-  // SEO 프리렌더 경로(/p/<id>/)로 진입하면 상세 뷰로 부팅 (scripts/prerender.mjs)
+  // SEO 프리렌더 경로 진입: /p/<id> → 상세, /c/<분야> → 검색(분야 필터)
   const pre = location.pathname.match(/\/p\/([a-z0-9-]+)\/?$/);
+  const cpre = location.pathname.match(/\/c\/([a-z0-9_-]+)\/?$/);
   return {
-    view: pre ? ("detail" as ViewName) : (p.get("view") as ViewName) || "home",
+    view: pre ? ("detail" as ViewName) : cpre ? ("search" as ViewName) : (p.get("view") as ViewName) || "home",
     id: pre ? pre[1] : p.get("id") || "",
     q: p.get("q") || "",
     group: p.get("group") || "",
@@ -166,6 +167,8 @@ export default function App() {
           <NavItem active={view === "partners"} onClick={() => go("partners")} label="제휴">🤝 <span className="navlbl">제휴</span>{!FLAGS.stage2 && <span className="soon">준비중</span>}</NavItem>
           <NavItem active={view === "exchange"} onClick={() => go("exchange")} label="거래소">🏦 <span className="navlbl">거래소</span>{!FLAGS.stage3 && <span className="soon">준비중</span>}</NavItem>
           <NavItem onClick={() => { setFav(true); go("home"); }} label={`즐겨찾기 ${favs.count}개`}>★ {favs.count}</NavItem>
+        </nav>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
           {remoteEnabled && (
             <NavItem active={view === "account" || view === "admin"} onClick={() => go("account")} label={session ? "내 계정" : "로그인"}>
               👤 <span className="navlbl">{session ? (profile?.display_name || "내 계정") : "로그인"}</span>
@@ -173,7 +176,7 @@ export default function App() {
             </NavItem>
           )}
           <button className="theme-btn" onClick={theme.toggle} aria-label="테마 전환">◐</button>
-        </nav>
+        </div>
       </div></header>
 
       {view === "partners" ? <Partners />
@@ -232,7 +235,7 @@ export default function App() {
           <div className="promo-grid">
             <button className="gcard promo" onClick={() => go("partners")}>
               <div className="g-ic">🤝</div><h4>제휴 매칭 <span className="badge good">오픈</span></h4>
-              <div className="g-cats">배너 교환·회원 상호송출·레퍼럴 — 22가지 방식으로 다른 플랫폼과 함께 크세요. 무료 베타.</div>
+              <div className="g-cats">광고 자리 맞바꾸기, 회원 서로 보내기, 소개 보상(레퍼럴) — 다른 플랫폼과 손잡고 함께 크는 22가지 방법. 전부 무료 베타.</div>
               <div className="g-meta" style={{ marginTop: 8 }}>제안 등록 → 검수 게시 → 세모플이 소개</div>
             </button>
             <button className="gcard promo" onClick={() => go("exchange")}>

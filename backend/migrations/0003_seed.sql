@@ -87,7 +87,7 @@ insert into public.platforms (id, name, category_id, region, url, blurb, is_new)
   ('makeshop', '메이크샵', 'mallbuilder', 'domestic', 'https://www.makeshop.co.kr/', '임대형 쇼핑몰 구축 솔루션.', false),
   ('godo', '고도몰', 'mallbuilder', 'domestic', 'https://www.godo.co.kr/', 'NHN의 쇼핑몰 구축·호스팅 솔루션.', false),
   ('wisa', '위사', 'mallbuilder', 'domestic', 'https://www.wisa.co.kr/', '독립·임대형 쇼핑몰 구축 이커머스 솔루션.', false),
-  ('allways', '올웨이즈', 'social', 'domestic', 'https://www.notefolio.net', '팀 구매(공동구매) 기반 초저가 커머스.', false),
+  ('allways', '올웨이즈', 'social', 'domestic', 'https://alwayz.co', '팀 구매(공동구매) 기반 초저가 커머스.', false),
   ('kakaogift', '카카오톡 선물하기', 'social', 'domestic', 'https://gift.kakao.com', '카카오톡 기반 선물·모바일 쿠폰 판매.', false),
   ('wemakeprice', '위메프', 'social', 'domestic', 'https://www.wemakeprice.com', '특가·딜 중심 소셜커머스.', false),
   ('tmon', '티몬', 'social', 'domestic', 'https://www.tmon.co.kr', '타임딜·특가 중심 소셜커머스.', false),

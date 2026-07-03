@@ -45,8 +45,43 @@ function pageFor(p) {
     .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${esc(title)}$2`)
     .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${esc(desc)}$2`)
     .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonical}$2`)
-    .replace("</head>", `  <link rel="canonical" href="${canonical}">\n  </head>`)
+    .replace("</head>", `  <link rel="canonical" href="${canonical}">\n  <script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "세모플", item: SITE + "/" }, { "@type": "ListItem", position: 2, name: cat?.name ?? "분야", item: `${SITE}/c/${p.category}/` }, { "@type": "ListItem", position: 3, name: p.name, item: canonical }] })}</script>\n  </head>`)
     .replace(/(<div id="root">)(<\/div>)/, `$1${staticBody}$2`);
+}
+
+/* 분야 허브 /c/<id>/ — "OO 플랫폼 목록" 롱테일 검색 랜딩 (ItemList JSON-LD) */
+function catPage(c) {
+  const list = data.platforms.filter((p) => p.category === c.id);
+  const title = `${c.name} 플랫폼 ${list.length}곳 — 목록·비교 | 세모플`;
+  const desc = `${c.desc}. ${c.name} 분야 플랫폼 ${list.length}곳을 같은 기준으로 정리 — ${list.slice(0, 5).map((p) => p.name).join(", ")} 등.`.slice(0, 155);
+  const canonical = `${SITE}/c/${c.id}/`;
+  const ld = JSON.stringify({
+    "@context": "https://schema.org", "@type": "ItemList", name: title,
+    numberOfItems: list.length,
+    itemListElement: list.slice(0, 30).map((p, i) => ({ "@type": "ListItem", position: i + 1, name: p.name, url: `${SITE}/p/${p.id}/` })),
+  });
+  const body = `
+<main style="max-width:720px;margin:32px auto;padding:0 20px">
+  <p><a href="/web1/">세모플 — 세상의 모든 플랫폼</a></p>
+  <h1>${esc(c.icon)} ${esc(c.name)} 플랫폼 ${list.length}곳</h1>
+  <p>${esc(c.desc)} — 같은 기준으로 정리했습니다.</p>
+  <ul>${list.map((p) => `<li><a href="/web1/p/${p.id}/">${esc(p.name)}</a>${p.region === "해외" ? " (해외)" : ""} — ${esc(p.blurb)}</li>`).join("")}</ul>
+</main>`;
+  return template
+    .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
+    .replace(/(<meta name="description" content=")[^"]*(")/, `$1${esc(desc)}$2`)
+    .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${esc(title)}$2`)
+    .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${esc(desc)}$2`)
+    .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonical}$2`)
+    .replace("</head>", `  <link rel="canonical" href="${canonical}">\n  <script type="application/ld+json">${ld}</script>\n  </head>`)
+    .replace(/(<div id="root">)(<\/div>)/, `$1${body}$2`);
+}
+let catCount = 0;
+for (const c of data.categories) {
+  const dir = path.join(DIST, "c", c.id);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "index.html"), catPage(c));
+  catCount++;
 }
 
 let count = 0;
@@ -62,6 +97,7 @@ const today = new Date().toISOString().slice(0, 10);
 const staticUrls = ["", "?view=partners", "?view=exchange", "?view=ai-finder", "?view=packs", "?view=weekly", "?view=onboarding", "?view=deal-guide", "?view=value-check"];
 const urls = [
   ...staticUrls.map((u) => `${SITE}/${u}`),
+  ...data.categories.map((c) => `${SITE}/c/${c.id}/`),
   ...data.platforms.map((p) => `${SITE}/p/${p.id}/`),
 ];
 fs.writeFileSync(path.join(DIST, "sitemap.xml"),
@@ -70,4 +106,4 @@ fs.writeFileSync(path.join(DIST, "sitemap.xml"),
   `\n</urlset>\n`);
 fs.writeFileSync(path.join(DIST, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml\n`);
 
-console.log(`프리렌더 ${count}p + sitemap(${urls.length} URL) + robots.txt 생성`);
+console.log(`프리렌더 상세 ${count}p + 분야 허브 ${catCount}p + sitemap(${urls.length} URL) + robots.txt 생성`);
