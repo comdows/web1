@@ -371,14 +371,19 @@ export function Partners() {
       </div>
       <div className="card-grid" style={{ marginBottom: 14 }}>
         <div className="pcard"><h4>무료 <Badge kind="good">현재</Badge></h4>
-          <p>등재·제휴 프로필·매칭 신청·배너교환형 제휴 무제한. 소개까지 전 과정 무료.</p></div>
-        <div className="pcard"><h4>스폰서 노출 <Badge kind="soon">준비중</Badge></h4>
-          <p>매칭 보드 상단 고정 슬롯(월 정액, <b>AD 표기</b>). 디렉토리 검색·비교 결과는 판매하지 않습니다.</p></div>
-        <div className="pcard"><h4>연결료 <Badge kind="soon">준비중</Badge></h4>
-          <p>양측 동의 후 <b>연락처를 상호 공유하는 순간</b>에만 소액 정액(방식 유형별 차등). 신청·매칭 확인까지는 무료,
-            소개가 이행되지 않으면 전액 환불.</p></div>
-        <div className="pcard"><h4>멤버십 <Badge kind="soon">예정</Badge></h4>
-          <p>파트너 검색 무제한·검증 배지·트래킹 대시보드·매칭 큐레이션(월 정액).</p></div>
+          <p>등재·제휴 프로필·매칭 신청·배너교환형 제휴 무제한. 소개까지 전 과정 무료.
+            배너 교환 등 <b>무정산형(A형) 연결은 유료화 후에도 무료</b>입니다.</p></div>
+        <div className="pcard"><h4>스폰서 노출 <Badge kind="soon">예정 · 월 99,000원</Badge></h4>
+          <p>매칭 보드 상단 고정 2슬롯(<b>AD 표기</b>, VAT 포함). 디렉토리 검색·비교 결과는 어떤 경우에도 판매하지 않습니다.</p></div>
+        <div className="pcard"><h4>연결료 <Badge kind="soon">예정 · 건 22,000~77,000원</Badge></h4>
+          <p>양측 동의 후 <b>연락처를 상호 공유하는 순간</b>에만 정액(레퍼럴형 22,000 · 깊은 연동형 77,000, VAT 포함).
+            신청·매칭 확인까지는 무료, <b>소개가 이행되지 않으면 전액 자동 환불</b>.</p></div>
+        <div className="pcard"><h4>Pro 멤버십 <Badge kind="soon">예정 · 월 66,000원</Badge></h4>
+          <p>레퍼럴형 연결 월 3건 포함 · 검증 배지 · 우선 검수 · 파트너 검색 무제한(VAT 포함).</p></div>
+      </div>
+      <div className="banner" style={{ marginBottom: 14 }}>
+        🌱 <b>파운더 할인</b> — 유료화 공지 전에 가입해 활동(제보 승인·제안 게시 등) 1건 이상 남긴 계정은
+        모든 유료 상품이 <b>첫 12개월 50%</b>. 유료화는 이용량 기준(게이트) 충족 후 <b>30일 전 공지</b>로만 시작합니다.
       </div>
       <p className="sub faint" style={{ fontSize: 12.5, marginBottom: 6 }}>
         원칙 — ① 세모플은 <b>소개(연결)를 팔지, 성사를 팔지 않습니다</b>(제휴 체결·성과는 당사자 몫).
@@ -787,14 +792,18 @@ export function Exchange() {
       <div className="sec-title" id="x-pricing">요금 안내</div>
       <div className="card-grid" style={{ marginBottom: 6 }}>
         <div className="pcard"><h4>무료 <Badge kind="good">현재</Badge></h4>
-          <p>매물 등록(검수·익명화 포함)·인수 브리프·소개까지 전 과정 무료(베타).</p></div>
-        <div className="pcard"><h4>매물 리스팅료 <Badge kind="soon">예정</Badge></h4>
-          <p>게재 90일 정액(검수·익명화 포함). <b>성사·거래액과 무관</b> — 팔리든 안 팔리든 같은 금액.</p></div>
-        <div className="pcard"><h4>인수자 멤버십 <Badge kind="soon">예정</Badge></h4>
-          <p>신규 매물 우선 알림·브리프 무제한(월 정액).</p></div>
+          <p>매물 등록(검수·익명화 포함)·인수 브리프·관심 등록·가치 자가 진단·소개까지 전 과정 무료(베타).
+            브리프·관심 등록은 유료화 후에도 무료입니다.</p></div>
+        <div className="pcard"><h4>매물 리스팅료 <Badge kind="soon">예정 · 90일 220,000원</Badge></h4>
+          <p>검수·익명화·게재 중 소개 무제한 포함(연장 +90일 110,000원, VAT 포함). <b>성사·거래액과 무관</b> —
+            팔리든 안 팔리든 같은 금액이고, 검수 반려 시 전액 환불됩니다.</p></div>
+        <div className="pcard"><h4>인수자 멤버십 <Badge kind="soon">예정 · 월 55,000원</Badge></h4>
+          <p>신규 매물 48시간 선공개 + 브리프 무제한(VAT 포함).</p></div>
       </div>
       <p className="sub faint" style={{ fontSize: 12.5, marginBottom: 18 }}>
         금지 원칙 — 성공보수(%)·성사 연동 과금·가격 협상 개입 대가는 받지 않습니다(위 "중개하지 않는 이유" 참조).
+        유료화는 매물 10건+ 등 이용량 기준 충족 후 <b>30일 전 공지</b>로만 시작하며, 진행 중인 건은 무료로 마무리됩니다.
+        파운더 할인(유료화 공지 전 활동 계정 첫 12개월 50%)이 적용됩니다.
       </p>
 
       {/* ── 매물 보드 ── */}
