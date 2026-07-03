@@ -7,9 +7,14 @@ import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
 import {
   createPlatform, getPendingCount, getPlatformLifecycle, getPopularSearches, getStats,
-  LIFECYCLE_NEXT, listSubmissions, remoteEnabled, reviewSubmission, transitionPlatform,
+  LIFECYCLE_NEXT, listBuyerBriefs, listDealInterests, listDealSubmissions, listPartnerInterests,
+  listPartnerPosts, listSubmissions, markIntroduced, publishDeal, remoteEnabled,
+  reviewDealSubmission, reviewPartnerPost, reviewSubmission, transitionPlatform,
 } from "./lib/api";
-import type { Lifecycle, Submission } from "./lib/api";
+import type {
+  BuyerBriefRow, DealSubmissionRow, InterestRow, Lifecycle, PartnerPostAdmin, Submission,
+} from "./lib/api";
+import { partnerTypes } from "./data";
 
 const LC_LABEL: Record<Lifecycle, string> = {
   soon: "등재 예정", review: "검토 중", verified: "검증됨", matched: "성사", rejected: "반려",
@@ -160,6 +165,180 @@ function LifecyclePanel() {
   );
 }
 
+/* ── 제휴 제안 검수 큐 (partner_posts pending → 게시/반려) ── */
+function PartnerPostQueue() {
+  const [items, setItems] = useState<PartnerPostAdmin[] | null>(null);
+  const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState("");
+  const reload = useCallback(() => {
+    listPartnerPosts(["pending"]).then(setItems).catch(() => setItems([]));
+  }, []);
+  useEffect(reload, [reload]);
+  const act = async (id: string, status: "published" | "rejected") => {
+    setBusy(id);
+    try { await reviewPartnerPost(id, { status, review_reason: reasons[id] || undefined }); reload(); }
+    finally { setBusy(""); }
+  };
+  const tLabel = (id: string) => partnerTypes.find((t) => t.id === id)?.label ?? id;
+  if (items === null) return <div className="empty">불러오는 중…</div>;
+  if (items.length === 0) return <div className="empty">대기 중인 제휴 제안이 없습니다 ✓</div>;
+  return (
+    <>
+      {items.map((p) => (
+        <div className="admin-card" key={p.id}>
+          <div className="admin-card-h">
+            <b>{p.title}</b>
+            <Badge kind="soon">{tLabel(p.type_id)}</Badge>
+            <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: "auto" }}>{p.created_at.slice(0, 10)}</span>
+          </div>
+          <p style={{ margin: "6px 0", fontSize: 13, color: "var(--muted)" }}>
+            Give: {p.give_text} / Get: {p.get_text} / {p.size_text}{p.detail ? ` — ${p.detail}` : ""}
+          </p>
+          <div className="admin-form">
+            <label style={{ flex: 1 }}>반려 사유 <input value={reasons[p.id] ?? ""} onChange={(e) => setReasons((r) => ({ ...r, [p.id]: e.target.value }))} placeholder="반려 시(연락처 포함 등)" /></label>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button className="btn primary sm" disabled={busy === p.id} onClick={() => act(p.id, "published")}>✓ 게시</button>
+            <button className="btn ghost sm" disabled={busy === p.id} onClick={() => act(p.id, "rejected")}>반려</button>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/* ── 매물 검수 큐 (deal_submissions → 익명화·코드명 부여 후 게시) ── */
+function DealSubQueue() {
+  const [items, setItems] = useState<DealSubmissionRow[] | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, { code: string; summary: string; highlights: string; reason: string }>>({});
+  const [busy, setBusy] = useState("");
+  const [err, setErr] = useState("");
+  const reload = useCallback(() => {
+    listDealSubmissions(["pending", "hold"]).then((rows) => {
+      setItems(rows);
+      setDrafts((d) => {
+        const n = { ...d };
+        rows.forEach((r, i) => {
+          if (!n[r.id]) n[r.id] = {
+            code: `D-${200 + i}`, summary: r.payload.summary ?? "",
+            highlights: r.payload.highlights ?? "", reason: "",
+          };
+        });
+        return n;
+      });
+    }).catch(() => setItems([]));
+  }, []);
+  useEffect(reload, [reload]);
+
+  const approve = async (s: DealSubmissionRow) => {
+    const d = drafts[s.id];
+    setErr(""); setBusy(s.id);
+    try {
+      await publishDeal({
+        id: d.code.trim(), category_id: s.payload.category_id ?? "", region: s.payload.region ?? "domestic",
+        revenue_band: s.payload.revenue_band ?? "", mode: s.payload.mode ?? "",
+        summary: d.summary.trim(), highlights: d.highlights ? d.highlights.split(",").map((x) => x.trim()).filter(Boolean) : [],
+        sale_reason: s.payload.sale_reason || null, owner_id: s.submitter_id,
+      });
+      await reviewDealSubmission(s.id, { status: "approved", approved_deal_id: d.code.trim() });
+      reload();
+    } catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(""); }
+  };
+  const reject = async (s: DealSubmissionRow) => {
+    setBusy(s.id);
+    try { await reviewDealSubmission(s.id, { status: "rejected", review_reason: drafts[s.id]?.reason || "익명성 규칙 미충족" }); reload(); }
+    finally { setBusy(""); }
+  };
+
+  if (items === null) return <div className="empty">불러오는 중…</div>;
+  if (items.length === 0) return <div className="empty">대기 중인 매각 접수가 없습니다 ✓</div>;
+  return (
+    <>
+      {items.map((s) => {
+        const d = drafts[s.id] ?? { code: "", summary: "", highlights: "", reason: "" };
+        const set = (patch: Partial<typeof d>) => setDrafts((r) => ({ ...r, [s.id]: { ...d, ...patch } }));
+        return (
+          <div className="admin-card" key={s.id}>
+            <div className="admin-card-h">
+              <b>매각 접수</b>
+              <Badge kind="soon">{s.payload.revenue_band ?? "?"}</Badge>
+              <Badge kind="muted">{s.payload.mode ?? "?"}</Badge>
+              <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: "auto" }}>{s.created_at.slice(0, 10)}</span>
+            </div>
+            <p style={{ margin: "6px 0", fontSize: 13, color: "var(--muted)" }}>
+              원문: {s.payload.summary}{s.payload.sale_reason ? ` (사유: ${s.payload.sale_reason})` : ""}
+            </p>
+            <div className="admin-form">
+              <label>코드명 <input value={d.code} onChange={(e) => set({ code: e.target.value })} placeholder="D-201" /></label>
+              <label style={{ flex: 2, minWidth: 240 }}>게시용 익명 요약(재작성)
+                <input value={d.summary} onChange={(e) => set({ summary: e.target.value })} /></label>
+              <label style={{ flex: 1, minWidth: 160 }}>하이라이트(쉼표)
+                <input value={d.highlights} onChange={(e) => set({ highlights: e.target.value })} /></label>
+              <label>반려 사유 <input value={d.reason} onChange={(e) => set({ reason: e.target.value })} placeholder="반려 시" /></label>
+            </div>
+            {err && busy !== s.id && <div className="err">{err}</div>}
+            <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+              <button className="btn primary sm" disabled={busy === s.id} onClick={() => approve(s)}>✓ 익명화 게시</button>
+              <button className="btn ghost sm" disabled={busy === s.id} onClick={() => reject(s)}>반려</button>
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+/* ── 소개 대기(매칭 신청·인수 관심·브리프) ── */
+function IntroQueue() {
+  const [pInts, setPInts] = useState<InterestRow[]>([]);
+  const [dInts, setDInts] = useState<InterestRow[]>([]);
+  const [briefs, setBriefs] = useState<BuyerBriefRow[]>([]);
+  const reload = useCallback(() => {
+    listPartnerInterests().then(setPInts).catch(() => setPInts([]));
+    listDealInterests().then(setDInts).catch(() => setDInts([]));
+    listBuyerBriefs().then(setBriefs).catch(() => setBriefs([]));
+  }, []);
+  useEffect(reload, [reload]);
+  const done = async (table: "partner_post_interests" | "deal_interests", id: string) => {
+    await markIntroduced(table, id).catch(() => { /* noop */ });
+    reload();
+  };
+  if (pInts.length === 0 && dInts.length === 0 && briefs.length === 0)
+    return <div className="empty">소개 대기 건이 없습니다 ✓</div>;
+  return (
+    <>
+      {pInts.map((i) => (
+        <div className="sub-item" key={i.id}>
+          <div style={{ minWidth: 0 }}>
+            <b>🤝 매칭 신청</b> — {i.platform_name} → "{i.partner_posts?.title ?? i.post_id}"
+            <div className="frm-note">{i.pitch} · {i.size_text}</div>
+          </div>
+          <button className="btn ghost sm" onClick={() => done("partner_post_interests", i.id)}>소개 완료</button>
+        </div>
+      ))}
+      {dInts.map((i) => (
+        <div className="sub-item" key={i.id}>
+          <div style={{ minWidth: 0 }}>
+            <b>🏦 인수 관심</b> — 매물 {i.deal_id}
+            <div className="frm-note">{i.intro}</div>
+          </div>
+          <button className="btn ghost sm" onClick={() => done("deal_interests", i.id)}>소개 완료</button>
+        </div>
+      ))}
+      {briefs.map((b) => (
+        <div className="sub-item" key={b.id}>
+          <div style={{ minWidth: 0 }}>
+            <b>📮 인수 브리프</b> — {b.entity} · {b.budget_band} · {b.mode}
+            <div className="frm-note">{b.categories.length ? b.categories.join(", ") : "분야 무관"}{b.note ? ` — ${b.note}` : ""}</div>
+          </div>
+          <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{b.created_at.slice(0, 10)}</span>
+        </div>
+      ))}
+    </>
+  );
+}
+
 /* ── 콘솔 본체 ────────────────────────────────────────────── */
 export function Admin() {
   const go = useNav();
@@ -205,6 +384,15 @@ export function Admin() {
       {queue === null ? <div className="empty">불러오는 중…</div>
         : queue.length === 0 ? <div className="empty">대기 중인 제보가 없습니다 ✓</div>
         : queue.map((s) => <ReviewCard key={s.id} s={s} onDone={reload} />)}
+
+      <div className="sec-title">🤝 제휴 제안 검수</div>
+      <PartnerPostQueue />
+
+      <div className="sec-title">🏦 매물 검수 (익명화 → 코드명 게시)</div>
+      <DealSubQueue />
+
+      <div className="sec-title">📮 소개 대기 (매칭 신청 · 인수 관심 · 브리프)</div>
+      <IntroQueue />
 
       <div className="sec-title">라이프사이클 전이</div>
       <p className="lead" style={{ maxWidth: 620, marginTop: -6 }}>
