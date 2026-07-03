@@ -1,0 +1,2322 @@
+-- ============================================================
+-- 세모플 백엔드 전체 마이그레이션 (한 번에 실행용)
+-- Supabase SQL Editor에 통째로 붙여넣고 Run 하면 된다.
+-- 구성: 0001 스키마 → 0002 RLS 정책 → 0003 시드(플랫폼 1,559)
+-- auth.users / auth.uid() 는 Supabase가 기본 제공하므로 별도 준비 불필요.
+-- ============================================================
+
+-- ============================================================
+-- 세모플 DB 스키마 v1  (Supabase/Postgres)
+-- 기준: redesign/handoff/API Spec.md (v0.9)
+-- 미래 기능(검수·라이프사이클·클레임·제휴·거래소·부스트·분석)을 선반영.
+-- 실행 순서: 0001_schema.sql → 0002_policies.sql → 0003_seed.sql
+-- ============================================================
+
+create extension if not exists pg_trgm;        -- 한국어 부분일치 검색(ilike + trgm 인덱스)
+
+-- ── Enums (영문 코드; 한국어 라벨은 프론트 담당) ──────────────
+create type region_t            as enum ('domestic','overseas');            -- 국내/해외
+create type fee_band_t          as enum ('low','mid','high');               -- 수수료대
+create type lifecycle_t         as enum ('soon','review','verified','matched','rejected');
+create type submission_status_t as enum ('pending','hold','approved','rejected');
+create type collection_t        as enum ('interest','review','plan');       -- 관심/검토중/입점예정
+create type proposal_status_t   as enum ('pending','accepted','rejected','withdrawn');
+create type claim_method_t      as enum ('email','dns','meta','doc');       -- 도메인 이메일/DNS/메타태그/서류
+create type claim_status_t      as enum ('pending','code_sent','verified','rejected');
+create type deal_status_t       as enum ('open','in_progress','closed');
+create type boost_status_t      as enum ('draft','review','active','paused','done','rejected');
+create type role_t              as enum ('user','operator','admin');
+create type event_t             as enum ('impression','click','outbound','favorite','search');
+
+-- ── 공통 트리거: updated_at 자동 갱신 ─────────────────────────
+create or replace function public.tg_touch_updated_at() returns trigger
+language plpgsql as $$
+begin new.updated_at := now(); return new; end $$;
+
+-- ============================================================
+-- 1) 사용자 / 역할
+-- ============================================================
+create table public.profiles (
+  id           uuid primary key references auth.users(id) on delete cascade,
+  role         role_t not null default 'user',
+  display_name text,
+  created_at   timestamptz not null default now(),
+  updated_at   timestamptz not null default now()
+);
+create trigger touch_profiles before update on public.profiles
+  for each row execute function public.tg_touch_updated_at();
+
+-- auth.users 생성 시 프로필 자동 생성
+create or replace function public.tg_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.profiles (id, display_name)
+  values (new.id, coalesce(new.raw_user_meta_data->>'name', split_part(new.email,'@',1)))
+  on conflict (id) do nothing;
+  return new;
+end $$;
+create trigger on_auth_user_created after insert on auth.users
+  for each row execute function public.tg_new_user();
+
+-- ============================================================
+-- 2) 분류 체계 (현행 5그룹 · 35분야 유지)
+-- ============================================================
+create table public.groups (
+  id          text primary key,          -- 'commerce' 등 (현행 slug 유지)
+  name        text not null,
+  icon        text not null default '',
+  description text not null default '',
+  sort        int  not null default 0
+);
+
+create table public.categories (
+  id          text primary key,          -- 'openmarket' 등
+  group_id    text not null references public.groups(id),
+  name        text not null,
+  icon        text not null default '',
+  description text not null default '',
+  sort        int  not null default 0
+);
+create index idx_categories_group on public.categories(group_id);
+
+-- ============================================================
+-- 3) 플랫폼 (디렉토리 본체 — 리치 필드 선반영)
+-- ============================================================
+create table public.platforms (
+  id          text primary key,                      -- 현행 slug id 유지 ('coupang')
+  name        text not null,
+  category_id text not null references public.categories(id),
+  region      region_t not null default 'domestic',
+  url         text not null,
+  blurb       text not null default '',              -- 개략 소개(중립·사실)
+  is_new      boolean not null default false,        -- 🆕 배지
+  -- 리치 필드(핸드오프 상세/비교 화면용, 조사 완료 전까지 null 허용)
+  verified    boolean not null default false,        -- 검증 배지(공식 확인)
+  lifecycle   lifecycle_t not null default 'verified',
+  fee_band    fee_band_t,                            -- 수수료대(낮음/중간/높음)
+  fee_text    text,                                  -- 표시용 "~4–10.8%"
+  settle_text text,                                  -- 정산주기
+  enter_text  text,                                  -- 입점조건
+  strength    text,                                  -- 한 줄 강점(근거 검수 후)
+  pros        text[] not null default '{}',          -- admin만 기록(명예훼손 방지)
+  cons        text[] not null default '{}',
+  year        int,                                   -- 디렉토리 등록연도
+  logo_url    text,                                  -- 파비콘 대체용(선택)
+  archived_at timestamptz,                           -- soft delete
+  created_by  uuid references public.profiles(id),
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create trigger touch_platforms before update on public.platforms
+  for each row execute function public.tg_touch_updated_at();
+create index idx_platforms_category  on public.platforms(category_id);
+create index idx_platforms_lifecycle on public.platforms(lifecycle) where archived_at is null;
+create index idx_platforms_new       on public.platforms(is_new) where is_new;
+create index idx_platforms_name_trgm  on public.platforms using gin (name gin_trgm_ops);
+create index idx_platforms_blurb_trgm on public.platforms using gin (blurb gin_trgm_ops);
+
+-- 분야별 수수료 상세(상세 페이지 표)
+create table public.platform_fees (
+  id          bigint generated always as identity primary key,
+  platform_id text not null references public.platforms(id) on delete cascade,
+  label       text not null,     -- '가전·디지털'
+  fee_text    text not null,     -- '~5–8%'
+  note        text not null default '',
+  source_url  text,              -- 근거 링크(공식 약관) — 신뢰 원칙
+  sort        int not null default 0
+);
+create index idx_pfees_platform on public.platform_fees(platform_id);
+
+-- ============================================================
+-- 4) 제보/검수 (Submission) + 라이프사이클 감사로그
+-- ============================================================
+create table public.submissions (
+  id            uuid primary key default gen_random_uuid(),
+  -- 제보 내용(연락처 저장 금지 — 프론트 안내 + 검수 체크리스트)
+  payload       jsonb not null,                       -- {name, category_id, region, url, desc, fee?...}
+  submitter_id  uuid references public.profiles(id),  -- 비로그인 제보는 null(GitHub 이슈 경유 등)
+  status        submission_status_t not null default 'pending',
+  dup_suspect_platform_id text references public.platforms(id),
+  approved_platform_id    text references public.platforms(id), -- 승인 시 생성된 플랫폼
+  review_reason text,
+  reviewed_by   uuid references public.profiles(id),
+  reviewed_at   timestamptz,
+  created_at    timestamptz not null default now()
+);
+create index idx_submissions_status on public.submissions(status, created_at desc);
+
+-- 라이프사이클 상태머신: 허용 전이 정의(스펙 §3)
+create or replace function public.lifecycle_allowed(p_from lifecycle_t, p_to lifecycle_t)
+returns boolean language sql immutable as $$
+  select (p_from, p_to) in (
+    ('soon','review'), ('soon','rejected'),
+    ('review','verified'), ('review','soon'), ('review','rejected'),
+    ('verified','matched'), ('verified','review'),
+    ('matched','verified'),
+    ('rejected','soon')
+  );
+$$;
+
+create table public.lifecycle_transitions (
+  id          bigint generated always as identity primary key,
+  platform_id text not null references public.platforms(id) on delete cascade,
+  from_state  lifecycle_t not null,
+  to_state    lifecycle_t not null,
+  reason      text,
+  actor_id    uuid references public.profiles(id),
+  created_at  timestamptz not null default now()
+);
+create index idx_transitions_platform on public.lifecycle_transitions(platform_id, created_at desc);
+
+-- 전이 RPC: 검증 + 적용 + 감사로그를 한 트랜잭션으로
+create or replace function public.transition_platform(p_platform text, p_to lifecycle_t, p_reason text default null)
+returns public.platforms language plpgsql security definer set search_path = public as $$
+declare v_from lifecycle_t; v_row public.platforms;
+begin
+  if not public.is_admin() then raise exception 'FORBIDDEN'; end if;
+  select lifecycle into v_from from public.platforms where id = p_platform for update;
+  if v_from is null then raise exception 'NOT_FOUND'; end if;
+  if not public.lifecycle_allowed(v_from, p_to) then
+    raise exception 'INVALID_TRANSITION: % -> %', v_from, p_to;
+  end if;
+  update public.platforms set lifecycle = p_to where id = p_platform returning * into v_row;
+  insert into public.lifecycle_transitions (platform_id, from_state, to_state, reason, actor_id)
+  values (p_platform, v_from, p_to, p_reason, auth.uid());
+  return v_row;
+end $$;
+
+-- ============================================================
+-- 5) 즐겨찾기 (컬렉션·메모·알림 — 핸드오프 Favorites 화면)
+-- ============================================================
+create table public.favorites (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references public.profiles(id) on delete cascade,
+  platform_id text not null references public.platforms(id) on delete cascade,
+  collection  collection_t not null default 'interest',
+  memo        text not null default '',
+  alert       boolean not null default false,        -- 변경 알림 수신
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  unique (user_id, platform_id)
+);
+create trigger touch_favorites before update on public.favorites
+  for each row execute function public.tg_touch_updated_at();
+create index idx_favorites_user on public.favorites(user_id, collection);
+
+-- ============================================================
+-- 6) 운영자 소유권 (클레임 → 권한)
+-- ============================================================
+create table public.operator_claims (
+  id             uuid primary key default gen_random_uuid(),
+  platform_id    text not null references public.platforms(id) on delete cascade,
+  user_id        uuid not null references public.profiles(id) on delete cascade,
+  method         claim_method_t not null default 'email',
+  business_email text,                     -- 도메인 일치 검증용(플랫폼 도메인 이메일)
+  token          text,                     -- 인증 코드/DNS·메타 토큰 (Edge Function이 발급·검증)
+  status         claim_status_t not null default 'pending',
+  reviewed_by    uuid references public.profiles(id),
+  created_at     timestamptz not null default now(),
+  verified_at    timestamptz
+);
+create index idx_claims_platform on public.operator_claims(platform_id, status);
+
+create table public.platform_operators (      -- 클레임 승인 시 부여되는 권한
+  platform_id text not null references public.platforms(id) on delete cascade,
+  user_id     uuid not null references public.profiles(id) on delete cascade,
+  granted_at  timestamptz not null default now(),
+  primary key (platform_id, user_id)
+);
+create index idx_pops_user on public.platform_operators(user_id);
+
+create or replace function public.is_operator_of(p_platform text)
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.platform_operators
+                 where platform_id = p_platform and user_id = auth.uid());
+$$;
+
+-- ============================================================
+-- 7) 제휴 매칭 (stage2 — 유형·제안)
+-- ============================================================
+create type settlement_t as enum ('none','direct','share');   -- 정산 없음/당사자 직접/비용 분담
+create type effort_t     as enum ('light','mid','heavy');
+
+create table public.partner_type_groups (   -- 제휴 방식 대분류(트래픽 교환·회원 성장 등)
+  id    text primary key,
+  label text not null,
+  descr text not null default '',
+  sort  int not null default 0
+);
+
+create table public.partner_types (          -- 제휴 방식 카탈로그(배너 맞교환·레퍼럴 등)
+  id         text primary key,               -- 'banner_swap','referral_fee' 등
+  group_id   text not null references public.partner_type_groups(id),
+  label      text not null,
+  descr      text not null default '',       -- 한 줄 정의
+  mechanics  text not null default '',       -- 작동 방식
+  example    text not null default '',       -- 예시
+  settlement settlement_t not null default 'none',
+  effort     effort_t not null default 'light',
+  goals      text[] not null default '{}',   -- growth/revenue/awareness/content/cost
+  sort       int not null default 0
+);
+
+create table public.proposals (
+  id               uuid primary key default gen_random_uuid(),
+  from_platform_id text not null references public.platforms(id),
+  to_platform_id   text not null references public.platforms(id),
+  type_id          text not null references public.partner_types(id),
+  give_text        text not null default '',   -- 우리가 제공(공개 지면 — 개인정보 금지)
+  get_text         text not null default '',   -- 상대에게 원하는 것
+  size_text        text not null default '',   -- 규모 밴드
+  status           proposal_status_t not null default 'pending',
+  introduced_at    timestamptz,                -- 소개 실행(연락처 상호 공유) 시점 = 연결료 과금 트리거
+  created_by       uuid not null references public.profiles(id),
+  created_at       timestamptz not null default now(),
+  responded_at     timestamptz,
+  check (from_platform_id <> to_platform_id)
+);
+create index idx_proposals_from on public.proposals(from_platform_id, status);
+create index idx_proposals_to   on public.proposals(to_platform_id, status);
+
+-- ============================================================
+-- 8) 거래소 (stage3 — 익명 매물; 연락처 컬럼 없음이 설계 원칙)
+-- ============================================================
+create table public.deals (
+  id           text primary key,                        -- 'D-101' 코드명(익명)
+  category_id  text not null references public.categories(id),
+  region       region_t not null default 'domestic',
+  revenue_band text not null,                            -- '연매출 1~5억'
+  mode         text not null,                            -- '지분 전량 매각' 등
+  summary      text not null,                            -- 익명 요약(익명성 규칙 검수 통과분)
+  highlights   text[] not null default '{}',             -- 범주·밴드 표현만 ("작가 풀 보유" 등)
+  sale_reason  text,                                     -- 매각 사유(선택, 신뢰 재료)
+  -- 희망 가격 컬럼은 의도적으로 없음: 가격은 소개 후 당사자 협상(가격 개입 = 중개 인상 → 금지)
+  status       deal_status_t not null default 'open',
+  is_demo      boolean not null default false,
+  owner_id     uuid references public.profiles(id),      -- 등록자(비공개; RLS로 보호)
+  posted       date not null default current_date,
+  created_at   timestamptz not null default now()
+);
+create index idx_deals_status on public.deals(status, posted desc);
+
+create table public.buyer_briefs (                       -- 인수 희망 브리프(수요 풀)
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references public.profiles(id) on delete cascade,
+  categories  text[] not null default '{}',              -- 관심 분야(category id)
+  budget_band text not null,                             -- 예산 밴드('~1억','1~5억'…)
+  mode        text not null default '',                  -- 희망 형태(지분/자산 등)
+  entity      text not null default '',                  -- 주체(개인/법인)
+  note        text not null default '',                  -- 소개(연락처 금지)
+  active      boolean not null default true,             -- 신규 매물 알림 대상
+  created_at  timestamptz not null default now()
+);
+create index idx_briefs_active on public.buyer_briefs(active) where active;
+
+create table public.deal_interests (                     -- 인수 관심(소개 요청)
+  id         uuid primary key default gen_random_uuid(),
+  deal_id    text not null references public.deals(id) on delete cascade,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  intro      text not null default '',                   -- 소개(연락처 금지 안내)
+  status     text not null default 'pending',            -- pending|introduced|closed
+  created_at timestamptz not null default now(),
+  unique (deal_id, user_id)
+);
+
+-- ============================================================
+-- 9) 부스트 (광고 상품·주문 — 자금 미보유: 기록만, 결제는 외부)
+-- ============================================================
+create table public.boost_tiers (
+  id         text primary key,          -- 'home_hero' 등
+  name       text not null,             -- '홈 상단 고정'
+  placement  text not null,             -- 노출 위치 설명
+  cpm        int  not null,             -- 1천 노출당 단가(원)
+  est_ctr    numeric(5,4) not null default 0.01,
+  sort       int not null default 0,
+  active     boolean not null default true
+);
+
+create table public.boost_orders (
+  id              uuid primary key default gen_random_uuid(),
+  platform_id     text not null references public.platforms(id),
+  tier_id         text not null references public.boost_tiers(id),
+  daily_budget    int not null check (daily_budget > 0),
+  days            int not null check (days between 1 and 90),
+  addons          text[] not null default '{}',
+  est_impressions int not null default 0,
+  est_clicks      int not null default 0,
+  total           int not null default 0,
+  status          boost_status_t not null default 'review',
+  created_by      uuid not null references public.profiles(id),
+  created_at      timestamptz not null default now(),
+  updated_at      timestamptz not null default now()
+);
+create trigger touch_boost_orders before update on public.boost_orders
+  for each row execute function public.tg_touch_updated_at();
+create index idx_boost_platform on public.boost_orders(platform_id, status);
+
+-- 견적 RPC(프론트 계산과 단일 소스)
+create or replace function public.estimate_boost(p_tier text, p_daily_budget int, p_days int, p_addons text[] default '{}')
+returns table (est_impressions int, est_clicks int, total int)
+language sql stable as $$
+  select
+    ((p_daily_budget::numeric / t.cpm) * 1000 * p_days)::int,
+    ((p_daily_budget::numeric / t.cpm) * 1000 * p_days * t.est_ctr)::int,
+    (p_daily_budget * p_days * (1 + 0.1 * coalesce(array_length(p_addons,1),0)))::int
+  from public.boost_tiers t where t.id = p_tier;
+$$;
+
+-- ============================================================
+-- 9.5) 과금 (stage2-monetization-plan.md — 3층 하이브리드)
+--  ⚠️ 자금 미보유 원칙: 여기 기록되는 금액은 전부 "세모플 명의 서비스 이용료"
+--     (연결료·노출·구독·리스팅료)이며, 제휴·M&A 대금은 절대 다루지 않는다.
+--  과금 트리거 = proposals.introduced_at (소개 실행 시점, 성사 아님)
+-- ============================================================
+create type charge_kind_t   as enum ('connection_fee','boost','subscription','listing_fee','success_report'); -- success_report=성사 자진신고 보상 기록(과금 아님, 배지·할인 근거)
+create type charge_status_t as enum ('quoted','invoiced','paid','waived','refunded','canceled');
+create type sub_status_t    as enum ('active','past_due','canceled');
+
+create table public.plans (                    -- 구독 멤버십(T3)
+  id            text primary key,              -- 'free','pro','premium'
+  label         text not null,
+  monthly_price int  not null default 0,       -- VAT 별도(원)
+  descr         text not null default '',
+  active        boolean not null default false,-- 게이트 통과 전 false(예고만)
+  sort          int not null default 0
+);
+
+create table public.subscriptions (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  plan_id    text not null references public.plans(id),
+  status     sub_status_t not null default 'active',
+  started_at timestamptz not null default now(),
+  ends_at    timestamptz
+);
+create index idx_subs_user on public.subscriptions(user_id, status);
+
+create table public.credit_ledger (            -- 선불 크레딧 지갑(연결료 차감·환급) — 합계=잔액
+  id         bigint generated always as identity primary key,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  delta      int not null,                     -- +충전/보너스/환급, -차감
+  reason     text not null,                    -- 'topup','bonus','connection_fee','refund','free_monthly'
+  ref_id     uuid,                             -- 관련 charge/proposal id
+  created_at timestamptz not null default now()
+);
+create index idx_credit_user on public.credit_ledger(user_id, created_at desc);
+
+create table public.charges (                  -- 세모플 이용료 청구·수납 기록(세금계산서 근거)
+  id          uuid primary key default gen_random_uuid(),
+  kind        charge_kind_t not null,
+  user_id     uuid not null references public.profiles(id),
+  platform_id text references public.platforms(id),
+  proposal_id uuid references public.proposals(id),  -- connection_fee의 근거(소개 실행 건)
+  deal_id     text references public.deals(id),      -- listing_fee의 근거(3단계)
+  amount      int not null check (amount >= 0),      -- 공급가(원)
+  vat         int not null default 0,                -- 부가세(원)
+  status      charge_status_t not null default 'quoted',
+  invoice_no  text,                                  -- 세금계산서 번호(자동발행 API 연동)
+  memo        text,
+  created_at  timestamptz not null default now(),
+  paid_at     timestamptz
+);
+create index idx_charges_user on public.charges(user_id, status, created_at desc);
+
+-- ============================================================
+-- 10) 분석 이벤트 (append-only) + 집계 뷰
+-- ============================================================
+create table public.events (
+  id          bigint generated always as identity primary key,
+  type        event_t not null,
+  platform_id text references public.platforms(id) on delete set null,
+  query       text,                          -- type='search'일 때
+  session_id  text,                          -- 익명 세션(uuid 문자열)
+  user_id     uuid references public.profiles(id) on delete set null,
+  created_at  timestamptz not null default now()
+);
+create index idx_events_platform on public.events(platform_id, type, created_at desc);
+create index idx_events_search   on public.events(created_at desc) where type = 'search';
+-- 트래픽 증가 시: created_at 기준 월별 파티셔닝으로 전환(스키마 변경 없이 신규 테이블 교체 가능)
+
+-- 홈 스탯(스펙 GET /stats)
+create or replace view public.v_stats as
+select
+  (select count(*) from public.platforms where archived_at is null)                   as platforms,
+  (select count(*) from public.categories)                                            as categories,
+  (select count(*) from public.platforms where is_new and archived_at is null)        as new_count;
+
+-- 인기 검색어(최근 7일)
+create or replace view public.v_popular_searches as
+select query, count(*) as cnt
+from public.events
+where type = 'search' and query is not null and created_at > now() - interval '7 days'
+group by query order by cnt desc limit 20;
+
+-- 운영자 콘솔 지표(최근 N일 노출/클릭)
+create or replace function public.platform_metrics(p_platform text, p_days int default 7)
+returns table (day date, impressions bigint, clicks bigint)
+language sql stable as $$
+  select d::date,
+    count(*) filter (where e.type = 'impression'),
+    count(*) filter (where e.type in ('click','outbound'))
+  from generate_series(current_date - (p_days-1), current_date, interval '1 day') d
+  left join public.events e on e.platform_id = p_platform and e.created_at::date = d::date
+  group by d order by d;
+$$;
+
+-- ============================================================
+-- 11) 추천 RPC (온보딩 — 스펙 GET /recommendations)
+-- ============================================================
+create or replace function public.recommend_platforms(
+  p_categories text[] default '{}', p_groups text[] default '{}',
+  p_prefer_new boolean default false, p_limit int default 12
+) returns setof public.platforms
+language sql stable as $$
+  select p.* from public.platforms p
+  join public.categories c on c.id = p.category_id
+  where p.archived_at is null
+    and (coalesce(array_length(p_categories,1),0) = 0 or p.category_id = any(p_categories))
+    and (coalesce(array_length(p_groups,1),0) = 0 or c.group_id = any(p_groups))
+  order by (case when p_prefer_new and p.is_new then 0 else 1 end),
+           p.verified desc, p.name
+  limit p_limit;
+$$;
+
+
+-- ============================================================
+-- 세모플 RLS 정책 v1 — 권한의 단일 원천 (0001 다음에 실행)
+-- 역할: anon(비로그인) / user / operator(플랫폼 소유) / admin
+-- ============================================================
+
+-- 역할 헬퍼
+create or replace function public.is_admin()
+returns boolean language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.profiles where id = auth.uid() and role = 'admin');
+$$;
+
+-- ── profiles ─────────────────────────────────────────────────
+alter table public.profiles enable row level security;
+create policy "own profile read"  on public.profiles for select using (id = auth.uid() or public.is_admin());
+create policy "own profile write" on public.profiles for update using (id = auth.uid())
+  with check (id = auth.uid() and role = (select role from public.profiles where id = auth.uid()));
+  -- role 자체 변경은 불가(관리자 지정은 SQL/서비스 키로만)
+
+-- ── 공개 읽기: 분류·플랫폼·수수료·제휴유형·부스트상품 ─────────
+alter table public.groups         enable row level security;
+alter table public.categories     enable row level security;
+alter table public.platforms      enable row level security;
+alter table public.platform_fees  enable row level security;
+alter table public.partner_type_groups enable row level security;
+alter table public.partner_types  enable row level security;
+alter table public.boost_tiers    enable row level security;
+
+create policy "public read groups"     on public.groups     for select using (true);
+create policy "public read categories" on public.categories for select using (true);
+create policy "public read platforms"  on public.platforms  for select
+  using (archived_at is null and lifecycle <> 'rejected' or public.is_admin());
+create policy "public read fees"       on public.platform_fees for select using (true);
+create policy "public read ptype groups" on public.partner_type_groups for select using (true);
+create policy "public read ptypes"     on public.partner_types for select using (true);
+create policy "public read tiers"      on public.boost_tiers   for select using (active or public.is_admin());
+
+-- 플랫폼 쓰기: admin 전면 / operator는 소유 플랫폼의 제한 필드만(뷰·RPC로 검수 경유 권장)
+create policy "admin write platforms" on public.platforms for all
+  using (public.is_admin()) with check (public.is_admin());
+create policy "admin write fees" on public.platform_fees for all
+  using (public.is_admin()) with check (public.is_admin());
+create policy "admin write taxonomy g" on public.groups for all
+  using (public.is_admin()) with check (public.is_admin());
+create policy "admin write taxonomy c" on public.categories for all
+  using (public.is_admin()) with check (public.is_admin());
+create policy "admin write ptype groups" on public.partner_type_groups for all
+  using (public.is_admin()) with check (public.is_admin());
+create policy "admin write ptypes" on public.partner_types for all
+  using (public.is_admin()) with check (public.is_admin());
+create policy "admin write tiers" on public.boost_tiers for all
+  using (public.is_admin()) with check (public.is_admin());
+
+-- ── submissions: 로그인 사용자 제보, 본인 조회, admin 검수 ────
+alter table public.submissions enable row level security;
+create policy "insert own submission" on public.submissions for insert
+  with check (auth.uid() is not null and submitter_id = auth.uid());
+create policy "read own submission" on public.submissions for select
+  using (submitter_id = auth.uid() or public.is_admin());
+create policy "admin review submission" on public.submissions for update
+  using (public.is_admin()) with check (public.is_admin());
+
+-- ── lifecycle_transitions: admin 전용(기록은 RPC가 수행) ──────
+alter table public.lifecycle_transitions enable row level security;
+create policy "admin read transitions" on public.lifecycle_transitions for select using (public.is_admin());
+
+-- ── favorites: 소유자 전용 ────────────────────────────────────
+alter table public.favorites enable row level security;
+create policy "own favorites" on public.favorites for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+
+-- ── operator_claims / platform_operators ─────────────────────
+alter table public.operator_claims    enable row level security;
+alter table public.platform_operators enable row level security;
+create policy "insert own claim" on public.operator_claims for insert
+  with check (user_id = auth.uid());
+create policy "read own claim" on public.operator_claims for select
+  using (user_id = auth.uid() or public.is_admin());
+create policy "admin review claim" on public.operator_claims for update
+  using (public.is_admin()) with check (public.is_admin());
+create policy "read own operatorship" on public.platform_operators for select
+  using (user_id = auth.uid() or public.is_admin());
+create policy "admin grant operatorship" on public.platform_operators for all
+  using (public.is_admin()) with check (public.is_admin());
+
+-- ── proposals: 관련 운영자(보낸/받는 쪽) + admin ──────────────
+alter table public.proposals enable row level security;
+create policy "operator send proposal" on public.proposals for insert
+  with check (created_by = auth.uid() and public.is_operator_of(from_platform_id));
+create policy "related read proposal" on public.proposals for select
+  using (public.is_operator_of(from_platform_id) or public.is_operator_of(to_platform_id) or public.is_admin());
+create policy "receiver respond proposal" on public.proposals for update
+  using (public.is_operator_of(to_platform_id) or public.is_admin())
+  with check (public.is_operator_of(to_platform_id) or public.is_admin());
+
+-- ── deals: 익명성 보장 — 공개는 v_deals_public 뷰로만, 원본 테이블은 소유자/admin 전용 ──
+-- 중요: 3단계 익명성은 사업모델의 핵심(stage3-exchange-plan §1). PostgREST는 원본
+-- 테이블(/rest/v1/deals)도 직접 노출하므로, 공개 정책이 열려 있으면 anon이 owner_id를
+-- 직접 조회해 매도자 신원을 역추적할 수 있다. 따라서 원본은 소유자/admin만 읽고,
+-- 익명 컬럼만 담은 v_deals_public 뷰(소유자 권한 실행 → base RLS 우회)를 공개 창구로 쓴다.
+alter table public.deals          enable row level security;
+alter table public.deal_interests enable row level security;
+create policy "own or admin read deal" on public.deals for select
+  using (owner_id = auth.uid() or public.is_admin());
+create policy "insert own deal" on public.deals for insert
+  with check (auth.uid() is not null and owner_id = auth.uid());
+create policy "own or admin update deal" on public.deals for update
+  using (owner_id = auth.uid() or public.is_admin())
+  with check (owner_id = auth.uid() or public.is_admin());
+create policy "insert own interest" on public.deal_interests for insert
+  with check (user_id = auth.uid());
+create policy "read own interest" on public.deal_interests for select
+  using (user_id = auth.uid() or public.is_admin());
+create policy "admin manage interest" on public.deal_interests for update
+  using (public.is_admin()) with check (public.is_admin());
+
+-- 익명 공개 뷰(owner_id 등 내부 필드 제외) — 프론트는 이 뷰만 읽는다.
+-- security_invoker=false(소유자 권한 실행): 원본 deals의 소유자 전용 RLS를 우회해
+-- 익명 컬럼만 공개한다. anon은 원본 테이블을 못 읽고 이 뷰로만 매물을 본다.
+create or replace view public.v_deals_public
+  with (security_invoker = false) as
+  select id, category_id, region, revenue_band, mode, summary, highlights, sale_reason, status, is_demo, posted
+  from public.deals where status <> 'closed';
+
+-- buyer_briefs: 소유자 전용(수요 정보는 비공개 자산), admin 열람
+alter table public.buyer_briefs enable row level security;
+create policy "own briefs" on public.buyer_briefs for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "admin read briefs" on public.buyer_briefs for select using (public.is_admin());
+
+-- ── boost_orders: 해당 플랫폼 운영자 + admin ──────────────────
+alter table public.boost_orders enable row level security;
+create policy "operator create order" on public.boost_orders for insert
+  with check (created_by = auth.uid() and public.is_operator_of(platform_id));
+create policy "related read order" on public.boost_orders for select
+  using (created_by = auth.uid() or public.is_operator_of(platform_id) or public.is_admin());
+create policy "admin manage order" on public.boost_orders for update
+  using (public.is_admin()) with check (public.is_admin());
+
+-- ── 과금: plans 공개 읽기 / 지갑·구독·청구는 소유자+admin ─────
+alter table public.plans          enable row level security;
+alter table public.subscriptions  enable row level security;
+alter table public.credit_ledger  enable row level security;
+alter table public.charges        enable row level security;
+create policy "public read plans" on public.plans for select using (true);
+create policy "admin write plans" on public.plans for all
+  using (public.is_admin()) with check (public.is_admin());
+create policy "own subscriptions" on public.subscriptions for select
+  using (user_id = auth.uid() or public.is_admin());
+create policy "admin manage subscriptions" on public.subscriptions for all
+  using (public.is_admin()) with check (public.is_admin());
+create policy "own credit ledger" on public.credit_ledger for select
+  using (user_id = auth.uid() or public.is_admin());
+create policy "admin write credit ledger" on public.credit_ledger for insert
+  with check (public.is_admin());   -- 충전·차감은 서버(RPC/관리자)만 기록
+create policy "own charges" on public.charges for select
+  using (user_id = auth.uid() or public.is_admin());
+create policy "admin manage charges" on public.charges for all
+  using (public.is_admin()) with check (public.is_admin());
+
+-- ── events: 누구나 기록 가능(익명 분석), 읽기는 admin만 ───────
+alter table public.events enable row level security;
+create policy "anyone insert event" on public.events for insert with check (true);
+create policy "admin read events"   on public.events for select using (public.is_admin());
+
+
+-- ============================================================
+-- 세모플 시드 v1 — build-seed.mjs 생성물 (직접 수정 금지)
+-- 그룹 5 · 분야 35 · 플랫폼 1559
+-- ============================================================
+
+insert into public.groups (id, name, icon, description, sort) values
+  ('commerce', '커머스·판매채널', '🛒', '온라인에서 상품을 파는 입점·판매 채널', 0),
+  ('trade', '해외·B2B·유통', '🚢', '수출입·도매·물류·기업 구매', 1),
+  ('service', '서비스·전문가·일자리', '🧑‍💼', '일감·인력·생활서비스·전문가 매칭', 2),
+  ('life', '생활·여가·예약', '🏝️', '여행·예약·차·집·가족·건강', 3),
+  ('money', '자금·콘텐츠·창작', '💰', '자금조달·금융·콘텐츠 수익화·창작물 판매', 4)
+on conflict (id) do nothing;
+
+insert into public.categories (id, group_id, name, icon, description, sort) values
+  ('openmarket', 'commerce', '오픈마켓·종합몰', '🏬', '종합 이커머스에 입점해 파는 판매채널', 0),
+  ('homeshopping', 'commerce', '홈쇼핑·T커머스', '🛍️', 'TV홈쇼핑·T커머스 종합 판매채널', 1),
+  ('mallbuilder', 'commerce', '자사몰·쇼핑몰 구축', '🛠️', '독립 쇼핑몰 구축·호스팅 솔루션', 2),
+  ('social', 'commerce', '소셜·공동구매·특가', '🤝', '공동구매·특가·선물하기 기반 판매채널', 3),
+  ('live', 'commerce', '라이브커머스', '📺', '실시간 방송으로 파는 채널', 4),
+  ('funding', 'money', '크라우드펀딩', '🎯', '선주문·투자로 자금을 모으는 플랫폼', 5),
+  ('freelance', 'service', '프리랜서·재능마켓', '🧑‍💻', '일·재능·전문가 용역을 거래', 6),
+  ('delivery', 'commerce', '배달·주문중개', '🛵', '음식·상품 주문을 중개', 7),
+  ('fulfillment', 'trade', '물류·풀필먼트·배송대행', '📦', '보관·포장·출고를 대행', 8),
+  ('global', 'trade', '수출입·해외판매', '🚢', '해외 바이어·소비자에게 파는 B2B/B2C 채널', 9),
+  ('wholesale', 'trade', '도매·소싱', '🏭', '사입·도매 상품을 떼오는 채널', 10),
+  ('space', 'life', '숙박·공간·투어 예약', '🏨', '숙소·공간·투어·액티비티 예약 중개', 11),
+  ('resale', 'commerce', '중고·리커머스', '♻️', '중고 거래 플랫폼', 12),
+  ('content', 'money', '콘텐츠·창작 수익화', '🎨', '온라인 강의·글·웹툰·영상 등 창작·교육 콘텐츠 수익화', 13),
+  ('fashion', 'commerce', '패션·뷰티 버티컬 커머스', '👗', '패션·의류·뷰티 특화 입점 판매채널', 14),
+  ('food', 'commerce', '식품·신선·정기배송', '🥬', '식품·농수산·신선식품 판매·정기배송 채널', 15),
+  ('handmade', 'commerce', '핸드메이드·작가마켓', '🎁', '수공예·디자인 굿즈 창작자 마켓', 16),
+  ('jobs', 'service', '구인구직·긱워크·인력', '🧰', '채용·아르바이트·긱 일자리 매칭', 17),
+  ('homeservice', 'service', '생활·홈서비스 O2O', '🧹', '청소·이사·수리·돌봄 등 생활서비스 매칭', 18),
+  ('realestate', 'life', '부동산·상업공간 중개', '🏢', '주거·사무실·매장 등 부동산 임차·거래 중개', 19),
+  ('beautyhealth', 'life', '뷰티·헬스케어 예약', '💇', '미용실·병원·시술 예약 중개', 20),
+  ('auto', 'life', '자동차 거래·정비', '🚗', '중고차 거래·자동차 정비 서비스 연결', 21),
+  ('ticket', 'life', '티켓·공연·이벤트 예매', '🎟️', '공연·전시·스포츠 등 표 판매·예매', 22),
+  ('pet', 'life', '반려동물', '🐾', '반려동물 커머스·돌봄·병원·서비스', 23),
+  ('kids', 'life', '육아·키즈', '🧸', '육아용품·교육·돌봄 커머스/서비스', 24),
+  ('print', 'money', '인쇄·굿즈 제작', '🖨️', 'POD·명함·판촉물·굿즈 제작 판매', 25),
+  ('assets', 'money', '창작물·디지털 자산 유통', '🎼', '음원·사진·폰트·디자인·전자책 유통', 26),
+  ('fitness', 'life', '운동·피트니스·스포츠', '🏋️', '운동시설 예약·강습·트레이너 매칭', 27),
+  ('wedding', 'life', '웨딩·결혼 준비', '💍', '웨딩홀·스드메·청첩장·예물·허니문', 28),
+  ('photo', 'life', '사진·영상 촬영·초대장', '📸', '스냅·영상 촬영 매칭·모바일 초대장·포토부스', 29),
+  ('event', 'life', '행사·케이터링·꽃', '🎉', '파티·행사 대행·케이터링·꽃·기프트', 30),
+  ('legaltax', 'service', '법률·세무·전문서비스', '⚖️', '변호사·세무·노무·전자계약·심리상담 매칭', 31),
+  ('finance', 'money', '금융·대출·보험 비교', '💳', '대출·보험·카드·해외송금·정책자금 비교/중개', 32),
+  ('rental', 'life', '렌탈·구독', '🔄', '가전·가구·명품·차량·장비 렌탈·구독', 33),
+  ('office', 'trade', '사무·MRO·산업재 B2B', '🖇️', '사무용품·MRO·공구·전자부품·건자재·포장재', 34)
+on conflict (id) do nothing;
+
+insert into public.platforms (id, name, category_id, region, url, blurb, is_new) values
+  ('coupang', '쿠팡', 'openmarket', 'domestic', 'https://www.coupang.com', '로켓배송 물류망을 갖춘 국내 최대 종합 이커머스.', false),
+  ('smartstore', '네이버 스마트스토어', 'openmarket', 'domestic', 'https://smartstore.naver.com', '네이버 검색·페이와 연동되는 입점형 쇼핑몰.', false),
+  ('11st', '11번가', 'openmarket', 'domestic', 'https://www.11st.co.kr', 'SK 계열 종합 오픈마켓.', false),
+  ('gmarket', 'G마켓', 'openmarket', 'domestic', 'https://www.gmarket.co.kr', '신세계 계열 오픈마켓(옥션과 통합 운영).', false),
+  ('auction', '옥션', 'openmarket', 'domestic', 'https://www.auction.co.kr', '국내 1세대 오픈마켓, 경매·즉시구매.', false),
+  ('ssg', 'SSG닷컴', 'openmarket', 'domestic', 'https://www.ssg.com', '신세계·이마트 기반 종합몰.', false),
+  ('lotteon', '롯데온', 'openmarket', 'domestic', 'https://www.lotteon.com', '롯데 유통 계열 통합 온라인몰.', false),
+  ('interpark', '인터파크쇼핑', 'openmarket', 'domestic', 'https://shopping.interpark.com', '공연·투어에 강한 종합 쇼핑몰.', false),
+  ('shoppingseller', '톡스토어', 'openmarket', 'domestic', 'https://shopping-seller.kakao.com/', '카카오톡 채널 기반 오픈형 쇼핑 판매 플랫폼.', false),
+  ('aboutfishing', '어바웃피싱', 'openmarket', 'domestic', 'https://aboutfishing.kr/', '선상낚시 예약에 낚시용품 커머스·중고장터·커뮤니티를 결합한 낚시 버티컬 마켓으로 2023년 쇼핑몰을 연 신생 슈퍼앱.', true),
+  ('hnsmall', '홈앤쇼핑', 'homeshopping', 'domestic', 'https://www.hnsmall.com/', '중소기업 제품 중심 TV홈쇼핑·온라인몰.', false),
+  ('gongyoungshop', '공영쇼핑', 'homeshopping', 'domestic', 'https://www.gongyoungshop.kr/', '중소기업·농어민 판로 지원 공영 홈쇼핑.', false),
+  ('nsmall', 'NS홈쇼핑', 'homeshopping', 'domestic', 'https://www.nsmall.com/', '식품·건강 강점 TV홈쇼핑·온라인몰.', false),
+  ('shinsegaetvshopping', '신세계TV쇼핑', 'homeshopping', 'domestic', 'https://www.shinsegaetvshopping.com/', '신세계 계열 T커머스·온라인몰.', false),
+  ('gsshop', 'GS샵', 'homeshopping', 'domestic', 'https://www.gsshop.com/', 'GS리테일 TV홈쇼핑·온라인 종합몰.', false),
+  ('cjonstyle', 'CJ온스타일', 'homeshopping', 'domestic', 'https://www.cjonstyle.com/', 'CJ ENM의 TV홈쇼핑·모바일 통합 쇼핑.', false),
+  ('hmall', '현대Hmall', 'homeshopping', 'domestic', 'https://www.hmall.com/', '현대홈쇼핑 TV홈쇼핑·온라인 종합몰.', false),
+  ('lotteimall', '롯데홈쇼핑', 'homeshopping', 'domestic', 'https://www.lotteimall.com/', '롯데 TV홈쇼핑·온라인 쇼핑몰(롯데아이몰).', false),
+  ('skstoa', 'SK스토아', 'homeshopping', 'domestic', 'https://www.skstoa.com/', 'SK의 T커머스 TV쇼핑·온라인몰.', false),
+  ('kshop', 'KT알파 쇼핑', 'homeshopping', 'domestic', 'https://www.kshop.co.kr/', 'KT알파 T커머스 TV쇼핑 채널·온라인몰.', false),
+  ('cafe242', '카페24', 'mallbuilder', 'domestic', 'https://www.cafe24.com/', '자사몰 구축·호스팅 이커머스 솔루션.', false),
+  ('imweb', '아임웹', 'mallbuilder', 'domestic', 'https://imweb.me/', '노코드 드래그 방식 자사몰·웹사이트 빌더.', false),
+  ('sixshop', '식스샵', 'mallbuilder', 'domestic', 'https://www.sixshop.com/', '디자인 템플릿 기반 노코드 자사몰 제작.', false),
+  ('makeshop', '메이크샵', 'mallbuilder', 'domestic', 'https://www.makeshop.co.kr/', '임대형 쇼핑몰 구축 솔루션.', false),
+  ('godo', '고도몰', 'mallbuilder', 'domestic', 'https://www.godo.co.kr/', 'NHN의 쇼핑몰 구축·호스팅 솔루션.', false),
+  ('wisa', '위사', 'mallbuilder', 'domestic', 'https://www.wisa.co.kr/', '독립·임대형 쇼핑몰 구축 이커머스 솔루션.', false),
+  ('allways', '올웨이즈', 'social', 'domestic', 'https://www.notefolio.net', '팀 구매(공동구매) 기반 초저가 커머스.', false),
+  ('kakaogift', '카카오톡 선물하기', 'social', 'domestic', 'https://gift.kakao.com', '카카오톡 기반 선물·모바일 쿠폰 판매.', false),
+  ('wemakeprice', '위메프', 'social', 'domestic', 'https://www.wemakeprice.com', '특가·딜 중심 소셜커머스.', false),
+  ('tmon', '티몬', 'social', 'domestic', 'https://www.tmon.co.kr', '타임딜·특가 중심 소셜커머스.', false),
+  ('ohou', '오늘의집(스토어)', 'social', 'domestic', 'https://ohou.se', '인테리어·리빙 콘텐츠 연계 커머스.', false),
+  ('dailyshot', '데일리샷', 'social', 'domestic', 'https://dailyshot.co/', '주류 특가·공동구매·예약 픽업 커머스.', false),
+  ('08liter', '공팔리터', 'social', 'domestic', 'https://www.08liter.com/', '인플루언서 공동구매·숏폼 기반 소셜 커머스.', false),
+  ('thirtymall', '떠리몰', 'social', 'domestic', 'https://thirtymall.com/', '유통기한 임박·B급 상품 할인 판매몰.', false),
+  ('lastorder', '라스트오더', 'social', 'domestic', 'https://www.lastorder.co.kr/', '편의점·음식점 마감할인 상품 판매 플랫폼.', false),
+  ('imbak', '임박몰', 'social', 'domestic', 'https://www.imbak.co.kr/', '유통기한 임박 식품·생활용품 할인몰.', false),
+  ('eyoumall', '이유몰', 'social', 'domestic', 'https://www.eyoumall.co.kr/', '임박·못난이·재고 등 이유 있는 상품 할인몰.', false),
+  ('mahi', '마감히어로', 'social', 'domestic', 'https://www.mahi.co.kr/', '동네 매장 마감할인 실시간 알림·픽업 앱.', false),
+  ('simsale', '심쿵할인', 'social', 'domestic', 'http://www.simsale.kr/', '함께 살수록 싸지는 공동구매 쇼핑 앱.', false),
+  ('market09', '공구마켓', 'social', 'domestic', 'https://www.market09.kr/', '2명부터 가능한 초특가 공동구매·라이브 경매.', false),
+  ('udong09', '우동공구', 'social', 'domestic', 'https://udong09.com/', '지역 기반 우리동네 공동구매 플랫폼.', false),
+  ('witdeal', '윗딜', 'social', 'domestic', 'https://witdeal.co.kr/', '아파트 입주민 대상 무료배송 공동구매 앱.', false),
+  ('ssagojoa', '싸고좋아', 'social', 'domestic', 'https://www.ssagojoa.com/', '다양한 카테고리 연중 공동구매 마켓 앱.', false),
+  ('inpock', '인포크스토어', 'social', 'domestic', 'https://www.inpock.co.kr/', '인플루언서 SNS 판매·공동구매 마켓 플랫폼.', false),
+  ('coocha', '쿠차', 'social', 'domestic', 'http://www.coocha.co.kr/', '소셜커머스·오픈마켓 핫딜·특가 비교 검색.', false),
+  ('uglyus', '어글리어스', 'social', 'domestic', 'https://uglyus.co.kr/', '못난이 농산물 정기배송 친환경 구독.', false),
+  ('motnany', '못난이마켓', 'social', 'domestic', 'https://www.motnany.com/', '못난이 농산물 산지·소비자 직거래 마켓.', false),
+  ('sodomall', '소도몰', 'social', 'domestic', 'https://www.sodomall.com/', '카톡 오픈채팅 기반으로 동네 매장에서 픽업하는 오프라인 공동구매 매장 프랜차이즈로 2024년 출범한 신생.', true),
+  ('colley', '콜리', 'social', 'domestic', 'https://colley.kr/', 'IP 소품 ''덕질''을 위한 편집샵·중고 덕친마켓·굿즈를 결합한 취향 커머스 앱으로 떠오르는 서비스.', true),
+  ('navershopl', '네이버 쇼핑라이브', 'live', 'domestic', 'https://shoppinglive.naver.com', '네이버 스마트스토어 연동 라이브 방송 판매.', false),
+  ('grip', '그립(Grip)', 'live', 'domestic', 'https://www.grip.show', '소상공인·1인 판매자 중심 라이브커머스.', false),
+  ('kakaoshopl', '카카오 쇼핑라이브', 'live', 'domestic', 'https://store.kakao.com', '카카오 채널 기반 라이브 판매.', false),
+  ('coupanglive', '쿠팡 라이브', 'live', 'domestic', 'https://www.coupang.com', '쿠팡 내 라이브 방송 판매.', false),
+  ('sauce', '소스라이브', 'live', 'domestic', 'https://sauce.im/', '자사몰에 설치하는 라이브·쇼퍼블 비디오 커머스 솔루션.', false),
+  ('vogoplay', '보고플레이', 'live', 'domestic', 'https://www.vogoplay.com/', '초특가 상품 중심 모바일 라이브커머스 플랫폼.', false),
+  ('samsung', '삼성 라이브', 'live', 'domestic', 'https://www.samsung.com/sec/store-model/live/', '삼성닷컴 가전·IT 실시간 방송 판매 채널.', false),
+  ('11st2', '11번가 라이브', 'live', 'domestic', 'https://m.11st.co.kr/page/main/live11', '11번가 예능형 라이브커머스 오픈 채널.', false),
+  ('shinsegaeliveshopping', '신세계라이브쇼핑', 'live', 'domestic', 'https://www.shinsegaeliveshopping.com/', '신세계 계열 TV·온라인 결합 라이브 쇼핑.', false),
+  ('jamlive', '잼라이브', 'live', 'domestic', 'https://jamlive.tv/', '인플루언서 중심 인터랙티브 라이브커머스.', false),
+  ('display', 'CJ온스타일 라이브', 'live', 'domestic', 'https://display.cjonstyle.com/', 'CJ ENM 모바일 라이브 방송 커머스.', false),
+  ('7shoppinglive', '세븐쇼핑라이브', 'live', 'domestic', 'https://7shoppinglive.com/', '뉴스 콘셉트 라이브 커머스 방송 플랫폼.', false),
+  ('soonshop', '순샵', 'live', 'domestic', 'https://www.soonshop.co.kr/', '크리에이터 숏폼 리뷰 영상으로 상품을 파는 숏폼 커머스로 2024년 5월 정식 출시된 신생(순이엔티).', true),
+  ('wadiz', '와디즈', 'funding', 'domestic', 'https://www.wadiz.kr', '리워드·투자형을 모두 다루는 국내 최대 크라우드펀딩.', false),
+  ('tumblbug', '텀블벅', 'funding', 'domestic', 'https://tumblbug.com', '창작·콘텐츠 프로젝트 중심 리워드형 펀딩.', false),
+  ('ohmycompany', '오마이컴퍼니', 'funding', 'domestic', 'https://www.ohmycompany.com', '소셜·공익 프로젝트와 증권형을 다루는 펀딩.', false),
+  ('crowdy', '크라우디', 'funding', 'domestic', 'https://www.ycrowdy.com', '증권형(투자형) 크라우드펀딩 특화.', false),
+  ('happybean', '해피빈 펀딩', 'funding', 'domestic', 'https://happybean.naver.com', '네이버 기반 기부·공익 펀딩.', false),
+  ('kickstarter', '킥스타터', 'funding', 'overseas', 'https://www.kickstarter.com', '하드웨어·게임에 강한 글로벌 리워드 펀딩(한국 직접 개설 미지원).', false),
+  ('funding4u', '펀딩포유', 'funding', 'domestic', 'https://www.funding4u.co.kr/', '비상장기업 증권형(온라인소액투자중개) 크라우드펀딩.', false),
+  ('crowdin', '굿펀딩', 'funding', 'domestic', 'https://crowdin.co.kr/', '청년·소셜벤처 후원·투자형 크라우드펀딩.', false),
+  ('benefitplus', '비플러스', 'funding', 'domestic', 'https://benefitplus.kr/', '소상공인·소셜벤처 대상 임팩트 대출형(온투업) 펀딩.', false),
+  ('otrade', '오픈트레이드', 'funding', 'domestic', 'https://otrade.co/', '비상장기업 지분투자형 크라우드펀딩 플랫폼.', false),
+  ('indiegogo', '인디고고', 'funding', 'overseas', 'https://www.indiegogo.com/', '글로벌 리워드형 크라우드펀딩 사이트.', false),
+  ('kasa', '카사', 'funding', 'domestic', 'https://www.kasa.co.kr/', '상업용 부동산 수익증권 조각투자 플랫폼.', false),
+  ('funble', '펀블', 'funding', 'domestic', 'https://www.funble.kr/', '블록체인 기반 부동산 조각투자 서비스.', false),
+  ('sou', '소유', 'funding', 'domestic', 'https://sou.place/', '토큰증권 기반 부동산 조각투자(월배당) 플랫폼.', false),
+  ('together', '투게더펀딩', 'funding', 'domestic', 'https://www.together.co.kr/', '부동산담보대출 중심 P2P(온투업) 투자.', false),
+  ('musicow', '뮤직카우', 'funding', 'domestic', 'https://www.musicow.com/', '음악 저작권료 수익증권 조각투자 플랫폼.', false),
+  ('weshareart', '아트투게더', 'funding', 'domestic', 'https://weshareart.com/', '미술품 투자계약증권 조각투자 플랫폼.', false),
+  ('tessa', '테사', 'funding', 'domestic', 'https://www.tessa.art/', '블루칩 미술품 조각투자 플랫폼.', false),
+  ('8percent', '8퍼센트', 'funding', 'domestic', 'https://8percent.kr/', '개인·기업 신용대출 중개 P2P(온투업) 투자.', false),
+  ('funderful', '펀더풀', 'funding', 'domestic', 'https://funderful.kr/', '2021년 출범한 신생 K-콘텐츠 투자 플랫폼으로 영화·드라마·공연 등 개별 콘텐츠 프로젝트에 소액 투자할 수 있다.', true),
+  ('fundingplay', '펀딩플레이', 'funding', 'domestic', 'https://www.fundingplay.kr/', '드라마·영화·웹툰·음악 등 K-콘텐츠 IP에 투자하는 신생 콘텐츠 프로젝트 펀딩 전문 플랫폼이다.', true),
+  ('withmix', '위드믹스', 'funding', 'domestic', 'https://withmix.kr/', '2022년 오픈한 신생 굿즈 크라우드펀딩 플랫폼으로 스트리머·크리에이터의 굿즈 프로젝트 펀딩을 지원한다.', true),
+  ('runfunding', '런크라우드펀딩', 'funding', 'domestic', 'https://runfunding.co.kr/', '리워드·후원·투자형을 아우르는 신규 종합 크라우드펀딩 플랫폼으로 창작·아이디어 프로젝트 펀딩을 지원한다.', true),
+  ('kmong', '크몽', 'freelance', 'domestic', 'https://kmong.com', '디자인·마케팅·IT 등 재능·용역 거래 마켓.', false),
+  ('soomgo', '숨고', 'freelance', 'domestic', 'https://soomgo.com', '레슨·이사·수리 등 생활 전문가 매칭.', false),
+  ('wishket', '위시켓', 'freelance', 'domestic', 'https://www.wishket.com', 'IT 개발·디자인 프로젝트 외주 매칭.', false),
+  ('taling', '탈잉', 'freelance', 'domestic', 'https://taling.me', '취미·직무 원데이 클래스·튜터 매칭.', false),
+  ('loud', '라우드소싱', 'freelance', 'domestic', 'https://www.loud.kr', '디자인 공모전·콘테스트 기반 외주.', false),
+  ('otwojob', '오투잡', 'freelance', 'domestic', 'https://www.otwojob.com', '재능·서비스 거래 마켓.', false),
+  ('elancer', '이랜서', 'freelance', 'domestic', 'https://www.elancer.co.kr/', '기업과 IT 프리랜서를 프로젝트 단위로 매칭하는 아웃소싱 플랫폼.', false),
+  ('freemoa', '프리모아', 'freelance', 'domestic', 'https://www.freemoa.net/', 'IT 개발·디자인 외주 프로젝트 중개 플랫폼.', false),
+  ('wanted', '원티드긱스', 'freelance', 'domestic', 'https://www.wanted.co.kr/gigs', '원티드가 운영하는 IT 프리랜서 외주 매칭.', false),
+  ('jaenung', '재능넷', 'freelance', 'domestic', 'https://www.jaenung.net/', '디자인·번역·영상 등 재능 거래 마켓.', false),
+  ('imjob', '아임잡', 'freelance', 'domestic', 'https://www.imjob.co.kr/', 'IT 인력과 기업 프로젝트를 연결하는 프리랜서 매칭.', false),
+  ('notefolio', '노트폴리오', 'freelance', 'domestic', 'https://notefolio.net/', '디자이너 포트폴리오·디자인 외주 크리에이터 플랫폼.', false),
+  ('datalab', '플리토 데이터랩', 'freelance', 'domestic', 'https://datalab.flitto.com', '크라우드소싱 다국어 번역·언어 데이터 가공 플랫폼.', false),
+  ('crowdworks', '크라우드웍스', 'freelance', 'domestic', 'https://www.crowdworks.kr', 'AI 학습 데이터 라벨링 크라우드소싱 플랫폼.', false),
+  ('selectstar', '셀렉트스타', 'freelance', 'domestic', 'https://selectstar.ai', 'AI 학습·평가 데이터 수집·가공 크라우드소싱.', false),
+  ('codenary', '코드너리', 'freelance', 'domestic', 'https://www.codenary.co.kr', '기술스택·개발자 채용·외주 큐레이션 플랫폼.', false),
+  ('provoice', '프로보이스', 'freelance', 'domestic', 'https://provoice.co.kr', '성우·더빙·로컬라이징 보이스 외주 중개.', false),
+  ('skillagit', '재능아지트', 'freelance', 'domestic', 'https://www.skillagit.com', '디자인·번역·성우·영상 재능 거래 마켓.', false),
+  ('talentbank', '탤런트뱅크', 'freelance', 'domestic', 'https://www.talentbank.co.kr/', '휴넷에서 분사해 성장한 긱워크 플랫폼으로, 검증된 시니어 전문가와 기업을 자문·프로젝트 단위로 연결한다.', true),
+  ('gigtalk', '긱톡', 'freelance', 'domestic', 'https://gigtalk.co.kr/', '전문가 네트워크 기반의 신흥 재능마켓으로, 프로젝트 매칭과 전문가 자문·인재추천을 중개한다.', true),
+  ('sooooon', '쑨', 'freelance', 'domestic', 'https://sooooon.com/', '자영업자와 단기 근무자를 당일 단위로 이어 주는 초단기 알바 매칭 플랫폼으로 최근 고속 성장 중인 긱워크 서비스다.', true),
+  ('apps9', '돌파구', 'freelance', 'domestic', 'https://apps.apple.com/us/app/id6756605947', '수수료 0%를 내세워 최근 출시된 신생 재능마켓 앱으로, 부업·N잡 프리랜서와 기업 외주를 연결한다.', true),
+  ('gigtalker', '긱톡커', 'freelance', 'domestic', 'https://gigtalker.com/', '지식상품 판매와 전문가 매칭을 지원하며 글로벌 시장을 겨냥해 최근 출시된 신규 재능마켓이다.', true),
+  ('1point', '원포인트', 'freelance', 'domestic', 'https://1point.kr/', 'AI 기반으로 검증된 상위 마케터·디자이너 프리랜서를 기업과 연결하는 신생 전문가 매칭 플랫폼이다.', true),
+  ('ssosing', '쏘싱', 'freelance', 'domestic', 'https://ssosing.com/', '전담 PM이 프로젝트를 관리하는 방식으로 스타트업에 프리랜서·외주업체를 추천 매칭하는 신규 IT 아웃소싱 플랫폼이다.', true),
+  ('heybeagle', '헤이비글', 'freelance', 'domestic', 'https://heybeagle.co.kr/', 'MC·사회자·공연 전문가 견적 비교 섭외 플랫폼.', false),
+  ('myoncast', '온캐스트', 'freelance', 'domestic', 'https://myoncast.com/', '아나운서·MC·사회자 매칭 섭외 서비스.', false),
+  ('ieumcompany', '이음컴퍼니', 'freelance', 'domestic', 'https://www.ieumcompany.co.kr/', '공연·사회자 섭외를 중개하는 플랫폼.', false),
+  ('lessoneasy', '레슨이지', 'freelance', 'domestic', 'https://lesson-easy.com/', '음악·미술·무용 레슨 강사 연결 플랫폼.', false),
+  ('lessoninfo', '레슨인포', 'freelance', 'domestic', 'https://lessoninfo.co.kr/', '음악 강사·학원 구인구직 매칭 플랫폼.', false),
+  ('zimcarry', '짐캐리', 'freelance', 'domestic', 'https://zimcarry.net/', '여행짐 배송·보관 서비스 플랫폼.', false),
+  ('lifeistravel', 'Life is Travel', 'freelance', 'domestic', 'https://www.lifeistravel.io/', '카페·편의점 제휴 기반 여행 짐보관 서비스.', false),
+  ('goodlugg', 'Goodlugg', 'freelance', 'domestic', 'https://www.goodlugg.com/', '여행 수하물 배송·보관 글로벌 플랫폼.', false),
+  ('ontrip', '온트립', 'freelance', 'overseas', 'http://www.ontrip.life/', '현지 가이드·투어·현지여행사를 직접 연결하는 플랫폼.', false),
+  ('baemin', '배달의민족', 'delivery', 'domestic', 'https://www.baemin.com', '국내 1위 음식 배달 주문 중개.', false),
+  ('coupangeats', '쿠팡이츠', 'delivery', 'domestic', 'https://www.coupangeats.com', '쿠팡의 음식 배달 주문 중개.', false),
+  ('yogiyo', '요기요', 'delivery', 'domestic', 'https://www.yogiyo.co.kr', '음식 배달 주문 중개.', false),
+  ('ddangyo', '땡겨요', 'delivery', 'domestic', 'https://www.ddangyo.com', '신한 계열, 낮은 수수료를 내세운 배달 앱.', false),
+  ('home', '부릉', 'delivery', 'domestic', 'https://home.vroong.com/', '상점 대상 프리미엄 배달대행(라이더 물류) 플랫폼.', false),
+  ('logiall', '생각대로', 'delivery', 'domestic', 'https://www.logiall.com/', '로지올이 운영하는 지역 배달대행 네트워크.', false),
+  ('mannaplus', '만나플러스', 'delivery', 'domestic', 'https://manna-plus.kr/', '배달대행 관제·정산 플랫폼.', false),
+  ('spidor', '영웅배송 스파이더', 'delivery', 'domestic', 'http://www.spidor.co.kr/', 'IT 기반 종합 배달대행 플랫폼.', false),
+  ('wmpo', '위메프오', 'delivery', 'domestic', 'https://www.wmpo.co.kr/', '저수수료 배달·픽업 주문중개 앱.', false),
+  ('mukkebi', '먹깨비', 'delivery', 'domestic', 'https://www.mukkebi.com/', '지역화폐 연계 저수수료 공공배달앱.', false),
+  ('daeguro', '대구로', 'delivery', 'domestic', 'https://daeguro.co.kr/', '대구시 공식 저수수료 공공배달앱.', false),
+  ('specialdelivery', '배달특급', 'delivery', 'domestic', 'https://www.specialdelivery.co.kr/', '경기도 공공배달앱, 지역화폐 결제 지원.', false),
+  ('neubility', '뉴빌리티', 'delivery', 'domestic', 'https://www.neubility.co.kr/', '자율주행 배달로봇 라스트마일 배달 스타트업.', false),
+  ('insungdata', '인성데이타', 'delivery', 'domestic', 'https://insungdata.com/', '이륜차 퀵·배달대행 관제 프로그램 개발사.', false),
+  ('gunsan', '배달의명수', 'delivery', 'domestic', 'https://www.gunsan.go.kr/main/m2359', '군산시 공공배달앱(전국 최초), 중개수수료·광고료 없음.', false),
+  ('apps7', '배달올거제', 'delivery', 'domestic', 'https://apps.apple.com/kr/app/id1561575473', '거제시 공공배달앱, 수수료·광고료·가입비 3무.', false),
+  ('play', '놀장', 'delivery', 'domestic', 'https://play.google.com/store/apps/details?id=com.noljang', '전통시장 점포 장보기·배달 시장 배달 플랫폼.', false),
+  ('jecheon', '배달모아', 'delivery', 'domestic', 'https://www.jecheon.go.kr/www/contents.do?key=49079', '제천시 공공배달앱, 지역화폐 할인·무수수료.', false),
+  ('bsnamgu', '어디고', 'delivery', 'domestic', 'https://www.bsnamgu.go.kr/', '부산 남구 공공배달앱, 오륙도페이 결제.', false),
+  ('play2', '울산페달', 'delivery', 'domestic', 'https://play.google.com/store/apps/details?id=gov.ulsan.uspay', '울산시 공공배달, 울산페이 기반 저수수료.', false),
+  ('incheoneum', '배달e음', 'delivery', 'domestic', 'https://incheoneum.or.kr/service/delivery', '인천e음 지역화폐 기반 공공배달·캐시백.', false),
+  ('apps8', '소문난샵', 'delivery', 'domestic', 'https://apps.apple.com/kr/app/id1479154838', '지역 소상공인 배달·픽업 앱(공공배달 연계).', false),
+  ('24242424', '화물맨', 'delivery', 'domestic', 'https://2424-2424.com/', '화주·화물차 기사 연결 화물 운송·퀵 중개.', false),
+  ('gogox', '고고엑스', 'delivery', 'domestic', 'https://www.gogox.com/kr/', '오토바이~트럭 퀵·용달·화물 실시간 중개.', false),
+  ('algoquick', '알고퀵', 'delivery', 'domestic', 'https://algoquick.com/', '실시간 요금·관제 온디맨드 퀵·화물 배송.', false),
+  ('hudadaq', '후다닥', 'delivery', 'domestic', 'https://www.hudadaq.com/', '퀵·용달·화물·간단이사 자동견적 배송 플랫폼.', false),
+  ('callkim', '콜킴', 'delivery', 'domestic', 'https://callkim.co.kr/', '오토바이·다마스·트럭 퀵서비스 요금조회·접수.', false),
+  ('kakaomobility2', '카카오T 퀵', 'delivery', 'domestic', 'https://www.kakaomobility.com/service-kakaot/quick', '카카오모빌리티 퀵·도보 배송 서비스.', false),
+  ('play3', '퀵톡', 'delivery', 'domestic', 'https://play.google.com/store/apps/details?id=kr.co.nssoft.quicktalk', '전국 퀵서비스·화물 당일배송 접수 앱.', false),
+  ('ssinging', '씽잉', 'delivery', 'domestic', 'https://ssinging.com/', '배달·구매대행·설치·청소 종합 심부름 앱.', false),
+  ('amazing', '브이투브이', 'delivery', 'domestic', 'https://www.amazing.today/', '창고 없이 차량이 노선을 순환하며 물품을 주고받는 방식으로 수도권 당일배송을 제공하는 신생 도시물류 스타트업 서비스.', true),
+  ('wemeetmobility', '위밋모빌리티', 'delivery', 'domestic', 'https://www.wemeetmobility.com/', '2023년 시작한 제주 지역 특화 당일배송 서비스로, 배차 최적화 기술을 활용한 지역기반 라스트마일 신규 서비스.', true),
+  ('chainlogis', '체인로지스', 'delivery', 'domestic', 'https://chainlogis.com/', '물류 이륜차를 활용해 입고 후 4시간 내 당일도착을 표방하는 라스트마일 배송 스타트업.', true),
+  ('returnit', '잇그린', 'delivery', 'domestic', 'https://www.returnit.kr/', '배달 다회용기를 배송·수거·세척해 순환시키는 친환경 라스트마일 신규 서비스.', true),
+  ('inflow', 'INFLOW', 'delivery', 'domestic', 'https://in-flow.co.kr/', '이륜 라이더 대상 차량·관제와 퀵서비스(무브온) 등을 운영하는 라스트마일 모빌리티·배송대행 신생 플랫폼.', true),
+  ('fassto', '파스토(FASSTO)', 'fulfillment', 'domestic', 'https://www.fassto.ai', '이커머스 셀러 대상 풀필먼트(보관·출고).', false),
+  ('dohandsome', '두손컴퍼니', 'fulfillment', 'domestic', 'https://dohandsome.com', '소량·스타트업 친화 풀필먼트.', false),
+  ('wekeep', '위킵', 'fulfillment', 'domestic', 'https://wekeep.co.kr', '쇼핑몰 물류 대행·풀필먼트.', false),
+  ('qxpress', '큐익스프레스', 'fulfillment', 'overseas', 'https://www.qxpress.net', '국제 배송·해외 풀필먼트.', false),
+  ('welcome', '품고', 'fulfillment', 'domestic', 'https://welcome.poomgo.com/', '이커머스 셀러 대상 풀필먼트 서비스.', false),
+  ('ourbox', '아워박스', 'fulfillment', 'domestic', 'https://www.ourbox.co.kr/', '물류 자동화 설비 기반 풀필먼트 기업.', false),
+  ('dealibird', '딜리버드', 'fulfillment', 'domestic', 'https://dealibird.com/', '동대문 의류·잡화 전문 사입~배송 풀필먼트.', false),
+  ('mychango', '마이창고', 'fulfillment', 'domestic', 'https://mychango.com/', '중소 셀러 대상 보관·물류대행 풀필먼트.', false),
+  ('colosseum', '콜로세움', 'fulfillment', 'domestic', 'https://colosseum.kr/', '보관~포장~배송~반품 풀필먼트 DX 플랫폼.', false),
+  ('ezadmin', '이지어드민', 'fulfillment', 'domestic', 'https://www.ezadmin.co.kr/', '쇼핑몰 통합관리·창고관리(WMS) 솔루션.', false),
+  ('logispot', '로지스팟', 'fulfillment', 'domestic', 'https://www.logi-spot.com/', 'IT 기반 화물운송·통합 물류 서비스.', false),
+  ('logiket', '로지켓', 'fulfillment', 'domestic', 'https://logiket.com/', '물류사 비교견적 3PL 대행 매칭 플랫폼.', false),
+  ('cjlogistics', 'CJ대한통운 e-풀필먼트', 'fulfillment', 'domestic', 'https://www.cjlogistics.com/ko/business/fulfillment', '이커머스 통합 풀필먼트(더 풀필) 서비스.', false),
+  ('sellerrouteground', '루트그라운드', 'fulfillment', 'domestic', 'https://sellerrouteground.com/', '3PL 풀필먼트·로켓그로스 납품 대행.', false),
+  ('returneeds', '리터니즈', 'fulfillment', 'domestic', 'https://returneeds.com/', '2023년 설립돼 반품 전용 센터를 기반으로 이커머스 반품 물류를 대행하는 신생 역물류 스타트업.', true),
+  ('enterround', '엔터라운드', 'fulfillment', 'domestic', 'https://www.enter-round.kr/', '국내외 풀필먼트와 103개국 해외배송·역직구 배송대행을 결합한 크로스보더 물류 신규 서비스.', true),
+  ('argoport', '테크타카', 'fulfillment', 'domestic', 'https://www.argoport.com/', '수요예측·재고·배송을 통합한 소프트웨어 기반 3PL 풀필먼트를 제공하는 물류 SaaS 스타트업.', true),
+  ('bold9', '볼드나인', 'fulfillment', 'domestic', 'https://www.bold-9.com/', '자체 풀필먼트 시스템으로 이커머스 셀러의 주문·배송·CS를 대행하는 기술 기반 풀필먼트 스타트업.', true),
+  ('alibaba', '알리바바닷컴', 'global', 'overseas', 'https://www.alibaba.com', '글로벌 B2B 도매·소싱 마켓플레이스.', false),
+  ('amazongs', '아마존 글로벌셀링', 'global', 'overseas', 'https://sell.amazon.com', '아마존 해외 마켓 입점·판매.', false),
+  ('shopee', '쇼피(Shopee)', 'global', 'overseas', 'https://shopee.com', '동남아·대만 중심 이커머스 마켓.', false),
+  ('qoo10', '큐텐(Qoo10)', 'global', 'overseas', 'https://www.qoo10.com', '일본 등 아시아권 오픈마켓.', false),
+  ('tradekorea', 'tradeKorea', 'global', 'overseas', 'https://www.tradekorea.com', 'KOTRA 운영 B2B 수출 매칭 플랫폼.', false),
+  ('buykorea', '바이코리아', 'global', 'overseas', 'https://www.buykorea.org', 'KOTRA 운영 수출 지원 B2B 플랫폼.', false),
+  ('ec21', 'EC21', 'global', 'overseas', 'https://www.ec21.com', '국내 대표 B2B 수출 마켓플레이스.', false),
+  ('ebay', '이베이 셀러', 'global', 'overseas', 'https://www.ebay.com/', '한국 판매자가 전 세계 이베이에 해외판매하는 채널.', false),
+  ('lazada', '라자다', 'global', 'overseas', 'https://www.lazada.com/', '동남아 크로스보더 셀러 입점 마켓플레이스.', false),
+  ('wish', '위시', 'global', 'overseas', 'https://www.wish.com/', '북미·유럽 중심 모바일 커머스 역직구 입점.', false),
+  ('seller', '틱톡샵', 'global', 'overseas', 'https://seller.tiktok.com/', '숏폼 기반 크로스보더 셀러센터 해외판매.', false),
+  ('seller2', '테무 셀러', 'global', 'overseas', 'https://seller.temu.com/', '저가 대량 판매 마켓플레이스 셀러 입점.', false),
+  ('sell', '알리익스프레스 글로벌셀링', 'global', 'overseas', 'https://sell.aliexpress.com/', '한국 상품을 해외에 파는 알리익스프레스 셀러.', false),
+  ('rakuten', '라쿠텐', 'global', 'overseas', 'https://www.rakuten.co.jp/', '일본 최대 온라인 마켓 입점 판매.', false),
+  ('marketplace', '월마트 마켓플레이스', 'global', 'overseas', 'https://marketplace.walmart.com/', '미국 대형 유통 마켓 초청제 글로벌 셀러.', false),
+  ('shopify', '쇼피파이', 'global', 'domestic', 'https://www.shopify.com/kr', '다국어·다통화 자사몰로 해외 직접 판매 솔루션.', false),
+  ('cafe24', '카페24 글로벌', 'global', 'domestic', 'https://www.cafe24.com/ecommerce/global/', '다국어 쇼핑몰·해외결제·배송 지원 솔루션.', false),
+  ('global', '메이크샵 글로벌', 'global', 'domestic', 'https://global.makeshop.com/', '영·일·중 통합 쇼핑몰 해외판매 솔루션.', false),
+  ('kr', '고비즈코리아', 'global', 'overseas', 'https://kr.gobizkorea.com/', '중소기업유통센터 B2B 온라인수출·바이어 매칭.', false),
+  ('marketplace2', '쿠팡 로켓그로스 해외진출', 'global', 'overseas', 'https://marketplace.coupang.com/', '쿠팡 통해 대만 등 해외 시장 동반 진출.', false),
+  ('musinsa2', '무신사 글로벌', 'global', 'overseas', 'https://www.musinsa.com/', 'K-패션 브랜드 해외 소비자 대상 역직구 스토어.', false),
+  ('malltail', '몰테일', 'global', 'domestic', 'https://www.malltail.com/', '9개국 물류 기반 역직구·해외배송 대행.', false),
+  ('delivered', '딜리버드 코리아', 'global', 'domestic', 'https://www.delivered.co.kr/', '한국 셀러 해외판매·배송 크로스보더 서비스.', false),
+  ('sellerhub', '셀러허브', 'global', 'domestic', 'https://www.sellerhub.co.kr/', '국내외 쇼핑몰 통합 관리 멀티채널 판매 솔루션.', false),
+  ('shopigate', '쇼피게이트', 'global', 'domestic', 'https://shopigate.co.kr/', '쇼피파이 스토어 구축~해외물류 역직구 대행.', false),
+  ('shipda', '셀러노트', 'global', 'domestic', 'https://www.ship-da.com', '이커머스 수입물류 포워딩 ''쉽다'' 운영.', false),
+  ('iporter', '아이포터', 'global', 'overseas', 'https://www.iporter.com', '미국·일본 배송대행·구매대행 서비스.', false),
+  ('ohmyzip', '오마이집', 'global', 'overseas', 'https://www.ohmyzip.com', '미국 물류센터 기반 해외 배송대행.', false),
+  ('tridge', '트릿지', 'global', 'overseas', 'https://www.tridge.com', '농식품 공급처·가격 데이터 B2B 무역 중개.', false),
+  ('saruwa', '사루와', 'global', 'overseas', 'https://www.saruwa.co.kr', '일본 사이트 상품 구매·배송 대행 서비스.', false),
+  ('japandelivery', '재팬딜리버리', 'global', 'overseas', 'https://japandelivery.co.kr', '일본 쇼핑몰 구매·배송대행 서비스.', false),
+  ('rakuten2', '라쿠텐 이치바 셀러', 'global', 'overseas', 'https://www.rakuten.co.jp/ec/sellinjapan/kr/', '일본 최대급 종합몰 라쿠텐 이치바에 한국 셀러가 입점해 현지 판매하는 공식 셀러 프로그램.', false),
+  ('sell2', 'noon 셀러', 'global', 'overseas', 'https://sell.withnoon.com/en/', '중동 대표 마켓플레이스 눈(noon)의 판매자 등록 포털.', false),
+  ('global2', 'Ozon Global', 'global', 'overseas', 'https://global.ozon.com/', '러시아 오존 마켓에 해외 셀러가 상품을 공급하는 크로스보더 판매 채널.', false),
+  ('seller3', 'Flipkart Seller Hub', 'global', 'overseas', 'https://seller.flipkart.com/', '인도 대형 이커머스 플립카트의 셀러 등록·운영 허브.', false),
+  ('group', 'Jumia Marketplace 셀러', 'global', 'overseas', 'https://group.jumia.com/business/marketplace/sell', '나이지리아 등 아프리카 다국가를 커버하는 주미아 마켓플레이스 판매자 등록.', false),
+  ('partner', 'Zalando Partner Program', 'global', 'overseas', 'https://partner.zalando.com/', '유럽 패션 마켓 잘란도의 승인형 파트너(입점) 프로그램.', false),
+  ('marketplace3', 'Cdiscount Marketplace', 'global', 'overseas', 'https://marketplace.cdiscount.com/en/service/international-sales/', '프랑스 씨디스카운트 마켓의 해외 셀러용 인터내셔널 판매 프로그램.', false),
+  ('sell3', 'Fruugo', 'global', 'domestic', 'https://sell.fruugo.com/en/', '40여 개국 다국어·다통화로 자동 노출되는 크로스보더 마켓플레이스.', false),
+  ('kogan', 'Kogan Marketplace', 'global', 'overseas', 'https://www.kogan.com/au/kogan-marketplace/', '호주 코간닷컴의 서드파티 셀러 마켓플레이스.', false),
+  ('reverb', 'Reverb', 'global', 'domestic', 'https://reverb.com/selling', '신품·빈티지 악기와 음향장비 전문 글로벌 셀러 마켓.', false),
+  ('sellervn', 'TikTok Shop 베트남 셀러센터', 'global', 'overseas', 'https://seller-vn.tiktok.com/', '틱톡샵 베트남의 국가별 판매자 센터(로컬·크로스보더 스토어).', false),
+  ('sellerid', 'Tokopedia 셀러센터', 'global', 'overseas', 'https://seller-id.tokopedia.com/', '인도네시아 토코피디아(틱톡샵 통합)의 셀러 관리 센터.', false),
+  ('globalsellers', '쿠팡 글로벌셀러', 'global', 'domestic', 'https://globalsellers.coupang.com/', '국내 제조·판매사가 대만 등 쿠팡 해외 채널로 진출하는 글로벌셀러 프로그램.', false),
+  ('sell4', '아마존 글로벌셀링 외부 서비스 사업자 네트워크', 'global', 'domestic', 'https://sell.amazon.co.kr/support/service-provider-network', '인증·물류·마케팅 등 아마존 진출을 돕는 공식 서비스 프로바이더(에이전시) 목록.', false),
+  ('sellerpick', '셀러픽', 'global', 'domestic', 'https://www.sellerpick.co.kr/', '해외 마켓 상품 등록·이미지 번역·AI 추천을 지원하는 역직구/구매대행 솔루션.', false),
+  ('globalselling', 'Mercado Libre Global Selling', 'global', 'overseas', 'https://global-selling.mercadolibre.com/', '멕시코·브라질 등 중남미를 단일 계정으로 판매하는 메르카도리브레 크로스보더 프로그램.', false),
+  ('domeggook', '도매꾹', 'wholesale', 'domestic', 'https://domeggook.com', '국내 대표 온라인 도매·소량 사입.', false),
+  ('domemedae', '도매매', 'wholesale', 'domestic', 'https://domeme.domeggook.com', '배송대행(위탁판매) 특화 도매.', false),
+  ('ownerclan', '오너클랜', 'wholesale', 'domestic', 'https://ownerclan.com', '위탁판매용 대량 상품 소싱.', false),
+  ('onchannel', '온채널', 'wholesale', 'domestic', 'https://www.onch3.co.kr', '위탁·도매 상품 공급 플랫폼.', false),
+  ('dometopia', '도매토피아', 'wholesale', 'domestic', 'https://dometopia.com/', '무사입 위탁판매 중심 B2B 종합 도매몰.', false),
+  ('domesin', '도매의신', 'wholesale', 'domestic', 'https://www.domesin.com/', '배송대행 특화 B2B 위탁 도매몰.', false),
+  ('naggama', '나까마시장', 'wholesale', 'domestic', 'https://naggama.com/', '덤핑·재고 상품 도매 거래 커뮤니티.', false),
+  ('sellpie', '셀파이', 'wholesale', 'domestic', 'https://sellpie.co.kr/', '위탁판매 전문 도매 사이트.', false),
+  ('sellerocean', '셀러오션', 'wholesale', 'domestic', 'https://sellerocean.com/', '위탁판매 공급자 연결 도매·소싱 플랫폼.', false),
+  ('sinsangmarket', '신상마켓', 'wholesale', 'domestic', 'https://sinsangmarket.kr/', '동대문 패션 도소매 B2B 사입 거래.', false),
+  ('zentrade', '젠트레이드', 'wholesale', 'domestic', 'https://www.zentrade.co.kr/', '문구·잡화·생필품 B2B 도매 사이트.', false),
+  ('domaechanggo', '도매창고', 'wholesale', 'domestic', 'https://domaechanggo.com/', '위탁판매용 B2B 도매 쇼핑몰.', false),
+  ('modoosale', '모두세일', 'wholesale', 'domestic', 'https://www.modoosale.co.kr/', '위탁도매·배송대행 소싱 플랫폼.', false),
+  ('asadalin', '아사달도매몰', 'wholesale', 'domestic', 'https://asadalin.com/', '유아·아동복 전문 B2B 도매 마켓.', false),
+  ('saibmoa', '사입모아', 'wholesale', 'domestic', 'https://www.saibmoa.net', '동대문 의류 사입·배송 대행 사입삼촌 서비스.', false),
+  ('selpi', '셀피', 'wholesale', 'domestic', 'https://www.selpi.co.kr', '동대문 도매 신상을 소매 셀러에 연결하는 사입앱.', false),
+  ('sellernow', '셀러나우', 'wholesale', 'domestic', 'https://sellernow.co.kr', '도매사이트 모음·3PL 비교 셀러 지원 플랫폼.', false),
+  ('domegod', '도매갓', 'wholesale', 'domestic', 'https://domegod.com', '사업자 전용 낱장구매·위탁배송 B2B 도매몰.', false),
+  ('doogo', '두고', 'wholesale', 'domestic', 'https://doogo.co', '위탁 셀러·공급사 연결 구독형 도매 오픈마켓.', false),
+  ('uh2samarket', '어이사마켓', 'wholesale', 'domestic', 'https://uh2samarket.com', '광저우 보세 직거래 사입·통관·배송 B2B.', false),
+  ('chinabuy', '차이나바이', 'wholesale', 'domestic', 'https://www.chinabuy.co.kr', '1688·타오바오 중국 구매대행 앱.', false),
+  ('algugo', '알구고', 'wholesale', 'domestic', 'https://algugo.co.kr', '1688 연동 자동주문·검수·물류 중국 구매대행.', false),
+  ('foodpang', '푸드팡', 'wholesale', 'domestic', 'https://foodpang.co', '외식업 농산물 도매시장 직거래 식자재 배송.', false),
+  ('beseller', '비셀러', 'wholesale', 'domestic', 'https://www.beseller.net', '농수축산 식품 B2B 위탁판매 플랫폼.', false),
+  ('hairnmi', '헤어앤미', 'wholesale', 'domestic', 'https://hairnmi.co.kr/', '미용실 전용 헤어제품을 도매하는 미용재료 전문 쇼핑몰.', false),
+  ('hairsoo', '헤어수', 'wholesale', 'domestic', 'https://www.hairsoo.com/', '염색약·펌제 등 미용재료를 도매가에 파는 전문몰.', false),
+  ('dckitchen', '디씨키친', 'wholesale', 'domestic', 'https://www.dckitchen.co.kr/', '싱크대·작업대 등 업소용 주방기구를 파는 도매 쇼핑몰.', false),
+  ('jubangbank', '주방뱅크', 'wholesale', 'domestic', 'https://www.jubangbank.co.kr', '업소용 주방용품·주방기기를 전문으로 하는 도매 사이트.', false),
+  ('jubangmart', '중고주방마트', 'wholesale', 'domestic', 'https://jubangmart.kr/', '업소용 주방기구를 납품·매입·렌탈하는 중고 전문 플랫폼.', false),
+  ('mednara', '메드나라', 'wholesale', 'domestic', 'https://mednara.com/', '중고·신품 의료기기를 매입·판매하는 거래 사이트.', false),
+  ('medimarket', '메디마켓', 'wholesale', 'domestic', 'https://medimarket.kr/', '병원용 중고 의료기기를 매입·판매하는 거래 쇼핑몰.', false),
+  ('medisale', '메디세일', 'wholesale', 'domestic', 'https://medisale.co.kr/', '병원 의료소모품을 사업자에게 도매하는 사이트.', false),
+  ('nongdal', '농사의달인', 'wholesale', 'domestic', 'https://www.nongdal.co.kr/', '비료·종자·농약 등 농자재를 파는 농업 전문 쇼핑몰.', false),
+  ('nongmart', '농마트', 'wholesale', 'domestic', 'https://www.nongmart.co.kr/', '비료·농약 등 농자재를 최저가 보상제로 파는 도매 쇼핑몰.', false),
+  ('vkm101', '바이킹마켓', 'wholesale', 'domestic', 'https://www.vkm101.com/', '노량진 중도매인이 운영하는 사업자 전용 수산물 B2B 도매몰.', false),
+  ('seapro', '씨프로', 'wholesale', 'domestic', 'https://seapro.kr/', '식당·급식업체용 냉동수산물을 중개하는 B2B 도매 플랫폼.', false),
+  ('haemulsa', '해물사관학교', 'wholesale', 'domestic', 'https://haemulsa.com/', '냉동수산물을 도매 최저가로 직거래하는 온라인 사이트.', false),
+  ('dsfoodmall', '디에스푸드몰', 'wholesale', 'domestic', 'https://www.dsfoodmall.com/', '축산물을 도소매로 직거래하는 정육 유통 쇼핑몰.', false),
+  ('onnurimeat', '온누리축산', 'wholesale', 'domestic', 'https://onnurimeat.com/', '1++ 한우 등 축산물을 도매하는 정육 전문 쇼핑몰.', false),
+  ('meatasia', '수입육거래소', 'wholesale', 'domestic', 'https://meat-asia.com/', '수입육을 온라인으로 도매 중개하는 축산 거래소.', false),
+  ('wholesale119', '꽃도매119', 'wholesale', 'domestic', 'https://wholesale119.com/', '양재 화훼시장 상품을 온라인으로 사입하는 꽃 도매 사이트.', false),
+  ('krflower', '코리아꽃도매', 'wholesale', 'domestic', 'https://www.krflower.kr/', '수입화·절화 등을 취급하는 화훼 온라인 도매몰.', false),
+  ('dplaza', '디플라자', 'wholesale', 'domestic', 'https://www.dplaza.kr/', '동대문 원단·의류부자재·액세서리를 파는 도매 종합몰.', false),
+  ('dongdaemun153', '동대문153', 'wholesale', 'domestic', 'https://www.dongdaemun153.co.kr/', '액세서리·봉제 부자재를 다루는 동대문 도매 쇼핑몰.', false),
+  ('ndmarket', '남도마켓', 'wholesale', 'domestic', 'https://www.ndmarket.co.kr/', '남대문·동대문 도매상품 사입을 돕는 B2B 소싱 플랫폼.', false),
+  ('sellup', '셀업', 'wholesale', 'domestic', 'https://www.sell-up.co.kr/', '동대문 도소매·사입삼촌의 소싱·주문·결제·정산을 앱으로 처리하는 패션 B2B 사입 플랫폼으로 최근 급성장한 신흥 서비스.', true),
+  ('yanolja', '야놀자', 'space', 'domestic', 'https://www.yanolja.com', '숙박·레저 예약 중개.', false),
+  ('goodchoice', '여기어때', 'space', 'domestic', 'https://www.goodchoice.kr', '숙박·액티비티 예약 중개.', false),
+  ('airbnb', '에어비앤비', 'space', 'overseas', 'https://www.airbnb.co.kr', '글로벌 숙소·체험 호스팅.', false),
+  ('spacecloud', '스페이스클라우드', 'space', 'domestic', 'https://www.spacecloud.kr', '모임·연습·촬영 공간 시간 대여.', false),
+  ('catchtable', '캐치테이블', 'space', 'domestic', 'https://www.catchtable.co.kr', '식당 예약·웨이팅 중개.', false),
+  ('myrealtrip', '마이리얼트립', 'space', 'domestic', 'https://www.myrealtrip.com', '투어·가이드·액티비티 예약 중개.', false),
+  ('klook', '클룩(Klook)', 'space', 'overseas', 'https://www.klook.com', '아시아권 여행·액티비티·티켓 예약.', false),
+  ('agoda', '아고다', 'space', 'domestic', 'https://www.agoda.com/ko-kr/', '호텔·숙소 예약 글로벌 OTA 플랫폼.', false),
+  ('booking', '부킹닷컴', 'space', 'domestic', 'https://www.booking.com/', '전 세계 숙소·호텔 예약 글로벌 OTA.', false),
+  ('hotelscombined', '호텔스컴바인', 'space', 'domestic', 'https://www.hotelscombined.com/', '호텔 가격 비교 메타서치 플랫폼.', false),
+  ('trivago', '트리바고', 'space', 'domestic', 'https://www.trivago.com/', '호텔 가격 비교 메타서치.', false),
+  ('kr2', '트립닷컴', 'space', 'domestic', 'https://kr.trip.com/', '항공·호텔·투어 종합 여행 예약 플랫폼.', false),
+  ('triple', '트리플', 'space', 'domestic', 'https://triple.guide/', 'AI 일정 생성·항공/호텔/투어 예약 여행 플랫폼.', false),
+  ('onlinetour', '온라인투어', 'space', 'domestic', 'https://www.onlinetour.co.kr/', '항공권·패키지·호텔 예약 종합 여행사.', false),
+  ('mtour', '위메프 여행레저', 'space', 'domestic', 'https://mtour.wonders.app/', '여행·숙박·레저 특가 판매 서비스.', false),
+  ('waug', '와그', 'space', 'domestic', 'https://www.waug.com/', '입장권·액티비티·투어 예약 여행 플랫폼.', false),
+  ('frip', '프립', 'space', 'domestic', 'https://www.frip.co.kr/', '취미 클래스·액티비티·모임 예약 여가 플랫폼.', false),
+  ('stayfolio', '스테이폴리오', 'space', 'domestic', 'https://www.stayfolio.com/', '디자인·감성 숙소 큐레이션 예약 플랫폼.', false),
+  ('livinginhotel', '호텔에삶', 'space', 'domestic', 'https://www.livinginhotel.com/', '호텔·레지던스 한 달 살기 단기 숙박 중개.', false),
+  ('wehome', '위홈', 'space', 'domestic', 'https://www.wehome.me/', '홈스테이 공유숙박 중개 플랫폼.', false),
+  ('hourplace', '아워플레이스', 'space', 'domestic', 'https://hourplace.co.kr/', '촬영 스튜디오·공간 시간제 예약 대여.', false),
+  ('shareit', '쉐어잇', 'space', 'domestic', 'https://shareit.kr/', '팝업·워크숍·모임 공간 중개 대여.', false),
+  ('moim', '토즈', 'space', 'domestic', 'https://moim.toz.co.kr/', '모임·회의실·스터디룸 공간 예약.', false),
+  ('camfit', '캠핏', 'space', 'domestic', 'https://camfit.co.kr/', '캠핑장·글램핑·차박 실시간 예약.', false),
+  ('thankqcamping', '땡큐캠핑', 'space', 'domestic', 'https://www.thankqcamping.com/', '캠핑장 실시간 예약·잔여석·리뷰.', false),
+  ('tabling', '테이블링', 'space', 'domestic', 'https://www.tabling.co.kr/', '식당 원격 줄서기·예약 웨이팅 플랫폼.', false),
+  ('home2', '나우웨이팅', 'space', 'domestic', 'https://home.nowwaiting.co/', '매장 원격 대기·예약 웨이팅 플랫폼.', false),
+  ('onoffmix', '온오프믹스', 'space', 'domestic', 'https://onoffmix.com/', '세미나·모임·행사 개설·신청 플랫폼.', false),
+  ('camperest', '캠퍼레스트', 'space', 'domestic', 'https://www.camperest.kr/', '2024년 출시된 신생 캠핑 올인원 앱으로, 캠핑장 예약·캠핑 다이어리·AI 맞춤 캠핑장 추천을 제공한다.', true),
+  ('cambak', '캠박', 'space', 'domestic', 'https://cambak.co.kr/', '전국 캠핑카 대여사를 연결해 차박·캠핑카 여행을 예약하는 신생 버티컬 플랫폼이다.', true),
+  ('yomo', '요모', 'space', 'domestic', 'https://yomo.co.kr/', '지역 여행 전문가와 고객을 연결해 맞춤 일정을 설계하는 신생 프라이빗 여행 컨시어지 플랫폼이다.', true),
+  ('popply', '팝플리', 'space', 'domestic', 'https://www.popply.co.kr/', '팝업스토어 발견부터 공간 대여·행사 공간 매칭까지 지원하는 신규 팝업스토어 전문 플랫폼이다.', true),
+  ('hanintel', '하닌텔', 'space', 'overseas', 'https://www.hanintel.com/', '전 세계 한인 게스트하우스·한인민박 예약 중개 플랫폼.', false),
+  ('campingtalk', '캠핑톡', 'space', 'domestic', 'https://www.campingtalk.me/', '오토캠핑·글램핑·카라반·펜션을 예약하는 캠핑 플랫폼.', false),
+  ('realground', '리얼그라운드', 'space', 'domestic', 'https://realground.co.kr/', 'VR로 미리 보고 예약하는 캠핑장·글램핑 예약 서비스.', false),
+  ('oneulbamn', '오늘밤엔', 'space', 'domestic', 'https://www.oneulbamn.com/', '펜션·풀빌라·글램핑 실시간 숙소 예약 사이트.', false),
+  ('wowple', '와우플', 'space', 'domestic', 'https://www.wowple.com/', '파티룸·회의실·스튜디오 등 공간 중개 플랫폼.', false),
+  ('kmeetingroom', '회의실닷컴', 'space', 'domestic', 'https://www.kmeetingroom.com/', '비즈니스 회의실을 비교·예약하는 매칭 서비스.', false),
+  ('flowoffice', '플로우 공유오피스', 'space', 'domestic', 'https://flowoffice.co.kr/', '비상주사무실·공유오피스 전문 중개 플랫폼.', false),
+  ('theowl', '부엉이곳간', 'space', 'domestic', 'https://www.theowl.co.kr/', '마포·홍대·합정 공유오피스와 시간제 회의실 대여.', false),
+  ('valuevenue', '가치공간', 'space', 'domestic', 'https://www.valuevenue.co.kr/', '팝업스토어 전문 공간 대여·매칭 리테일 플랫폼.', false),
+  ('modushare', '쇼픈', 'space', 'domestic', 'https://www.modushare.co.kr/', '팝업·전시·촬영 용도별 공간을 매칭하는 대여 플랫폼.', false),
+  ('daangn', '당근마켓', 'resale', 'domestic', 'https://www.daangn.com', '지역 기반 중고 직거래·동네생활.', false),
+  ('bunjang', '번개장터', 'resale', 'domestic', 'https://m.bunjang.co.kr', '모바일 중고 거래(안전결제 제공).', false),
+  ('junggonara', '중고나라', 'resale', 'domestic', 'https://web.joongna.com', '국내 최대 규모 중고 거래 커뮤니티/앱.', false),
+  ('mintit', '민팃', 'resale', 'domestic', 'https://www.mintit.co.kr/', 'AI 무인 ATM 중고폰 비대면 매입 리커머스.', false),
+  ('fongabi', '폰가비', 'resale', 'domestic', 'https://fongabi.com/', '중고폰·태블릿·노트북 매입/판매·시세 비교.', false),
+  ('charan', '차란', 'resale', 'domestic', 'https://www.charan.co.kr/', '촬영·판매 대행 위탁형 세컨핸드 패션 앱.', false),
+  ('marketinu', '마켓인유', 'resale', 'domestic', 'https://marketinu.com/', '세탁·검수 수입 빈티지·중고 의류 셀렉트샵.', false),
+  ('parabara', '파라바라', 'resale', 'domestic', 'https://www.parabara.kr/', '무인 자판기 기반 비대면 중고거래.', false),
+  ('kream', 'KREAM', 'resale', 'domestic', 'https://kream.co.kr/', '검수 기반 한정판 스니커즈·패션·명품 리셀.', false),
+  ('soldout', '솔드아웃', 'resale', 'domestic', 'https://www.soldout.co.kr/', '무신사의 한정판 스니커즈·패션 검수 리셀.', false),
+  ('gugus', '구구스', 'resale', 'domestic', 'https://www.gugus.co.kr/', '감정 기반 매장형 중고명품 매입·판매.', false),
+  ('feelway', '필웨이', 'resale', 'domestic', 'https://www.feelway.com/', '대형 중고명품 직거래 사이트.', false),
+  ('koibito', '고이비토', 'resale', 'domestic', 'https://www.koibito.co.kr/', '매입·위탁판매·감정 중고명품 플랫폼.', false),
+  ('mrcamel', '미스터카멜', 'resale', 'domestic', 'https://mrcamel.co.kr/', '중고명품 매물 통합검색·정가품 감정 앱.', false),
+  ('apps', '패피스', 'resale', 'domestic', 'https://apps.apple.com/kr/app/id1640840534', '명품 수선·쇼핑·판매 결합 리세일 앱.', false),
+  ('withsellit', '셀잇', 'resale', 'domestic', 'https://www.withsellit.com/', '중고 전자기기 컨시어지 거래 서비스.', false),
+  ('aladin', '알라딘 중고', 'resale', 'domestic', 'https://www.aladin.co.kr/usedstore/wgate.aspx', '온·오프라인 중고 도서·음반·굿즈 매입/판매.', false),
+  ('hellomarket', '헬로마켓', 'resale', 'domestic', 'https://www.hellomarket.com/', '개인 간 중고거래 모바일 커머스 앱.', false),
+  ('recl', '리클', 'resale', 'domestic', 'https://recl.co.kr/', '모바일로 헌 옷을 간편 수거해 리워드를 주고 되파는 중고의류 리커머스로, 2023년 앱 출시 후 급성장한 신생.', true),
+  ('newoff', '뉴오프', 'resale', 'domestic', 'https://www.newoff.co.kr/', '안 입는 옷을 수거·검수·살균해 재판매하는 중고의류 커머스로, 2024년 출시되고 퓨처플레이 시드 투자를 받은 신생.', true),
+  ('secondsold', '세컨솔드', 'resale', 'domestic', 'https://secondsold.kr/', '전국 오프라인 빈티지샵을 한 곳에 모은 빈티지·구제 패션 모음 커머스 앱으로 2024년 말 나온 신생.', true),
+  ('collectiv', '콜렉티브', 'resale', 'domestic', 'https://collectiv.kr/', '프리미엄·디자이너 세컨핸드 패션을 거래하는 C2C 앱(크레이빙콜렉터)으로, 크림 투자를 받으며 떠오른 리커머스.', true),
+  ('fruitsfamily', '후루츠패밀리', 'resale', 'domestic', 'https://fruitsfamily.com/', '판매수수료 0원을 내세운 빈티지·세컨핸드 패션 커뮤니티 마켓으로 Z세대 중심으로 떠오른 리커머스.', true),
+  ('viver', '바이버', 'resale', 'domestic', 'https://www.viver.co.kr/', '전문가 검수 기반 명품 시계 C2C 거래 플랫폼(두나무 계열)으로 최근 급성장한 신흥 리셀 서비스.', true),
+  ('chicpap', '시크', 'resale', 'domestic', 'https://chicpap.com/', '명품 커뮤니티 시크먼트와 크림이 함께 만든 안전결제 기반 중고 명품 거래 앱으로 2022년경 등장한 신생.', true),
+  ('npremium', '네이버 프리미엄콘텐츠', 'content', 'domestic', 'https://contents.premium.naver.com', '유료 구독 콘텐츠 발행·판매.', false),
+  ('class101', '클래스101', 'content', 'domestic', 'https://class101.net', '온라인 클래스 제작·판매(크리에이터).', false),
+  ('brunch', '브런치스토리', 'content', 'domestic', 'https://brunch.co.kr', '글 발행·작가 활동 플랫폼.', false),
+  ('youtube', '유튜브', 'content', 'domestic', 'https://www.youtube.com', '영상 콘텐츠 게시·광고 수익화.', false),
+  ('inflearn', '인프런', 'content', 'domestic', 'https://www.inflearn.com', '개발·디자인·직무 온라인 강의 마켓.', false),
+  ('fastcampus', '패스트캠퍼스', 'content', 'domestic', 'https://fastcampus.co.kr', '직무·부트캠프형 프리미엄 온라인 강의.', false),
+  ('naverwebtoon', '네이버웹툰', 'content', 'domestic', 'https://comic.naver.com', '국내 최대 웹툰 연재 플랫폼.', false),
+  ('kakaopage', '카카오페이지', 'content', 'domestic', 'https://page.kakao.com', '웹툰·웹소설 연재·유료 열람.', false),
+  ('udemy', '유데미', 'content', 'overseas', 'https://www.udemy.com/ko/', '누구나 강의를 만들어 파는 글로벌 온라인 강의 마켓.', false),
+  ('edu', '구름EDU', 'content', 'domestic', 'https://edu.goorm.io/', '클라우드 실습 기반 IT·코딩 교육 플랫폼.', false),
+  ('codeit', '코드잇', 'content', 'domestic', 'https://www.codeit.kr/', '구독형 프로그래밍·데이터 강의·부트캠프.', false),
+  ('nomadcoders', '노마드코더', 'content', 'domestic', 'https://nomadcoders.co/', '클론코딩 방식 실전형 개발 강의·챌린지.', false),
+  ('spartaclub', '스파르타코딩클럽', 'content', 'domestic', 'https://spartaclub.kr/', '부트캠프·온라인 코딩 강의 IT 교육 플랫폼.', false),
+  ('coloso', '콜로소', 'content', 'domestic', 'https://coloso.co.kr/', '현업 전문가 실무 VOD 강의 플랫폼.', false),
+  ('liveklass', '라이브클래스', 'content', 'domestic', 'https://www.liveklass.com/', '지식 크리에이터 VOD 강의 개설·판매 올인원.', false),
+  ('learnit', '러닛', 'content', 'domestic', 'https://www.learnit.co.kr/', '플립러닝 프로그래밍·IT 온라인 강의.', false),
+  ('classu', '클래스유', 'content', 'domestic', 'https://www.classu.co.kr/', '취미·실무 온라인 클래스 마켓.', false),
+  ('bearu', '베어유', 'content', 'domestic', 'https://bear-u.com/', '커리어·실무 온라인 클래스 서비스.', false),
+  ('elice', '엘리스', 'content', 'domestic', 'https://elice.io/', 'AI 실습 기반 코딩 교육·부트캠프 에듀테크.', false),
+  ('postype', '포스타입', 'content', 'domestic', 'https://www.postype.com/', '창작 콘텐츠 유료 판매·후원·멤버십 커뮤니티.', false),
+  ('ridibooks', '리디', 'content', 'domestic', 'https://ridibooks.com/', '전자책·웹소설·웹툰 콘텐츠 플랫폼.', false),
+  ('munpia', '문피아', 'content', 'domestic', 'https://www.munpia.com/', '연재·유료화 중심 웹소설 창작 플랫폼.', false),
+  ('joara', '조아라', 'content', 'domestic', 'https://www.joara.com/', '아마추어·프로 작가 웹소설 연재 플랫폼.', false),
+  ('novelpia', '노벨피아', 'content', 'domestic', 'https://novelpia.com/', '웹소설 연재·수익화 플랫폼.', false),
+  ('emoticonstudio', '카카오 이모티콘 스튜디오', 'content', 'domestic', 'https://emoticonstudio.kakao.com/', '이모티콘 제안·출시·판매 창작 플랫폼.', false),
+  ('toonation', '투네이션', 'content', 'domestic', 'https://toonation.co.kr/', '스트리머·창작자 도네이션(후원) 플랫폼.', false),
+  ('fanding', '팬딩', 'content', 'domestic', 'https://fanding.kr/', '구독형 창작자 후원·멤버십 플랫폼.', false),
+  ('twip', '트윕', 'content', 'domestic', 'https://www.twip.kr/', '스트리머 후원(도네이션) 도구 플랫폼.', false),
+  ('sooplive', 'SOOP', 'content', 'domestic', 'https://www.sooplive.co.kr/', '후원 기반 라이브 스트리밍 플랫폼(구 아프리카TV).', false),
+  ('chzzk', '치지직', 'content', 'domestic', 'https://chzzk.naver.com/', '네이버 게임 특화 라이브 스트리밍·후원 플랫폼.', false),
+  ('patreon', '패트리온', 'content', 'overseas', 'https://www.patreon.com/', '창작자 정기 구독 후원 글로벌 플랫폼.', false),
+  ('welaaa', '윌라', 'content', 'domestic', 'https://www.welaaa.com/', '오디오북·강연 구독형 오디오 콘텐츠 플랫폼.', false),
+  ('millie', '밀리의 서재', 'content', 'domestic', 'https://www.millie.co.kr/', '전자책·오디오북 무제한 구독 독서 플랫폼.', false),
+  ('podbbang', '팟빵', 'content', 'domestic', 'https://www.podbbang.com/', '광고·후원 기반 오디오·팟캐스트 플랫폼.', false),
+  ('audioclip', '네이버 오디오클립', 'content', 'domestic', 'https://audioclip.naver.com/', '구독·재생 기반 오디오 콘텐츠 플랫폼.', false),
+  ('mildang', '밀당PT', 'content', 'domestic', 'https://www.mildang.kr', 'AI 분석 맞춤 온라인 1:1 과외 서비스.', false),
+  ('kr3', '산타', 'content', 'domestic', 'https://kr.aitutorsanta.com', 'AI 적응형 토익 온라인 교육 앱.', false),
+  ('yanadoo', '야나두', 'content', 'domestic', 'https://www.yanadoo.co.kr', '하루 10분 온라인 영어회화 어학 교육.', false),
+  ('siwonschool', '시원스쿨', 'content', 'domestic', 'https://www.siwonschool.com', '영어·외국어 중심 온라인 인강 플랫폼.', false),
+  ('hackers', '해커스', 'content', 'domestic', 'https://www.hackers.com', '토익·토플 등 어학시험 대비 온라인 강의.', false),
+  ('eduwill', '에듀윌', 'content', 'domestic', 'https://eduwill.net', '공인중개사·공무원·자격증 온라인 인강.', false),
+  ('megastudy', '메가스터디', 'content', 'domestic', 'https://www.megastudy.net', '수능·대입 고등 온라인 강의 인강 플랫폼.', false),
+  ('etoos', '이투스', 'content', 'domestic', 'https://www.etoos.com', '구독형 고등 대입 온라인 강의 사이트.', false),
+  ('classting', '클래스팅', 'content', 'domestic', 'https://www.classting.com', '학급 관리·AI 개인화 학습 교육 플랫폼.', false),
+  ('tutoring', '링고라', 'content', 'domestic', 'https://tutoring.co.kr', '1:1 원어민 영어회화·AI 어학 교육 앱.', false),
+  ('stibee', '스티비', 'content', 'domestic', 'https://stibee.com/', '유료 구독 기능을 갖춘 국내 뉴스레터 발행·구독자 관리 플랫폼.', false),
+  ('maily', '메일리', 'content', 'domestic', 'https://maily.so/', '멤버십 유료 콘텐츠 수익화를 지원하는 뉴스레터 발행 플랫폼.', false),
+  ('airklass', '에어클래스', 'content', 'domestic', 'https://www.airklass.com/', '마스터(강사)가 클래스를 개설·판매하는 온라인 강의 플랫폼.', false),
+  ('typecast', '타입캐스트', 'content', 'domestic', 'https://typecast.ai/', '감정 표현 TTS 기반의 AI 성우 음성 생성 서비스.', false),
+  ('pozalabs', '포자랩스', 'content', 'domestic', 'https://www.pozalabs.com/', '저작권 이슈 없는 AI 생성 배경음악을 제작·유통하는 음악 플랫폼.', false),
+  ('britg', '브릿G', 'content', 'domestic', 'https://britg.kr/', '장편·중단편 소설을 장르 구분 없이 자유 연재·판매하는 플랫폼.', false),
+  ('ctee', '크티', 'content', 'overseas', 'https://ctee.kr', '최근 성장 중인 신생 크리에이터 수익화 플랫폼으로 멤버십·후원·상품 판매를 플랫폼 수수료 0%로 지원한다.', true),
+  ('fancimm', '팬심M', 'content', 'overseas', 'https://fancimm.com', '크리에이터와 팬의 1:1 비공개 소통·후원·굿즈를 중개하는 신생 팬덤 수익화 플랫폼이다.', true),
+  ('litt', '리틀리', 'content', 'overseas', 'https://litt.ly', '2021년 시작한 국내 올인원 프로필 링크 서비스로 링크 정리에 더해 후원·커머스 등 크리에이터 수익화 기능을 제공한다.', true),
+  ('carat', '캐럿', 'content', 'overseas', 'https://carat.im', '스타트업 패러닷이 만든 신생 AI 콘텐츠 제작 에이전트로 대화형 인터페이스로 텍스트·이미지·영상·오디오를 생성한다.', true),
+  ('gazet', '가제트', 'content', 'overseas', 'https://gazet.ai', '한국어에 특화된 신생 생성형 AI 글쓰기 도구로 블로그·광고 카피 등 문장을 자동 생성한다.', true),
+  ('musia', '뮤지아', 'content', 'overseas', 'https://musia.ai', '크리에이티브마인드가 운영하는 AI 작곡 서비스로 음악 지식 없이도 곡을 생성·편집할 수 있는 신생 뮤직테크 도구다.', true),
+  ('fikad', '피카클립', 'content', 'overseas', 'https://www.fikad.boo', '2023년 설립된 대전 스타트업 피카디의 서비스로 긴 영상을 AI가 여러 개의 숏폼으로 자동 제작해준다.', true),
+  ('toonda', '툰다', 'content', 'overseas', 'https://toonda.com', '스타트업 콘파파가 개발한 신생 웹툰 창작 툴로 글콘티·그림콘티·식자 작업을 지원한다.', true),
+  ('ploonet', '플루닛', 'content', 'overseas', 'https://www.ploonet.com', '생성형·대화형 AI 기반의 가상인간과 영상 제작 서비스를 제공하는 국내 신생 AI 콘텐츠 기업이다.', true),
+  ('zigzag', '지그재그', 'fashion', 'domestic', 'https://zigzag.kr', '여성 패션 큐레이션 마켓, 영상쇼핑 중심.', false),
+  ('ably', '에이블리', 'fashion', 'domestic', 'https://www.a-bly.com', '여성 의류·잡화 셀러 입점형 마켓.', false),
+  ('musinsa', '무신사', 'fashion', 'domestic', 'https://www.musinsa.com', '패션·스니커즈·뷰티 종합 플랫폼.', false),
+  ('wconcept', 'W컨셉', 'fashion', 'domestic', 'https://www.wconcept.co.kr', '디자이너·컨템포러리 패션 편집몰.', false),
+  ('brandi', '브랜디', 'fashion', 'domestic', 'https://www.brandi.co.kr', '모바일 여성 패션 마켓.', false),
+  ('29cm', '29CM', 'fashion', 'domestic', 'https://www.29cm.co.kr', '패션·라이프스타일 편집 큐레이션몰.', false),
+  ('queenit', '퀸잇', 'fashion', 'domestic', 'https://queenit.co.kr/', '4050 여성 타깃 패션 버티컬 커머스 앱.', false),
+  ('posty', '포스티', 'fashion', 'domestic', 'https://posty.kr/', '카카오스타일이 운영하는 4050 세대 대상 백화점·명품 패션 플랫폼.', false),
+  ('asler', '애슬러', 'fashion', 'domestic', 'https://www.asler.co.kr/', '4050 시니어 남성 대상 패션 버티컬 커머스 앱.', false),
+  ('lookpin', '룩핀', 'fashion', 'domestic', 'https://lookpin.co.kr/', '남성 종합 패션·코디 추천 커머스 앱.', false),
+  ('mustit', '머스트잇', 'fashion', 'domestic', 'https://mustit.co.kr/', '온라인 명품 전문 커머스 플랫폼.', false),
+  ('trenbe', '트렌비', 'fashion', 'domestic', 'https://www.trenbe.com/', '자체 감정·풀필먼트를 갖춘 온라인 명품 커머스.', false),
+  ('balaan', '발란', 'fashion', 'domestic', 'https://www.balaan.co.kr/', '온라인 명품 커머스 플랫폼.', false),
+  ('oliveyoung', '올리브영 온라인몰', 'fashion', 'domestic', 'https://www.oliveyoung.co.kr/', 'CJ올리브영의 뷰티·헬스 상품 온라인몰.', false),
+  ('hwahae', '화해 쇼핑', 'fashion', 'domestic', 'https://www.hwahae.co.kr/', '성분·리뷰 기반 화장품 앱이 운영하는 K-뷰티 커머스.', false),
+  ('aprin', '에이피알', 'fashion', 'domestic', 'https://apr-in.com/', '메디큐브 등을 보유한 뷰티테크 D2C 자사몰 운영사.', false),
+  ('kurly2', '뷰티컬리', 'fashion', 'domestic', 'https://www.kurly.com/main/beauty', '컬리가 운영하는 뷰티 상품 새벽배송 커머스.', false),
+  ('halfclub', '하프클럽', 'fashion', 'domestic', 'https://www.halfclub.com/', '패션 브랜드 상품을 모은 온라인 패션 종합몰.', false),
+  ('fashionplus', '패션플러스', 'fashion', 'domestic', 'https://www.fashionplus.co.kr/', '수천 브랜드 패션을 아울렛형으로 파는 종합 패션몰.', false),
+  ('jkids', '제이키즈', 'fashion', 'domestic', 'https://www.jkids.co.kr/', '아동복 전문 키즈 패션 쇼핑몰.', false),
+  ('moomooz', '무무즈', 'fashion', 'domestic', 'https://www.moomooz.co.kr/', '키즈 패션·패밀리 라이프스타일 편집샵.', false),
+  ('mami', '마미', 'fashion', 'domestic', 'https://mami.co.kr/', '아동복·육아용품·엄마 패션 쇼핑앱.', false),
+  ('stylebiggirl', '스타일빅걸', 'fashion', 'domestic', 'https://stylebiggirl.co.kr/', '여성 빅사이즈 의류 전문 쇼핑몰.', false),
+  ('lalaswan', '라라스완', 'fashion', 'domestic', 'https://lalaswan.com/', '여성 플러스사이즈 의류 전문 쇼핑몰.', false),
+  ('bigmom', '빅맘', 'fashion', 'domestic', 'https://bigmom.co.kr/', '중년 여성 체형커버 빅사이즈 여성의류몰.', false),
+  ('venuseshop', '비너스', 'fashion', 'domestic', 'https://www.venus-eshop.co.kr/', '여성 속옷·언더웨어 전문 쇼핑몰.', false),
+  ('dorosiwa', '도로시와', 'fashion', 'domestic', 'https://www.dorosiwa.co.kr/', '여성 언더웨어 공식몰.', false),
+  ('rounz', '라운즈', 'fashion', 'domestic', 'https://rounz.com/', '가상피팅·얼굴형 추천 온라인 안경 쇼핑.', false),
+  ('breezm', '브리즘', 'fashion', 'domestic', 'https://www.breezm.com/', '3D 스캔·프린팅 맞춤 아이웨어 브랜드.', false),
+  ('amondz', '아몬즈', 'fashion', 'domestic', 'https://www.amondz.com/', '주얼리·액세서리 전문 편집 플랫폼.', false),
+  ('goldria', '골드리아', 'fashion', 'domestic', 'https://www.goldria.net/', '14k·18k 주얼리 전문 브랜드 쇼핑몰.', false),
+  ('monthlycosmetics', '먼슬리코스메틱', 'fashion', 'domestic', 'https://monthlycosmetics.com/', '맞춤 화장품 정기배송 뷰티 구독 서비스.', false),
+  ('toun28', '톤28', 'fashion', 'domestic', 'https://toun28.com/', '피부 진단 맞춤 화장품 구독 서비스.', false),
+  ('memebox', '미미박스', 'fashion', 'domestic', 'https://memebox.com/', '화장품 종합 쇼핑몰(뷰티 구독 출발).', false),
+  ('laka', '라카', 'fashion', 'domestic', 'https://laka.co.kr/', '젠더 뉴트럴 메이크업 브랜드 공식몰.', false),
+  ('bgroom', '비그룸', 'fashion', 'domestic', 'https://bgroom.co.kr/', '남성 전문 뷰티 셀렉샵.', false),
+  ('groominglab', '그루밍랩', 'fashion', 'domestic', 'https://groominglab.co.kr/', '남성 헤어·바디 그루밍 케어 브랜드.', false),
+  ('shoeprize', '슈프라이즈', 'fashion', 'domestic', 'https://www.shoeprize.com/', '한정판 신발 발매 정보 스니커즈 플랫폼.', false),
+  ('09women', '공구우먼', 'fashion', 'domestic', 'https://www.09women.com/', '빅사이즈 여성의류 전문 쇼핑몰.', false),
+  ('stylebot', '스타일봇', 'fashion', 'domestic', 'https://stylebot.co.kr/', 'AI 옷 분석·코디 추천 패션 스타일링 앱.', false),
+  ('vinzip', '빈집샵', 'fashion', 'domestic', 'https://vinzip.kr/', '국내외 브랜드 빈티지 의류를 셀렉해 판매하는 온라인 구제 편집샵.', false),
+  ('tomovintage', '토모빈티지', 'fashion', 'domestic', 'https://tomovintage.com/', '일본 구제 위주로 매일 다량의 빈티지 신상을 공개하는 쇼핑몰.', false),
+  ('vintageone', '빈티지원', 'fashion', 'domestic', 'https://vintageone.co.kr/', '수입 빈티지 브랜드 구제 의류를 취급하는 온라인몰.', false),
+  ('vintagezet', '빈티지제트', 'fashion', 'domestic', 'https://m.vintagezet.com/', '상태 좋은 빈티지 신발을 전문으로 다루는 쇼핑몰.', false),
+  ('deadstock', 'DEADSTOCK', 'fashion', 'domestic', 'https://deadstock.co.kr/', '해외 브랜드 수입 빈티지를 정품으로 판매하는 편집샵.', false),
+  ('worknwalk', '워크앤워크', 'fashion', 'domestic', 'https://worknwalk.imweb.me/', '워크웨어·아메카지 스타일을 다루는 온라인 편집샵.', false),
+  ('drvintage', '닥터빈티지', 'fashion', 'domestic', 'https://drvintage.co.kr/', '아메카지·워크웨어 중심의 온·오프라인 빈티지 편집샵.', false),
+  ('bluesman', '블루즈맨', 'fashion', 'domestic', 'https://bluesman.co.kr/', '아메리칸 캐주얼 남성의류를 다루는 온라인 편집숍.', false),
+  ('outdoorfeel', '아웃도어필', 'fashion', 'domestic', 'https://outdoorfeel.com/', '수입 아웃도어 브랜드를 모은 온라인 셀렉트몰.', false),
+  ('vegantigerkorea', '비건타이거', 'fashion', 'domestic', 'https://vegantigerkorea.com/', '동물성 소재를 배제한 국내 비건 패션 브랜드 자사몰.', false),
+  ('bbybstore', 'BBYB', 'fashion', 'domestic', 'https://www.bbybstore.com/', '페이크 레더 기반 비건 가방·액세서리 브랜드 자사몰.', false),
+  ('lotuff', '로터프', 'fashion', 'domestic', 'https://lotuff.co.kr/', '가죽 백팩·토트백 등을 만드는 국내 가죽가방 브랜드.', false),
+  ('camelbrown', '캐멜브라운', 'fashion', 'domestic', 'https://camelbrown.com/', '여성 백팩·토트백 중심의 프리미엄 가방 브랜드.', false),
+  ('soulbag', '쏘울백', 'fashion', 'domestic', 'https://soulbag.co.kr/', '가죽가방·쇼퍼백·크로스백을 다루는 여성가방 자사몰.', false),
+  ('prettica', '프레티카', 'fashion', 'domestic', 'https://prettica.co.kr/', '데일리용 심플한 실버 핸드메이드 주얼리 브랜드.', false),
+  ('dianajewelry', '다이애나쥬얼리', 'fashion', 'domestic', 'https://dianajewelry.shop/', '실버925 원석 귀걸이·반지 등 핸드메이드 주얼리 전문몰.', false),
+  ('hangleeyewear', '한글 아이웨어', 'fashion', 'domestic', 'https://hangle-eyewear.com/', '선글라스·블루라이트 안경 등을 만드는 아이웨어 브랜드 자사몰.', false),
+  ('2eyeshop', '세컨아이즈', 'fashion', 'domestic', 'https://2eyeshop.com/', '자체 하우스 브랜드를 갖춘 안경·선글라스 쇼핑몰.', false),
+  ('dongneoo', '동네선글라스', 'fashion', 'domestic', 'https://dongneoo.com/', '정품 아이웨어를 취급하는 선글라스 전문 온라인샵.', false),
+  ('elleinnerwear', '엘르이너웨어', 'fashion', 'domestic', 'https://elleinnerwear.kr/', '엘르 라이선스 이너웨어를 판매하는 공식 온라인 스토어.', false),
+  ('sockstaz', '삭스타즈', 'fashion', 'domestic', 'https://sockstaz.com/', '양말을 중심으로 라이프스타일 소품을 전개하는 삭스 브랜드.', false),
+  ('customsoxx', '커스텀삭스', 'fashion', 'domestic', 'https://customsoxx.com/', '디자인·주문제작 중심의 커스텀 양말 전문 브랜드.', false),
+  ('leesle', '리슬', 'fashion', 'domestic', 'https://leesle.kr/', '한복을 현대적으로 재해석한 모던 한복 패션 브랜드.', false),
+  ('wayyu', '웨이유', 'fashion', 'domestic', 'https://wayyu.kr/', '전통 요소를 캐주얼에 접목한 생활한복 브랜드 자사몰.', false),
+  ('thegoeun', '더고은', 'fashion', 'domestic', 'https://thegoeun.com/', '인사동 기반의 생활한복 브랜드 온라인몰.', false),
+  ('byatti', '바이아띠', 'fashion', 'domestic', 'https://www.byatti.com/', '생활한복을 전문으로 하는 온라인 쇼핑몰.', false),
+  ('philosophia', '필로소피아', 'fashion', 'domestic', 'https://philosophia.co.kr/', '여성 요가복·필라테스복 전문 애슬레저 브랜드.', false),
+  ('conch', '콘치웨어', 'fashion', 'domestic', 'https://conch.co.kr/', '필라테스·요가 레깅스 등 피트니스 웨어 브랜드.', false),
+  ('kurly', '마켓컬리', 'food', 'domestic', 'https://www.kurly.com', '신선식품 새벽배송 이커머스.', false),
+  ('oasis', '오아시스마켓', 'food', 'domestic', 'https://www.oasis.co.kr', '친환경·신선식품 새벽배송.', false),
+  ('jeongyukgak', '정육각', 'food', 'domestic', 'https://www.jeongyukgak.com', '신선육류 직판·정기배송.', false),
+  ('cookatmarket', '쿠캣마켓', 'food', 'domestic', 'https://cookatmarket.com/', '간편식·디저트·식단 제품 온라인 식품몰.', false),
+  ('yamtable', '얌테이블', 'food', 'domestic', 'http://www.yamtable.com/', '수산물 중심 온라인 수산식품 마켓.', false),
+  ('choroc', '초록마을', 'food', 'domestic', 'https://www.choroc.com/', '친환경·유기농 먹거리 매장·온라인 식품몰.', false),
+  ('jungoneshop', '정원e샵', 'food', 'domestic', 'https://www.jungoneshop.com/', '대상그룹 공식 온라인 식품몰.', false),
+  ('mart', '배민상회', 'food', 'domestic', 'https://mart.baemin.com/', '사장님용 식자재·부자재 B2B 장보기몰.', false),
+  ('freshcode', '프레시코드', 'food', 'domestic', 'https://www.freshcode.me/', '샐러드·건강간편식 정기배송 푸드 커머스.', false),
+  ('greating', '그리팅', 'food', 'domestic', 'https://www.greating.co.kr/', '현대그린푸드의 건강식단 정기배송 온라인몰.', false),
+  ('shop', '한살림 장보기', 'food', 'domestic', 'https://shop.hansalim.or.kr/', '한살림 협동조합의 친환경 식품 장보기몰.', false),
+  ('icoop', '자연드림(아이쿱생협)', 'food', 'domestic', 'https://www.icoop.or.kr/coopmall/', '아이쿱생협의 유기농·공정무역 식품몰.', false),
+  ('boratr', '보라티알', 'food', 'domestic', 'https://www.boratr.co.kr/', '수입 식품·식자재 유통·판매 온라인 플랫폼.', false),
+  ('sooldamhwa', '술담화', 'food', 'domestic', 'https://www.sooldamhwa.com/', '전통주 큐레이션 정기구독 배송 서비스.', false),
+  ('purpledog', '퍼플독', 'food', 'domestic', 'https://www.purpledog.co.kr/', '취향 분석 맞춤 와인 정기구독 서비스.', false),
+  ('thebanchan', '더반찬', 'food', 'domestic', 'https://www.thebanchan.co.kr/', '당일 조리 반찬·국·밀키트 새벽배송.', false),
+  ('zipbanchan', '집반찬연구소', 'food', 'domestic', 'http://www.zipbanchan.co.kr/', '가정식 수제반찬 주문 배송 쇼핑몰.', false),
+  ('thesoban', '더소반', 'food', 'domestic', 'https://thesoban.com/', '셰프 가정식 수제반찬 정기배송 구독.', false),
+  ('laclachansang', '락락한상', 'food', 'domestic', 'https://www.laclachansang.co.kr/', '반찬·국·메인요리 정기배송 가정식.', false),
+  ('homebabs', '집밥연구소', 'food', 'domestic', 'https://homebabs.co.kr/', '주간 식단 반찬 정기배송 구독 서비스.', false),
+  ('farmmorning', '팜모닝', 'food', 'domestic', 'https://farmmorning.com/', '농민 직접 판매 농산물 직거래·농사 지원.', false),
+  ('marketsoo', '마켓수', 'food', 'domestic', 'https://www.marketsoo.kr/', '농·수·축산물 산지직송 직거래 사이트.', false),
+  ('sanjicook', '산지쿡농수산', 'food', 'domestic', 'https://www.sanjicook.com/', '검증 농수산물 산지직송 오픈마켓.', false),
+  ('unclemart', '엉클농수산', 'food', 'domestic', 'https://unclemart.co.kr/', '농·축·수산물 산지직송 전문 마켓.', false),
+  ('fishsale', '피시세일', 'food', 'domestic', 'https://www.fishsale.co.kr/', '국내산 수산물 전문 온라인 쇼핑몰.', false),
+  ('farmmate', '참거래농민장터', 'food', 'domestic', 'https://farmmate.com/', '친환경 농산물 생산자·소비자 직거래.', false),
+  ('nhlocalfood', '농협로컬푸드직매장', 'food', 'domestic', 'https://nhlocalfood.com/', '지역 농산물 로컬푸드 직매장 온라인몰.', false),
+  ('marcheat', '마르쉐', 'food', 'domestic', 'https://www.marcheat.net/', '농부·요리사·수공예가 도시형 농부시장.', false),
+  ('meatbox', '미트박스', 'food', 'domestic', 'https://www.meatbox.co.kr/', '축산물 직거래 온라인 고기 플랫폼.', false),
+  ('permeal', '퍼밀', 'food', 'domestic', 'https://www.permeal.co.kr/', '산지 식재료·밀키트 온라인 푸드 플랫폼.', false),
+  ('youngbakery', '영베이커리', 'food', 'domestic', 'https://youngbakery.com/', '빵 정기배송 베이커리 구독 서비스.', false),
+  ('hyfresh', '프레딧', 'food', 'domestic', 'https://www.hyfresh.co.kr/', 'hy의 국·탕·밀키트·신선식품 구독 쇼핑몰.', false),
+  ('fresheasy', '프레시지', 'food', 'domestic', 'https://fresheasy.co.kr/', '밀키트·간편식·HMR 전문 온라인몰.', false),
+  ('soolmarket', '술마켓', 'food', 'domestic', 'https://www.soolmarket.com/', '전국 양조장 전통주 전문 판매 쇼핑몰.', false),
+  ('soollove', '전통주애', 'food', 'domestic', 'https://soollove.com/', '전통주 전문 온라인 판매 쇼핑몰.', false),
+  ('business', '벨루가', 'food', 'domestic', 'https://business.veluga.kr/', '주류 도매 발주·와인 유통 중개 B2B.', false),
+  ('roout', '루트', 'food', 'domestic', 'https://roout.co.kr/', '농어민·소비자 연결 농수산물 직거래.', false),
+  ('oraund', '오라운트', 'food', 'domestic', 'https://oraund.com/', '당일 로스팅 원두·드립백을 판매하는 스페셜티 커피 로스터리.', false),
+  ('unspecialty', '언스페셜티', 'food', 'domestic', 'https://unspecialty.com/', '여러 로스터리 원두를 모은 스페셜티 커피 플랫폼.', false),
+  ('180coffee', '180커피로스터스', 'food', 'domestic', 'https://180coffee.com/', '국가대표 로스터가 운영하는 스페셜티 원두 로스팅 컴퍼니.', false)
+on conflict (id) do nothing;
+
+insert into public.platforms (id, name, category_id, region, url, blurb, is_new) values
+  ('altdif', '알디프', 'food', 'domestic', 'https://altdif.com/', '시그니처 블렌딩 티를 전개하는 티·라이프스타일 브랜드.', false),
+  ('lookourtea', '룩아워티', 'food', 'domestic', 'https://www.lookourtea.com/', '블렌딩 티를 전문으로 하는 티 브랜드.', false),
+  ('zzann', '짠', 'food', 'domestic', 'https://zzann.co.kr/', '막걸리·약주·리큐르 등을 다루는 전통주 직거래 플랫폼.', false),
+  ('mewolmejoo', '매월매주', 'food', 'domestic', 'https://mewolmejoo.com/', '전통주 구독·단품·선물세트를 다루는 전통주 허브몰.', false),
+  ('lovinghut', '러빙헛', 'food', 'domestic', 'https://lovinghut.co.kr/', '식물성 대체육·비건 간편식을 파는 비건 채식 쇼핑몰.', false),
+  ('hanggi', '채식한끼', 'food', 'domestic', 'https://m.hanggi.kr/', '대체육·대체해산물 등 비건 지향 식품 전문 쇼핑몰.', false),
+  ('vegemom', '베지맘', 'food', 'domestic', 'http://www.vegemom.net/', '비건 식품·조미료를 다루는 채식 전문 쇼핑몰.', false),
+  ('calobye', '칼로바이', 'food', 'domestic', 'https://www.calobye.shop/', '프로틴 음료 등 다이어트·단백질 식품을 파는 D2C 자사몰.', false),
+  ('dshop', '다신샵', 'food', 'domestic', 'https://dshop.dietshin.com/', '단백질·다이어트 식품을 전문으로 하는 다이어트 식품몰.', false),
+  ('granola', '그래놀라몰', 'food', 'domestic', 'https://www.granola.co.kr/', '그래놀라·뮤즐리·견과 등을 모은 시리얼·건강간식 전문몰.', false),
+  ('kihya', '키햐', 'food', 'domestic', 'https://www.kihya.com/', '위스키·와인·사케 등 주류를 가격비교·스마트오더로 파는 앱으로 2022년 설립된 신생 주류 커머스.', true),
+  ('idus', '아이디어스', 'handmade', 'domestic', 'https://www.idus.com', '수공예·핸드메이드 작가 마켓.', false),
+  ('10x10', '텐바이텐', 'handmade', 'domestic', 'https://www.10x10.co.kr', '디자인 문구·잡화 편집 마켓.', false),
+  ('handmadeo', '핸드메이드오', 'handmade', 'domestic', 'https://handmadeo.kr/', '메이커와 소비자를 잇는 관계지향형 핸드메이드 마켓.', false),
+  ('handion', '핸디온', 'handmade', 'domestic', 'https://www.handion.com/', '수공예 액세서리·홈데코 전문 핸드메이드 오픈마켓.', false),
+  ('youarehandmade', '유어핸드메이드', 'handmade', 'domestic', 'http://youarehandmade.com/', '작가 수공예 작품 판매 핸드메이드 쇼핑몰.', false),
+  ('thehandz', '더핸즈', 'handmade', 'domestic', 'https://www.thehandz.com/', '수공예 완제품·DIY 재료 핸드메이드 포털.', false),
+  ('twenty', '트웬티', 'handmade', 'domestic', 'https://twenty.style/', '일러스트 작가 스티커·다이어리 굿즈 마켓.', false),
+  ('etsy', '엣시', 'handmade', 'overseas', 'https://www.etsy.com/', '전 세계 창작자 핸드메이드·빈티지 글로벌 마켓.', false),
+  ('amazon', '아마존 핸드메이드', 'handmade', 'overseas', 'https://www.amazon.com/handmade', '아마존 장인·메이커 전용 수제 상품 코너.', false),
+  ('folksy', '폭시', 'handmade', 'overseas', 'https://folksy.com/', '영국 기반 핸드메이드 공예품 마켓플레이스.', false),
+  ('wooddle', '우들', 'handmade', 'domestic', 'https://wooddle.com/', '취미·핸드메이드 활동 매칭 플랫폼.', false),
+  ('saramin', '사람인', 'jobs', 'domestic', 'https://www.saramin.co.kr', '정규·경력직 채용 매칭 플랫폼.', false),
+  ('jobkorea', '잡코리아', 'jobs', 'domestic', 'https://www.jobkorea.co.kr', '종합 채용 정보 플랫폼.', false),
+  ('albamon', '알바몬', 'jobs', 'domestic', 'https://www.albamon.com', '아르바이트·단기 일자리 중개.', false),
+  ('alba', '알바천국', 'jobs', 'domestic', 'https://www.alba.co.kr', '아르바이트 구인구직 플랫폼.', false),
+  ('coupangflex', '쿠팡플렉스', 'jobs', 'domestic', 'https://www.coupang.com/np/campaigns/1015', '개인 배송 긱워크(자차 배송).', false),
+  ('baeminconnect', '배민커넥트', 'jobs', 'domestic', 'https://www.baemin.com/connect', '배달의민족 라이더 긱워크.', false),
+  ('wanted2', '원티드', 'jobs', 'domestic', 'https://www.wanted.co.kr/', 'IT 중심 지인추천 기반 채용 플랫폼.', false),
+  ('incruit', '인크루트', 'jobs', 'domestic', 'https://www.incruit.com/', '종합 구인구직 채용 플랫폼.', false),
+  ('rocketpunch', '로켓펀치', 'jobs', 'domestic', 'https://www.rocketpunch.com/', '스타트업 채용·비즈니스 네트워킹.', false),
+  ('career', '리멤버 커리어', 'jobs', 'domestic', 'https://career.rememberapp.co.kr/', '명함 기반 경력직 스카우트 채용.', false),
+  ('catch', '캐치', 'jobs', 'domestic', 'https://www.catch.co.kr/', '대기업·중견기업 채용 정보·일정 제공.', false),
+  ('jobplanet', '잡플래닛', 'jobs', 'domestic', 'https://www.jobplanet.co.kr/', '기업 리뷰·연봉 정보와 채용 공고.', false),
+  ('peoplenjob', '피플앤잡', 'jobs', 'domestic', 'https://www.peoplenjob.com/', '외국계·헤드헌팅 채용 특화 사이트.', false),
+  ('gubgoo', '급구', 'jobs', 'domestic', 'https://www.gubgoo.com/', '당일·단기 알바 실시간 매칭 긱워크 앱.', false),
+  ('barogo', '바로고', 'jobs', 'domestic', 'https://www.barogo.com/', '라이더·상점 연결 배달대행 긱워크.', false),
+  ('work', '고용24', 'jobs', 'domestic', 'https://www.work.go.kr', '고용노동부 구인구직·직업정보 공공 취업포털.', false),
+  ('findjob', '벼룩시장', 'jobs', 'domestic', 'https://www.findjob.co.kr', '지역 생활밀착 알바·구인구직 정보 플랫폼.', false),
+  ('newworker', '뉴워커', 'jobs', 'domestic', 'https://www.newworker.co.kr', '인크루트 긱워커 매칭·정산 플랫폼.', false),
+  ('specter', '스펙터', 'jobs', 'domestic', 'https://www.specter.co.kr', '지원자 평판조회(레퍼런스 체크) 인재 검증.', false),
+  ('attalework', '어테일워크', 'jobs', 'domestic', 'https://www.attalework.com', '4060 중장년·시니어 전문가 채용 매칭.', false),
+  ('senior', '원더풀시니어', 'jobs', 'domestic', 'https://senior.saramin.co.kr', '사람인 중장년 취업 진단·구직·교육 지원.', false),
+  ('woodel', '우리동네딜리버리', 'jobs', 'domestic', 'https://woodel.co.kr', 'GS리테일 도보 배달 긱워크 플랫폼.', false),
+  ('codingvalley', 'AI 코딩밸리', 'jobs', 'domestic', 'https://www.codingvalley.com/', '2022년 창업한 유리프트가 운영하는 신생 에듀테크로, 직장인을 위한 ChatGPT·Claude·Gemini 등 AI 활용 및 코딩 교육을 모바일로 제공한다.', true),
+  ('epop', '말해보카', 'jobs', 'domestic', 'https://epop.ai/', '이팝소프트가 만든 AI 기반 영어 단어·회화 학습 앱으로, 게이미피케이션을 접목해 최근 빠르게 성장 중인 신흥 어학 에듀테크다.', true),
+  ('argong', '알공', 'jobs', 'domestic', 'https://www.argong.ai/', '디엔소프트가 선보인 초등 특화 AI 코스웨어로, 영어·수학을 맞춤형으로 학습시키는 신규 에듀테크 서비스다.', true),
+  ('tiokorea', '티오', 'jobs', 'domestic', 'https://tiokorea.com/', '취업준비생을 위한 AI 자기소개서·면접 준비 어시스턴트를 표방하는 신생 커리어테크 서비스다.', true),
+  ('haijob', '하이잡', 'jobs', 'domestic', 'https://www.haijob.co.kr/', '직무적합성 진단부터 자소서 첨삭, 면접까지 한곳에서 돕는 신규 AI 취업 준비 플랫폼이다.', true),
+  ('naim', '나임', 'jobs', 'domestic', 'https://naim.cool/', '개인 경험 데이터를 기억해 자소서를 작성·검증해 주는 신생 AI 취업 지원 서비스다.', true),
+  ('groupby', '그룹바이', 'jobs', 'domestic', 'https://groupby.kr/', '스타트업 채용 공고와 취업 인사이트를 큐레이션하는 신흥 스타트업 전문 채용 플랫폼이다.', true),
+  ('dio', '디오', 'jobs', 'domestic', 'https://www.dio.so/', '검증된 경력직 인재를 구독형으로 매칭·채용하는 신규 HR테크 플랫폼이다.', true),
+  ('1gada', '가다', 'jobs', 'domestic', 'https://1gada.com/', '건설 일용직 근로자와 현장을 실시간 연결하는 인력 중개 플랫폼으로, 2025년 시리즈B 투자를 유치하며 성장 중인 서비스다.', true),
+  ('kowork', '코워크', 'jobs', 'domestic', 'https://kowork.kr/', '2023년 앱을 정식 출시한 신규 플랫폼으로, 외국인 구직자와 국내 기업을 잇는 구인구직·비자 정보 서비스를 제공한다.', true),
+  ('workwiz', '워크위즈', 'jobs', 'domestic', 'https://www.workwiz.co.kr/', '4050 중장년 재취업에 특화된 커리어 매칭 플랫폼으로, 전문 컨설턴트 코칭과 일자리 매칭을 함께 제공하는 서비스다.', true),
+  ('miso', '미소', 'homeservice', 'domestic', 'https://miso.kr', '가사·청소·이사 등 홈서비스 매칭.', false),
+  ('cleanlab', '청소연구소', 'homeservice', 'domestic', 'https://www.cleaninglab.co.kr', '가사도우미·홈클리닝 매칭.', false),
+  ('daerijubu', '대리주부', 'homeservice', 'domestic', 'https://www.hom.kr', '가사·돌봄 도우미 중개.', false),
+  ('jjakkak', '째깍악어', 'homeservice', 'domestic', 'https://www.tictoccroc.com', '아이 돌봄·놀이 선생님 매칭.', false),
+  ('homemaster', '홈마스터', 'homeservice', 'domestic', 'http://homemaster.co.kr/main/', '가사·청소 도우미 예약 매칭 서비스.', false),
+  ('getwashswat', '세탁특공대', 'homeservice', 'domestic', 'https://www.getwashswat.com/', '모바일 세탁물 수거·배송 O2O.', false),
+  ('laundrygo', '런드리고', 'homeservice', 'domestic', 'https://www.laundrygo.com/', '문 앞 수거·배송 세탁·수선 서비스.', false),
+  ('apps2', '애니맨', 'homeservice', 'domestic', 'https://apps.apple.com/kr/app/id1341537162', '심부름·배달·청소 실시간 매칭 앱.', false),
+  ('apps3', '해주세요', 'homeservice', 'domestic', 'https://apps.apple.com/kr/app/id1567338376', '배달·청소·이사·펫 등 심부름 매칭 앱.', false),
+  ('zipdoc', '집닥', 'homeservice', 'domestic', 'https://zipdoc.co.kr/', '인테리어 비교견적·시공 중개 O2O.', false),
+  ('houstep', '하우스텝', 'homeservice', 'domestic', 'https://m.houstep.co.kr/estimate', '도배·마루·창호 등 표준 견적 시공 플랫폼.', false),
+  ('apps4', '인스타워시', 'homeservice', 'domestic', 'https://apps.apple.com/kr/app/id1112047529', '방문 프리미엄 출장 세차 O2O.', false),
+  ('wayopet', '와요', 'homeservice', 'domestic', 'https://wayopet.com/', '펫시터 방문 돌봄·산책 예약 플랫폼.', false),
+  ('dogmate', '도그메이트', 'homeservice', 'domestic', 'https://www.dogmate.co.kr/', '반려동물 방문 돌봄·산책 매칭.', false),
+  ('mogwai', '모그와이', 'homeservice', 'domestic', 'https://www.mogwai.co.kr/', '펫시터 방문 돌봄 예약 플랫폼.', false),
+  ('petplanet', '펫플래닛', 'homeservice', 'domestic', 'https://petplanet.co/', '펫시터 위탁·방문 돌봄 연결 플랫폼.', false),
+  ('jaranda', '자란다', 'homeservice', 'domestic', 'https://www.jaranda.kr/', '아이 놀이·학습 선생님 매칭 돌봄.', false),
+  ('momsitter', '맘시터', 'homeservice', 'domestic', 'https://www.mom-sitter.com/', '베이비시터·아이돌보미 매칭 플랫폼.', false),
+  ('zimssa', '짐싸', 'homeservice', 'domestic', 'https://www.zimssa.com', '앱으로 포장이사·입주청소 견적 비교·예약.', false),
+  ('24mall', '이사몰', 'homeservice', 'domestic', 'https://www.24mall.co.kr', '이삿짐센터 포장이사 견적 실시간 비교.', false),
+  ('modoo24', '모두이사', 'homeservice', 'domestic', 'https://modoo24.net', '허가 이사·입주청소 후기 기반 매칭.', false),
+  ('hcmaster', '홈케어마스터', 'homeservice', 'domestic', 'https://www.hcmaster.kr', '소독·방역·해충방제 생활방역 홈케어.', false),
+  ('hscare', 'HS홈케어', 'homeservice', 'domestic', 'https://hs-care.com', '매트리스·에어컨·세탁기 분해 세척 홈케어.', false),
+  ('yper', '와이퍼', 'homeservice', 'domestic', 'https://yper.co.kr', '수거-손세차-배달 원스톱 출장 세차.', false),
+  ('kimzipsa', '김집사', 'homeservice', 'domestic', 'https://kimzipsa.co.kr', '아파트 상주형 배달·심부름 생활 대행 O2O.', false),
+  ('bosalpim', '보살핌', 'homeservice', 'domestic', 'https://www.bosalpim.co.kr/', '2021년 출범한 신생 시니어케어 스타트업으로, 요양보호사 등 돌봄 인력과 어르신·기관을 연결하는 매칭 플랫폼이다.', true),
+  ('forparents', '포페런츠', 'homeservice', 'domestic', 'https://forparents.co.kr/', '2022년 설립된 신규 스타트업으로, 전문 케어 인력 ''버디''가 동행하는 어르신 나들이·생활 돌봄 컨시어지 서비스를 제공한다.', true),
+  ('sinor', '시놀 79전화', 'homeservice', 'domestic', 'https://www.sinor.co.kr/', '2024년 출시된 시니어 대상 신규 서비스로, 5070 세대를 위한 AI 말벗·친구 매칭 등 비대면 돌봄을 표방한다.', true),
+  ('petbom', '펫봄', 'homeservice', 'domestic', 'https://petbom.com/', '2021년 말 출시된 신생 하이퍼로컬 펫시터 앱으로, 이웃 돌봄님에게 강아지·고양이 방문 돌봄과 산책을 맡길 수 있다.', true),
+  ('hisitter', '하이시터', 'homeservice', 'domestic', 'https://hi-sitter.com/', '2024년 2월 출시된 신규 회원제 아이돌봄 서비스로, 영유아 대상 풀타임 가정 방문 베이비시터를 연결한다.', true),
+  ('woowarhanclean', '우아한정리', 'homeservice', 'domestic', 'https://www.woowarhanclean.com/', '정리수납·집정리 컨설팅 방문 서비스와 무료 견적을 제공한다.', false),
+  ('aftermoving', '이사후애', 'homeservice', 'domestic', 'https://www.aftermoving.net/', '이사 전후 짐 정리와 정리수납 전문가 방문 서비스를 다룬다.', false),
+  ('verygoodlife', '베리굿정리컨설팅', 'homeservice', 'domestic', 'https://www.verygoodlife.kr/', '가정·상업 공간의 정리수납 컨설팅과 교육을 제공하는 업체다.', false),
+  ('covering', '커버링', 'homeservice', 'domestic', 'https://www.covering.app/', '생활 쓰레기·폐기물 방문 수거를 앱으로 신청하는 서비스다.', false),
+  ('sgin', '시공인', 'homeservice', 'domestic', 'https://www.sgin.co.kr/', '인테리어 시공 현장과 기술 인력을 지역·시간 기준으로 매칭한다.', false),
+  ('cleanbell', '클린벨', 'homeservice', 'domestic', 'https://www.cleanbell.co.kr/', '입주·이사청소 업체 견적을 비교해 연결하는 플랫폼이다.', false),
+  ('archisketch', '아키스케치', 'homeservice', 'domestic', 'https://www.archisketch.com/', '3D 인테리어·가구배치 시뮬레이션 도구를 제공한다.', false),
+  ('zigbang', '직방', 'realestate', 'domestic', 'https://www.zigbang.com', '원룸·오피스텔·아파트 등 주거 부동산 중개.', false),
+  ('dabang', '다방', 'realestate', 'domestic', 'https://www.dabangapp.com', '주거용 부동산 매물 정보.', false),
+  ('naverland', '네이버 부동산', 'realestate', 'domestic', 'https://land.naver.com', '종합 부동산 매물·시세 정보.', false),
+  ('rsquare', '알스퀘어', 'realestate', 'domestic', 'https://www.rsquare.co.kr', '사무실·상업용 부동산 중개(B2B).', false),
+  ('ziptoss', '집토스', 'realestate', 'domestic', 'https://www.ziptoss.com', '전·월세 중개 부동산 플랫폼.', false),
+  ('nemoapp', '네모', 'realestate', 'domestic', 'https://www.nemoapp.kr/', '상가·사무실·빌딩 상업용 부동산 임대·매매.', false),
+  ('peterpanz', '피터팬의 좋은방 구하기', 'realestate', 'domestic', 'https://www.peterpanz.com/', '원룸·투룸 부동산 직거래·커뮤니티.', false),
+  ('hogangnono', '호갱노노', 'realestate', 'domestic', 'https://hogangnono.com/', '실거래가 기반 아파트 시세·매물 지도.', false),
+  ('asil', '아실', 'realestate', 'domestic', 'https://asil.kr/', '아파트 실거래가·단지 비교·투자 분석.', false),
+  ('disco', '디스코', 'realestate', 'domestic', 'https://www.disco.re/', '토지·빌딩·상가 실거래가·등기 지도 서비스.', false),
+  ('valueupmap', '밸류맵', 'realestate', 'domestic', 'https://www.valueupmap.com/', '토지·건물·상가·공장 실거래가·매물 지도.', false),
+  ('bdsplanet', '부동산플래닛', 'realestate', 'domestic', 'https://www.bdsplanet.com/', '토지·건물·상가 실거래가·노후도 분석.', false),
+  ('r114', '부동산R114', 'realestate', 'domestic', 'https://r114.com/', '아파트·상가 시세·분양·매물 데이터 플랫폼.', false),
+  ('kbland', 'KB부동산', 'realestate', 'domestic', 'https://kbland.kr/', 'KB 시세 기반 실거래가·매물·분양 정보.', false),
+  ('smatch', '스매치', 'realestate', 'domestic', 'https://smatch.kr/', '사무실·상가·빌딩 임대·매매 상업용 중개.', false),
+  ('officefind', '오피스파인드', 'realestate', 'domestic', 'https://officefind.co.kr/', '데이터 기반 오피스 임대·이전 컨설팅.', false),
+  ('fastfive', '패스트파이브', 'realestate', 'domestic', 'https://fastfive.co.kr/', '국내 최다 지점 공유오피스 브랜드.', false),
+  ('sparkplus', '스파크플러스', 'realestate', 'domestic', 'https://sparkplus.co.kr/', '역세권 중심 사무 특화 공유오피스.', false),
+  ('wework', '위워크 코리아', 'realestate', 'domestic', 'https://www.wework.com/', '글로벌 공유 업무공간·오피스 임대.', false),
+  ('regus', '리저스', 'realestate', 'domestic', 'https://www.regus.co.kr/', '서비스드 오피스 글로벌 공유오피스 브랜드.', false),
+  ('wecook', '위쿡', 'realestate', 'domestic', 'https://www.wecook.co.kr/', '제조·배달형 공유주방 공간 임대.', false),
+  ('nanudakitchen', '나누다키친', 'realestate', 'domestic', 'https://nanudakitchen.com/', '상권분석 기반 공유주방 중개 플랫폼.', false),
+  ('jisanlive', '지산라이브', 'realestate', 'domestic', 'https://jisanlive.com/', '지식산업센터·상가·창고 임대·매매 정보.', false),
+  ('jumpapp', '점프컴퍼니', 'realestate', 'domestic', 'https://jumpapp.co.kr/', '지식산업센터·오피스 분양·임대·매매 중개.', false),
+  ('myfranchise', '마이프차', 'realestate', 'domestic', 'https://myfranchise.kr', '프랜차이즈 매출·창업비용 비교·상권분석.', false),
+  ('openub', '오픈업', 'realestate', 'domestic', 'https://www.openub.com', '빅데이터 기반 AI 상권분석 플랫폼.', false),
+  ('auction1', '옥션원', 'realestate', 'domestic', 'https://www.auction1.co.kr', '법원경매·부동산경매 정보·교육 플랫폼.', false),
+  ('ggi', '지지옥션', 'realestate', 'domestic', 'https://www.ggi.co.kr', '법원경매·공매 정보·권리분석 서비스.', false),
+  ('dooinauction', '두인경매', 'realestate', 'domestic', 'https://www.dooinauction.com', '경매·공매·NPL·권리분석 정보 플랫폼.', false),
+  ('thecomenstay', '컴앤스테이', 'realestate', 'domestic', 'https://www.thecomenstay.com', '월 단위 청년 셰어하우스 검색·운영 플랫폼.', false),
+  ('gobang', '고방', 'realestate', 'domestic', 'https://gobang.kr', '원룸텔·셰어하우스·룸메이트 매칭 주거 플랫폼.', false),
+  ('gosi1', '고시원넷', 'realestate', 'domestic', 'http://www.gosi1.net', '고시원·고시텔·원룸텔 검색 정보 사이트.', false),
+  ('drapt', '닥터아파트', 'realestate', 'domestic', 'http://www.drapt.com', '아파트 시세·분양·재건축 정보 포털.', false),
+  ('bbric', '비브릭', 'realestate', 'domestic', 'https://bbric.com/', '세종텔레콤이 부산 블록체인 규제샌드박스에서 운영하는 신생 상업용 부동산 조각투자 플랫폼이다.', true),
+  ('naezipscan', '내집스캔', 'realestate', 'domestic', 'https://www.naezipscan.com/', '한국부동산데이터연구소가 만든 신생 서비스로, AI가 등기부·임대인 정보를 분석해 전세사기·깡통전세 위험도를 진단한다.', true),
+  ('zippoom', '집품', 'realestate', 'domestic', 'https://zippoom.com/', '넥스트그라운드가 운영하는 신생 프롭테크로, 실거주 리뷰와 보증금 위험 분석 리포트를 제공한다.', true),
+  ('dizo', '디조', 'realestate', 'domestic', 'https://dizo.com/', '네이버 부동산 기획자 출신이 창업한 신규 프롭테크로, 주거·상업용 부동산 데이터와 중개사 마이페이지를 제공한다.', true),
+  ('arcadegod', '상가의신', 'realestate', 'domestic', 'https://www.arcadegod.co.kr/', '상가 분양·임대·매매 등 상업용 부동산 매물을 모아 비교하는 플랫폼.', false),
+  ('sangga114', '상가114', 'realestate', 'domestic', 'https://www.sangga114.co.kr/', '신규 상가 분양 정보를 안내하는 상가 전문 사이트.', false),
+  ('imya', '임야114', 'realestate', 'domestic', 'https://imya.co.kr/', '임야·산 매매 매물을 경사도·도로 등 정보와 함께 제공하는 사이트.', false),
+  ('imya4989', '한국임야매매닷컴', 'realestate', 'domestic', 'http://imya4989.com/', '임야·산지 매매 매물을 다루는 토지 전문 중개 사이트.', false),
+  ('ddangya', '땅야', 'realestate', 'domestic', 'https://ddangya.com/', '전국 토지 실거래가 조회와 토지 매물 거래를 제공하는 서비스.', false),
+  ('zoomansa', '주만사', 'realestate', 'domestic', 'https://www.zoomansa.com/', '유휴 주차공간을 공유하는 월주차·일주차 중개 플랫폼.', false),
+  ('bunyangi', '분양알리미', 'realestate', 'domestic', 'https://bunyangi.com/', '신규 아파트 분양·청약 일정과 입지 정보를 모아 제공하는 서비스.', false),
+  ('gfauction', '굿프렌드경매', 'realestate', 'domestic', 'https://gfauction.info/', 'AI 권리분석과 낙찰 통계를 제공하는 부동산 경매 정보 플랫폼.', false),
+  ('seeauction', '보이는부동산경매', 'realestate', 'domestic', 'https://seeauction.net/', '법원경매·공매 물건과 권리분석 정보를 제공하는 경매 사이트.', false),
+  ('zipgoai', '땅집고옥션', 'realestate', 'domestic', 'https://zipgoai.com/', '경·공매 및 NPL 물건을 AI로 분석해 주는 경매 정보 서비스.', false),
+  ('building0', '빌사남', 'realestate', 'domestic', 'https://www.building0.com/', '중소형·꼬마빌딩 실거래가와 매물을 지도로 조회하는 서비스.', false),
+  ('buildingmeme', '빌딩매매닷컴', 'realestate', 'domestic', 'http://www.buildingmeme.com/', '빌딩·건물 매매 및 임대 매물을 다루는 중개 사이트.', false),
+  ('archiproperty', '아키부동산', 'realestate', 'domestic', 'https://www.archiproperty.com/', '꼬마빌딩 매매와 상가·사무실 임대를 다루는 부동산 중개.', false),
+  ('xnob0bj3f9wty2d24ab95b', '공장네트웍스', 'realestate', 'domestic', 'https://xn--ob0bj3f9wty2d24ab95b.com/', '전국 공장·창고·물류센터 매매·임대 전문 중개 플랫폼.', false),
+  ('penggo', '펭고', 'realestate', 'domestic', 'http://www.penggo.net/', '상온·냉장·냉동 창고 임대와 매매를 중개하는 서비스.', false),
+  ('gangnamunni', '강남언니', 'beautyhealth', 'domestic', 'https://www.gangnamunni.com', '미용·성형·피부 시술 정보·예약.', false),
+  ('goodoc', '굿닥', 'beautyhealth', 'domestic', 'https://www.goodoc.co.kr', '병원·약국 검색·예약.', false),
+  ('ddocdoc', '똑닥', 'beautyhealth', 'domestic', 'https://www.ddocdoc.com', '병원 예약·접수·대기 관리.', false),
+  ('kakaohair', '카카오헤어샵', 'beautyhealth', 'domestic', 'https://hairshop.kakao.com', '미용실 예약 중개.', false),
+  ('yeoshin', '여신티켓', 'beautyhealth', 'domestic', 'https://www.yeoshin.co.kr/', '피부·성형 시술 정보·후기·병원 예약.', false),
+  ('babitalk', '바비톡', 'beautyhealth', 'domestic', 'https://www.babitalk.com/', '성형·피부 시술 정보·후기·병원 예약.', false),
+  ('modoodoc', '모두닥', 'beautyhealth', 'domestic', 'https://www.modoodoc.com/', '실방문 리뷰·가격으로 병원 비교·예약.', false),
+  ('hidoc', '하이닥', 'beautyhealth', 'domestic', 'https://www.hidoc.co.kr/', '건강 Q&A·의사/병원 찾기 건강 포털.', false),
+  ('doctornow', '닥터나우', 'beautyhealth', 'domestic', 'https://doctornow.co.kr/', '비대면 진료·처방·약국 찾기 원격의료.', false),
+  ('hospital', '핏펫', 'beautyhealth', 'domestic', 'https://hospital.fitpetmall.com/', '동물병원 검색·예약·반려 건강관리.', false),
+  ('heally', '힐리', 'beautyhealth', 'domestic', 'https://heally.co.kr/', '마사지샵 가격비교·예약 플랫폼.', false),
+  ('mamap', '마사지맵', 'beautyhealth', 'domestic', 'https://mamap.co.kr/', '마사지샵 최저가 검색·예약 앱.', false),
+  ('makangs', '마캉스', 'beautyhealth', 'domestic', 'http://www.makangs.com/', '마사지·왁싱·에스테틱 예약 앱.', false),
+  ('fingerprincess', '핑프', 'beautyhealth', 'domestic', 'https://finger-princess.com/', '네일아트 탐색·예약·결제 뷰티 플랫폼.', false),
+  ('pillyze', '필라이즈', 'beautyhealth', 'domestic', 'https://www.pillyze.com/', 'AI 식단·영양제·혈당 기록 건강관리 앱.', false),
+  ('noom', '눔', 'beautyhealth', 'domestic', 'https://www.noom.com/', '식단·운동·습관 코칭 헬스케어 앱.', false),
+  ('pearlcare', '펄케어', 'beautyhealth', 'domestic', 'https://pearlcare.co.kr/', 'RF·EMS·광테라피 기반 두피·피부 홈 뷰티 디바이스 브랜드.', false),
+  ('pesade', '페사드', 'beautyhealth', 'domestic', 'https://pesade.kr/', '오드퍼퓸·핸드케어를 전개하는 니치 향수 라이프스타일 브랜드.', false),
+  ('athebeauty', '아떼', 'beautyhealth', 'domestic', 'https://athebeauty.com/', '비건 인증 스킨케어·메이크업을 만드는 비건 뷰티 브랜드.', false),
+  ('melixir', '멜릭서', 'beautyhealth', 'domestic', 'https://www.melixir.me/', '식물성 성분 중심의 비건 스킨케어 브랜드 자사몰.', false),
+  ('jejuon', '제주온', 'beautyhealth', 'domestic', 'https://jejuon.kr/', '제주 유기농 원료로 만드는 비건 지향 천연 화장품 브랜드.', false),
+  ('en', '비그린', 'beautyhealth', 'domestic', 'https://en.vegreen.co.kr/', '비건·친환경을 표방하는 스킨케어 브랜드.', false),
+  ('nutridday', 'Nutri D-Day', 'beautyhealth', 'domestic', 'https://nutridday.com/', '저분자 피쉬콜라겐 등 이너뷰티 제품을 파는 D2C 자사몰.', false),
+  ('foodology', '푸드올로지', 'beautyhealth', 'domestic', 'https://food-ology.co.kr/', '이너뷰티·다이어트 식품 라인을 운영하는 D2C 브랜드몰.', false),
+  ('mindle', '마인들링', 'beautyhealth', 'domestic', 'https://mindle.kr/', '서울대병원 출신 정신과 전문의가 창업한 포티파이의 셀프 멘탈케어 구독 앱으로, 심리검사부터 맞춤형 케어까지 제공하는 신생 멘탈테크 서비스다.', true),
+  ('inside', '인사이드', 'beautyhealth', 'domestic', 'https://www.inside.im/', '2021년 설립된 오웰헬스가 운영하는 인지행동치료(CBT) 기반 정신건강 자가검사·멘탈케어 앱으로, 현재 ''디스턴싱''으로 서비스되는 신생 서비스다.', true),
+  ('checkup', '착한의사', 'beautyhealth', 'domestic', 'https://checkup.adoc.co.kr/', '건강검진 비교·예약과 결과조회를 지원하는 헬스케어 플랫폼으로, 운영사 비바이노베이션이 2024년 60억원 규모 시리즈A를 유치한 신생 스타트업이다.', true),
+  ('checkupmoa', '검진모아', 'beautyhealth', 'domestic', 'https://www.checkupmoa.com/', '종합건강검진과 국가건강검진 비용 할인·예약 정보를 모아 제공하는 신생 건강검진 예약 플랫폼이다.', true),
+  ('wellcheck', '웰체크', 'beautyhealth', 'domestic', 'https://www.well-check.co.kr/', '당뇨·고혈압 등 만성질환자의 혈압·혈당·복약 데이터를 의료진과 함께 관리하는 디지털 헬스케어 플랫폼이다.', true),
+  ('heymama', '헤이마마', 'beautyhealth', 'domestic', 'https://heymama.kr/', '2023년 출시된 더패밀리랩의 펨테크 서비스로, 산후 여성의 기능 회복과 건강관리를 비대면 홈트레이닝으로 돕는 신생 여성 헬스케어 앱이다.', true),
+  ('encar', '엔카', 'auto', 'domestic', 'https://www.encar.com', '국내 대표 중고차 거래 플랫폼.', false),
+  ('heydealer', '헤이딜러', 'auto', 'domestic', 'https://www.heydealer.com', '내 차 팔기(딜러 경매) 중개.', false),
+  ('kcar', 'K Car(케이카)', 'auto', 'domestic', 'https://www.kcar.com', '중고차 직영 판매·매입.', false),
+  ('kbchachacha', 'KB차차차', 'auto', 'domestic', 'https://www.kbchachacha.com', 'KB 계열 중고차 거래 플랫폼.', false),
+  ('cardoc', '카닥', 'auto', 'domestic', 'https://www.cardoc.co.kr', '자동차 정비·수리 견적 매칭.', false),
+  ('carnoon', '카눈', 'auto', 'domestic', 'https://www.carnoon.co.kr/', '신차 구매정보·견적 모음 플랫폼.', false),
+  ('web', '겟차', 'auto', 'domestic', 'https://web.getcha.kr/', '신차 견적·할부·리스·장기렌트 비교.', false),
+  ('web2', '첫차', 'auto', 'domestic', 'https://web.chutcha.net/', '중고차 매매 플랫폼.', false),
+  ('reborncar', '리본카', 'auto', 'domestic', 'https://www.reborncar.co.kr/', '품질검사·시승 후 구매 직영 중고차 플랫폼.', false),
+  ('autoplus', '오토플러스', 'auto', 'domestic', 'https://www.autoplus.co.kr/', '직영관리 중고차 판매·매입·경매.', false),
+  ('autobell', '오토벨', 'auto', 'domestic', 'https://autobell.co.kr/main', '현대글로비스 중고차 경매·매매·시세.', false),
+  ('carisyou', '카이즈유', 'auto', 'domestic', 'https://www.carisyou.com/', '자동차 통계·신차 견적·시승기 종합정보.', false),
+  ('auto', '다나와 자동차', 'auto', 'domestic', 'https://auto.danawa.com/', '신차 견적·렌트/리스·중고차 가격비교.', false),
+  ('kcarauction', 'K Car 옥션', 'auto', 'domestic', 'https://www.kcarauction.com/', '케이카 중고차 경매 플랫폼.', false),
+  ('mycle', '마이클', 'auto', 'domestic', 'https://mycle.co.kr/', '정비소 예약·소모품 알림 내차관리 앱.', false),
+  ('carsuri', '카수리', 'auto', 'domestic', 'https://www.carsuri.co.kr/', '출장 엔진오일·배터리 정비 서비스.', false),
+  ('carpos', '카포스', 'auto', 'domestic', 'http://www.carpos.com', '자동차 정비사업조합 연합 정비·부품 정보.', false),
+  ('partzone', '파트존', 'auto', 'domestic', 'https://www.partzone.co.kr', '차량번호 호환 부품 매칭·정비 예약 플랫폼.', false),
+  ('cartem', '카템', 'auto', 'domestic', 'http://www.cartem.co.kr', '자동차 용품·튜닝 부품 온라인 스토어.', false),
+  ('autohub', '오토허브', 'auto', 'domestic', 'http://www.autohub.co.kr', '대형 중고차 매매단지·자동차 경매 운영.', false),
+  ('greencar', '그린카', 'auto', 'domestic', 'https://www.greencar.co.kr', '카셰어링·차량구독 모빌리티 플랫폼.', false),
+  ('kakaomobility', '카카오T 대리', 'auto', 'domestic', 'https://www.kakaomobility.com/service-kakaot/driver', '모바일 대리운전 호출 서비스.', false),
+  ('camtayo', '캠타요', 'auto', 'domestic', 'https://camtayo.com/', '개인 간 중고 캠핑카 직거래와 품질보장을 제공하는 플랫폼.', false),
+  ('campingncar', '캠핑엔카', 'auto', 'domestic', 'https://www.campingncar.co.kr/', '신차·중고 캠핑카와 카라반 매매·렌트를 다루는 사이트.', false),
+  ('wonderfulcar', '원더풀캠핑카', 'auto', 'domestic', 'http://wonderfulcar.kr/', '모터홈·차박용 캠핑카 판매와 사후관리를 제공하는 업체몰.', false),
+  ('zaekook', '캠핑제국', 'auto', 'domestic', 'https://www.zaekook.com/', '캠핑카·카라반 가격비교와 중고 직거래 정보를 제공하는 사이트.', false),
+  ('bikeweb', '바이크마트', 'auto', 'domestic', 'https://bikeweb.bikemart.co.kr/', '중고 오토바이·수입바이크 직거래와 시세 검색 전문 사이트.', false),
+  ('revolt', '리볼트', 'auto', 'domestic', 'https://www.revolt.kr/', '배터리 진단 인증을 거친 중고 전기차 전문 거래 플랫폼.', false),
+  ('charzing', '차징', 'auto', 'domestic', 'https://charzing.kr/', '전기차 배터리 성능(SOH)을 방문 진단하는 서비스.', false),
+  ('tirepick', '타이어픽', 'auto', 'domestic', 'https://www.tire-pick.com/', '타이어 가격 비교와 장착점 예약을 연결하는 플랫폼.', false),
+  ('isnara', '장착나라', 'auto', 'domestic', 'https://isnara.co.kr/', '온라인 구매 타이어의 전국 장착점 예약을 중개하는 서비스.', false),
+  ('otire', '오타이어', 'auto', 'domestic', 'https://otire.co.kr/', '지역 매장에서 인터넷 가격으로 당일 타이어 장착을 연결하는 서비스.', false),
+  ('automango', '오토망고', 'auto', 'domestic', 'https://automango.co.kr/', '인제스피디움이 운영하는 자동차용품·튜닝용품 전문 쇼핑몰.', false),
+  ('cazamall', '카자몰', 'auto', 'domestic', 'https://cazamall.co.kr/', '국산·수입차 차종별 튜닝파츠와 자동차용품 전문 쇼핑몰.', false),
+  ('liuparts', '리우파츠', 'auto', 'domestic', 'https://liuparts.com/', '벤츠·BMW·아우디 등 수입차 튜닝 부품 전문 쇼핑몰.', false),
+  ('happyscrapcar', '해피폐차', 'auto', 'domestic', 'https://happyscrapcar.com/', '전국 관허 폐차장을 경매로 연결하는 폐차 견적 플랫폼.', false),
+  ('carbridge', '카브릿지', 'auto', 'domestic', 'https://car-bridge.co.kr/', '사고차·고장차를 수리 없이 매입 견적내는 서비스.', false),
+  ('joinsauto', '조인스오토', 'auto', 'domestic', 'https://joinsauto.co.kr/', '폐차 견적 비교(규제샌드박스 임시허가)를 제공하는 플랫폼.', false),
+  ('goodbrother', '착한형오토바이', 'auto', 'domestic', 'https://goodbrother.co.kr/', '중고 오토바이 출장 매입을 전문으로 하는 서비스.', false),
+  ('evmodu', '모두의충전', 'auto', 'domestic', 'https://evmodu.kr/', '전국 전기차 충전소 정보와 통합결제(모두페이)를 제공하는 신생 스타트업 스칼라데이터의 EV 충전 앱으로, 30억원 규모 시리즈A를 유치했다.', true),
+  ('pluglink', '플러그링크', 'auto', 'domestic', 'https://pluglink.kr/', '아파트·오피스텔 등 공동주택에 완속 충전 인프라를 무상 설치·운영하는 앱 기반 전기차 충전 신생 스타트업이다.', true),
+  ('octoev', '옥토브', 'auto', 'domestic', 'https://www.octoev.com/', '2022년 설립된 신생 스타트업으로, 레일을 따라 충전기가 이동하며 여러 대를 자동 충전하는 무인 전기차 충전 시스템 ''스카이차저''를 개발한다.', true),
+  ('autostay', '오토스테이', 'auto', 'domestic', 'https://www.autostay.co.kr/', '월정액 구독으로 전국 매장에서 자동세차를 무제한 이용하는 신생 구독형 세차 서비스로, 최근 세차·전기차 충전 결합 매장으로 확장 중이다.', true),
+  ('carvazo', '카바조', 'auto', 'domestic', 'https://www.carvazo.com/', '중고차 구매 시 전문 정비사가 동행해 차량 상태를 검수해주는 O2O 서비스로, 2023년 헤이딜러로부터 전략적 투자를 유치한 신생 플랫폼이다.', true),
+  ('interparkticket', '인터파크 티켓', 'ticket', 'domestic', 'https://tickets.interpark.com', '공연·콘서트·스포츠 등 종합 예매.', false),
+  ('yes24ticket', '예스24 공연', 'ticket', 'domestic', 'http://ticket.yes24.com', '공연·뮤지컬 중심 예매.', false),
+  ('ticketlink', '티켓링크', 'ticket', 'domestic', 'https://www.ticketlink.co.kr', '공연·스포츠 예매.', false),
+  ('melonticket', '멜론티켓', 'ticket', 'domestic', 'https://ticket.melon.com', '공연·콘서트 예매(음악 중심).', false),
+  ('nol', 'NOL 티켓', 'ticket', 'domestic', 'https://nol.interpark.com/ticket', '콘서트·뮤지컬·전시 예매(구 인터파크티켓).', false),
+  ('ticketbay', '티켓베이', 'ticket', 'domestic', 'https://www.ticketbay.co.kr/', '공연·스포츠 티켓 양도·거래 중고 티켓.', false),
+  ('ticket', '하나티켓', 'ticket', 'domestic', 'https://ticket.hanatour.com/', '하나투어 공연·전시·레저 티켓 예매.', false),
+  ('ticket2', '위메프 공연티켓', 'ticket', 'domestic', 'https://ticket.wemakeprice.com/', '뮤지컬·콘서트 할인 예매 서비스.', false),
+  ('clipservice', '클립서비스', 'ticket', 'domestic', 'https://www.clipservice.co.kr/', '공연 기획·제작·티켓 유통 예매 플랫폼.', false),
+  ('playticket', '플레이티켓', 'ticket', 'domestic', 'https://www.playticket.co.kr/', '중소극장 공연 예매 사이트.', false),
+  ('nanumticket', '나눔티켓', 'ticket', 'domestic', 'https://www.nanumticket.or.kr/', '공연 잔여석 기부·저가 나눔 플랫폼.', false),
+  ('eventus', '이벤터스', 'ticket', 'domestic', 'https://event-us.kr/', '공연·전시·세미나 행사 신청·티켓 관리.', false),
+  ('kopis', 'KOPIS', 'ticket', 'domestic', 'http://www.kopis.or.kr/', '공연예술 정보·예매처·통계 통합 제공.', false),
+  ('sac', '예술의전당', 'ticket', 'domestic', 'https://www.sac.or.kr', '종합 예술기관 공연·전시 온라인 예매.', false),
+  ('sejongpac', '세종문화회관', 'ticket', 'domestic', 'https://www.sejongpac.or.kr', '서울시 문화예술기관 공연·전시 예매.', false),
+  ('festivallife', '페스티벌라이프', 'ticket', 'domestic', 'https://festivallife.kr', '국내외 페스티벌 라인업·티켓 일정 안내.', false),
+  ('timeticket', '타임티켓', 'ticket', 'domestic', 'https://timeticket.co.kr/', '연극·공연 등 문화 티켓을 예매하는 플랫폼.', false),
+  ('dongnemudae', '동네무대', 'ticket', 'domestic', 'https://dongnemudae.com/', '전국 소극장 연극·뮤지컬·콘서트 일정 검색·예매.', false),
+  ('enticket', '엔티켓', 'ticket', 'domestic', 'http://enticket.com/', '인천 지역 공연 티켓 예매·발권 전문 서비스.', false),
+  ('finestage', '파인스테이지', 'ticket', 'domestic', 'https://finestage.co.kr/', '클래식 음악 공연 전문 예매 사이트.', false),
+  ('ticketguide', '티켓가이드', 'ticket', 'overseas', 'https://www.ticketguide.co.kr/', '유럽축구 등 해외 스포츠 직관 티켓 예매 서비스.', false),
+  ('thebestplay', '연극열전', 'ticket', 'domestic', 'https://www.thebestplay.co.kr/', '연극 공연 정보·예매를 제공하는 사이트.', false),
+  ('petfriends', '펫프렌즈', 'pet', 'domestic', 'https://www.pet-friends.co.kr/', '사료·간식·용품 반려동물 종합 커머스·빠른배송.', false),
+  ('aboutpet', '어바웃펫', 'pet', 'domestic', 'https://www.aboutpet.co.kr/', 'GS리테일 계열 반려동물 종합 쇼핑 커머스.', false),
+  ('biteme', '바잇미', 'pet', 'domestic', 'https://www.biteme.co.kr/', '자체 제작 강아지 용품·간식·의류 브랜드몰.', false),
+  ('dogpre', '강아지대통령', 'pet', 'domestic', 'https://dogpre.com/', '강아지 사료·간식·용품 전문 커머스.', false),
+  ('dogpang', '도그팡', 'pet', 'domestic', 'https://www.dogpang.com/', '강아지 용품·사료 전문 쇼핑몰.', false),
+  ('catpang', '캣팡', 'pet', 'domestic', 'https://www.catpang.com/', '고양이 용품·사료 전문 반려묘 커머스.', false),
+  ('catskingdom', '고양이왕국', 'pet', 'domestic', 'https://www.catskingdom.co.kr/', '고양이 용품 전문 온라인 쇼핑몰.', false),
+  ('maxcat', '맥스캣', 'pet', 'domestic', 'https://www.maxcat.co.kr/', '고양이 용품 전문 쇼핑몰.', false),
+  ('drfelis', '닥터펠리스', 'pet', 'domestic', 'https://drfelis.com/', '수의사 기획 고양이 용품 D2C 브랜드몰.', false),
+  ('petbazaar', '펫바자', 'pet', 'domestic', 'https://petbazaar.kr/', '반려동물 용품 아울렛형 커머스.', false),
+  ('petmily', '펫밀리', 'pet', 'domestic', 'https://petmily.shop/', '반려동물 영양제·건강용품 쇼핑몰.', false),
+  ('petmart', '펫마트', 'pet', 'domestic', 'https://petmart.co.kr/', '사료·간식·용품 반려동물 종합몰.', false),
+  ('harimpetfood', '하림펫푸드', 'pet', 'domestic', 'https://harimpetfood.com/', '휴먼그레이드 사료·간식 제조 D2C몰.', false),
+  ('petfresh', '펫프레시', 'pet', 'domestic', 'https://www.petfresh.co.kr/', '사료 정기구독·AI 영양 상담 펫푸드 서비스.', false),
+  ('dogmalion', '도그말리온', 'pet', 'domestic', 'https://dogmalion.com/', '무첨가 강아지 수제간식 D2C 브랜드.', false),
+  ('petoi', '페토이', 'pet', 'domestic', 'https://petoi.co.kr/', 'IoT 자동급식기 등 펫테크 브랜드몰.', false),
+  ('petrasyu', '펫트라슈', 'pet', 'domestic', 'https://petrasyu.com/', '동물병원 진료비 조회·후기·예약 앱.', false),
+  ('intopet', '인투펫', 'pet', 'domestic', 'https://intopet.co.kr/', '동물병원 접종·복약 관리·모바일 예약 앱.', false),
+  ('todaypaw', '오늘댕냥', 'pet', 'domestic', 'https://todaypaw.com/', '동물병원 진료비 비교·후기·예약 플랫폼.', false),
+  ('petdoc', '펫닥', 'pet', 'domestic', 'https://www.petdoc.co.kr/', '수의사 실시간 상담·케어 기록 앱.', false),
+  ('ipet', '아이펫', 'pet', 'domestic', 'https://ipet.co.kr/', '반려동물 보험 비교·청구 관리 플랫폼.', false),
+  ('petforest', '펫포레스트', 'pet', 'domestic', 'https://petforest.co.kr/', '반려동물 장례·추모 공간 예약.', false),
+  ('petnight', '펫나잇', 'pet', 'domestic', 'https://www.petnight.co.kr/', '전국 반려동물 장례식장 비교·예약.', false),
+  ('banjjakpet', '반짝', 'pet', 'domestic', 'https://banjjakpet.com/', '반려동물 미용실 검색·포트폴리오·예약.', false),
+  ('enterdog', '엔터독', 'pet', 'domestic', 'https://www.enterdog.com/', '애견동반 숙소·호텔·매장 예약 중개.', false),
+  ('hoteldogs', '호텔독스', 'pet', 'domestic', 'https://hoteldogs.co.kr/', 'CCTV·24시간 강아지 호텔·유치원.', false),
+  ('banlife', '반려생활', 'pet', 'domestic', 'https://www.ban-life.com/', '애견동반 숙소·여행지·맛집 예약 앱.', false),
+  ('pawinhand', '포인핸드', 'pet', 'domestic', 'https://pawinhand.kr/', '보호소 유기동물 입양·실종동물 찾기.', false),
+  ('petner', '펫트너', 'pet', 'domestic', 'https://www.petner.kr/', '방문 펫시터·방문 미용 예약 플랫폼.', false),
+  ('woofoo', '우푸', 'pet', 'domestic', 'https://woofoo.kr/', '도그워커·방문 펫시터·캣시터 매칭.', false),
+  ('beforpet', '비포펫', 'pet', 'domestic', 'https://beforpet.com/', '반려견 산책 대행 서비스.', false),
+  ('9dogcat', '구독캣', 'pet', 'domestic', 'https://9dogcat.com/', '고양이 모래·용품을 정기구독 방식으로 배송하는 쇼핑몰이다.', false),
+  ('dogmeal', '도그밀', 'pet', 'domestic', 'https://dogmeal.shop/', '반려견 맞춤 식단을 정기배송하는 애견 식단 구독 서비스다.', false),
+  ('petbox', '펫박스', 'pet', 'domestic', 'https://www.petbox.kr/', '사료·수제간식 등 반려동물 용품을 판매하는 쇼핑몰이다.', false),
+  ('breeeeeding', '브리딩', 'pet', 'domestic', 'https://www.breeeeeding.com/', '강아지 훈련·교육 콘텐츠와 프로그램을 제공하는 서비스다.', false),
+  ('petfins', '펫핀스', 'pet', 'domestic', 'https://petfins.net/', '여러 보험사의 펫보험 상품을 비교·가입하는 플랫폼이다.', false),
+  ('petme', '펫미', 'pet', 'domestic', 'https://www.petme.kr/', '미용·호텔 등 반려동물 서비스와 전문가를 연결하는 플랫폼이다.', false),
+  ('goodbyeangel', '굿바이엔젤', 'pet', 'domestic', 'https://www.goodbyeangel.co.kr/', '반려동물 장례·화장을 예약하고 24시간 상담을 제공한다.', false),
+  ('21gram', '21그램', 'pet', 'domestic', 'https://21gram.co.kr/', '반려동물 장례 준비물부터 화장 절차까지 지원하는 장례식장이다.', false),
+  ('petvip', '펫VIP', 'pet', 'domestic', 'https://www.petvip.co.kr/', '반려동물 출장·방문 미용과 목욕·돌봄을 제공하는 서비스다.', false),
+  ('charactergrooming', '캐릭터그루밍', 'pet', 'domestic', 'https://charactergrooming.imweb.me/', '캐릭터·창작 스타일의 애견 미용을 예약하는 니치 그루밍샵이다.', false),
+  ('othermars', '아더마스', 'pet', 'domestic', 'https://othermars.shop/', '유기농 무첨가 자연식 펫푸드를 자사몰 중심으로 파는 D2C 브랜드(올데이올가닉)로 2023년 이후 성장한 신생.', true),
+  ('momq', '맘큐', 'kids', 'domestic', 'https://www.momq.co.kr/', '유한킴벌리 육아·출산용품 커머스·멤버십 직영몰.', false),
+  ('kizmom', '키즈맘쇼핑', 'kids', 'domestic', 'https://www.kizmom.kr/', '수입 유아용품·완구 전문 온라인 쇼핑몰.', false),
+  ('inuri', '아이누리', 'kids', 'domestic', 'http://www.i-nuri.com/', '유아 보육·교육용품 커머스 사이트.', false),
+  ('mamigo', '마미고', 'kids', 'domestic', 'https://www.mamigo.co.kr/', '프리미엄 유아용품 온라인 육아 쇼핑몰.', false),
+  ('agabang', '아가방몰', 'kids', 'domestic', 'https://www.agabang.co.kr/', '아가방 유아복·육아용품 공식 커머스몰.', false),
+  ('momnuri', '맘누리', 'kids', 'domestic', 'https://www.momnuri.com/', '임부복·출산 준비물 임신·출산 커머스.', false),
+  ('ibaby', '아이베이비', 'kids', 'domestic', 'https://www.i-baby.co.kr/', '유아용품 안전거래 중고거래 플랫폼.', false),
+  ('homelearn', '아이스크림 홈런', 'kids', 'domestic', 'https://www.home-learn.co.kr/', '초등 AI 온라인 학습 플랫폼.', false),
+  ('smartall', '웅진스마트올', 'kids', 'domestic', 'https://smartall.wjthinkbig.com/', '웅진씽크빅 유아~중등 AI 스마트 학습.', false),
+  ('nurinori', '누리놀이', 'kids', 'domestic', 'https://www.nurinori.com/', '유아 교육·놀이 콘텐츠·교구 플랫폼.', false),
+  ('sssd', '솜씨당', 'kids', 'domestic', 'https://www.sssd.co.kr/', '원데이클래스·체험 예약 취미 플랫폼(키즈 포함).', false),
+  ('umclass', '움클래스', 'kids', 'domestic', 'https://www.umclass.com/', '체험권·원데이클래스 중개 예약 플랫폼.', false),
+  ('kidsday', '키즈데이', 'kids', 'domestic', 'https://kidsday.kr/', '유아·초등 체험학습·키즈클래스 예약.', false),
+  ('nolbal', '놀이의발견', 'kids', 'domestic', 'https://nolbal.com/', '가족·아이 여가 체험시설 검색·예약 플랫폼.', false),
+  ('ipoomgo', '아이품고', 'kids', 'domestic', 'https://www.ipoomgo.co.kr/', '산후조리원 온라인 투어·비교·예약.', false),
+  ('momsmanager', '맘스매니저', 'kids', 'domestic', 'https://www.momsmanager.co.kr/', '산후관리사·마사지 전문가 예약 매칭.', false),
+  ('doctormam', '닥터맘', 'kids', 'domestic', 'https://doctormam.com/', '산모도우미·산후관리사 매칭 케어 플랫폼.', false),
+  ('imilkbook', '밀크북', 'kids', 'domestic', 'https://imilkbook.com/', '어린이 도서·전집 판매·구독 서비스.', false),
+  ('saybooks', '세이북', 'kids', 'domestic', 'https://saybooks.net/', '어린이·가정 도서 정기구독 서비스.', false),
+  ('gilbutkid', '길벗어린이', 'kids', 'domestic', 'https://www.gilbutkid.co.kr/', '그림책·아동도서 출판·판매 채널.', false),
+  ('littlebaby', '리틀베이비', 'kids', 'domestic', 'https://littlebaby.co.kr/', '수입 아기용품 대여·판매 렌탈 커머스.', false),
+  ('babynoriter', '베이비노리터', 'kids', 'domestic', 'https://babynoriter.com/', '유아용품·장난감 대여 전문 플랫폼.', false),
+  ('toyuncle', '장난감아저씨', 'kids', 'domestic', 'https://toyuncle.co.kr/', '유아용품·장난감 방문 대여 렌탈 서비스.', false),
+  ('ozkiz', '오즈키즈', 'kids', 'domestic', 'https://ozkiz.com/', '3~10세 아동복·키즈신발 브랜드몰.', false),
+  ('nonikids', '노니키즈', 'kids', 'domestic', 'https://nonikids.kr/', '신생아~초등 종합 아동복 쇼핑몰.', false),
+  ('bebezone', '베베존', 'kids', 'domestic', 'http://www.bebezone.com/', '임산부·출산용품 전문 커머스몰.', false),
+  ('kidsnote', '키즈노트', 'kids', 'domestic', 'https://www.kidsnote.com/', '어린이집·유치원 알림장·원비 결제 플랫폼.', false),
+  ('pinkids', '핀키즈', 'kids', 'domestic', 'https://pinkids.kr/', '수유실·노키즈존 여부 등 아이 동반 장소를 지도로 찾는 서비스다.', false),
+  ('dorbom', '돌봄플러스', 'kids', 'domestic', 'http://dorbom.com/', '베이비시터·아이돌봄을 매칭하는 돌봄 플랫폼이다.', false),
+  ('yummimeal', '얌이밀', 'kids', 'domestic', 'https://www.yummimeal.com/', '단계별 이유식·아기반찬을 정기배송하는 구독 서비스다.', false),
+  ('planacampus', '플랜에이캠퍼스', 'kids', 'domestic', 'https://www.planacampus.com/', '검증된 교사가 방문하는 유아 미술 교육 서비스다.', false),
+  ('gguge', '꾸그', 'kids', 'domestic', 'https://www.gguge.com/', '아동 대상 라이브 온라인 수업을 중개하는 플랫폼이다.', false),
+  ('raraclass', '라라클래스', 'kids', 'domestic', 'https://www.raraclass.com/', '미취학·초등 대상 체험·도슨트 프로그램을 운영한다.', false),
+  ('kidsning', '키즈닝', 'kids', 'domestic', 'https://www.kidsning.co.kr/', '육아맘 셀럽마켓·아동 패션·육아템을 모은 육아 라이프스타일 쇼핑앱(밀크코퍼레이션)으로 최근 떠오른 신흥.', true),
+  ('marpple', '마플', 'print', 'domestic', 'https://www.marpple.com/kr', '커스텀 굿즈를 1개부터 주문 제작하는 POD 플랫폼.', false),
+  ('marpple2', '마플샵', 'print', 'domestic', 'https://marpple.shop/kr', '디자인 등록만으로 무재고 굿즈를 제작·판매하는 크리에이터 커머스.', false),
+  ('ohprint', '오프린트미', 'print', 'domestic', 'https://www.ohprint.me/', '명함·스티커·현수막·커스텀 의류를 소량 제작하는 인쇄 서비스.', false),
+  ('redprinting', '레드프린팅', 'print', 'domestic', 'https://www.redprinting.co.kr/ko', '스티커·명함·어패럴부터 상업 인쇄까지 온라인 인쇄소.', false),
+  ('snaps', '스냅스', 'print', 'domestic', 'https://www.snaps.com/', '포토북·사진인화·액자·달력 등 사진 상품 제작.', false),
+  ('zzixx', '찍스', 'print', 'domestic', 'https://www.zzixx.com/', '사진인화·포토북·포토상품 주문 제작.', false),
+  ('publog', '퍼블로그', 'print', 'domestic', 'https://www.publog.co.kr/', '포토북·포토카드·아크릴 굿즈 소량 제작 플랫폼.', false),
+  ('bizhows', '비즈하우스', 'print', 'domestic', 'https://www.bizhows.com/ko', '현수막·명함·판촉물을 온라인 툴로 1장부터 제작.', false),
+  ('withgoods', '위드굿즈', 'print', 'domestic', 'https://withgoods.net/', '주문·재고·CS 대행 아트굿즈 마켓플레이스.', false),
+  ('shopfanpick', '샵팬픽', 'print', 'domestic', 'https://www.shopfanpick.com/', '크리에이터 IP 커스텀 굿즈 기획·제작·유통 팬덤 플랫폼.', false),
+  ('designersbay', '디자이너스베이', 'print', 'domestic', 'https://www.designersbay.com/', '티셔츠·에코백 커스텀 굿즈 1장부터 제작.', false),
+  ('allthatprinting', '올댓프린팅', 'print', 'domestic', 'https://allthatprinting.co.kr/', '아크릴·우드 등 창작자용 인쇄 굿즈 소량·B2B 제작.', false),
+  ('itension', '아이텐션', 'print', 'domestic', 'https://itension.co.kr/', '아크릴 키링·스탠드·등신대 굿즈 제작.', false),
+  ('hanalldnp', '한올디앤피', 'print', 'domestic', 'https://hanalldnp.co.kr/', '아크릴 스탠드·키링을 레이저 커팅·UV 인쇄로 소량 제작.', false),
+  ('hueandgo', '휴앤고', 'print', 'domestic', 'https://hueandgo.com/', '아크릴 키링·마우스패드 등 커스텀 굿즈 제작.', false),
+  ('koaladesign', '코알라디자인', 'print', 'domestic', 'https://koaladesign.co.kr/', '아크릴 키링·모빌·DIY 키트 굿즈 제작.', false),
+  ('customland', '커스텀랜드', 'print', 'domestic', 'https://www.customland.kr/', '공장 직영 커스텀 굿즈 1개~대량 제작.', false),
+  ('dpl', '디플샵', 'print', 'domestic', 'https://dpl.shop/', '셀러·제작사 연결 굿즈 제작·배송 자동화 B2B.', false),
+  ('qrim', '큐림', 'print', 'domestic', 'https://qrim.co.kr/', '단체·커스텀 티셔츠 주문 제작 어패럴 인쇄.', false),
+  ('customzone', '커스텀존', 'print', 'domestic', 'https://www.customzone.co.kr/', '프린팅 티셔츠 커스텀 제작 사이트.', false),
+  ('stickerz', '스티커즈', 'print', 'domestic', 'https://stickerz.co.kr/', '스티커·포토카드 1장부터 당일 출고 제작.', false),
+  ('printingting', '프린팅팅', 'print', 'domestic', 'https://printingting.com/', '굿즈·명함·포토카드·스티커 소량 제작 인쇄.', false),
+  ('wowpress', '와우프레스', 'print', 'domestic', 'https://wowpress.co.kr/', '명함·스티커·전단 인쇄·후가공·배송 디지털 인쇄.', false),
+  ('swadpia', '성원애드피아', 'print', 'domestic', 'https://www.swadpia.co.kr/', '명함·전단·스티커·책자 종합 온라인 인쇄.', false),
+  ('dtpia', '디티피아', 'print', 'domestic', 'https://dtpia.co.kr/', '명함·굿즈·포토카드 빠른 소량 인쇄.', false),
+  ('printingkorea', '인쇄코리아', 'print', 'domestic', 'https://printingkorea.net/', '명함·스티커·전단·현수막·라벨 소량 주문 제작.', false),
+  ('ecard21', '명함천국', 'print', 'domestic', 'https://www.ecard21.co.kr/', '명함·스티커·전단·포토카드 인쇄 전문.', false),
+  ('inswaehada', '인쇄하다', 'print', 'domestic', 'https://www.inswaehada.com/', '배너·현수막 실사출력과 명함·전단 인쇄.', false),
+  ('nmk', '뉴마커스', 'print', 'domestic', 'https://www.n-mk.net/', '현수막·배너·에어간판 실사출력 홍보물 제작.', false),
+  ('printing24', '인쇄24', 'print', 'domestic', 'https://printing24.co.kr/', '현수막·미니배너·롤스크린 실사출력 제작.', false),
+  ('label', '아이라벨', 'print', 'domestic', 'https://www.label.kr/', '스티커·방수·바코드 라벨 주문 제작 전문.', false),
+  ('labelpack', '라벨팩', 'print', 'domestic', 'https://www.labelpack.co.kr/', '라벨·스티커·패키지 맞춤 제작 쇼핑몰.', false),
+  ('juagift', '주아기프트', 'print', 'domestic', 'https://juagift.com/', '판촉물·기념품에 로고 인쇄·각인 주문 제작.', false),
+  ('3dprocess', '3D프로', 'print', 'domestic', 'https://3dprocess.co.kr/', '3D프린팅 출력 대행·시제품 주문 제작.', false),
+  ('stellamove', '스텔라무브', 'print', 'domestic', 'https://www.stellamove.com/', 'FDM·SLA 3D프린팅 시제품·조형물 제작.', false),
+  ('creallo', '크렐로', 'print', 'domestic', 'https://creallo.com/', '3D프린팅·CNC·사출 맞춤 부품 온라인 제조.', false),
+  ('inupt', '이넙트', 'print', 'domestic', 'https://inupt.io/', 'IP·캐릭터 굿즈 소량 제작을 쉽게 해주는 커스텀 굿즈 제작 플랫폼으로 새로 떠오른 신생 서비스.', true),
+  ('poclanos', '포크라노스', 'assets', 'domestic', 'https://poclanos.com/', '인디 뮤지션 음원·음반 국내외 배급 유통사.', false),
+  ('danalenter', '다날엔터테인먼트', 'assets', 'domestic', 'https://www.danalenter.co.kr/', '음원 국내외 스트리밍·다운로드 유통사.', false),
+  ('bugscorp', '벅스 뮤직유통', 'assets', 'domestic', 'https://www.bugscorp.co.kr/', '아티스트·기획사 음원 B2B 유통 사업.', false),
+  ('spaceoddity', '스페이스오디티', 'assets', 'domestic', 'https://www.spaceoddity.me/', '아티스트 음원 기획·유통 뮤직 컴퍼니.', false),
+  ('dittomusic', '디토뮤직', 'assets', 'overseas', 'https://dittomusic.com/', '150여 플랫폼 셀프 음원 배급 글로벌 서비스.', false),
+  ('sellbuymusic', '셀바이뮤직', 'assets', 'domestic', 'https://www.sellbuymusic.com/', '저작권 BGM 음원 판매 오픈마켓.', false),
+  ('crowdpic', '크라우드픽', 'assets', 'domestic', 'https://www.crowdpic.net/', '사진·일러스트 작가 등록 상업용 스톡 마켓.', false),
+  ('iclickart', '아이클릭아트', 'assets', 'domestic', 'https://www.iclickart.co.kr/', '사진·일러스트·영상·폰트 올인원 스톡 플랫폼.', false),
+  ('utoimage', '유토이미지', 'assets', 'domestic', 'https://www.utoimage.com/', '사진·일러스트·그래픽 스톡 콘텐츠 마켓.', false),
+  ('gettyimagesbank', '게티이미지뱅크', 'assets', 'domestic', 'https://www.gettyimagesbank.com/', '국내 최대 로열티프리 스톡 이미지 플랫폼.', false),
+  ('clipartkorea', '클립아트코리아', 'assets', 'domestic', 'https://www.clipartkorea.co.kr/', '사진·일러스트·폰트·영상 스톡 플랫폼.', false),
+  ('mbdrive', '게티이미지코리아', 'assets', 'domestic', 'https://mbdrive.gettyimageskorea.com/', '사진·영상 작가 콘텐츠 판매 기여자 채널.', false),
+  ('contributors', '게티이미지 기여자', 'assets', 'overseas', 'https://contributors.gettyimages.com/', '사진·영상 라이선스 판매 글로벌 기여 프로그램.', false),
+  ('submit', '셔터스톡 기여자', 'assets', 'overseas', 'https://submit.shutterstock.com/', '사진·영상·벡터 업로드 로열티 글로벌 스톡.', false),
+  ('contributor', '어도비 스톡 기여자', 'assets', 'overseas', 'https://contributor.stock.adobe.com/', '사진·영상·벡터 판매 어도비 스톡 기여자.', false),
+  ('pixta', '픽스타', 'assets', 'overseas', 'https://www.pixta.jp/', '일본 기반 사진·일러스트·영상 스톡 마켓.', false),
+  ('pond5', '폰드파이브', 'assets', 'overseas', 'https://www.pond5.com/', '영상·음악·이미지 기여자 판매 미디어 마켓.', false),
+  ('sandollcloud', '산돌구름', 'assets', 'domestic', 'https://www.sandollcloud.com/', '산돌 폰트 구독·판매 플랫폼.', false),
+  ('noonnu', '눈누', 'assets', 'domestic', 'https://noonnu.cc/', '상업용 무료 한글 폰트 큐레이션 배포.', false),
+  ('font', '폰코', 'assets', 'domestic', 'https://font.co.kr/', '윤디자인 한글·글로벌 폰트 판매 플랫폼.', false),
+  ('fontclub', '폰트클럽', 'assets', 'domestic', 'http://www.fontclub.co.kr/', '국내외 폰트 판매 전문 쇼핑몰·커뮤니티.', false),
+  ('rixfontcloud', '릭스폰트클라우드', 'assets', 'domestic', 'https://www.rixfontcloud.com/', '폰트릭스 릭스폰트 구독·판매 클라우드.', false),
+  ('miricanvas', '미리캔버스 기여자', 'assets', 'domestic', 'https://www.miricanvas.com/', '디자인 템플릿·요소·사진·음원 기여자 마켓.', false),
+  ('bookk', '부크크', 'assets', 'domestic', 'https://bookk.co.kr/', '종이책·전자책 POD 자가출판 플랫폼.', false),
+  ('pubple', '교보문고 퍼플', 'assets', 'domestic', 'http://pubple.kyobobook.co.kr/', '전자책·POD 종이책 자가출판 서비스.', false),
+  ('upaper', '유페이퍼', 'assets', 'domestic', 'https://www.upaper.net/', 'EPUB 전자책 자가출판·서점 유통 플랫폼.', false),
+  ('ridibooks2', '리디 파트너스', 'assets', 'domestic', 'https://ridibooks.com/partners/', '웹소설·웹툰·전자책 작가 투고·출간 채널.', false),
+  ('jakkawa', '작가와', 'assets', 'domestic', 'https://www.jakkawa.com/', '워드로 전자책·POD 출판·서점 유통 플랫폼.', false),
+  ('happycampus', '해피캠퍼스', 'assets', 'domestic', 'https://www.happycampus.com/', '레포트·논문·PPT 문서 판매 지식 거래.', false),
+  ('reportworld', '레포트월드', 'assets', 'domestic', 'https://www.reportworld.co.kr/', '레포트·자료·문서 등록·판매 플랫폼.', false),
+  ('audiojungle', '오디오정글', 'assets', 'overseas', 'https://audiojungle.net/', '로열티프리 배경음악 판매 글로벌 스톡 음악.', false),
+  ('assetstore', '유니티 에셋스토어', 'assets', 'overseas', 'https://assetstore.unity.com/', '2D·3D·툴 게임 개발 에셋 판매 공식 마켓.', false),
+  ('fab', '팹', 'assets', 'overseas', 'https://www.fab.com/', '3D·게임 에셋 판매 에픽게임즈 통합 마켓.', false),
+  ('cgtrader', 'CG트레이더', 'assets', 'overseas', 'https://www.cgtrader.com/', '3D 모델·프린팅 파일 판매 글로벌 마켓.', false),
+  ('sketchfab', '스케치팹 스토어', 'assets', 'overseas', 'https://sketchfab.com/store', '실시간 3D 모델 판매 글로벌 마켓.', false),
+  ('artstation', '아트스테이션 마켓', 'assets', 'overseas', 'https://www.artstation.com/marketplace', '3D 에셋·브러시·튜토리얼 판매 크리에이티브 마켓.', false),
+  ('artipio', '아티피오', 'assets', 'domestic', 'https://www.artipio.com/', '예스24 계열이 2023년 선보인 신생 미술품 투자계약증권 발행 플랫폼으로 소액 아트 조각투자를 지원한다.', true),
+  ('treasurer', '트레져러', 'assets', 'domestic', 'https://www.treasurer.co.kr/', '명품 시계·와인 등 고가 수집품을 소액 단위로 나눠 투자하는 신생 대체투자 조각투자 플랫폼이다.', true),
+  ('bankcow', '뱅카우', 'assets', 'domestic', 'https://www.bankcow.co.kr/', '스탁키퍼가 운영하는 국내 최초 한우 조각투자 플랫폼으로 4만원대부터 송아지 공동투자가 가능한 신생 서비스다.', true),
+  ('twig', '트위그', 'assets', 'domestic', 'https://twig.money/', '슈퍼카·비상장주식 등 글로벌 자산을 소액으로 공동투자하는 신생 대체투자 조각투자 플랫폼이다.', true),
+  ('creators', 'OGQ 크리에이터 스튜디오', 'assets', 'domestic', 'https://creators.ogq.me/', '이모티콘·스티커·이미지를 한 번 업로드로 여러 마켓에 판매하는 크리에이터 스튜디오.', false),
+  ('stipop', '스티팝', 'assets', 'domestic', 'https://stipop.io/', '작가 스티커(이모티콘)를 글로벌 메신저에 유통하는 스티커 API 플랫폼.', false),
+  ('stock', '드롭샷스톡', 'assets', 'domestic', 'https://stock.dropshot.io/ko', '한국적 소재의 상업용 스톡 영상을 판매·유통하는 영상 스톡 플랫폼.', false),
+  ('obud', '오붓', 'fitness', 'domestic', 'https://www.obud.co', '요가·필라테스·바레 등 웰니스 스튜디오 통합 이용권.', false),
+  ('healthboypass', '헬보올패스', 'fitness', 'domestic', 'https://healthboypass.co.kr', '헬스보이짐 전국 지점 통합 헬스장 패스.', false),
+  ('likefit', '라이크핏', 'fitness', 'domestic', 'https://www.likefit.me', '카메라 자세 인식 AI 홈트레이닝 코칭 앱.', false),
+  ('quat', '콰트', 'fitness', 'domestic', 'https://quat.life', '필라테스·요가·홈트 온라인 운동 코칭 앱.', false),
+  ('planfit', '플랜핏', 'fitness', 'domestic', 'https://planfit.ai', 'AI 운동 루틴 추천·기록·음성 코칭 앱.', false),
+  ('dagym', '다짐', 'fitness', 'domestic', 'https://www.da-gym.co.kr', '주변 헬스장·PT·필라테스 가격비교·예약 앱.', false),
+  ('ngym', '니짐내짐', 'fitness', 'domestic', 'https://www.ngym.co.kr', '주변 헬스장 월 구독 할인 이용 예약 앱.', false),
+  ('helssg', '헬쓱', 'fitness', 'domestic', 'https://www.helssg.com', '헬스·요가·PT 회원권 양도·양수 거래 플랫폼.', false),
+  ('kimcaddie', '김캐디', 'fitness', 'domestic', 'https://kimcaddie.com', '스크린골프·연습장·레슨 가격비교 예약.', false),
+  ('kakao', '카카오골프예약', 'fitness', 'domestic', 'https://www.kakao.golf', '골프장 티타임 검색·온라인 부킹(카카오VX).', false),
+  ('golfzon', '골프존', 'fitness', 'domestic', 'https://www.golfzon.com', '스크린골프 매장 예약·시뮬레이터 서비스.', false),
+  ('golfzonmarket', '골프존마켓', 'fitness', 'domestic', 'https://www.golfzonmarket.com', '골프클럽·용품 판매·렌탈 O2O 마켓.', false),
+  ('plabfootball', '플랩풋볼', 'fitness', 'domestic', 'https://www.plabfootball.com', '소셜 축구·풋살 매칭·구장 예약 플랫폼.', false),
+  ('iamground', '아이엠그라운드', 'fitness', 'domestic', 'https://www.iamground.kr', '풋살장 실시간 예약·팀매칭 앱.', false),
+  ('smaxh', '스매시', 'fitness', 'domestic', 'https://www.smaxh.com', '테니스 코트 예약·레슨·클럽 매칭 플랫폼.', false),
+  ('pleisure', '플레져', 'fitness', 'domestic', 'https://www.pleisure.co', '테니스 코트 예약 서비스.', false),
+  ('theclimb', '더클라임', 'fitness', 'domestic', 'https://theclimb.co.kr', '통합 회원권 실내 볼더링 클라이밍짐.', false),
+  ('watercleanse', '워터클랜즈', 'fitness', 'domestic', 'https://watercleanse.co.kr', '지역별 소규모 수영 특강 예약 플랫폼.', false),
+  ('ddakple', '딱플', 'fitness', 'domestic', 'https://www.ddakple.com', '생활체육 체육관 실시간 검색·예약·결제.', false),
+  ('runday', '런데이', 'fitness', 'domestic', 'https://runday.co.kr', '음성 코칭 러닝·걷기 트레이닝 앱.', false),
+  ('mochaclass', '모카클래스', 'fitness', 'domestic', 'https://mochaclass.com', '요가·필라테스·레저 원데이클래스 예약.', false),
+  ('play4', '웨잇버디', 'fitness', 'domestic', 'https://play.google.com/store/apps/details?id=com.weight.buddy', '2023년 출시된 신생 앱으로, 조건별 헬스메이트·운동 파트너를 AI로 매칭해주는 피트니스 플랫폼이다.', true),
+  ('woondoc', '운동닥터', 'fitness', 'domestic', 'https://www.woondoc.com/', '내 주변 헬스 PT·필라테스 트레이너의 가격·후기·자격을 조회하고 매칭하는 신생 피트니스 스타트업 서비스다.', true),
+  ('mobile', '러닝라이프', 'fitness', 'domestic', 'https://mobile.runninglife.co.kr/', '2023년 러닝 커뮤니티로 시작해 앱으로 성장한 신생 서비스로, 러닝 대회·러닝크루·기록 관리를 한곳에서 제공한다.', true),
+  ('runable', '러너블', 'fitness', 'domestic', 'https://runable.me/', '마라톤 대회 접수와 AI 맞춤 러닝 코칭을 결합한 신생 러닝 특화 플랫폼이다.', true),
+  ('play5', '다톡이', 'fitness', 'domestic', 'https://play.google.com/store/apps/details?id=com.sentif.datoki', '2026년 출시된 신규 앱으로, 사진·대화만으로 칼로리와 식단을 분석·기록해주는 에이전틱 AI 다이어트 코치다.', true),
+  ('studiomate', '스튜디오메이트', 'fitness', 'domestic', 'https://studiomate.kr/', '필라테스·요가 스튜디오의 회원 수업 예약·관리 앱이다.', false),
+  ('classworks', '클래스웍스', 'fitness', 'domestic', 'https://www.classworks.kr/', '운동 스튜디오의 수업 예약·회원 관리를 지원하는 서비스다.', false),
+  ('percentup', '퍼센트업', 'fitness', 'domestic', 'https://www.percentup.co.kr/', '헬스장·PT 트레이너를 비교·매칭하는 플랫폼이다.', false),
+  ('golfspot', '골프스팟', 'fitness', 'domestic', 'https://golfspot.co.kr/', '골프 레슨 프로와 수강생을 조건별로 매칭하는 플랫폼이다.', false),
+  ('semos', '세모스', 'fitness', 'domestic', 'https://semos.kr/', '수영·다이빙·서핑 등 레저스포츠 프로그램을 검색·예약한다.', false),
+  ('marathongo', '마라톤GO', 'fitness', 'domestic', 'https://marathongo.co.kr/', '국내외 마라톤 대회와 러닝 크루를 통합 검색하는 서비스다.', false),
+  ('plsr', '베이스라인', 'fitness', 'domestic', 'https://www.plsr.live/', '테니스장 예약과 대회·실력 평가를 제공하는 앱이다.', false),
+  ('weddingbook', '웨딩북', 'wedding', 'domestic', 'https://www.weddingbook.com/', '웨딩홀·스드메·허니문 예약·후기 결혼준비 플랫폼.', false),
+  ('iwedding', '아이웨딩', 'wedding', 'domestic', 'https://www.iwedding.co.kr/', '웨딩홀 예약·스드메 패키지 종합 웨딩 플랫폼.', false),
+  ('directwedding', '다이렉트 결혼준비', 'wedding', 'domestic', 'https://www.directwedding.co.kr/', '웨딩홀·스드메·허니문·혼수 결혼준비 플랫폼.', false),
+  ('itwed', '아이티웨딩', 'wedding', 'domestic', 'https://www.itwed.co.kr/', '웨딩홀 찾기·웨딩 역경매 결혼준비 플랫폼.', false),
+  ('sinbuya', '신부야', 'wedding', 'domestic', 'https://www.sinbuya.com/', '웨딩홀·스드메 가격·견적 공개 결혼준비 플랫폼.', false),
+  ('wedqueen', '웨딩의 여신', 'wedding', 'domestic', 'https://www.wedqueen.com/', '결혼 준비 일정·견적 공유 웨딩 준비 앱.', false),
+  ('apps5', '요즘웨딩', 'wedding', 'domestic', 'https://apps.apple.com/kr/app/id6739044980', '맞춤 계획표·웨딩업체 추천 올인원 앱.', false),
+  ('oding', '오딩', 'wedding', 'domestic', 'https://oding.co.kr', '스드메·본식스냅·스몰웨딩 비교·예약.', false),
+  ('kingswed', '웨딩킹', 'wedding', 'domestic', 'https://kingswed.com/', '제휴사 예약·셀프 견적 결혼준비 플랫폼.', false),
+  ('wedytor', '웨디터', 'wedding', 'domestic', 'https://wedytor.co.kr/', '모바일청첩장·식순·예산장 올인원 플랫폼.', false),
+  ('kgwed', '결직웨딩', 'wedding', 'domestic', 'https://kgwed.com/', '스드메·본식 촬영 직거래 연결 플랫폼.', false),
+  ('smartweddingpro', '스마트웨딩', 'wedding', 'domestic', 'https://smartwedding-pro.com/', '웨딩홀 추천·스드메 패키지 웨딩 플랫폼.', false),
+  ('houseweddinglink', '하우스웨딩링크', 'wedding', 'domestic', 'https://www.houseweddinglink.com/', '스몰·하우스웨딩 장소·업체 연결 플랫폼.', false),
+  ('haileyhouse', '헤일리하우스', 'wedding', 'domestic', 'https://haileyhouse.co.kr/', '주택·별장 스몰웨딩 장소·디렉팅 서비스.', false),
+  ('barunsoncard', '바른손카드', 'wedding', 'domestic', 'https://www.barunsoncard.com/', '종이·모바일 청첩장 제작 브랜드.', false),
+  ('itscard', '잇츠카드', 'wedding', 'domestic', 'https://www.itscard.co.kr/', '모바일 청첩장 제작·수정 서비스.', false),
+  ('bojagicard', '보자기카드', 'wedding', 'domestic', 'https://bojagicard.com/', '종이·모바일 청첩장·식전영상 서비스.', false),
+  ('salondeletter', '살롱드레터', 'wedding', 'domestic', 'https://salondeletter.com/', '테마·음악 커스텀 모바일 청첩장 서비스.', false),
+  ('toourguest', '투아워게스트', 'wedding', 'domestic', 'https://toourguest.com/', '디자인 템플릿 모바일 청첩장 제작.', false),
+  ('theirmood', '데어무드', 'wedding', 'domestic', 'https://theirmood.com/', '템플릿형 모바일 청첩장 제작 서비스.', false),
+  ('pastelmovie', '파스텔무비', 'wedding', 'domestic', 'https://pastelmovie.com/', '모바일 청첩장·식전영상 제작 서비스.', false),
+  ('maad', '메드스튜디오', 'wedding', 'domestic', 'https://m.maad.co.kr/', '결혼반지·예물 웨딩 주얼리 브랜드.', false),
+  ('nouv', '누브', 'wedding', 'domestic', 'https://nouv.co.kr/', '청담 예물 다이아몬드·주얼리 브랜드.', false),
+  ('ringplate', '링플레이트', 'wedding', 'domestic', 'http://www.ringplate.com/', '커스텀 웨딩밴드·커플링 주얼리 브랜드.', false),
+  ('ehoneymoon', '이허니문', 'wedding', 'overseas', 'https://e-honeymoon.co.kr/', '신혼여행지 상품 예약 허니문 전문 여행사.', false),
+  ('palmtour', '팜투어', 'wedding', 'overseas', 'https://www.palmtour.co.kr/', '몰디브·하와이 등 허니문 전문 여행사.', false),
+  ('hihoneymoon', '하이허니문', 'wedding', 'overseas', 'https://www.hihoneymoon.co.kr/', '신혼여행 상품 예약 허니문 전문 여행사.', false),
+  ('monoscale', '모노스케일', 'wedding', 'domestic', 'https://monoscale.net/', '본식스냅·웨딩 영상 촬영 예약 플랫폼.', false),
+  ('wooawedding', '우아한웨딩', 'wedding', 'domestic', 'https://wooawedding.com/', '플로리스트·사진·헤어메이크업 섭외 웨딩 디렉팅 플랫폼.', false),
+  ('hanboknam', '한복남', 'wedding', 'domestic', 'https://hanboknam.com/', '경복궁·전주 등 한복 대여 및 택배 대여 서비스.', false),
+  ('jaengyi', '한복쟁이', 'wedding', 'domestic', 'https://jaengyi.com/', '온·오프라인 한복 대여 서비스.', false),
+  ('onedayhanbok', '원데이한복', 'wedding', 'domestic', 'https://www.onedayhanbok.com/', '체험·여행용 한복 대여 예약 서비스.', false),
+  ('dolbokhouse', '첫날한복', 'wedding', 'domestic', 'https://dolbokhouse.com/', '돌복·기념일 한복 대여 서비스.', false),
+  ('filmconnect', '필름커넥트', 'photo', 'domestic', 'https://www.filmconnect.co.kr/', '본식·돌·프로필 스냅/스튜디오 작가 예약·매칭.', false),
+  ('snaaaper', '스냅퍼', 'photo', 'domestic', 'https://www.snaaaper.com/', '본식·돌·데이트스냅 작가 검색·예약 서비스.', false),
+  ('graphus', '그래퍼스', 'photo', 'domestic', 'https://www.graphus.co.kr/', '사진·영상 작가 포트폴리오 검색·중개 플랫폼.', false),
+  ('apps6', '스냅핏', 'photo', 'domestic', 'https://apps.apple.com/kr/app/id6642695481', '프로필·스냅 작가 포트폴리오·가격비교 예약 앱.', false),
+  ('snappi', '스내피', 'photo', 'domestic', 'https://snappi.imweb.me/', '일상·프로필 촬영 작가 매칭 서비스.', false),
+  ('snapcap', '스냅캡', 'photo', 'domestic', 'https://snapcap.kr/', '장소·컨셉·작가 선택 출장 촬영 매칭 플랫폼.', false),
+  ('honeypic', '허니픽', 'photo', 'overseas', 'https://honeypic.com/', '해외 여행지 현지 스냅 작가 매칭·예약.', false),
+  ('stafpic', '스텝픽', 'photo', 'domestic', 'https://stafpic.com/', '영상 촬영·제작사 의뢰자 연결 외주 매칭.', false),
+  ('videocon', '비디오콘', 'photo', 'domestic', 'https://www.videocon.io/', '영상 제작사 매칭·비교견적 외주 플랫폼.', false),
+  ('vidfolio', '비드폴리오', 'photo', 'domestic', 'https://vidfolio.kr/', '포트폴리오 기반 영상 제작사 매칭 서비스.', false),
+  ('match', '드롭샷매치', 'photo', 'domestic', 'https://match.dropshot.io/', '기업·영상제작사 비교견적 B2B 매칭.', false),
+  ('vcrewcorp', '브이크루', 'photo', 'domestic', 'https://www.vcrewcorp.com/', '영상 제작·편집·촬영 대행 매칭 서비스.', false),
+  ('studiopeople', '스튜디오피플', 'photo', 'domestic', 'https://www.studiopeople.kr/', '프로필·증명·바디프로필 촬영 예약 서비스.', false),
+  ('successstudio', '성공사진관', 'photo', 'domestic', 'https://www.success-studio.kr/', '사진관 예약·고객·매출 관리 솔루션.', false),
+  ('mcard', '바른손M카드', 'photo', 'domestic', 'https://mcard.barunsoncard.com/', '바른손 모바일 청첩장·초대장 제작.', false),
+  ('feelmaker', '필메이커', 'photo', 'domestic', 'https://feelmaker.co.kr/', '스킨 선택 무료 모바일 청첩장 제작.', false),
+  ('directwedcard', '필카드', 'photo', 'domestic', 'https://directwedcard.com/', '무료 모바일 청첩장 제작 서비스.', false),
+  ('moiitee', '모이티', 'photo', 'domestic', 'https://www.moiitee.com/', '모바일 청첩장·웨딩포스터·식권 셀프 제작.', false),
+  ('dalpeng', '달팽', 'photo', 'domestic', 'https://dalpeng.com/', '청첩장·돌잔치·행사 모바일 초대장 제작.', false),
+  ('deardeer', '디얼디어', 'photo', 'domestic', 'https://deardeer.kr/', '종이·모바일 청첩장 제작 서비스.', false),
+  ('ofy', '온니포유', 'photo', 'domestic', 'https://ofy.kr/', '돌잔치·청첩장 모바일 초대장 제작.', false),
+  ('life4cut', '인생네컷', 'photo', 'domestic', 'https://www.life4cut.co.kr/', '셀프 촬영·즉석 인화 네컷사진 포토부스.', false),
+  ('photogray', '포토그레이', 'photo', 'domestic', 'https://photogray.com/', '셀프 촬영 포토부스 네컷사진 브랜드.', false),
+  ('photoair', '포토에어', 'photo', 'domestic', 'https://photo-air.com/', '출장형 렌탈 셀프 포토부스 서비스.', false),
+  ('partypang', '파티팡', 'event', 'domestic', 'https://www.partypang.co.kr/', '파티용품·장식·헬륨풍선 배달 전문몰.', false),
+  ('partyhae', '파티해', 'event', 'domestic', 'https://partyhae.com/', '파티 장식·풍선·이벤트 소품 할인 쇼핑몰.', false),
+  ('joyparty', '조이파티', 'event', 'domestic', 'https://www.joyparty.co.kr/', '생일파티용품·풍선 차량배달 전문점.', false),
+  ('rentalfr', '렌탈프리', 'event', 'domestic', 'https://rentalfr.com/', '포토월·바테이블 등 행사용품 렌탈.', false),
+  ('rentalmonkey', '렌탈몽키', 'event', 'domestic', 'https://rental-monkey.com/', '테이블 등 행사용품 대여 전문 업체.', false),
+  ('whitebooth', '하얀부스', 'event', 'domestic', 'https://www.whitebooth.co.kr/', '행사용품 렌탈·설치·행사 기획 업체.', false),
+  ('partykorea', '파티코리아', 'event', 'domestic', 'https://partykorea.co.kr/', '개업·기업행사 출장뷔페·케이터링.', false),
+  ('koreabuffet', '코리아출장부페', 'event', 'domestic', 'https://www.koreabuffet.co.kr/', '수도권 출장뷔페·케이터링 서비스.', false),
+  ('awesomeparty', '어썸파티', 'event', 'domestic', 'https://awesomeparty.co.kr/', '포장 배달형 케이터링·파티박스 서비스.', false),
+  ('roomservicehomeparty', '룸서비스 홈파티', 'event', 'domestic', 'https://roomservicehomeparty.com/', '집들이·모임 홈파티 출장뷔페 케이터링.', false),
+  ('justincatering', '저스틴케이터링', 'event', 'domestic', 'https://www.justincatering.com/', '호텔식 도시락·프리미엄 케이터링 주문.', false),
+  ('damsoban', '담소반', 'event', 'domestic', 'https://www.damsoban.co.kr/', '셰프·플로리스트 케이터링·도시락 주문.', false),
+  ('foodsupporters', '푸드서포터즈', 'event', 'domestic', 'https://www.foodsupporters.com/', '단체 도시락·케이터링 주문·배달 플랫폼.', false),
+  ('fooding', '오피스푸딩', 'event', 'domestic', 'https://fooding.io/', '사무실 단체식·간식·케이터링 주문 플랫폼.', false)
+on conflict (id) do nothing;
+
+insert into public.platforms (id, name, category_id, region, url, blurb, is_new) values
+  ('kukka', '꾸까', 'event', 'domestic', 'https://kukka.kr/', '꽃 정기구독 온라인 플라워 브랜드.', false),
+  ('flipflower', '플립플라워', 'event', 'domestic', 'https://www.flipflower.co.kr/', '꽃 정기구독 서비스.', false),
+  ('florano', '플로라노', 'event', 'domestic', 'https://www.florano.shop/', '프리미엄 꽃 정기구독·플라워 카페 브랜드.', false),
+  ('snowfoxflowers', '스노우폭스 플라워', 'event', 'domestic', 'https://snowfoxflowers.com/', '합리적 가격 꽃 판매 플라워 브랜드.', false),
+  ('honestflower', '어니스트플라워', 'event', 'domestic', 'https://honestflower.kr/', '일상용 꽃 판매·배송 플라워 브랜드.', false),
+  ('fleurue', '플레루', 'event', 'domestic', 'https://www.fleurue.com/', '일상용 꽃 정기구독 플라워 서비스.', false),
+  ('flowerrepublic', '플라워리퍼블릭', 'event', 'domestic', 'http://www.flowerrepublic.co.kr/', '근조·축하화환·개업선물 당일배송.', false),
+  ('cultwoflower', '컬투플라워', 'event', 'domestic', 'https://www.cultwo-flower.com/', '꽃다발·화환 전국 당일배송 꽃배달.', false),
+  ('flower119', '플라워119', 'event', 'domestic', 'https://www.flower119.co.kr/', '전국 꽃집 네트워크 화환·꽃 당일배송.', false),
+  ('flowerplus', '플라워플러스', 'event', 'domestic', 'https://flowerplus.co.kr/', '기업용 화환·식물 원스톱 꽃배달.', false),
+  ('biz', '기프티쇼 비즈', 'event', 'domestic', 'https://biz.giftishow.com/', '기업용 모바일쿠폰·판촉물 대량발송.', false),
+  ('barunsonthegift', '바른손 더기프트', 'event', 'domestic', 'https://www.barunsonthegift.com/', '답례품·선물 전문몰.', false),
+  ('giftinfo', '세종기프트', 'event', 'domestic', 'https://giftinfo.co.kr/', '판촉물·기념품·답례품 제작·판매.', false),
+  ('showgle', '쇼글', 'event', 'domestic', 'https://www.showgle.co.kr/', '공연팀·연예인 섭외 매칭 플랫폼.', false),
+  ('eventnet', '이벤트넷', 'event', 'domestic', 'https://eventnet.co.kr/', '행사·전시·컨벤션 전문가 매칭 커뮤니티.', false),
+  ('eventplus', '이벤트플러스', 'event', 'domestic', 'https://www.eventplus.co.kr/', '장비 대여·인력 섭외 행사 대행 매칭.', false),
+  ('myfair', '마이페어', 'event', 'domestic', 'https://myfair.co/', '해외 박람회 부스 예약·파트너 매칭 전시.', false),
+  ('iex', '아이전시', 'event', 'domestic', 'https://i-ex.co.kr/', '전시·박람회 부스·포토존 설치 대행.', false),
+  ('gopropose', '고프로포즈', 'event', 'domestic', 'https://gopropose.com/', '프로포즈·기념일 서프라이즈 이벤트 대행.', false),
+  ('luvhunter', '러브헌터', 'event', 'domestic', 'https://www.luvhunter.net/', '프로포즈·기념일 이벤트 대행 업체.', false),
+  ('haruclass', '하루클래스', 'event', 'domestic', 'https://haruclass.kr/', '취미·원데이 클래스를 예약하는 플랫폼.', false),
+  ('deardayclass', '디어데이클래스', 'event', 'domestic', 'https://deardayclass.co.kr/', '원데이클래스 예약·소개 서비스.', false),
+  ('annaandparty', '안나앤파티', 'event', 'domestic', 'https://annaandparty.com/', '백일상·돌상 셀프 상차림 대여 서비스.', false),
+  ('pookoodol', '뿌꾸돌상', 'event', 'domestic', 'https://pookoodol.com/', '돌상·백일상·한복 대여 상차림 전문 서비스.', false),
+  ('dollsdream', '돌스드림', 'event', 'domestic', 'https://dollsdream.co.kr/', '집에서 하는 셀프 돌상 대여 서비스.', false),
+  ('lawtalk', '로톡', 'legaltax', 'domestic', 'https://www.lawtalk.co.kr/', '변호사 검색·전화/영상/방문 법률 상담 매칭.', false),
+  ('lawandgood', '로앤굿', 'legaltax', 'domestic', 'https://www.lawandgood.com/', '질문지 기반 변호사 제안서 법률 매칭 플랫폼.', false),
+  ('lawsee', '로시컴', 'legaltax', 'domestic', 'https://www.lawsee.com/', '변호사·노무사·세무사 상담 매칭 플랫폼.', false),
+  ('helpme', '헬프미', 'legaltax', 'domestic', 'https://www.help-me.kr/', '지급명령·법인등기·상속 온라인 법률 리걸테크.', false),
+  ('albup', '알법', 'legaltax', 'domestic', 'https://albup.co.kr/', '이용자·변호사 빠른 연결 법률상담 매칭 앱.', false),
+  ('connects', '아하커넥츠', 'legaltax', 'domestic', 'https://connects.a-ha.io/', '변호사 등 전문가 1:1 유료 상담 플랫폼.', false),
+  ('lawmaster', '로마스터', 'legaltax', 'domestic', 'https://law-master.com/', '내용증명·지급명령 등 AI 법률 서비스 플랫폼.', false),
+  ('lawform', '로폼', 'legaltax', 'domestic', 'https://www.lawform.io/', '계약서·내용증명 자동작성·전자서명·보관.', false),
+  ('3o3', '삼쩜삼', 'legaltax', 'domestic', 'https://www.3o3.co.kr/', '종합소득세 신고·환급 모바일 세무 플랫폼.', false),
+  ('taxmon', '택스몬', 'legaltax', 'domestic', 'https://taxmon.co.kr/', '양도·상속·증여세 시뮬레이션·상담 세무 서비스.', false),
+  ('semutong', '세무통', 'legaltax', 'domestic', 'https://www.semutong.com/', '세무사 수수료·후기 비교·견적 매칭 플랫폼.', false),
+  ('findsemusa', '찾아줘세무사', 'legaltax', 'domestic', 'https://www.findsemusa.com/', '세무사 실시간 상담 매칭 플랫폼.', false),
+  ('jobis', '자비스', 'legaltax', 'domestic', 'https://jobis.co/', '세무사·회계사 기장·세무신고 대행 플랫폼.', false),
+  ('findsemusa2', '찾아줘노무사', 'legaltax', 'domestic', 'https://www.findsemusa.com/labor/', '노무사 실시간 채팅·전화 상담 매칭.', false),
+  ('markinfo', '마크인포', 'legaltax', 'domestic', 'https://markinfo.kr/', '온라인 상표 검색·출원 상표등록 플랫폼.', false),
+  ('markinfoglobal', '마크인포 글로벌', 'legaltax', 'overseas', 'https://www.markinfoglobal.com/', '해외 상표등록 절차 지원 플랫폼.', false),
+  ('modusign', '모두싸인', 'legaltax', 'domestic', 'https://modusign.co.kr/', '전자서명 요청·체결·관리 전자계약 SaaS.', false),
+  ('eformsign', '이폼사인', 'legaltax', 'domestic', 'https://www.eformsign.com/', '전자계약 작성·서명·보관 클라우드 전자문서.', false),
+  ('glosign', '글로싸인', 'legaltax', 'domestic', 'https://www.glosign.com/', '온라인 계약 체결 전자계약·전자서명 플랫폼.', false),
+  ('trost', '트로스트', 'legaltax', 'domestic', 'https://trost.co.kr/', '상담사 문자·전화·대면 심리상담 매칭.', false),
+  ('mindcafe', '마인드카페', 'legaltax', 'domestic', 'https://mindcafe.co.kr/', '익명 커뮤니티·전문가 원격 심리상담 플랫폼.', false),
+  ('hellomindcare', '헬로마인드케어', 'legaltax', 'domestic', 'https://www.hellomindcare.com/', '심리상담사 매칭·영상 상담·심리검사 앱.', false),
+  ('zuzu', 'ZUZU', 'legaltax', 'domestic', 'https://zuzu.network/', '법인설립·등기·주주·스톡옵션 관리 플랫폼.', false),
+  ('scil', '서울신용평가정보', 'legaltax', 'domestic', 'https://scil.co.kr/', '채권추심 온라인 종합지원 채권 회수 서비스.', false),
+  ('lbox', '엘박스', 'legaltax', 'domestic', 'https://lbox.kr/', '방대한 판결문 데이터를 기반으로 판례 검색과 AI 요약·분석을 제공하는 신규 리걸테크 스타트업 서비스다.', true),
+  ('bhsn', '앨리비', 'legaltax', 'domestic', 'https://bhsn.ai/', '2020년 설립된 BHSN이 법률 특화 AI로 계약서 검토·기업법무를 지원하는 올인원 리걸AI 솔루션 ''앨리비''를 제공하는 신생 스타트업이다.', true),
+  ('seteuk', '세무특공대', 'legaltax', 'domestic', 'https://seteuk.tax/', '아이비즈온이 운영하는 AI 기장 서비스로, 홈택스·은행·카드 데이터를 연동해 거래 분류와 장부 작성을 자동화하는 신규 세무테크다.', true),
+  ('pluscompany', '덧셈', 'legaltax', 'domestic', 'https://www.pluscompany.kr/', '2023년 설립된 덧셈컴퍼니가 프리랜서·직장인·사업자의 종합소득세 신고와 세금 환급(경정청구)을 자동화해주는 신생 세무 서비스다.', true),
+  ('heumtax', '더낸세금', 'legaltax', 'domestic', 'https://www.heumtax.com/', '세무법인 혜움이 2021년 선보인 세금 환급 서비스로, 누락된 공제·감면을 경정청구로 돌려받도록 돕는 신규 세무테크 플랫폼이다.', true),
+  ('finda', '핀다', 'finance', 'domestic', 'https://finda.co.kr/', 'AI 다수 금융사 대출 금리·한도 비교 플랫폼.', false),
+  ('toss', '토스', 'finance', 'domestic', 'https://toss.im/', '송금·자산관리·대출 비교 금융 슈퍼앱.', false),
+  ('kakaopay', '카카오페이 대출', 'finance', 'domestic', 'https://www.kakaopay.com/', '여러 금융사 대출 금리·한도 조회·비교.', false),
+  ('banksalad', '뱅크샐러드', 'finance', 'domestic', 'https://www.banksalad.com/', '자산관리·대출/카드/보험 비교 마이데이터 앱.', false),
+  ('dambee', '담비', 'finance', 'domestic', 'http://www.dambee.com/', '주담대·전세대출 담보대출 비교 플랫폼.', false),
+  ('alda', '알다', 'finance', 'domestic', 'https://www.alda.ai/', '대출 비교·신청·관리(론테크) 앱.', false),
+  ('finnq', '핀크', 'finance', 'domestic', 'https://www.finnq.com/', '하나금융 계열 생활금융·대출/카드/보험 비교.', false),
+  ('bankmall', '뱅크몰', 'finance', 'domestic', 'https://www.bank-mall.co.kr/', '주담대·전세·신용대출 비교 플랫폼.', false),
+  ('cashnote', '캐시노트', 'finance', 'domestic', 'https://cashnote.kr/', '소상공인 경영관리·사업자대출 비교·신청.', false),
+  ('einsmarket', '보험다모아', 'finance', 'domestic', 'https://www.e-insmarket.or.kr/', '온라인 보험상품 비교·공시 슈퍼마켓.', false),
+  ('goodrich', '굿리치', 'finance', 'domestic', 'https://www.goodrich.co.kr/', '보험 조회·분석·비교·청구 인슈어테크·GA.', false),
+  ('bomapp', '보맵', 'finance', 'domestic', 'https://www.bomapp.co.kr/', '보험 조회·분석·비교·간편청구 관리 앱.', false),
+  ('signalplanner', '시그널플래너', 'finance', 'domestic', 'https://signalplanner.co.kr/', '보험 조회·진단·비대면 상담 앱.', false),
+  ('bodoc', '보닥', 'finance', 'domestic', 'https://www.bodoc.co.kr/', 'AI 보험 진단·분석·관리 보험 앱.', false),
+  ('bohumclinic', '보험클리닉', 'finance', 'domestic', 'https://bohumclinic.com/', '오프라인 매장 기반 보험 점검·비교·설계.', false),
+  ('insvalley', '인스밸리', 'finance', 'domestic', 'https://www.insvalley.com/', '자동차보험 등 온라인 보험 견적 비교.', false),
+  ('cardgorilla', '카드고릴라', 'finance', 'domestic', 'https://www.card-gorilla.com/', '신용·체크카드 혜택·순위 비교·추천 플랫폼.', false),
+  ('travelwallet', '트래블월렛', 'finance', 'domestic', 'https://www.travel-wallet.com/', '다통화 충전·환전·해외결제·송금 앱.', false),
+  ('wirebarley', '와이어바알리', 'finance', 'domestic', 'https://www.wirebarley.com/', '저수수료 다국가 해외송금 핀테크.', false),
+  ('sentbe', '센트비', 'finance', 'domestic', 'https://www.sentbe.com/', '개인·사업자 저비용 해외송금 서비스.', false),
+  ('themoin', '모인', 'finance', 'domestic', 'https://www.themoin.com/', '우대환율·저수수료 다국가 해외송금 앱.', false),
+  ('fint', '핀트', 'finance', 'domestic', 'https://www.fint.co.kr/', 'AI 로보어드바이저 비대면 자산관리 앱.', false),
+  ('ols', '소상공인정책자금', 'finance', 'domestic', 'https://ols.semas.or.kr/', '소상공인시장진흥공단 정책자금 안내·신청.', false),
+  ('paywatch', '페이워치', 'finance', 'domestic', 'https://paywatch.co.kr/', '근로자가 급여일 전에 이미 일한 만큼의 임금을 미리 받을 수 있게 해주는 급여 선지급(EWA) 신생 핀테크다.', true),
+  ('canopy', '캐노피', 'finance', 'domestic', 'https://www.canopy.im/ko', '2024년 설립된 신생 스타트업으로, 근무 기록에 따라 근로자가 정산일 전에 급여를 실시간으로 인출하는 급여 선정산 서비스를 제공한다.', true),
+  ('ezloan', '이지론', 'finance', 'domestic', 'https://ezloan.io/', '소액·비상금·무직자 대출 등 다양한 상품을 연결해주는 신생 대출 비교·중개 성격의 핀테크 플랫폼이다.', true),
+  ('coway', '코웨이', 'rental', 'domestic', 'https://www.coway.com/', '정수기·공기청정기·매트리스 등 생활가전 렌탈 기업.', false),
+  ('skmagic', 'SK매직', 'rental', 'domestic', 'https://www.skmagic.com/', '주방·생활가전 렌탈·구독 서비스.', false),
+  ('lge', 'LG전자 구독', 'rental', 'domestic', 'https://www.lge.co.kr/lgekor/microsite/rentalcare/mrcMain.do', 'LG 가전 월 구독·방문 관리 렌탈 서비스.', false),
+  ('myomee', '롯데렌탈 묘미', 'rental', 'domestic', 'https://www.myomee.com/', '가전·가구·패션 단기~장기 라이프스타일 렌탈.', false),
+  ('hyundairentalcare', '현대렌탈케어 큐밍', 'rental', 'domestic', 'https://www.hyundairentalcare.com/', '현대백화점 계열 홈케어 가전 렌탈.', false),
+  ('chungho', '청호나이스', 'rental', 'domestic', 'https://www.chungho.com/', '정수기·공기청정기·안마의자 렌탈 기업.', false),
+  ('hellorental', 'LG헬로렌탈', 'rental', 'domestic', 'https://www.hello-rental.net/', '생활가전·안마의자·매트리스 렌탈·구독.', false),
+  ('xn299ar6vqrd', '빌리고', 'rental', 'domestic', 'https://xn--299ar6vqrd.com/', '생활가전·가구·매트리스 월납 렌탈 플랫폼.', false),
+  ('rentre', '렌트리', 'rental', 'domestic', 'https://rentre.kr/', '가전 렌탈 월요금·조건 비교 견적 플랫폼.', false),
+  ('closetshare', '클로젯셰어', 'rental', 'domestic', 'https://closetshare.com/', '명품가방·의류 공유·월정액 대여 패션 플랫폼.', false),
+  ('reebonz', '리본즈 렌트잇', 'rental', 'domestic', 'https://www.reebonz.co.kr/', '명품 가방·시계 단기·구독 대여 서비스.', false),
+  ('opengallery', '오픈갤러리', 'rental', 'domestic', 'https://www.opengallery.co.kr/', '작가 원화 미술품 3개월 교체 대여·구독.', false),
+  ('plan', '쏘카플랜', 'rental', 'domestic', 'https://plan.socar.kr/', '월 구독·기간형 중장기 차량 렌트.', false),
+  ('thetrive', '더트라이브', 'rental', 'domestic', 'https://thetrive.com/', '수입차 월 구독·관리 자동차 구독 플랫폼.', false),
+  ('hyundai', '현대 셀렉션', 'rental', 'domestic', 'https://www.hyundai.com/kr/ko/e/', '현대차 월 구독·교체 이용 자동차 구독.', false),
+  ('slrrent', 'SLR렌트', 'rental', 'domestic', 'https://www.slrrent.com/', '카메라·렌즈·촬영장비 단기 대여 전문.', false),
+  ('playslr', '플레이에스엘알', 'rental', 'domestic', 'https://playslr.co.kr/', 'DSLR·미러리스·렌즈 카메라 렌탈 서비스.', false),
+  ('youtuberental', '콩렌탈', 'rental', 'domestic', 'https://youtuberental.com/', '카메라·고프로 등 유튜브 장비 대여.', false),
+  ('hanent', '한렌탈', 'rental', 'domestic', 'https://www.hanent.com/', '카메라·렌즈 촬영장비 대여 업체.', false),
+  ('rrental', '알렌탈', 'rental', 'domestic', 'https://r-rental.co.kr/', '카메라·조명 촬영장비 대여 서비스.', false),
+  ('pacey', '페이시', 'rental', 'domestic', 'https://www.pacey.co.kr/', '노트북·맥북·모니터 IT기기 구독·렌탈.', false),
+  ('arthurrental', '아서렌탈', 'rental', 'domestic', 'https://m.arthurrental.com/', '노트북·PC IT기기 기업·개인 대여.', false),
+  ('korearental', '한국렌탈', 'rental', 'domestic', 'https://korearental.co.kr/', 'PC·계측기·산업장비 종합 렌탈 기업.', false),
+  ('hilti', '힐티 공구임대', 'rental', 'domestic', 'https://www.hilti.co.kr/', '전동공구 월 사용료 임대·관리 서비스.', false),
+  ('jsrental', 'JS렌탈', 'rental', 'domestic', 'https://jsrental.co.kr/', '행사·이벤트용품 대여 전문 업체.', false),
+  ('rentalevent', '이벤트렌탈', 'rental', 'domestic', 'https://rentalevent.com/', '천막·냉난방·전시용품 행사용품 대여.', false),
+  ('campal', '캠팔', 'rental', 'domestic', 'http://www.campal.co.kr/', '텐트·타프 등 캠핑용품 대여 플랫폼.', false),
+  ('camproad', '캠프로드', 'rental', 'domestic', 'https://camp-road.co.kr/', '텐트·캠핑장비 대여 서비스.', false),
+  ('info', '열린옷장', 'rental', 'domestic', 'https://info.theopencloset.net/', '면접·행사용 정장 택배·방문 대여 공유.', false),
+  ('jjinsuit', '제이진슈트', 'rental', 'domestic', 'https://jjinsuit.com/', '프리미엄 맞춤정장 렌탈 서비스.', false),
+  ('greant', '그린트', 'rental', 'domestic', 'https://m.greant.co.kr/', '면접·예복 정장 익일배송 렌탈.', false),
+  ('eshare', '공유누리', 'rental', 'domestic', 'https://www.eshare.go.kr/', '공공기관 공구·기기 공유·대여 정부 플랫폼.', false),
+  ('ium', '이음(I:UM)', 'office', 'domestic', 'https://www.i-um.co.kr/', '지식산업센터·산업단지 입주 중소기업·제조사를 단지 단위로 잇는 하이퍼로컬 B2B 네트워킹 플랫폼. 협력사·거래처 발굴, 공급망 분석, 기업 홍보·파트너 매칭을 무료 제공.', true),
+  ('officedepot', '오피스디포', 'office', 'domestic', 'https://www.officedepot.co.kr/', '기업·개인 사무용품·소모품 온라인 쇼핑몰.', false),
+  ('officenex', '오피스넥스', 'office', 'domestic', 'https://www.officenex.com/', '잉크·토너·사무기기 사무용품 B2B 쇼핑몰.', false),
+  ('ioffice', '아이오피스', 'office', 'domestic', 'http://i-office.co.kr/', '사무용품·비품 온라인 전문몰.', false),
+  ('officezone', '오피스존', 'office', 'domestic', 'https://officezone.co.kr/', '사무용품·문구·비품 종합 쇼핑몰.', false),
+  ('modenoffice', '모든오피스', 'office', 'domestic', 'https://www.modenoffice.com/', '사무용품·MRO 시스템 전문 쇼핑몰.', false),
+  ('mmarket', '엠마켓', 'office', 'domestic', 'https://www.m-market.net/', '복사용지·공구·안전용품 기업 통합구매몰.', false),
+  ('imarket', '아이마켓', 'office', 'domestic', 'https://www.imarket.co.kr/', '사무·산업재·안전용품 기업 전용 쇼핑몰.', false),
+  ('imarketkorea', '아이마켓코리아', 'office', 'domestic', 'https://www.imarketkorea.com/', '기업 소모성자재(MRO) 통합구매대행.', false),
+  ('serveone', '서브원', 'office', 'domestic', 'https://www.serveone.co.kr/', '기업 MRO 구매대행·자재 공급 플랫폼.', false),
+  ('navimro', '나비엠알오', 'office', 'domestic', 'https://www.navimro.com/', '공구·안전·사무 MRO 기업 전용 쇼핑몰.', false),
+  ('bipum', '비품넷', 'office', 'domestic', 'https://www.bipum.net/', '청소·위생·사무 기업 비품 쇼핑몰.', false),
+  ('koskomro', '코스코엠알오', 'office', 'domestic', 'https://koskomro.com/', '안전용품·공구·소모자재·건자재 MRO 도매몰.', false),
+  ('cretec', '크레텍', 'office', 'domestic', 'https://cretec.kr/', '산업공구 유통 전문 온라인 주문 시스템.', false),
+  ('kr4', '미스미코리아', 'office', 'domestic', 'https://kr.misumi-ec.com/', 'FA·금형 표준부품·간접자재 e카탈로그.', false),
+  ('gonggus', '공구닷컴', 'office', 'domestic', 'http://www.gonggus.com/', '산업·작업공구 온라인 공구 쇼핑몰.', false),
+  ('gongguro', '공구로', 'office', 'domestic', 'https://www.gongguro.co.kr/', '공구·안전용품·베어링 산업용품 쇼핑몰.', false),
+  ('toolmall', '툴마트', 'office', 'domestic', 'http://www.toolmall.net/', '공구 전문 온라인 쇼핑몰.', false),
+  ('tools24', '툴스24', 'office', 'domestic', 'https://tools24.co.kr/', '절삭·수공구·농기계 공구 전문몰.', false),
+  ('yugatool', '공구명가', 'office', 'domestic', 'https://yugatool.co.kr/', '측정기·전동공구·철물 산업용품 쇼핑몰.', false),
+  ('total09', '토탈공구', 'office', 'domestic', 'https://total09.net/', '작업·측정공구·산업용품 전문몰.', false),
+  ('dntool', '동남툴스', 'office', 'domestic', 'https://dntool.co.kr/', '산업·측정공구 공구 도매 쇼핑몰.', false),
+  ('ggjt', '공구장터', 'office', 'domestic', 'https://www.ggjt.co.kr/', '사업자 공구·산업용품 종합 쇼핑몰.', false),
+  ('dosomarket', '도소마켓', 'office', 'domestic', 'https://dosomarket.com/', '철강·건자재 견적 비교·거래 플랫폼.', false),
+  ('steellink', '스틸링크', 'office', 'domestic', 'https://www.steellink.kr/', '철강 견적·가격정보 온라인 거래 플랫폼.', false),
+  ('cheolsusee', '철수씨', 'office', 'domestic', 'https://cheolsusee.com/', '철강 직거래 중개 온라인 플랫폼.', false),
+  ('steelshop', '스틸샵', 'office', 'domestic', 'https://steelshop.com/', '철강재 온라인 거래 플랫폼(동국제강).', false),
+  ('fixit', '픽스잇', 'office', 'domestic', 'https://www.fixit.co.kr/', '자재 공급사·시공업체 연결 건자재 B2B.', false),
+  ('buildersdepot', '손스', 'office', 'domestic', 'https://buildersdepot.co.kr/', '건축 장식 철물자재 온라인 도매몰.', false),
+  ('jajaemart', '자재마트', 'office', 'domestic', 'https://jajaemart.com/', '금속철물·건축자재 온라인 쇼핑몰.', false),
+  ('boxmake', '박스공장닷컴', 'office', 'domestic', 'https://www.boxmake.co.kr/', '택배박스·완충재·포장 부자재 도매몰.', false),
+  ('boxvill', '박스마을', 'office', 'domestic', 'https://boxvill.com/', '주문제작 박스·포장 부자재 전문몰.', false),
+  ('boxmall', '박스몰', 'office', 'domestic', 'http://www.boxmall.net/', '박스·비닐·포장 부자재 전문 쇼핑몰.', false),
+  ('xncmall', '엑스엔씨몰', 'office', 'domestic', 'https://www.xncmall.co.kr/', '택배봉투·박스·테이프 포장 부자재 몰.', false),
+  ('eleparts', '엘레파츠', 'office', 'domestic', 'https://eleparts.co.kr/', '반도체·모듈·계측기 전자부품 전문몰.', false),
+  ('devicemart', '디바이스마트', 'office', 'domestic', 'https://www.devicemart.co.kr/', '아두이노·센서·개발보드 전자부품 몰.', false),
+  ('icbanq', '아이씨뱅큐', 'office', 'domestic', 'https://www.icbanq.com/', '반도체·오픈소스HW·전자부품 쇼핑몰.', false),
+  ('mechasolution', '메카솔루션', 'office', 'domestic', 'https://mechasolution.com/', '아두이노·임베디드·교육키트 전자부품몰.', false),
+  ('cleaniglobal', '크린글로벌', 'office', 'domestic', 'https://cleaniglobal.kr/', '세제·청소도구·건물관리용품 도매몰.', false),
+  ('ypcity', '용품시티', 'office', 'domestic', 'https://ypcity.co.kr/', '업소용 청소 소모품 도매 쇼핑몰.', false),
+  ('hnrjh', '하나로종합', 'office', 'domestic', 'https://hnrjh.com/', '학교·건물·관공서 청소용품 도매 납품.', false),
+  ('hansolink', '한솔잉크', 'office', 'domestic', 'https://www.hansolink.com/', '잉크·토너 기업 납품 인쇄소모품 도매몰.', false),
+  ('printersmall', '프린터스몰', 'office', 'domestic', 'https://www.printersmall.co.kr/', '프린터·복합기·잉크·토너 인쇄소모품몰.', false),
+  ('916er', '916ER', 'office', 'domestic', 'https://916er.com/', '사무실 인테리어 비교견적과 시공을 연결하는 플랫폼.', false),
+  ('office0u', '오피스공유', 'office', 'domestic', 'https://www.office0u.com/', '공유오피스·사무실 공유 매물을 검색·광고하는 커뮤니티 사이트.', false),
+  ('howmuchisit', '하우머치', 'office', 'domestic', 'https://howmuchisit.kr/', '공유오피스 가격 비교와 입주 지원금을 안내하는 중개 서비스.', false),
+  ('mroofficedepot', '오피스디포 MRO', 'office', 'domestic', 'https://mro-officedepot.co.kr/', '기업 사무용품·비품 통합구매를 대행하는 법인 전용몰.', false),
+  ('lalab2b', '라라팬시B2B', 'office', 'domestic', 'https://www.lalab2b.com/', '문구·팬시·사무용품을 사업자에게 도매하는 B2B 쇼핑몰.', false),
+  ('themro', 'THEMRO', 'office', 'domestic', 'https://www.themro.co.kr/', '공공기관 대상 소모성자재(MRO) 구매대행 전문 플랫폼.', false),
+  ('adprint', '애드프린트', 'office', 'domestic', 'https://adprint.co.kr/', '명함·스티커·브로셔 등 인쇄물을 소량·대량 주문하는 인쇄 쇼핑몰.', false),
+  ('pojangmall', '착한포장몰', 'office', 'domestic', 'https://pojangmall.co.kr/', '에어캡·완충재 등 포장 자재를 취급하는 도매 쇼핑몰.', false),
+  ('alwaysbomgift', '늘봄기프트', 'office', 'domestic', 'https://alwaysbomgift.com/', '기업·공공기관 판촉물과 기념품을 제작하는 도매 사이트.', false),
+  ('panchock', '판촉넷', 'office', 'domestic', 'https://panchock.net/', '기업 판촉물·기념품 제작 주문을 다루는 전문 사이트.', false),
+  ('workclo', '웍클로', 'office', 'domestic', 'https://www.workclo.co.kr/', '작업복·근무복·기업 단체복을 맞춤 제작하는 전문 쇼핑몰.', false),
+  ('clicksports', '클릭스포츠', 'office', 'domestic', 'https://clicksports.co.kr/', '단체복·작업복·단체패딩을 주문 제작하는 쇼핑몰.', false),
+  ('mintcorn', '민트콘', 'office', 'domestic', 'https://mintcorn.com/', '매장 간판·사인물을 실내외 주문 제작하는 전문 서비스.', false),
+  ('mysign', '간판친구', 'office', 'domestic', 'https://mysign.kr/', '간판 디자인·설계·제작을 다루는 제작 서비스.', false),
+  ('dwsafety', '대원안전', 'office', 'domestic', 'http://www.dw-safety.co.kr/', '보호구 등 산업안전용품을 취급하는 안전용품 전문점.', false),
+  ('gunjajae24', '건자재24', 'office', 'domestic', 'http://www.gunjajae24.com/', '건설현장용 건축자재·안전용품·MRO를 도매하는 특판몰.', false),
+  ('b2btool', 'B2B공구도매', 'office', 'domestic', 'https://b2btool.toolpark.kr/', '산업공구·절삭·에어공구 등을 실시간 재고로 도매하는 B2B몰.', false),
+  ('matched', '매치드 Matched', 'office', 'domestic', 'https://matched.biz/', '기업 의사결정권자를 대상으로 B2B 영업 미팅을 매칭하는 서비스.', false),
+  ('b2bjoinkorea', '비투비조인코리아', 'office', 'domestic', 'https://www.b2bjoinkorea.com/', '제조업 기업정보와 B2B 중개·입찰을 제공하는 플랫폼.', false),
+  ('castingn', '캐스팅엔', 'office', 'domestic', 'https://www.castingn.com/', '기업 간접구매·외주를 전자입찰·전자계약으로 소싱하는 매칭 플랫폼.', false),
+  ('smartfactoria', '스마트팩토리아', 'office', 'domestic', 'https://smartfactoria.com/', '제조 자동화 수요기업과 로봇·비전·설비 공급사를 연결하는 매칭.', false),
+  ('factoryplatform', '팩토리플랫폼', 'office', 'domestic', 'https://www.factory-platform.com/', '식품 제조업체와 발주기업을 무료로 매칭하는 서비스.', false),
+  ('workieum', '워키움', 'office', 'domestic', 'https://www.workieum.com/', '제조·외주가공·엔지니어링 전문 업체를 발굴·매칭하는 플랫폼.', false),
+  ('industrialmarket', '산업마켓', 'office', 'domestic', 'https://industrialmarket.biz/', '중고 기계·설비·공구를 기업 간 직거래하는 플랫폼.', false),
+  ('mc', '다아라기계장터', 'office', 'domestic', 'https://mc.daara.co.kr/', '산업기계·장비를 B2B로 직거래 중개하는 플랫폼.', false),
+  ('linkmachine', '링크머신', 'office', 'domestic', 'http://linkmachine.co.kr/', '중고기계 매입·판매·시세조회 직거래 플랫폼.', false),
+  ('nextunicorn', '넥스트유니콘', 'office', 'domestic', 'https://www.nextunicorn.kr/', '스타트업과 전문투자자를 연결하는 네트워킹 플랫폼.', false),
+  ('beginmate', '비긴메이트', 'office', 'domestic', 'https://www.beginmate.com/', '공동창업자·초기멤버 팀빌딩을 매칭하는 플랫폼.', false),
+  ('knowwherebridge', '노웨어브릿지', 'office', 'domestic', 'https://knowwherebridge.com/', '해외 파트너·바이어와의 비즈니스 매칭을 돕는 서비스.', false),
+  ('cretop', '크레탑', 'office', 'domestic', 'https://www.cretop.com/', '기업 신용·재무 정보를 조회하고 거래처를 발굴하는 서비스.', false),
+  ('kodata', '한국평가데이터', 'office', 'domestic', 'http://www.kodata.co.kr/', '국내 최대 규모의 기업 신용·산업 데이터를 제공.', false),
+  ('companymarket', '컴파니마켓', 'office', 'domestic', 'https://www.companymarket.co.kr/', '기업거래·사업체 매매를 중개하는 플랫폼.', false),
+  ('kmx', '한국M&A거래소', 'office', 'domestic', 'https://kmx.kr/', '중소기업 M&A 매도·매수를 중개·매칭하는 거래소.', false),
+  ('fanfandaero', '판판대로', 'office', 'domestic', 'https://fanfandaero.kr/', '중소기업유통센터가 운영하는 판로개척 지원 플랫폼.', false),
+  ('kompass', '콤파스코리아', 'office', 'domestic', 'https://kompass.co.kr/', '글로벌 기업 DB 기반 비즈니스 매칭 서비스.', false),
+  ('capa', '캐파', 'office', 'domestic', 'https://capa.ai/', 'CNC·판금·사출 등 온라인 제조 견적·발주를 매칭하는 플랫폼.', false),
+  ('baroorder', '바로발주', 'office', 'domestic', 'https://baro-order.com/', '도면 업로드로 AI 실시간 견적 후 외주가공을 발주.', false),
+  ('pltik', '플틱', 'office', 'domestic', 'https://www.pltik.com/', '산업소재 가공 견적을 무료로 비교·요청하는 플랫폼.', false),
+  ('makeit', '메이크잇', 'office', 'domestic', 'https://makeit.ai.kr/', '도면 업로드 시 AI가 가공 견적을 산출하고 업체를 매칭.', false),
+  ('make', '샤플메이크', 'office', 'domestic', 'https://make.shapl.com/', '공장 매칭 기반 온라인 제조 비교·견적 플랫폼.', false),
+  ('mpnite', '엠피니티', 'office', 'domestic', 'https://mpnite.com/', '3D프린팅·CNC·판금·사출을 비교 견적하는 온라인 제조 플랫폼.', false),
+  ('meviy', '메비', 'office', 'domestic', 'https://meviy.misumi-ec.com/ko-kr/', '3D CAD 파일로 판금·절삭 부품을 즉시 견적·주문.', false),
+  ('ideaaudition', '아이디어오디션', 'office', 'domestic', 'https://www.ideaaudition.com/', '소량 발주를 모아 금형·사출 제조를 중개하는 플랫폼.', false),
+  ('madeall3d', '메이드올', 'office', 'domestic', 'https://madeall3d.com/', '웹 기반 자동화 3D프린팅 출력·소량 제작 서비스.', false),
+  ('castingn2', '캐스팅엔소싱', 'office', 'domestic', 'https://www.castingn.com/sourcing', '기업 간접구매·외주 소싱 견적을 통합하는 플랫폼.', false),
+  ('koreab2b', '코리아B2B', 'office', 'domestic', 'https://www.koreab2b.com/', '제조기업 대상 MRO 구매대행·소싱 인프라 서비스.', false),
+  ('speedmall', '스피드몰', 'office', 'domestic', 'https://www.speedmall.co.kr/', '기업 소모품·산업용 자재 전문 B2B 쇼핑몰.', false),
+  ('esteel4u', '이스틸포유', 'office', 'domestic', 'https://www.esteel4u.com/', '철강 온라인 거래 플랫폼.', false),
+  ('sungple', '성플', 'office', 'domestic', 'https://www.sungple.com/', '재생플라스틱 원료 매매·압출·사출 견적 플랫폼.', false),
+  ('ic114', 'IC114', 'office', 'domestic', 'https://www.ic114.com/', '국내 최대 규모의 전자부품 전문 온라인 쇼핑몰.', false),
+  ('samplepcb', '샘플피씨비', 'office', 'domestic', 'https://www.samplepcb.co.kr/', 'PCB 실시간 견적·소량 발주 온라인 플랫폼.', false),
+  ('mpgate', '엠피게이트', 'office', 'domestic', 'https://www.mpgate.co.kr/', 'PCB 설계·제작·양산을 원스톱 주문제작하는 서비스.', false),
+  ('ecplaza', 'ECPlaza', 'global', 'domestic', 'https://www.ecplaza.net', '다국어를 지원하는 글로벌 B2B 무역 마켓플레이스.', false),
+  ('rinda', '린다', 'global', 'domestic', 'https://www.rinda.ai', 'AI로 해외 바이어를 발굴하고 콜드메일 영업을 자동화하는 수출 SaaS.', false),
+  ('tradlinx', '트레드링스', 'fulfillment', 'domestic', 'https://www.tradlinx.com', '수출입 물류비 비교견적·화물추적·포워딩을 중개하는 물류 플랫폼.', false),
+  ('utradehub', '유트레이드허브', 'global', 'domestic', 'https://www.utradehub.or.kr', '국가전자무역 플랫폼으로 무역서류·통관·결제를 원스톱 처리.', false),
+  ('sourcingchina', '소싱차이나', 'global', 'domestic', 'https://sourcingchina.co.kr', '중국 OEM/ODM 소싱·수입통관·물류를 대행하는 수입 소싱 플랫폼.', false),
+  ('g2b', '나라장터', 'office', 'domestic', 'https://www.g2b.go.kr', '조달청이 운영하는 국가종합전자조달 시스템(공공입찰·쇼핑몰).', false),
+  ('g2bplus', '지투비플러스', 'office', 'domestic', 'https://www.g2bplus.kr', '나라장터 입찰·낙찰정보를 AI로 분석·알림하는 공공조달 서비스.', false),
+  ('kbid', '케이비드', 'office', 'domestic', 'https://www.kbid.co.kr', '공공·민간 입찰공고를 통합 검색·제공하는 입찰정보 서비스.', false),
+  ('modoobid', '모두입찰', 'office', 'domestic', 'https://www.modoobid.co.kr', '빅데이터 기반 전자입찰 분석·투찰가 산출을 지원하는 서비스.', false),
+  ('marketbom', '마켓봄', 'food', 'domestic', 'https://marketbom.com/', '식자재 유통사와 거래처를 잇는 B2B 수발주 관리 플랫폼.', false),
+  ('foodspring', '식봄', 'food', 'domestic', 'https://www.foodspring.co.kr/', '외식 사장님 대상 식자재 오픈마켓, 익일배송.', false),
+  ('kitchenboard', '키친보드', 'food', 'domestic', 'https://kitchenboard.co.kr/', '식당 식자재 주문·비용관리 및 유통사 연결 서비스.', false),
+  ('orderplus', '오더플러스', 'food', 'domestic', 'https://www.orderplus.io/', '식당 식자재 가격을 비교·주문하는 B2B 플랫폼.', false),
+  ('parado', '파라도', 'food', 'domestic', 'https://parado.co.kr/', '식당 대상 산지직송 온라인 식자재 도매몰.', false),
+  ('orderhero', '오더히어로', 'food', 'domestic', 'http://orderhero.co.kr/', '음식점 식자재를 통합 직매입·유통·발주하는 플랫폼.', false),
+  ('kafb2b', '카프비투비', 'food', 'domestic', 'https://kafb2b.or.kr/', 'aT가 운영하는 전국단위 농수산물 온라인 공영도매시장.', false),
+  ('luckyfresh', '행운프레시', 'food', 'domestic', 'https://luckyfresh.co.kr/', '과일·농산물 B2B 도매 위탁판매와 자동발주 서비스.', false),
+  ('odyb2b', '오대양몰', 'food', 'domestic', 'https://odyb2b.co.kr/', '사업자 전용 냉동수산물 B2B 도매 전문몰.', false),
+  ('koke', '코케비즈', 'food', 'domestic', 'https://biz.koke.kr/', '카페·식당 대상 원두·용품 납품 도매 플랫폼.', false),
+  ('coffeeb2b', '커피비투비', 'food', 'domestic', 'https://coffeeb2b.co.kr/', '원두·시럽 등 카페 원부자재 B2B 도매몰.', false),
+  ('baljuora', '발주오라', 'wholesale', 'domestic', 'https://baljuora.com/', '거래처 주문·정산·발주를 자동화하는 B2B 유통 솔루션.', false),
+  ('baljumoa', '발주모아', 'wholesale', 'domestic', 'https://www.baljumoa.com/', '온라인 유통 판매를 통합관리·발주하는 솔루션.', false),
+  ('cmtstory', '화장품스토리', 'wholesale', 'domestic', 'https://m.cmtstory.com/', 'K-뷰티 화장품 도매·위탁판매 B2B 플랫폼.', false),
+  ('beautydome', '뷰티돔', 'wholesale', 'domestic', 'https://www.beautydome.co.kr/', '화장품 종합 도매 B2B 쇼핑몰.', false),
+  ('realflower', '리얼플라워', 'wholesale', 'domestic', 'https://realflower.co.kr/', '생화 도매 위탁·배송 B2B 플랫폼.', false),
+  ('bizinfo', '기업마당', 'office', 'domestic', 'https://www.bizinfo.go.kr/', '중소기업·소상공인 정부지원사업 공고를 모은 통합 포털.', false),
+  ('smes', '중소벤처24', 'office', 'domestic', 'https://www.smes.go.kr/', '중소벤처기업 지원사업을 조회·신청하는 통합 포털.', false),
+  ('kstartup', '케이스타트업', 'office', 'domestic', 'https://www.k-startup.go.kr/', '창업·스타트업 정부지원사업 정보를 제공하는 포털.', false),
+  ('tigris', '티그리스', 'office', 'domestic', 'https://tigris.cloud/gov-promote', '정부지원사업을 검색·관리하는 업무 플랫폼.', false),
+  ('kfund', '케이펀드', 'office', 'domestic', 'https://kfund.ai/', '정부지원사업 공고를 맞춤 알림해 주는 서비스.', false),
+  ('works', '커넥트웍스', 'office', 'domestic', 'https://works.connect24.kr/', '정부지원사업을 통합 조회·관리하는 플랫폼.', false),
+  ('winkstone', '윙크스톤파트너스', 'finance', 'domestic', 'https://www.winkstone.com/', '중소사업자 대상 B2B 대출·BNPL 금융 서비스.', false),
+  ('loanboss', '로안보스', 'finance', 'domestic', 'https://loanboss.isweb.co.kr/', '소상공인·중소기업 사업자대출 비교 플랫폼.', false),
+  ('thevc', '더브이씨', 'office', 'domestic', 'https://thevc.kr/', '한국 스타트업 투자·지원사업 데이터베이스.', false),
+  ('startupplus', '스타트업플러스', 'office', 'domestic', 'https://startup-plus.kr/', '스타트업과 투자자를 연결하는 투자 매칭 플랫폼.', false),
+  ('barobill', '바로빌', 'finance', 'domestic', 'https://www.barobill.co.kr/', '전자세금계산서 발급·역발행을 대행하는 서비스.', false),
+  ('popbill', '팝빌', 'finance', 'domestic', 'https://www.popbill.com/', '전자세금계산서 대량발행 API·플랫폼.', false),
+  ('factoring', '위하고팩토링', 'finance', 'domestic', 'https://factoring.wehago.com/', '중소기업 매출채권 팩토링 자금조달 서비스.', false),
+  ('sellerline', '셀러라인', 'finance', 'domestic', 'https://www.sellerline.co.kr/', '온라인 셀러 맞춤 선정산 서비스.', false),
+  ('allra', '올라', 'finance', 'domestic', 'https://allra.co.kr/', '온라인 셀러 자금관리·선정산 서비스.', false),
+  ('home3', '바이나우', 'finance', 'domestic', 'https://home.buy-now.kr/', '쇼핑몰 매출 기반 선정산 자금화 서비스.', false),
+  ('ofin', '오핀', 'finance', 'domestic', 'https://ofin.co.kr/', 'B2B 후불결제·즉시정산 솔루션.', false),
+  ('gowid', '고위드', 'office', 'domestic', 'https://www.gowid.com/', '법인카드·지출관리·SaaS 혜택을 묶은 금융 플랫폼.', false),
+  ('spendit', '스팬딧', 'office', 'domestic', 'https://www.spendit.kr/', '스타트업 법인카드·경비 지출관리 서비스.', false),
+  ('unipost', '유니포스트', 'office', 'domestic', 'https://unipost.co.kr/', '임직원 경비지출 디지털 증빙을 관리하는 SaaS.', false),
+  ('granter', '그랜터', 'office', 'domestic', 'https://granter.biz/', '스타트업 AI 재무·회계 자동화 솔루션.', false),
+  ('scordi', '스코디', 'office', 'domestic', 'https://scordi.io/', '기업 SaaS 구독을 통합관리·비용분석하는 플랫폼.', false),
+  ('smply', '에스엠플리', 'office', 'domestic', 'https://www.smply.one/', '사내 SaaS 사용·결제 현황을 관리하는 서비스.', false),
+  ('flex', '플렉스', 'office', 'domestic', 'https://flex.team/', '근태·급여·인사를 통합하는 HR SaaS 플랫폼.', false),
+  ('ustracloud', '유스트라', 'office', 'domestic', 'https://www.ustracloud.com/', '인사·근태·급여를 통합하는 클라우드 HR 솔루션.', false),
+  ('quotabook', '쿼타북', 'office', 'domestic', 'https://quotabook.com/', '비상장기업 주주명부·증권을 관리하는 SaaS.', false),
+  ('lezhin', '레진코믹스', 'content', 'domestic', 'https://www.lezhin.com', '유료 결제 모델 기반 웹툰 플랫폼.', false),
+  ('muzeplatform', '뮤즈플랫폼', 'content', 'domestic', 'https://www.muzeplatform.com', '국내외 사이트로 음원을 유통하는 플랫폼.', false),
+  ('topport', '탑포트', 'assets', 'domestic', 'https://www.topport.io', '작가 작품 중심 NFT 아트 마켓플레이스.', false),
+  ('weverse', '위버스', 'social', 'domestic', 'https://weverse.io', '하이브의 글로벌 팬덤 커뮤니티 플랫폼.', false),
+  ('artmug', '아트머그', 'handmade', 'domestic', 'https://artmug.kr', '일러스트·Live2D 창작 외주·커미션 플랫폼.', false),
+  ('learningspoons', '러닝스푼즈', 'content', 'domestic', 'https://learningspoons.com', '데이터·마케팅·금융 등 직장인 직무교육 플랫폼.', false),
+  ('programmers', '프로그래머스', 'content', 'domestic', 'https://programmers.co.kr', '코딩테스트·데브코스 개발자 취업 교육 플랫폼.', false),
+  ('wecode', '위코드', 'content', 'domestic', 'https://wecode.co.kr', '개발자 양성 코딩 부트캠프.', false),
+  ('supercoding', '슈퍼코딩', 'content', 'domestic', 'https://supercoding.net', '관리형 개발자 취업 코딩 부트캠프 플랫폼.', false),
+  ('speak', '스픽', 'content', 'domestic', 'https://www.speak.com/ko', 'AI 음성인식 기반 영어 스피킹 학습 앱.', false),
+  ('cambly', '캠블리', 'content', 'domestic', 'https://www.cambly.com', '원어민 1:1 화상 영어회화 학습 플랫폼.', false),
+  ('ringleplus', '링글', 'content', 'domestic', 'https://www.ringleplus.com/ko', '원어민 1:1 화상영어·AI 스피킹 학습 플랫폼.', false),
+  ('ebsi', 'EBSi', 'content', 'domestic', 'https://www.ebsi.co.kr', '고교 대표 인터넷 강의 학습 플랫폼.', false),
+  ('kimstudy', '김과외', 'freelance', 'domestic', 'https://kimstudy.com', '대한민국 대표 과외 매칭 플랫폼.', false),
+  ('qanda', '콴다과외', 'freelance', 'domestic', 'https://class.qanda.ai', '검증 선생님 1:1 맞춤 온라인 과외 매칭 앱.', false),
+  ('gawebada', '과외바다', 'freelance', 'domestic', 'https://www.gawebada.com', '중개 수수료 0% 과외 매칭 플랫폼.', false),
+  ('wjthinkbig', '웅진씽크빅', 'kids', 'domestic', 'https://www.wjthinkbig.com', 'AI 맞춤학습 초등 스마트학습 플랫폼.', false),
+  ('milkt', '밀크티', 'kids', 'domestic', 'https://www.milkt.co.kr', '천재교육 초등 화상관리형 스마트학습 플랫폼.', false),
+  ('symentor', '시멘토', 'kids', 'domestic', 'https://app.symentor.co.kr', '한글·영어·창의력 게임형 유아 학습 앱.', false),
+  ('mydoctor', '나만의닥터', 'beautyhealth', 'domestic', 'https://my-doctor.io/', '비대면 진료·약국찾기·병원예약 앱.', false),
+  ('platpharm', '플랫팜', 'beautyhealth', 'domestic', 'https://www.platpharm.co.kr/', '약국 의약품 거래·주문·정산 플랫폼.', false),
+  ('hihealth', '검진하이', 'beautyhealth', 'domestic', 'https://www.hihealth.co.kr/', '종합건강검진 할인·실시간 예약 플랫폼.', false),
+  ('drdiary', '닥터다이어리', 'beautyhealth', 'domestic', 'https://drdiary.co.kr/', '혈당·혈압·당뇨 등 만성질환 관리 앱.', false),
+  ('caring', '케어링', 'homeservice', 'domestic', 'https://caring.co.kr/', '방문요양·가족요양·주간보호 돌봄 서비스.', false),
+  ('neofect', '네오펙트', 'homeservice', 'domestic', 'https://www.neofect.com/kr', 'AI 재활·홈 재활훈련 헬스케어 플랫폼.', false),
+  ('edgc', 'EDGC', 'beautyhealth', 'domestic', 'https://www.edgc.com/kor/', '유전자 검사 기반 바이오 헬스케어 기업.', false),
+  ('pilly', '필리', 'beautyhealth', 'domestic', 'https://pilly.kr/', '1:1 맞춤 영양제 정기구독 서비스.', false),
+  ('iamiam', '아이엠', 'beautyhealth', 'domestic', 'https://iam-iam.com/', 'AI 분석 맞춤형 건강기능식품 구독.', false),
+  ('fitamin', '핏타민', 'beautyhealth', 'domestic', 'https://www.fitamin.kr/', '약사 상담 맞춤 영양제 구독 서비스.', false),
+  ('rallit', '랠릿', 'jobs', 'domestic', 'https://www.rallit.com/', '프로그래머스가 운영하는 IT 인재 채용 플랫폼.', false),
+  ('jobda', '잡다', 'jobs', 'domestic', 'https://www.jobda.im/', '역량검사 기반으로 매칭하는 취업 플랫폼.', false),
+  ('sherlockn', '셜록N', 'jobs', 'domestic', 'https://sherlockn.incruit.com/', '헤드헌터가 인재를 추천하는 헤드헌팅 플랫폼.', false),
+  ('hiddenscout', '히든스카우트', 'jobs', 'domestic', 'https://www.hiddenscout.co.kr/', '다수 헤드헌터가 인재를 추천하는 플랫폼.', false),
+  ('bzpp', '비즈니스피플', 'jobs', 'domestic', 'https://www.bzpp.co.kr/', '임원·경력직 핵심인재 채용 플랫폼.', false),
+  ('dongnealba', '동네알바', 'jobs', 'domestic', 'https://www.dongnealba.com/', '사장이 먼저 제안하는 우리동네 알바 앱.', false),
+  ('connectin', '커넥틴', 'jobs', 'domestic', 'https://www.connec-tin.com/', '건설 근로자와 현장을 잇는 인력 중개 플랫폼.', false),
+  ('workmeet', '워크밋', 'jobs', 'domestic', 'https://www.workmeet.co.kr/', '일용직 구인구직 인력 매칭 플랫폼.', false),
+  ('jobploy', '잡플로이', 'jobs', 'domestic', 'https://www.jobploy.kr/', '외국인 근로자 맞춤 일자리 매칭 플랫폼.', false),
+  ('itdaa', '잇다', 'jobs', 'domestic', 'https://www.itdaa.net/', '현직자와 함께하는 취업 멘토링 플랫폼.', false),
+  ('thehelper', '헬퍼', 'homeservice', 'domestic', 'https://www.thehelper.io/', '보호자가 간병인을 직접 고르는 매칭 플랫폼.', false),
+  ('carenation', '케어네이션', 'homeservice', 'domestic', 'https://www.carenation.kr/', '간병·돌봄 매칭 앱.', false),
+  ('ninehire', '나인하이어', 'office', 'domestic', 'https://www.ninehire.com/', '채용 전 과정 자동화 올인원 ATS 솔루션.', false),
+  ('jiwon', '지원전에', 'office', 'domestic', 'https://jiwon.app/', '채용 플랫폼 통합관리·스카우트 SaaS.', false),
+  ('mobiletax', '모바일택스', 'legaltax', 'domestic', 'https://mobiletax.kr/', '1:1 세무사 배정 모바일 세무대리 앱.', false),
+  ('gommark', '곰마크', 'legaltax', 'domestic', 'https://www.gommark.com/', '온라인 상표·특허 등록 대행 서비스.', false),
+  ('widsign', '위드싸인', 'office', 'domestic', 'https://www.widsign.com/', '클라우드 전자계약·본인인증 플랫폼.', false),
+  ('ucansign', '유캔싸인', 'office', 'domestic', 'https://ucansign.com/', '저비용 전자계약 솔루션.', false),
+  ('hancomsign', '한컴싸인', 'office', 'domestic', 'https://www.hancomsign.com/', '한글과컴퓨터의 전자계약·서명 서비스.', false),
+  ('donue', '도뉴', 'office', 'domestic', 'https://donue.co.kr/', '인증서 없이 쓰는 간편 전자계약 서비스.', false),
+  ('matazoo', '마타주', 'fulfillment', 'domestic', 'https://matazoo.net/', '개당 단위 픽업·보관 개인 짐 보관 서비스.', false),
+  ('sendy', '센디', 'delivery', 'domestic', 'https://sendy.ai/', 'AI 기반 용달·화물 운송 매칭·정산 플랫폼.', false),
+  ('kurlynextmile', '컬리넥스트마일', 'delivery', 'domestic', 'https://www.kurlynextmile.com/', '콜드체인 새벽배송 라스트마일 운송 서비스.', false),
+  ('goodsflow', '굿스플로', 'office', 'domestic', 'https://www.goodsflow.com/', '주문수집·배송추적·반품자동화 SCM 솔루션.', false),
+  ('btorage', '비토리지', 'global', 'domestic', 'https://btorage.com/', '한국상품 전세계 역구매·배송대행 플랫폼.', false),
+  ('tagby', '태그바이', 'social', 'domestic', 'https://tagby.io/', '인플루언서 체험단 모집·운영 올인원 마케팅 플랫폼.', false),
+  ('brickc', '브릭씨', 'social', 'domestic', 'https://biz.brick-c.com/', '인플루언서 마케팅 캠페인 운영 플랫폼.', false),
+  ('itfl', '잇플루언서', 'social', 'domestic', 'https://itfl.io/', '브랜드와 인플루언서를 연결하는 매칭 플랫폼.', false),
+  ('assaview', '아싸뷰', 'social', 'domestic', 'https://assaview.co.kr/', '블로그·인스타 체험단 리뷰 마케팅 플랫폼.', false),
+  ('realreview', '리얼리뷰', 'social', 'domestic', 'https://www.real-review.kr/', '체험단·인플루언서 리뷰 마케팅 플랫폼.', false),
+  ('reviewnote', '리뷰노트', 'social', 'domestic', 'https://www.reviewnote.co.kr/', '블로그·인스타·유튜브 체험단 운영 플랫폼.', false),
+  ('stylec', '스타일씨', 'social', 'domestic', 'https://www.stylec.co.kr/', '블로그 체험단 모집·신청 플랫폼.', false),
+  ('brixcorp', '브릭스', 'social', 'domestic', 'https://brixcorp.net/', '인플루언서 공동구매 모집·판매 대행 플랫폼.', false),
+  ('flexmatch', '플렉스매치', 'social', 'domestic', 'https://www.flexmatch.kr/', '크리에이터 공동구매·협찬 매칭 플랫폼.', false),
+  ('srookpay', '스룩페이', 'social', 'domestic', 'https://srookpay.com/', 'SNS 공동구매 간편결제·판매관리 솔루션.', false),
+  ('celebtion', '셀럽션', 'social', 'domestic', 'https://www.celebtion.com/', '인플루언서 공동구매 중개·정산 플랫폼.', false),
+  ('popomon', '포포몬', 'social', 'domestic', 'https://popomon.com/', '인플루언서 체험단 협찬 매칭 플랫폼.', false),
+  ('cellypick', '셀리픽', 'social', 'domestic', 'https://cellypick.com/', '인플루언서 커머스 판매·정산 지원 플랫폼.', false),
+  ('creatorlink', '크리에이터링크', 'mallbuilder', 'domestic', 'https://www.creatorlink.net/', '무료 홈페이지·쇼핑몰 제작 빌더.', false),
+  ('bigin', '빅인', 'office', 'domestic', 'https://bigin.io/', '이커머스 CRM 마케팅 자동화 솔루션.', false),
+  ('datarize', '데이터라이즈', 'office', 'domestic', 'https://www.datarize.ai/', 'AI 기반 이커머스 CRM 마케팅 자동화 솔루션.', false),
+  ('notifly', '노티플라이', 'office', 'domestic', 'https://www.notifly.tech/', '앱·웹 CRM 마케팅 자동화 솔루션.', false),
+  ('igotcha', '갓차', 'auto', 'domestic', 'https://igotcha.co.kr/', '구독형 방문세차 예약 서비스.', false),
+  ('chaevi', '채비', 'auto', 'domestic', 'https://chaevi.com/', '전기차 충전 원스톱 솔루션·예약 결제.', false),
+  ('socar', '쏘카', 'rental', 'domestic', 'https://www.socar.kr/', '국내 대표 카셰어링 모빌리티 서비스.', false),
+  ('carmoa', '카모아', 'rental', 'domestic', 'https://www.carmoa.com/', '국내외 렌트카 가격비교·예약 플랫폼.', false),
+  ('zzimcar', '찜카', 'rental', 'domestic', 'https://zzimcar.com/', '렌트카·항공권·숙소 실시간 가격비교.', false),
+  ('skdirect', 'SK렌터카', 'rental', 'domestic', 'https://www.skdirect.co.kr/', '장기렌트·단기렌트 직영 렌터카 서비스.', false),
+  ('rtplanner', '렌트플래너', 'rental', 'domestic', 'https://rtplanner.com/', '장기렌트·자동차리스 견적 비교 플랫폼.', false),
+  ('modoobike', '모두의바이크', 'delivery', 'domestic', 'https://modoobike.com/', '배달오토바이 렌트·리스 전문 서비스.', false),
+  ('arentalnservice', '에이렌탈', 'delivery', 'domestic', 'https://arentalnservice.com/', '배달오토바이 렌탈 전문, 전국배송.', false),
+  ('bikebank', '바이크뱅크', 'delivery', 'domestic', 'https://www.bikebank.kr/', '비즈니스 이륜차 렌트·리스 솔루션.', false),
+  ('tayota', '타요타', 'delivery', 'domestic', 'https://tayota.co.kr/', '배달 이륜차 리스·렌트 최저가 지향.', false),
+  ('moduparking', '모두의주차장', 'auto', 'domestic', 'https://www.moduparking.com/', '주차장 찾기·할인·공유주차 앱.', false),
+  ('gcoo', '지쿠', 'rental', 'domestic', 'https://gcoo.io/', '전동킥보드·전기자전거 공유 모빌리티.', false),
+  ('33m2', '삼삼엠투', 'realestate', 'domestic', 'https://web.33m2.co.kr/', '보증금 33만원 단기임대 원룸 부동산 앱.', false),
+  ('liveanywhere', '리브애니웨어', 'realestate', 'domestic', 'https://www.liveanywhere.me/', '한달살기·단기임대 숙소 중개 플랫폼.', false),
+  ('zaritalk', '자리톡', 'realestate', 'domestic', 'https://zaritalk.com/', '임대인·세입자용 부동산 임대관리 서비스.', false),
+  ('ezrems', '이지램스', 'realestate', 'domestic', 'https://www.ezrems.com/', '임대·자산관리 클라우드 SaaS.', false),
+  ('thebldgs', '더빌딩', 'realestate', 'domestic', 'https://www.thebldgs.com/', 'AI 기반 통합 건물·임대 관리 플랫폼.', false),
+  ('interiorbay', '인테리어베이', 'homeservice', 'domestic', 'https://www.interiorbay.co.kr/', '인테리어 무료 비교견적 중개 플랫폼.', false),
+  ('apartmentary', '아파트멘터리', 'homeservice', 'domestic', 'https://www.apartmentary.com/', '표준화 아파트 인테리어 리모델링 서비스.', false),
+  ('drbuild', '닥터빌드', 'homeservice', 'domestic', 'https://drbuild.co.kr/', 'AI 추천 건축사·시공사 매칭 건축 플랫폼.', false),
+  ('howbuild', '하우빌드', 'homeservice', 'domestic', 'https://www.howbuild.com/', '건설사 선정·공사관리 지원 건축 플랫폼.', false),
+  ('fivespot', '파이브스팟', 'office', 'domestic', 'https://fivespot.io/', '1인·소형 사무실 공유오피스 워크라운지.', false),
+  ('camplink', '캠프링크', 'space', 'domestic', 'http://www.camplink.co.kr/', '캠핑장 예약·빈자리 알림·후기 앱.', false),
+  ('tamnao', '탐나오', 'ticket', 'domestic', 'https://www.tamnao.com/', '제주 렌트카·숙소·관광지 할인 플랫폼.', false),
+  ('discoverjeju', '디스커버제주', 'ticket', 'domestic', 'https://discover-jeju.com/', '제주 로컬 액티비티·체험 예약 플랫폼.', false),
+  ('sunsang24', '선상24', 'ticket', 'domestic', 'https://www.sunsang24.com/', '전국 선상낚시·배낚시 실시간 예약.', false),
+  ('usin', '어신', 'ticket', 'domestic', 'https://www.us-in.io/', '낚시배·낚시터 통합 예약 피싱 플랫폼.', false),
+  ('athlit', '애슬릿', 'fitness', 'domestic', 'https://athlit.io/', '헬스·요가·크로스핏 드랍인 운동 클래스 예약.', false),
+  ('farmstay', '팜스테이', 'space', 'domestic', 'https://www.farmstay.co.kr/', '농협 농촌체험·팜스테이 숙박 예약.', false),
+  ('welchon', '웰촌', 'space', 'domestic', 'https://www.welchon.com/', '농어촌체험휴양마을 여행 포털.', false),
+  ('farmerstore88', '농가살리기', 'food', 'domestic', 'https://www.farmerstore88.com/', '농가·소기업 산지직송 D2C 커머스.', false),
+  ('kgfarmmall', 'KG팜몰', 'office', 'domestic', 'https://www.kgfarmmall.co.kr/', '비료·농약·농자재 종합 온라인 쇼핑몰.', false),
+  ('smartfarmkorea', '스마트팜코리아', 'office', 'domestic', 'https://www.smartfarmkorea.net/', '스마트팜 정보·교육·솔루션 종합 포털.', false),
+  ('nthing', '엔씽', 'office', 'domestic', 'https://www.nthing.net/', '컨테이너형 수직농장 AI 스마트팜 솔루션.', false),
+  ('slf', '스마트로컬푸드', 'office', 'domestic', 'https://slf.happyict.co.kr/', '로컬푸드 직매장 출하·정산 운영 SaaS.', false),
+  ('farmdy', '팜디', 'content', 'domestic', 'https://farmdy.kr/', 'AI 병해충 분석·영농일지 올인원 농업 앱.', false),
+  ('tpirates', '인어교주해적단', 'content', 'domestic', 'https://tpirates.com/', '전국 수산시장 당일 시세·수산물 정보 앱.', false),
+  ('baroinfo', '바로정보', 'content', 'domestic', 'https://www.baroinfo.com/', '전국 로컬푸드 직매장·직거래 종합정보.', false),
+  ('hiver', '하이버', 'fashion', 'domestic', 'https://www.hiver.co.kr', '남성 전용 패션 쇼핑앱.', false),
+  ('houseof', '하우스오브', 'fashion', 'domestic', 'https://houseof.kr', '디자이너 브랜드 편집샵 커뮤니티.', false),
+  ('fetching', '페칭', 'fashion', 'domestic', 'https://fetching.co.kr', '디자이너·럭셔리 셀렉트샵 플랫폼.', false),
+  ('resellground', '리셀그라운드', 'resale', 'domestic', 'https://www.resellground.com', '시세 기반 중고 명품가방 거래소.', false),
+  ('fount', '파운트', 'finance', 'domestic', 'https://fount.co/', '로보어드바이저 AI 자산관리 서비스.', false),
+  ('honestfund', '어니스트펀드', 'funding', 'domestic', 'https://www.honestfund.kr/', 'AI 신용분석 기반 P2P 투자·대출 플랫폼.', false),
+  ('piece', '피스', 'assets', 'domestic', 'https://piece.run/', '명품시계·미술품 등 현물 조각투자 플랫폼.', false),
+  ('seoulexchange', '서울거래 비상장', 'assets', 'domestic', 'https://www.seoulexchange.kr/', '비상장·장외주식 거래 플랫폼.', false),
+  ('ustockplus', '증권플러스 비상장', 'assets', 'domestic', 'https://www.ustockplus.com/', '두나무가 운영하는 비상장주식 거래 플랫폼.', false),
+  ('alphasquare', '알파스퀘어', 'assets', 'domestic', 'https://alphasquare.co.kr/', '차트·분석 통합 스마트 트레이딩 플랫폼.', false),
+  ('tosspayments', '토스페이먼츠', 'office', 'domestic', 'https://www.tosspayments.com/', '온라인 사업자용 간편결제 PG 인프라.', false),
+  ('itemmania', '아이템매니아', 'assets', 'domestic', 'https://www.itemmania.com/', '게임 아이템·계정·게임머니 안전거래 플랫폼.', false),
+  ('itembay', '아이템베이', 'assets', 'domestic', 'https://www.itembay.com/', '게임머니·아이템·계정 시세 조회·안전거래 중개.', false),
+  ('idfarm', '아이디팜', 'assets', 'domestic', 'https://idfarm.co.kr/', '계정·게임머니·아이템·상품권 거래 게임 거래소.', false),
+  ('gamemarket', '게임마켓', 'assets', 'domestic', 'https://www.gamemarket.kr/', '인증 판매자 기반 게임 계정·아이템 거래.', false),
+  ('barotem', '바로템', 'assets', 'domestic', 'https://www.barotem.com/', '계정·게임머니·아이템·상품권 거래 플랫폼.', false),
+  ('acon3d', '에이콘3D', 'assets', 'domestic', 'https://www.acon3d.com/', '웹툰·게임용 3D 배경 등 디지털 에셋 스토어.', false),
+  ('directg', '다이렉트게임즈', 'assets', 'domestic', 'https://directg.net/', 'PC·콘솔 게임 다운로드 키를 파는 한국형 ESD.', false),
+  ('phocamarket', '포카마켓', 'resale', 'domestic', 'https://phocamarket.com/', 'K-POP 포토카드 시세 조회·안전 거래 앱.', false),
+  ('wyyyes', '와이스', 'resale', 'domestic', 'https://wyyyes.com/', '트레이딩카드를 라이브로 거래하는 수집 앱.', false),
+  ('gigs', 'OP.GG Gigs', 'content', 'domestic', 'https://gigs.op.gg/', '롤·발로란트 등 전문가 게임 코칭·강의 플랫폼.', false),
+  ('lolcoach', '롤코치미', 'content', 'domestic', 'https://www.lol-coach.me/', '리그오브레전드 1:1 코칭 서비스.', false),
+  ('monthlytoy', '월간토이', 'content', 'domestic', 'https://monthlytoy.co.kr/', '매달 취미 키트를 배송하는 취미 구독 서비스.', false),
+  ('hobbyinthebox', '101박스', 'handmade', 'domestic', 'https://hobbyinthebox.co.kr/', '직접 만드는 창작 DIY 키트 쇼핑몰.', false),
+  ('ozjejakso', '오즈의제작소', 'print', 'domestic', 'https://ozjejakso.com/', '굿즈 디자인·제작·배송 원스톱 제작 플랫폼.', false),
+  ('villagebaby', '베이비빌리', 'kids', 'domestic', 'https://www.villagebaby.co.kr/', '임산부·육아맘 임신출산 콘텐츠·커머스 앱.', false),
+  ('mmtalk', '마미톡', 'kids', 'domestic', 'https://mmtalk.kr/', '초음파 영상·임신출산 정보 육아앱.', false),
+  ('zzimkong', '찜콩', 'kids', 'domestic', 'https://www.zzimkong.com/', '유아동 패션·가구 쇼핑앱.', false),
+  ('kidikidi', '키디키디', 'kids', 'domestic', 'https://www.kidikidi.com/', '이랜드가 운영하는 유아동 패션 편집샵.', false),
+  ('yugacrew', '육아크루', 'kids', 'domestic', 'https://www.yugacrew.com/', '동네 기반 육아친구 찾기 지역 커뮤니티 앱.', false),
+  ('momsdiary', '맘스다이어리', 'kids', 'domestic', 'https://www.momsdiary.co.kr/', '임신육아일기·무료 포토북 출판 지원 앱.', false),
+  ('smartowl', '똑똑한부엉이', 'rental', 'domestic', 'https://smartowl.co.kr/', '유아~초등 전집·영어책 무제한 대여 서비스.', false),
+  ('buggyfriend', '유모차친구', 'rental', 'domestic', 'https://www.buggyfriend.com/', '제주 유모차·카시트 예약 픽업 대여 서비스.', false),
+  ('barfdog', '바프독', 'pet', 'domestic', 'https://barfdog.co.kr/', '강아지 맞춤 생식 식단 정기배송 서비스.', false),
+  ('comestay', '컴스테이', 'pet', 'domestic', 'https://comestay.kr/', '반려견 동반 가능 숙소 예약 플랫폼.', false),
+  ('mypetplus', '마이펫플러스', 'beautyhealth', 'domestic', 'https://www.mypetplus.co.kr/', '동물병원 가격비교·찾기 앱.', false),
+  ('petping', '펫핑', 'beautyhealth', 'domestic', 'https://www.petping.com/', '스마트 반려동물 건강관리 펫테크 서비스.', false),
+  ('airdny', '에어댕냥이', 'homeservice', 'domestic', 'https://www.airdny.co.kr/', '반려동물 돌봄·산책·펫시터 매칭 플랫폼.', false),
+  ('rentalfriend', '렌탈프렌드', 'rental', 'domestic', 'https://rentalfriend.co.kr/', '정수기·가구 등 렌탈 가격비교 플랫폼.', false),
+  ('alphabox', '알파박스', 'rental', 'domestic', 'https://alphabox.co.kr/', '24시간 무인 셀프스토리지 짐보관.', false),
+  ('dalock', '미니창고 다락', 'rental', 'domestic', 'https://www.dalock.kr/', '온습도 관리 개인 셀프스토리지 창고.', false),
+  ('myzzym', '마이짐', 'rental', 'domestic', 'https://myzzym.com/', '짐보관 창고 중개 O2O 플랫폼.', false),
+  ('select', '리디셀렉트', 'rental', 'domestic', 'https://select.ridibooks.com/', '전자책 무제한 월정액 구독 서비스.', false),
+  ('ablanc', '에이블랑', 'fashion', 'domestic', 'https://ablanc.co.kr/', '월정액 명품 가방 대여 구독 서비스.', false),
+  ('streamingwear', '스트리밍웨어', 'fashion', 'domestic', 'https://streamingwear.com/', '월단위 패션 의류 정기구독 서비스.', false),
+  ('serieseight', '시리즈에잇', 'fashion', 'domestic', 'https://series-eight.com/', '명품 가방 대여 서비스.', false),
+  ('kocorental', '코코렌탈', 'office', 'domestic', 'https://kocorental.co.kr/', '노트북·복합기 등 사무기기 렌탈.', false),
+  ('lotterental', '롯데렌탈', 'office', 'domestic', 'https://www.lotterental.com/', '사무용 IT기기 종합 렌탈·A/S.', false),
+  ('repercent', '리퍼센트', 'resale', 'domestic', 'https://repercent.com/', '시세 기반 중고폰 최고가 매입 앱.', false),
+  ('sello', '셀로', 'resale', 'domestic', 'https://sell-o.kr/', '비대면 중고폰 판매 서비스.', false),
+  ('repickus', '피커스', 'resale', 'domestic', 'https://www.repickus.com/', '중고 가전·가구 재활용 거래 플랫폼.', false),
+  ('refurlab', '리퍼연구소', 'resale', 'domestic', 'https://www.refurlab.com/', '리퍼·중고 노트북·태블릿 프리미엄 쇼핑.', false),
+  ('watchexchange', '시계거래소', 'resale', 'domestic', 'https://www.watchexchange.co.kr/', '명품시계 매물·시세 제공 거래 서비스.', false),
+  ('xgolf', '엑스골프', 'ticket', 'domestic', 'https://www.xgolf.com/', '전국·일본 골프장 실시간 예약과 조인 서비스.', false),
+  ('golfmon', '골프몬', 'ticket', 'domestic', 'https://golfmon.kr/', '골프 부킹·조인·해외골프 통합 예약 앱.', false),
+  ('moolban', '물반고기반', 'ticket', 'domestic', 'https://www.moolban.com/', '바다·민물 낚시 통합 실시간 예약 앱.', false),
+  ('wrightbrothers', '라이트브라더스', 'openmarket', 'domestic', 'https://www.wrightbrothers.kr/', '자전거 인증 중고거래·커머스.', false),
+  ('market', '골핑', 'openmarket', 'domestic', 'https://market.golping.com/', '골프존커머스가 운영하는 골프용품 오픈마켓.', false),
+  ('hellin', '헬린캠프', 'fitness', 'domestic', 'https://hellin.camp/', '트레이너용 PT 운동일지·예약·회원관리.', false),
+  ('tranggle', '트랭글', 'content', 'domestic', 'https://www.tranggle.com/', '등산·자전거 GPS 기록·배지 커뮤니티.', false),
+  ('apple', '램블러', 'content', 'domestic', 'https://apps.apple.com/kr/app/id531276104', '등산·걷기 경로 기록·사진 마커 커뮤니티.', false),
+  ('myweddingdiary', '마웨다', 'wedding', 'domestic', 'https://myweddingdiary.co.kr', '웨딩홀 견적서 원본을 비교하는 플랫폼.', false),
+  ('snaplink', '스냅링크', 'photo', 'domestic', 'https://www.snaplink.run', 'AI 추천 여행·커플·웨딩 스냅작가 매칭.', false),
+  ('snapsta', '스냅스타', 'photo', 'domestic', 'https://www.snapsta.co.kr', '웨딩·돌잔치 스냅 촬영 전문 예약.', false),
+  ('ssople', '쏘플', 'event', 'domestic', 'https://ssople.com', '전국 프라이빗 파티룸 예약 서비스.', false),
+  ('amuse', '어뮤즈컴퍼니', 'event', 'domestic', 'https://amuse.company', '축제·MICE 행사 기획 대행 원스톱.', false),
+  ('dailoz', '데일로즈', 'event', 'domestic', 'https://www.dailoz.com', '주기별 꽃 정기구독 배송 서비스.', false),
+  ('autopartsner', '파츠너', 'auto', 'domestic', 'https://auto-partsner.com/', '국산·수입·상용차 부품 전문 온라인 쇼핑몰.', false),
+  ('myungcha', '명차닷컴', 'auto', 'domestic', 'https://www.myungcha.com/', '벤츠·BMW·아우디 등 수입차 부품 전문몰.', false),
+  ('hellowcar', '헬로우카', 'auto', 'domestic', 'https://hellowcar.com/', '현대모비스 순정부품 공식 온라인 대리점몰.', false),
+  ('partsro', '파츠로', 'auto', 'domestic', 'https://partsro.com/', '현대·기아 순정부품 부품번호·VIN 조회 판매.', false),
+  ('tstation', '티스테이션', 'auto', 'domestic', 'https://www.tstation.com/', '한국타이어 타이어 예약·차량관리 플랫폼.', false),
+  ('bluetire', '블루타이어', 'auto', 'domestic', 'https://bluetire.co.kr/', '넥센타이어 공식몰, 장착점 배송 예약.', false),
+  ('parts114', '파츠114', 'auto', 'domestic', 'https://parts114.co.kr/', '수입차 부품 취급 전문 쇼핑몰.', false),
+  ('pcarmall', '피카몰', 'auto', 'domestic', 'https://pcarmall.com/', '엔진오일·요소수 등 차량용품 종합몰.', false),
+  ('nebaqui', '네바퀴닷컴', 'auto', 'domestic', 'https://nebaqui.com/', '시트·매트 등 자동차용품 전문 쇼핑몰.', false),
+  ('reitwagen', '라이트바겐', 'auto', 'domestic', 'https://www.reitwagen.co.kr/', '중고 오토바이 거래·할부 이륜차 플랫폼.', false),
+  ('bstore', '블랙스토어', 'auto', 'domestic', 'https://b-store.co.kr/', '차량용 블랙박스 전문 쇼핑몰.', false),
+  ('gongim', '공임나라', 'auto', 'domestic', 'https://www.gongim.com/', '정비·엔진오일·타이어 출장장착 플랫폼.', false),
+  ('intrax', '인트락스몰', 'auto', 'domestic', 'https://www.intrax.co.kr/', '자동차·오토바이 튜닝·모터스포츠 종합몰.', false),
+  ('pechanara', '폐차나라', 'auto', 'domestic', 'https://pechanara.com/', '자동차 중고·폐차 부품 전문 쇼핑몰.', false),
+  ('carlandasia', '카랜드', 'auto', 'domestic', 'https://carlandasia.com/', '중고엔진·미션 등 자동차 중고부품 쇼핑몰.', false),
+  ('carssenb2b', '카쎈B2B', 'office', 'domestic', 'https://carssenb2b.com/', '사업자 전용 자동차 부품 B2B 도매몰.', false),
+  ('mamedene', '마메드네', 'beautyhealth', 'domestic', 'https://mamedene.com/', 'AI 헤어 시뮬레이션과 미용실·네일·왁싱 예약 앱.', false),
+  ('gongbiz', '공비서', 'beautyhealth', 'domestic', 'https://gongbiz.kr/', '네일·미용실·왁싱 등 뷰티샵 비교예약 앱.', false),
+  ('mendlemendle', '맨들맨들', 'beautyhealth', 'domestic', 'https://mendlemendle.com/', '왁싱·네일·피부·속눈썹 뷰티샵 예약 플랫폼.', false),
+  ('msgtong', '마통', 'beautyhealth', 'domestic', 'https://www.msgtong.co.kr/', '마사지·에스테틱·왁싱 예약결제 정보 플랫폼.', false),
+  ('mimobio', '미모', 'beautyhealth', 'domestic', 'http://www.mimobio.com/', '전문 피부관리샵 실시간 예약 플랫폼.', false),
+  ('tattooshare', '타투쉐어', 'beautyhealth', 'domestic', 'https://m.tattooshare.co.kr/', '타투 견적비교·할인·리뷰 매칭 앱.', false),
+  ('beauty', '용감한뷰티', 'beautyhealth', 'domestic', 'https://beauty.yonggam.com/', '뷰티샵 고객관리·예약 통합 관리 서비스.', false),
+  ('previewapp', '프리뷰', 'content', 'domestic', 'https://previewapp.co.kr/ko', '눈썹·입술 반영구 문신 시뮬레이션 상담 앱.', false),
+  ('meemong', '미몽', 'content', 'domestic', 'https://meemong.com/', '헤어 컨설팅·헤어모델 매칭 플랫폼.', false),
+  ('groomingjok', '그루밍족', 'content', 'domestic', 'https://groomingjok.com/', '남성 성형·시술 정보 커뮤니티 앱.', false),
+  ('unpa', '언니의파우치', 'social', 'domestic', 'https://unpa.me/', '내돈내산 뷰티 리뷰·커뮤니티 앱.', false),
+  ('gov', '정부24', 'office', 'domestic', 'https://www.gov.kr/', '각종 민원 신청·발급·조회 통합 정부 포털.', false),
+  ('safetyreport', '안전신문고', 'office', 'domestic', 'https://www.safetyreport.go.kr/', '생활 속 안전위험을 사진으로 신고하는 앱.', false),
+  ('epeople', '국민신문고', 'office', 'domestic', 'https://www.epeople.go.kr/', '민원·제안·예산낭비신고 온라인 창구.', false),
+  ('cheongwon', '청원24', 'office', 'domestic', 'https://www.cheongwon.go.kr/', '국가기관에 온라인으로 청원하는 서비스.', false),
+  ('mobileid', '모바일 신분증', 'office', 'domestic', 'https://www.mobileid.go.kr/', '주민등록증·운전면허증 모바일 발급 앱.', false),
+  ('airkorea', '에어코리아', 'content', 'domestic', 'https://www.airkorea.or.kr/', '실시간 미세먼지·대기질 정보 제공.', false),
+  ('pp', '한전 파워플래너', 'content', 'domestic', 'https://pp.kepco.co.kr/', '실시간 전기 사용량·요금 조회 절약 앱.', false),
+  ('solarplay', '솔라플레이', 'content', 'domestic', 'https://www.solarplay.co.kr/', '태양광발전소 발전량 실시간 모니터링.', false),
+  ('lasee', '라씨', 'content', 'domestic', 'https://www.lasee.io/', '태양광 발전 현황·이상 알림 모니터링 앱.', false),
+  ('bikeseoul', '서울자전거 따릉이', 'social', 'domestic', 'https://www.bikeseoul.com/', '서울시 공공자전거 대여 서비스.', false),
+  ('tashu', '대전 타슈', 'social', 'domestic', 'https://www.tashu.or.kr/', '대전시 무인 공공자전거 대여 서비스.', false),
+  ('thepodo', '오늘의 분리수거', 'social', 'domestic', 'https://www.thepodo.com/', '분리배출 실천하고 포인트 받는 앱.', false),
+  ('superbin', '수퍼빈', 'social', 'domestic', 'https://www.superbin.co.kr/', '재활용 회수기 네프론 자원순환 플랫폼.', false),
+  ('treepla', '트리플래닛', 'social', 'domestic', 'https://www.treepla.net/', '크라우드펀딩으로 숲 조성 나무심기 플랫폼.', false),
+  ('cpoint', '탄소중립포인트', 'finance', 'domestic', 'https://cpoint.or.kr/netzero/', '친환경 활동 시 현금·포인트 인센티브.', false),
+  ('gmoney', '경기지역화폐', 'finance', 'domestic', 'https://apps.gmoney.or.kr/', '충전 인센티브 제공 지역사랑상품권 앱.', false),
+  ('zeropay', '제로페이', 'finance', 'domestic', 'https://www.zeropay.or.kr/', '소상공인 수수료 절감 QR 간편결제.', false),
+  ('together2', '카카오같이가치', 'social', 'domestic', 'https://together.kakao.com/', '누구나 참여하는 모금·기부 플랫폼.', false),
+  ('oraebakery', '오래베이커리', 'food', 'domestic', 'https://oraebakery.com/', '천연발효 사워도우 빵 정기배송.', false),
+  ('vegefood', '베지푸드', 'food', 'domestic', 'http://www.vegefood.co.kr/', '채식 전문 커머스.', false),
+  ('beanbrothers', '빈브라더스', 'food', 'domestic', 'https://www.beanbrothers.co.kr/subscribe/', '스페셜티 원두 정기구독 로스터리.', false),
+  ('cafebox', '카페박스', 'food', 'domestic', 'https://cafebox.kr/', '매달 바뀌는 로스터리 커피 구독.', false),
+  ('yundiet', '윤식단', 'food', 'domestic', 'https://www.yundiet.com/', '다이어트 단백질 도시락 정기배송.', false),
+  ('tandanji', '탄단지박스', 'food', 'domestic', 'https://www.tandanji.me/', '탄단지 밸런스 식단 구독 서비스.', false),
+  ('6meal', '식스밀', 'food', 'domestic', 'https://6meal.co.kr/', 'AI 식단코칭 다이어트 도시락 구독.', false),
+  ('farmtobaby', '팜투베이비', 'food', 'domestic', 'https://www.farmtobaby.co.kr/', '친환경 원료 영양맞춤 이유식 구독.', false),
+  ('bebecook', '베베쿡', 'food', 'domestic', 'https://www.bebecook.com/', '배달이유식 구독 브랜드.', false),
+  ('pocketsalad', '포켓샐러드', 'food', 'domestic', 'https://pocketsalad.co.kr/', '주문 즉시 제작 샐러드 정기배송.', false),
+  ('cueat', '큐잇', 'food', 'domestic', 'https://cueat.kr/', '취향 큐레이션 과일·채소 구독.', false),
+  ('ffd', '농사펀드', 'social', 'domestic', 'https://www.ffd.co.kr/', '농부-소비자 연결 제철농산물 크라우드.', false),
+  ('tving', '티빙', 'content', 'domestic', 'https://www.tving.com', 'CJ ENM 계열 국내 대표 OTT, tvN·JTBC 콘텐츠.', false),
+  ('wavve', '웨이브', 'content', 'domestic', 'https://www.wavve.com', '지상파 3사와 SK 합작 OTT, 방송 콘텐츠 강점.', false),
+  ('watcha', '왓챠', 'content', 'domestic', 'https://watcha.com', '추천 기반 영화·드라마 OTT, 마니아 콘텐츠 특화.', false),
+  ('coupangplay', '쿠팡플레이', 'content', 'domestic', 'https://www.coupangplay.com', '쿠팡이 운영하는 OTT, 스포츠·오리지널 콘텐츠.', false),
+  ('laftel', '라프텔', 'content', 'domestic', 'https://laftel.net', '애니메이션 전문 스트리밍 OTT.', false),
+  ('vigloo', '비글루', 'content', 'domestic', 'https://www.vigloo.com', '글로벌 숏폼 드라마 플랫폼.', false),
+  ('dramaboxapp', '드라마박스', 'content', 'domestic', 'https://www.dramaboxapp.com', '숏폼 드라마 스트리밍 앱.', false),
+  ('audiocomics', '오디오코믹스', 'content', 'domestic', 'https://audiocomics.kr', '웹툰·웹소설 기반 오디오 드라마 플랫폼.', false)
+on conflict (id) do nothing;
+
+insert into public.platforms (id, name, category_id, region, url, blurb, is_new) values
+  ('sooplive2', '숲', 'social', 'domestic', 'https://www.sooplive.com', '1인 방송·라이브 스트리밍 플랫폼(구 아프리카TV).', false),
+  ('spooncast', '스푼', 'social', 'domestic', 'https://www.spooncast.net/kr', '목소리로 소통하는 오디오 라이브 방송 앱.', false),
+  ('vworld', '브이월드', 'social', 'domestic', 'https://v-world.io', '버튜버 팬 커뮤니티 플랫폼.', false),
+  ('vrew', '브루', 'assets', 'domestic', 'https://vrew.ai/ko', 'AI 자동 자막·음성인식 기반 영상 편집 툴.', false),
+  ('aistudios', 'AI스튜디오스', 'assets', 'domestic', 'https://www.aistudios.com', 'AI 아바타·텍스트 투 비디오 제작 SaaS.', false),
+  ('videomonster', '비디오몬스터', 'assets', 'domestic', 'https://www.videomonster.com', '템플릿 기반 자동 영상 제작 SaaS.', false),
+  ('dental', '치과웨건', 'beautyhealth', 'domestic', 'https://dental.pricewagon.net/', '내 주변 임플란트·교정 치과 가격비교 사이트.', false),
+  ('gooodcare', '좋은케어', 'homeservice', 'domestic', 'https://www.gooodcare.com/', '교육받은 간병인·케어매니저 매칭 서비스.', false),
+  ('modohan', '모두한', 'homeservice', 'domestic', 'https://www.modohan.co.kr/', '증상·지역별 한의원 검색·예약 한방 플랫폼.', false),
+  ('download', '슬립큐', 'content', 'domestic', 'https://download.sleepq.ai/', '식약처 허가 불면증 디지털 치료제 앱.', false),
+  ('lasikhelp', '라식헬프', 'content', 'domestic', 'https://lasikhelp.co.kr/', '라식·라섹 정보와 제휴 안과 이벤트 비교.', false),
+  ('kormedi', '코메디닷컴', 'content', 'domestic', 'https://kormedi.com/', '건강·의학 정보 콘텐츠 미디어 플랫폼.', false),
+  ('thedirectdonation', '곧장기부', 'funding', 'domestic', 'https://thedirectdonation.org/', '수수료 없이 100% 전달하는 다이렉트 기부 플랫폼.', false),
+  ('ilovegohyang', '고향사랑e음', 'funding', 'domestic', 'https://www.ilovegohyang.go.kr/', '고향사랑기부제 공식 온라인 기부·답례품 플랫폼.', false),
+  ('socialfunch', '소셜펀치', 'funding', 'domestic', 'https://www.socialfunch.org/', '인권·환경·노동 사회운동 후원 크라우드펀딩.', false),
+  ('crowdnet', '크라우드넷', 'funding', 'domestic', 'https://www.crowdnet.or.kr/', '증권형 크라우드펀딩 정보 제공 공식 포털.', false),
+  ('greenfund', '환경재단 그린펀드', 'funding', 'domestic', 'https://greenfund.org/', '환경 캠페인·기부를 모으는 환경재단 플랫폼.', false),
+  ('sharencare', '쉐어앤케어', 'funding', 'domestic', 'https://sharencare.me/', '콘텐츠 공유로 기업이 대신 기부하는 소셜 플랫폼.', false),
+  ('donus', '도너스', 'social', 'domestic', 'https://www.donus.org/', '비영리 후원자 개발·정기결제 모금 SaaS.', false),
+  ('donationbox', '도네이션박스', 'social', 'domestic', 'https://donationbox.co.kr/', 'NGO 후원자·모금 관리 온라인 모금함 서비스.', false),
+  ('1365', '1365 자원봉사포털', 'social', 'domestic', 'https://www.1365.go.kr/', '전국 자원봉사 검색·신청·실적관리 공식 포털.', false),
+  ('vms', 'VMS 사회복지자원봉사', 'social', 'domestic', 'https://www.vms.or.kr/', '사회복지 분야 자원봉사 모집·인증관리 시스템.', false),
+  ('donghaeng', '서울동행', 'social', 'domestic', 'https://www.donghaeng.seoul.kr/', '대학생 멘토링·기획봉사 매칭 자원봉사 플랫폼.', false),
+  ('dovol', '청소년자원봉사 도볼', 'social', 'domestic', 'https://www.dovol.net/', '청소년 봉사활동 검색·신청·실적 원스톱 서비스.', false),
+  ('beautifulstore', '아름다운가게', 'social', 'domestic', 'https://www.beautifulstore.org/', '물품기부·재사용 판매로 이웃 돕는 나눔 플랫폼.', false),
+  ('bigwalk', '빅워크', 'social', 'domestic', 'https://www.bigwalk.co.kr/', '걸음 기부로 사회·환경 문제 후원하는 앱.', false),
+  ('sepp', 'e스토어 36.5+', 'openmarket', 'domestic', 'https://www.sepp.or.kr/', '사회적경제기업 제품 공식 온라인 쇼핑몰.', false),
+  ('hknuri', '함께누리몰', 'openmarket', 'domestic', 'https://www.hknuri.co.kr/', '사회적기업·공정무역 제품 판매 커머스.', false),
+  ('fairtradeshop', '공정무역가게', 'openmarket', 'domestic', 'https://fairtradeshop.co.kr/', '공정무역기구 한국사무소 운영 공정무역 쇼핑몰.', false),
+  ('buysocial', '바이소셜', 'openmarket', 'domestic', 'https://www.buysocial.or.kr/', '사회적경제 제품 구매·가치소비 캠페인 마켓.', false),
+  ('kr5', '튜터하이브', 'freelance', 'domestic', 'https://kr.tutorhive.co', '명문대 출신 유학생 과외 멘토 매칭 앱.', false),
+  ('uhakplanner', '유학플래너닷컴', 'content', 'domestic', 'https://www.uhakplanner.com/', '조기유학·해외대학 전문 유학 컨설팅.', false),
+  ('uhakpeople', '유학피플', 'content', 'domestic', 'https://www.uhakpeople.com/', '해외유학·어학연수·조기유학 정보 포털.', false),
+  ('edmuhak', 'edm유학센터', 'content', 'domestic', 'https://www.edmuhak.com/language-abroad', '국가별 어학연수·어학원 후기 비교.', false),
+  ('coei', '종로유학원', 'content', 'domestic', 'https://www.coei.com/', '어학연수·학위유학·조기유학 종합 유학원.', false),
+  ('megagong', '넥스트공무원', 'content', 'domestic', 'https://www.megagong.net/', '9급·7급 공무원 인강, 합격 시 환급.', false),
+  ('egosi', '해커스공무원', 'content', 'domestic', 'https://egosi.hackers.com/', '공무원 인강 및 수험정보 플랫폼.', false),
+  ('edumegong', '에듀공', 'content', 'domestic', 'https://www.edumegong.co.kr/', '공무원·경찰·소방 인강 및 교재 사이트.', false),
+  ('modoogong', '모두공', 'content', 'domestic', 'https://www.modoogong.com/', '학습량 관리형 공무원 인강 서비스.', false),
+  ('passdong', '자격동스쿨', 'content', 'domestic', 'https://www.passdong.com/cert/', '자격증 독학 인강 플랫폼.', false),
+  ('llo', '한국자격평생교육원', 'content', 'domestic', 'https://llo.or.kr/', '심리상담·지도사 등 자격증 인강.', false),
+  ('lab', '잇올 랩', 'kids', 'domestic', 'https://m.lab.itall.com/', 'AI 합격예측 기반 입시전략 컨설팅 플랫폼.', false),
+  ('apple2', '이고다', 'kids', 'domestic', 'https://apps.apple.com/kr/app/id6449497486', '입시 컨설팅 매칭 플랫폼.', false),
+  ('mcc', '메가스터디 대입컨설팅', 'kids', 'domestic', 'https://mcc.megastudy.net/', '수시·정시·학종 맞춤 대입 컨설팅.', false),
+  ('studymoa', '스터디모아', 'space', 'domestic', 'https://studymoa.me/', '스터디카페·스터디룸 좌석 예약 앱.', false),
+  ('apple3', '와이즈스터디', 'space', 'domestic', 'https://apps.apple.com/kr/app/id1496015703', '프리미엄 독서실·스터디카페 좌석 예약.', false),
+  ('pickko', '픽코', 'space', 'domestic', 'https://www.pickko.co.kr/', '전국 스터디카페·독서실 좌석 예약 앱.', false),
+  ('zaksim', '작심', 'space', 'domestic', 'https://www.zaksim.co.kr/kiosk', '무인 독서실·스터디카페 예약 결제.', false),
+  ('studylive', '스터디라이브', 'content', 'domestic', 'https://studylive.co.kr/', '24시간 실시간 캠스터디 온라인 스터디룸.', false),
+  ('gongzakso', '공작소', 'content', 'domestic', 'https://www.gongzakso.com/', '온라인 스터디 그룹 모집·관리 앱.', false),
+  ('hakwonsin', '학원의신', 'kids', 'domestic', 'https://hakwonsin.co.kr/', '전국 학원 정보·리뷰 비교 플랫폼.', false),
+  ('hakwonmap', '학원맵', 'kids', 'domestic', 'https://hakwonmap.com/', '학원 검색·비교·수강신청 통합 플랫폼.', false),
+  ('sscoaching', '상상코칭', 'freelance', 'domestic', 'https://sscoaching.co.kr/', '성적·성향 맞춤 1:1 과외 매칭.', false),
+  ('jinhak', '진학사', 'kids', 'domestic', 'https://www.jinhak.com/', '대입 합격예측·모의지원 입시 플랫폼.', false),
+  ('adiga', '어디가', 'kids', 'domestic', 'https://www.adiga.kr/', '대교협 공식 대입정보 포털.', false),
+  ('gs25', '우리동네GS', 'delivery', 'domestic', 'https://gs25.gsretail.com/', '동네 편의점 즉시배송 퀵커머스.', false),
+  ('dongnemom', '동네맘', 'social', 'domestic', 'http://dongnemom.com/', '우리동네 지역·육아 정보 공유 맘 커뮤니티.', false),
+  ('mcafe', '맘카페', 'social', 'domestic', 'https://mcafe.me/', '전국 동네 맘 커뮤니티, 지역 정보·나눔 게시판.', false),
+  ('incheoneum2', '인천e음', 'social', 'domestic', 'https://incheoneum.or.kr/', '인천시 지역화폐, 동네 가맹점 캐시백 카드.', false)
+on conflict (id) do nothing;
+
+insert into public.partner_type_groups (id, label, descr, sort) values
+  ('traffic', '트래픽·노출 교환', '돈 없이 서로의 지면과 채널을 맞바꾼다 — 가장 쉬운 시작점', 0),
+  ('growth', '회원 성장', '상대의 회원을 내 회원으로 — 상호송출·레퍼럴·간편입점', 1),
+  ('commerce', '판매·상품 결합', '상품과 혜택을 묶어 양쪽 거래를 함께 키운다', 2),
+  ('comarketing', '공동 마케팅', '이벤트·세미나·리포트를 함께 만들어 비용은 반, 도달은 두 배', 3),
+  ('infra', '기능·데이터 연동', '서로의 기능·데이터·인프라를 연결하는 깊은 제휴', 4),
+  ('trust', '신뢰·소개', '검증 배지와 리드 소개로 신뢰를 주고받는다', 5)
+on conflict (id) do nothing;
+
+insert into public.partner_types (id, group_id, label, descr, mechanics, example, settlement, effort, goals, sort) values
+  ('banner_swap', 'traffic', '배너 맞교환', '서로의 홈·주요 지면에 배너를 동일 가치로 상호 게재', '노출량(또는 기간)을 동일 기준으로 정하고 각자 배너를 게재. 월 단위로 노출 수치를 상호 공유', 'B2B 네트워킹 플랫폼 ↔ MRO몰이 메인 배너를 한 달간 맞교환', 'none', 'light', '{"growth","awareness","cost"}', 0),
+  ('newsletter_swap', 'traffic', '뉴스레터·푸시 스왑', '각자의 뉴스레터·앱 푸시에서 상대 플랫폼을 소개', '발송 리스트 규모를 맞춰 회당 교환. 서로의 회원 DB는 넘기지 않고 각자 발송(개인정보 이관 없음)', '직무 뉴스레터 하단 배너 ↔ 커리어 플랫폼 앱 푸시 1회', 'none', 'light', '{"growth","content"}', 1),
+  ('content_exchange', 'traffic', '콘텐츠 교차 게재', '블로그·가이드 기고를 맞교환하고 상호 백링크', '상대 고객에게 유용한 실무 콘텐츠를 서로의 블로그에 기고. SEO 백링크 효과 덤', '물류 플랫폼이 커머스 블로그에 ''풀필먼트 고르는 법'' 기고', 'none', 'light', '{"content","awareness"}', 2),
+  ('partner_zone', 'traffic', '파트너관 상호 입점', '앱·웹의 ''추천 서비스'' 코너에 서로를 상시 노출', '각자 서비스 내 파트너 코너를 만들고 상대 서비스 카드를 상시 게재(딥링크)', '쇼핑몰 빌더의 ''추천 도구''에 마케팅 SaaS 입점, 반대 방향도 동일', 'none', 'mid', '{"growth","awareness"}', 3),
+  ('cross_signup', 'growth', '회원 상호송출', '가입 완료·핵심 액션 시점에 상대 플랫폼을 추천', '가입 완료 화면·온보딩 메일에 ''함께 쓰면 좋은 서비스''로 상대를 노출. 전환 수치 상호 공유', '펀딩 종료 메이커에게 상시 판매채널을, 판매채널 셀러에게 펀딩 개설을 안내', 'none', 'light', '{"growth"}', 4),
+  ('referral_fee', 'growth', '레퍼럴 제휴 (성과 수수료)', '추천 링크·코드로 발생한 가입·거래에 성과 수수료 지급', '고유 추천 코드/UTM 링크 발급 → 전환 발생 시 건당·비율 수수료. 정산은 두 플랫폼이 직접(세모플은 연결만)', '회원모집 중인 플랫폼이 추천 가입 1건당 정액 지급, 파트너는 자기 회원에게 안내', 'direct', 'mid', '{"growth","revenue"}', 5),
+  ('cross_onboarding', 'growth', '크로스 온보딩 (간편 입점)', '내 회원이 상대 플랫폼에 서류 재활용·우대 심사로 쉽게 입점', '입점 서류·검증 결과를 회원 동의하에 재활용하거나 전용 입점 링크로 심사 우대', '오픈마켓 우수 셀러가 물류 플랫폼에 원클릭 가입 + 첫 달 우대가', 'none', 'mid', '{"growth"}', 6),
+  ('member_benefit', 'growth', '멤버십 상호 혜택', 'A 회원에게 B의 상시 할인·우대를 제공 (양방향)', '회원 등급·인증 기준으로 상대 서비스 상시 혜택 부여. 혜택 코드 방식이면 개인정보 이관 없음', '지식산업센터 입주사 인증 회원에게 사무용품몰 상시 할인', 'none', 'mid', '{"growth","awareness"}', 7),
+  ('coupon_exchange', 'commerce', '쿠폰 상호 제공', '구매완료·예약확정 화면에 상대 플랫폼 쿠폰을 노출', '전환이 끝난 시점(구매완료)에 상대 쿠폰 노출 — 자기 전환을 깎지 않으면서 상대에게 고객 전달', '반려동물 커머스 주문완료 화면 ↔ 애견동반 숙소 예약확정 화면 쿠폰 맞교환', 'none', 'light', '{"revenue","growth"}', 8),
+  ('bundle', 'commerce', '번들·패키지', '두 플랫폼의 상품·서비스를 묶어 패키지로 판매', '묶음 구성만 공동으로 하고 결제·배송·정산은 각자 자기 상품만 처리(교차 정산 없음)', '이유식 구독 첫 결제에 육아용품 할인권 동봉, 반대 방향도 동일', 'none', 'mid', '{"revenue"}', 9),
+  ('joint_gongu', 'commerce', '공동구매 합동 진행', '양쪽 회원을 모아 한 번의 공동구매를 함께 연다', '모집 인원·물량을 합산해 단가를 낮추고, 주문·정산은 각 플랫폼이 자기 회원 몫만 처리', '두 지역 커머스가 제철 과일 공구를 합동 진행해 최소물량 돌파', 'none', 'mid', '{"revenue","growth"}', 10),
+  ('affiliate_listing', 'commerce', '위탁·어필리에이트 입점', '상대 플랫폼의 상품·서비스를 내 지면에서 판매·중개', '링크·API로 상대 상품을 내 카탈로그에 노출, 판매 발생 시 수수료(당사자 직접 정산)', '인테리어 플랫폼이 가구 렌탈 상품을 자기 앱에서 판매 중개', 'direct', 'heavy', '{"revenue"}', 11),
+  ('joint_event', 'comarketing', '공동 이벤트·챌린지', '참가형 이벤트를 공동 개최해 양쪽 브랜드를 함께 노출', '기획·경품·홍보를 분담하고 참가 접수는 각자 채널로. 성과(참가자 수) 상호 공유', '러닝 플랫폼 대회 완주자에게 건강식단 구독 체험권 리워드', 'share', 'mid', '{"awareness","growth"}', 12),
+  ('joint_webinar', 'comarketing', '공동 웨비나·교육', 'B2B 실무 세미나를 공동 개최해 참가 리드를 나눈다', '주제·연사를 나눠 맡고 신청 페이지 공동 운영. 참가자 동의 기반으로 리드 공유', 'B2B 네트워킹 플랫폼 × 제조 견적 플랫폼의 ''공장 세일즈'' 웨비나', 'share', 'mid', '{"awareness","growth","content"}', 13),
+  ('joint_report', 'comarketing', '공동 리서치·리포트', '업계 데이터 리포트를 공동 발행해 다운로드 리드를 수집', '각자 보유한 (비개인) 데이터·인사이트를 합쳐 리포트 발행, 다운로드 신청 리드는 동의 기반 공유', '물류 플랫폼 × 커머스 플랫폼의 ''이커머스 배송 트렌드'' 리포트', 'share', 'mid', '{"content","awareness"}', 14),
+  ('offline_popup', 'comarketing', '오프라인 팝업·부스 공동 운영', '박람회 부스·팝업스토어를 함께 열어 비용을 나눈다', '부스 임차·운영 인력을 분담하고 서로의 고객층에 함께 노출', '창업 박람회에서 쇼핑몰 빌더 × 풀필먼트가 공동 부스', 'share', 'heavy', '{"awareness","cost"}', 15),
+  ('api_embed', 'infra', 'API·위젯 연동', '상대 플랫폼의 기능을 내 서비스 안에 임베드', 'API·위젯으로 상대 기능(견적·예약·검색)을 내 화면에 통합. 발생 거래는 성과 기준 정산 가능', '커머스 셀러센터 안에 물류 플랫폼 견적 위젯 임베드', 'direct', 'heavy', '{"revenue","growth"}', 16),
+  ('data_partnership', 'infra', '데이터 제휴', '상품·시세·카탈로그 데이터를 상호 제공 (개인정보 제외)', '비개인 데이터(시세·재고·카탈로그)만 API로 교환. 회원 DB 이관은 하지 않는다', '수산물 시세 플랫폼 데이터를 식자재 발주 앱에 제공, 반대로 수요 데이터 공유', 'direct', 'heavy', '{"revenue","content"}', 17),
+  ('infra_deal', 'infra', '인프라 우대 제휴', '물류·결제·풀필먼트 등 인프라를 파트너 회원에게 우대 조건으로', '파트너 플랫폼 회원 대상 전용 요금·우선 처리 제공, 상대는 자기 채널에서 안내', '풀필먼트가 특정 오픈마켓 셀러에게 첫 3개월 보관비 우대', 'direct', 'mid', '{"growth","revenue"}', 18),
+  ('trust_badge', 'trust', '파트너 인증 배지', '상호 검증을 마친 파트너임을 배지로 표시해 신뢰를 이전', '상호 실사·검증 후 서로의 지면에 ''공식 파트너'' 배지와 소개 페이지 게재', '세무 플랫폼 × 법인설립 플랫폼이 상호 공식 파트너 표기', 'none', 'light', '{"awareness"}', 19),
+  ('lead_exchange', 'trust', 'B2B 리드 상호 소개', '내게 맞지 않는 문의를 맞는 파트너에게 소개 (동의 기반)', '고객 동의를 받은 문의만 소개. 개인정보 최소화 원칙 — 소개 성사 시 정액 사례 가능(당사자 간)', '인테리어 견적 문의 중 상업공간 건은 상업 전문 플랫폼으로 소개', 'direct', 'light', '{"revenue","awareness"}', 20),
+  ('group_alliance', 'trust', '버티컬 연합 (3사 이상)', '같은 고객군의 플랫폼 여럿이 혜택·마케팅 연합을 결성', '동일 타깃(예: 1인 셀러)의 비경쟁 플랫폼 3~5곳이 공동 혜택 패키지·공동 캠페인 운영', '쇼핑몰 빌더 + 풀필먼트 + 세무 + 마케팅 SaaS의 ''창업 스타터 연합''', 'share', 'heavy', '{"growth","awareness","cost"}', 21)
+on conflict (id) do nothing;
+
+insert into public.deals (id, category_id, region, revenue_band, mode, summary, status, is_demo, posted) values
+  ('D-001', 'handmade', 'domestic', '연매출 1~5억', '지분 전량 매각', '운영 6년차 수공예 버티컬 마켓. 작가 풀·단골 고객 보유, 운영자 이직으로 매각 희망.', 'open', true, '2026-06-15'),
+  ('D-002', 'delivery', 'domestic', '연매출 5~10억', '지분 일부 + 운영 승계', '지역 기반 배달 중개. 가맹점 네트워크 안정적, 확장 자본 유치 또는 매각 병행 검토.', 'open', true, '2026-06-22'),
+  ('D-003', 'content', 'domestic', '연매출 1억 미만', '자산 양수도(회원·콘텐츠)', '니치 취미 클래스 플랫폼. 콘텐츠 라이브러리와 회원 DB 중심의 자산 매각.', 'in_progress', true, '2026-06-05')
+on conflict (id) do nothing;
+
+insert into public.plans (id, label, monthly_price, descr, active, sort) values
+  ('free',    'Free',    0,      '등재·제휴 프로필·배너교환형 무제한·월 무료 크레딧', true,  0),
+  ('pro',     'Pro',     70000,  '연결 크레딧 포함·파트너 검색 무제한·검증 배지·트래킹 대시보드', false, 1),
+  ('premium', 'Premium', 250000, '매칭 매니저 큐레이션·깊은연동 우선 소개·계약 템플릿·성과 리포트', false, 2)
+on conflict (id) do nothing;
+
+insert into public.boost_tiers (id, name, placement, cpm, est_ctr, sort) values
+  ('home_hero',   '홈 상단 고정',     '홈 히어로 아래 첫 카드 슬롯', 8000, 0.0200, 0),
+  ('cat_top',     '분야 상단 노출',   '해당 분야 목록 최상단',       5000, 0.0150, 1),
+  ('search_boost','검색 상위 노출',   '관련 검색결과 상단(AD 표기)', 6000, 0.0180, 2)
+on conflict (id) do nothing;

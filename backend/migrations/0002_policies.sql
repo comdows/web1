@@ -92,11 +92,15 @@ create policy "receiver respond proposal" on public.proposals for update
   using (public.is_operator_of(to_platform_id) or public.is_admin())
   with check (public.is_operator_of(to_platform_id) or public.is_admin());
 
--- ── deals: 공개는 open/in_progress 익명 필드만(owner_id는 뷰로 차단) ──
+-- ── deals: 익명성 보장 — 공개는 v_deals_public 뷰로만, 원본 테이블은 소유자/admin 전용 ──
+-- 중요: 3단계 익명성은 사업모델의 핵심(stage3-exchange-plan §1). PostgREST는 원본
+-- 테이블(/rest/v1/deals)도 직접 노출하므로, 공개 정책이 열려 있으면 anon이 owner_id를
+-- 직접 조회해 매도자 신원을 역추적할 수 있다. 따라서 원본은 소유자/admin만 읽고,
+-- 익명 컬럼만 담은 v_deals_public 뷰(소유자 권한 실행 → base RLS 우회)를 공개 창구로 쓴다.
 alter table public.deals          enable row level security;
 alter table public.deal_interests enable row level security;
-create policy "public read open deals" on public.deals for select
-  using (status <> 'closed' or owner_id = auth.uid() or public.is_admin());
+create policy "own or admin read deal" on public.deals for select
+  using (owner_id = auth.uid() or public.is_admin());
 create policy "insert own deal" on public.deals for insert
   with check (auth.uid() is not null and owner_id = auth.uid());
 create policy "own or admin update deal" on public.deals for update
@@ -109,8 +113,11 @@ create policy "read own interest" on public.deal_interests for select
 create policy "admin manage interest" on public.deal_interests for update
   using (public.is_admin()) with check (public.is_admin());
 
--- 익명 공개 뷰(owner_id 등 내부 필드 제외) — 프론트는 이 뷰만 읽는다
-create or replace view public.v_deals_public as
+-- 익명 공개 뷰(owner_id 등 내부 필드 제외) — 프론트는 이 뷰만 읽는다.
+-- security_invoker=false(소유자 권한 실행): 원본 deals의 소유자 전용 RLS를 우회해
+-- 익명 컬럼만 공개한다. anon은 원본 테이블을 못 읽고 이 뷰로만 매물을 본다.
+create or replace view public.v_deals_public
+  with (security_invoker = false) as
   select id, category_id, region, revenue_band, mode, summary, highlights, sale_reason, status, is_demo, posted
   from public.deals where status <> 'closed';
 

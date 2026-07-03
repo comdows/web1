@@ -30,24 +30,59 @@
 | `migrations/0001_schema.sql` | 전체 스키마(enum·테이블·인덱스·트리거·상태머신 검증·뷰) |
 | `migrations/0002_policies.sql` | RLS 정책 + 역할 헬퍼 함수 |
 | `migrations/0003_seed.sql` | 현행 데이터 시드(그룹 5·분야 35·플랫폼 1,559 + 제휴 유형·부스트 상품·데모 매물) — `seed/build-seed.mjs`가 생성 |
+| `migrations/ALL.sql` | **0001+0002+0003 합본** — SQL Editor에 한 번에 붙여넣고 Run 하는 용도(아래 절차 2번) |
 | `seed/build-seed.mjs` | `app/src/data/*.json` → 시드 SQL 생성기(데이터 갱신 시 재실행) |
+
+> **검증 완료**: 세 마이그레이션(및 합본 `ALL.sql`)을 로컬 Postgres 16에서 실제 실행해 무오류를 확인했다.
+> anon(비로그인) 역할로 접근 시 공개 데이터(플랫폼 1,559·분야 35·제휴유형·플랜·`v_stats`·`v_deals_public`)는
+> 읽히고, 민감 테이블(`deals` 원본·`favorites`·`charges`·`buyer_briefs`·`proposals`)은 **전부 0건(RLS 차단)** 임을 확인.
+> 검증 중 발견한 **거래소 익명성 누수**(anon이 `deals` 원본에서 `owner_id`로 매도자 역추적 가능)를
+> 수정함 — 원본은 소유자/admin만 읽고 공개는 익명 뷰 `v_deals_public`로만 나간다.
 
 ## 4. 적용 절차 (님이 하는 것 — 약 10분)
 
-1. [supabase.com](https://supabase.com) 가입 → New Project (리전: Northeast Asia 권장)
-2. SQL Editor에서 `0001_schema.sql` → `0002_policies.sql` → `0003_seed.sql` 순서로 실행
-3. Authentication → 이메일(또는 카카오/구글 OAuth) 활성화
-4. Project Settings → API에서 `Project URL`·`anon key` 복사
-5. 프론트 연결: 저장소 시크릿/환경변수로
+**A. Supabase 프로젝트 만들기** *(계정·결제는 본인만 가능 — 대행 불가)*
+1. [supabase.com](https://supabase.com) 가입 → **New Project**
+   - Region: **Northeast Asia (Seoul)** 권장 · Database Password는 안전하게 보관
+   - 무료 티어로 충분(초기)
+
+**B. DB 켜기 — SQL 한 번 실행**
+2. 좌측 **SQL Editor** → New query → `backend/migrations/ALL.sql` 내용을 통째로 붙여넣고 **Run**
+   - (또는 `0001_schema.sql` → `0002_policies.sql` → `0003_seed.sql`을 순서대로 실행해도 동일)
+   - `auth.users`·`auth.uid()`는 Supabase가 기본 제공 → 별도 준비 불필요
+   - 성공하면 Table Editor에 `platforms`(1,559행) 등이 보인다
+
+**C. 로그인 활성화**
+3. **Authentication → Providers**에서 이메일(또는 카카오/구글 OAuth) 활성화
+   - 지금은 발견 기능만 켤 거면 이 단계는 나중에 해도 됨(공개 읽기는 로그인 불필요)
+
+**D. 키 복사**
+4. **Project Settings → API**에서 두 값 복사:
+   - `Project URL` (예: `https://xxxx.supabase.co`)
+   - `anon` `public` 키 (`eyJ...` — **anon 키만**, `service_role` 키는 절대 쓰지 말 것)
+
+**E. 프론트에 연결 — GitHub Secrets** *(배포 워크플로우가 자동 주입하도록 이미 배선됨)*
+5. GitHub 저장소 → **Settings → Secrets and variables → Actions → New repository secret** 로 2개 등록:
    ```
-   VITE_SUPABASE_URL=https://xxxx.supabase.co
-   VITE_SUPABASE_ANON_KEY=eyJ...
+   VITE_SUPABASE_URL        = https://xxxx.supabase.co
+   VITE_SUPABASE_ANON_KEY   = eyJ...
    ```
-   → `app/src/lib/api.ts`가 자동으로 원격 모드로 전환(없으면 지금처럼 로컬 모드)
-6. 최초 관리자 지정: SQL Editor에서
+   - `.github/workflows/pages.yml`의 빌드 단계가 이 시크릿을 읽어 번들에 넣는다(코드 수정 불필요)
+   - 시크릿이 없으면 앱은 지금처럼 **로컬 JSON 모드**로 동작(안전한 기본값)
+6. `master`에 push하거나 Actions에서 워크플로우를 **Run workflow**로 재배포 → 앱이 원격 모드로 전환
+   - 확인: 브라우저 콘솔에 API 호출(`/rest/v1/platforms...`)이 보이면 연결 성공. 실패 시 자동 로컬 폴백.
+
+**F. 나를 관리자로 지정** *(로그인 1회 후)*
+7. 앱에서 한 번 로그인 → SQL Editor에서:
    ```sql
-   update public.profiles set role='admin' where id = '<내 auth.users id>';
+   update public.profiles set role='admin'
+   where id = (select id from auth.users where email = '<내 이메일>');
    ```
+   - 이후 제보 검수·라이프사이클·부스트 관리 등 admin 기능이 열린다
+
+> **anon 키를 정적 번들에 넣어도 안전한 이유**: anon 키는 설계상 공개 키다. 실제 접근 권한은
+> 전적으로 RLS(§6)가 DB 계층에서 강제하며, 위 검증에서 anon이 민감 데이터에 닿지 못함을 확인했다.
+> 반대로 `service_role` 키는 RLS를 우회하므로 프론트·워크플로우·저장소 어디에도 두면 안 된다.
 
 ## 5. 단계별 로드맵 (프론트 연동 순서)
 
