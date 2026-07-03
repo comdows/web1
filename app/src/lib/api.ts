@@ -383,6 +383,32 @@ export interface IntroQueueRow {
 export async function listAdminIntroQueue(): Promise<IntroQueueRow[]> {
   return rest<IntroQueueRow[]>("v_admin_intro_queue?status=eq.pending&select=*&order=created_at.asc&limit=100");
 }
+/* 최신 코드명(D-###) — 매물 게시 기본값 제안용(세션 인덱스 대신 DB 기준) */
+export async function fetchLatestDealCode(): Promise<string | null> {
+  const rows = await rest<{ id: string }[]>("deals?select=id&order=id.desc&limit=1");
+  return rows[0]?.id ?? null;
+}
+/* 이미 게시된 매물의 소유자 확인(승인 재진입 판정용 — admin RLS) */
+export async function getDealOwner(id: string): Promise<string | null> {
+  const rows = await rest<{ owner_id: string | null }[]>(`deals?id=eq.${encodeURIComponent(id)}&select=owner_id`);
+  return rows[0]?.owner_id ?? null;
+}
+/* 게시된 매물 상태 전이(모집중→진행중→마감) — closed는 공개 뷰에서 자동 제외 */
+export async function updateDealStatus(id: string, status: "open" | "in_progress" | "closed"): Promise<void> {
+  await rest(`deals?id=eq.${encodeURIComponent(id)}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status }),
+  });
+}
+export async function listDealsAdmin(): Promise<{ id: string; status: string; summary: string; is_demo: boolean }[]> {
+  return rest("deals?select=id,status,summary,is_demo&order=posted.desc&limit=100");
+}
+/* 브리프 안내 완료 처리(active=false — 0005 admin update 정책 필요) */
+export async function deactivateBrief(id: string): Promise<void> {
+  await rest(`buyer_briefs?id=eq.${id}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ active: false }),
+  });
+}
+
 export interface BuyerBriefRow {
   id: string; categories: string[]; budget_band: string; mode: string; entity: string; note: string; active: boolean; created_at: string;
 }
