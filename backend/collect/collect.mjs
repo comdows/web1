@@ -84,6 +84,20 @@ function parseHN(json) {
   }));
 }
 
+/* 제목·설명 키워드 → 분야 추정(검수 셀렉트 초기값 제안 — 오분류여도 관리자가 교정) */
+const CAT_RULES = [
+  [/video|영상|film|clip/i, "ai_video"], [/image|이미지|design|디자인|photo|logo/i, "ai_image"],
+  [/voice|audio|music|음성|음악|tts|speech/i, "ai_audio"], [/code|coding|developer|개발|ide|api/i, "ai_code"],
+  [/meeting|회의|transcri|note/i, "ai_meeting"], [/marketing|seo|광고|ads|customer|support|cs/i, "ai_marketing"],
+  [/agent|automat|workflow|자동화/i, "ai_auto"], [/search|research|리서치|번역|translat|paper/i, "ai_research"],
+  [/write|writing|copy|글쓰기|document|문서/i, "ai_writing"], [/\bai\b|gpt|llm|chat/i, "ai_chat"],
+];
+function guessCategory(name, desc) {
+  const hay = `${name} ${desc}`;
+  for (const [re, cat] of CAT_RULES) if (re.test(hay)) return cat;
+  return "";
+}
+
 /* ── 정규화·필터 ───────────────────────────────────────────── */
 const KO_LAUNCH = /(출시|론칭|런칭|오픈|선보|공개)/;           // 국내 뉴스: 출시 소식만 후보로
 const NAME_CUT = /\s*(?:[—–|]|\s-|:)\s+.*$/;                  // "이름 - 부제" / "이름: 부제" → 이름
@@ -177,7 +191,7 @@ for (const c of candidates) {
     body: JSON.stringify({
       submitter_id: uid,
       payload: {
-        name: c.name, url: c.url, category_id: "", region: c.region,
+        name: c.name, url: c.url, category_id: guessCategory(c.name, c.desc), region: c.region,
         desc: c.desc, note: `auto:${c.source} (${c.sourceLabel})`,
       },
     }),

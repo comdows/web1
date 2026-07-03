@@ -467,6 +467,34 @@ export async function listBuyerBriefs(): Promise<BuyerBriefRow[]> {
   return rest<BuyerBriefRow[]>("buyer_briefs?active=is.true&select=id,categories,budget_band,mode,entity,note,active,created_at&order=created_at.desc&limit=100");
 }
 
+/* ── 관리자: 운영 지표(개수만 — count=exact 헤더, 본문 미전송) ── */
+async function restCount(pathQ: string): Promise<number> {
+  const token = (await getAccessToken()) ?? SB_KEY;
+  const res = await fetch(`${SB_URL}/rest/v1/${pathQ}`, {
+    headers: { apikey: SB_KEY!, Authorization: `Bearer ${token}`, Prefer: "count=exact", Range: "0-0" },
+  });
+  if (!res.ok) return 0;
+  return parseInt((res.headers.get("content-range") ?? "0/0").split("/")[1], 10) || 0;
+}
+export interface AdminMetrics {
+  members: number; favs: number; searches7d: number; outbound7d: number;
+  livePosts: number; liveDeals: number; introduced: number;
+}
+export async function fetchAdminMetrics(): Promise<AdminMetrics> {
+  const week = new Date(Date.now() - 7 * 86400000).toISOString();
+  const [members, favs, searches7d, outbound7d, livePosts, liveDeals, introP, introD] = await Promise.all([
+    restCount("profiles?select=id"),
+    restCount("favorites?select=user_id"),
+    restCount(`events?type=eq.search&created_at=gte.${week}&select=id`),
+    restCount(`events?type=eq.outbound&created_at=gte.${week}&select=id`),
+    restCount("partner_posts?status=in.(published,matched)&select=id"),
+    restCount("deals?is_demo=is.false&status=neq.closed&select=id"),
+    restCount("partner_post_interests?status=eq.introduced&select=id"),
+    restCount("deal_interests?status=eq.introduced&select=id"),
+  ]);
+  return { members, favs, searches7d, outbound7d, livePosts, liveDeals, introduced: introP + introD };
+}
+
 /* ── 관리자: 플랫폼 인라인 편집 + 정보 보강 큐 (admin write platforms RLS) ── */
 export async function getPlatformFull(id: string): Promise<Platform | null> {
   const rows = await rest<DbPlatform[]>(`platforms?id=eq.${encodeURIComponent(id)}&select=${PLATFORM_COLS}`);

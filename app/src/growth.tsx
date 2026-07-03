@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { platforms as staticPlatforms } from "./data";
 import type { Platform } from "./data";
-import { Badge, PlatformCard } from "./components";
+import { Badge, PlatformCard, ShareButton } from "./components";
 import { useNav } from "./nav";
 import { fetchRecentPlatforms, remoteEnabled } from "./lib/api";
 import { usePlatformIndex } from "./lib/platforms";
@@ -32,7 +32,7 @@ export function Weekly() {
   }, [rows]);
   return (
     <main className="page container">
-      <h1>🗞️ 새로 나온 플랫폼·AI <Badge kind="new">매주 갱신</Badge></h1>
+      <h1>🗞️ 새로 나온 플랫폼·AI <Badge kind="new">매주 갱신</Badge> <ShareButton title="새로 나온 플랫폼·AI — 세모플" /></h1>
       <p className="lead" style={{ maxWidth: 640 }}>
         매주 전 세계 신규 플랫폼·AI 도구를 수집해 검수를 거쳐 등재합니다. 이 페이지만 가끔 들러도
         "요즘 뭐가 나왔는지"를 놓치지 않아요. 빠진 게 있으면 <button className="linklike" onClick={() => go("submit")}>제보</button>해 주세요.
@@ -110,7 +110,15 @@ const PACKS: Pack[] = [
 export function Packs() {
   const go = useNav();
   const index = usePlatformIndex();
-  const [open, setOpen] = useState<string | null>(PACKS[0].id);
+  const [open, setOpen] = useState<string | null>(() => {
+    const q = new URLSearchParams(location.search).get("id");
+    return PACKS.some((pk) => pk.id === q) ? q : PACKS[0].id;
+  });
+  useEffect(() => {
+    const p = new URLSearchParams(location.search);
+    if (open) p.set("id", open); else p.delete("id");
+    history.replaceState(null, "", `?${p}`);
+  }, [open]);
   return (
     <main className="page container">
       <h1>🧰 업종별 시작 조합 <Badge kind="good">무료</Badge></h1>
@@ -125,7 +133,7 @@ export function Packs() {
       </div>
       {PACKS.filter((pk) => pk.id === open).map((pk) => (
         <div key={pk.id}>
-          <div className="sec-title">{pk.icon} {pk.title}</div>
+          <div className="sec-title">{pk.icon} {pk.title} <ShareButton title={`${pk.title} — 시작 조합 | 세모플`} /></div>
           <p className="lead" style={{ marginTop: -6, maxWidth: 640 }}>{pk.desc}</p>
           {pk.steps.map((st, i) => {
             const list = st.ids.map((id) => index.get(id)).filter(Boolean) as Platform[];

@@ -2,14 +2,16 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { categories, groups, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
-import { Avatar, Badge, PlatformCard } from "./components";
+import { Avatar, Badge, PlatformCard, ShareButton } from "./components";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
 import { amOperatorOf, createOperatorClaim, getMyClaim, getPlatform, remoteEnabled, trackEvent } from "./lib/api";
 import type { OperatorClaim } from "./lib/api";
 import { pickRecommended, sortByRelevance } from "./lib/search";
-import { Favs, Interests, Recent, useCompare, useFavs } from "./lib/store";
+import { Compare as CompareStore, Favs, Interests, Recent, useCompare, useFavs } from "./lib/store";
 import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
+
+const Compare_hasSafe = (id: string) => CompareStore.has(id);
 
 const FEE_LABEL: Record<string, { l: string; k: "good" | "soon" | "muted" }> = {
   low: { l: "낮음", k: "good" }, mid: { l: "중간", k: "soon" }, high: { l: "높음", k: "muted" },
@@ -141,6 +143,7 @@ export function PlatformDetail({ id }: { id?: string }) {
             <a className="btn primary" href={p.url} target="_blank" rel="noopener noreferrer" onClick={() => { Recent.push(p.id); trackEvent("outbound", p.id); }}>공식 사이트 방문 ↗</a>
             <button className={`btn ghost ${on ? "on" : ""}`} onClick={() => favs.toggle(p.id)}>{on ? "★ 저장됨" : "☆ 즐겨찾기"}</button>
             <button className={`btn ghost ${inCmp ? "on" : ""}`} disabled={!inCmp && cmp.full} onClick={() => cmp.toggle(p.id)}>{inCmp ? "✓ 비교 담김" : "+ 비교 담기"}</button>
+            <ShareButton small={false} title={`${p.name} — 세모플`} url={`${location.origin}${import.meta.env.BASE_URL}p/${p.id}/`} />
           </div>
         </div>
       </div>
@@ -313,6 +316,18 @@ export function Compare() {
   const go = useNav();
   const cmp = useCompare();
   const index = usePlatformIndex();
+  // 공유 링크(?ids=a,b,c)로 진입하면 비교함을 채운다 — 비교표가 "보낼 수 있는 산출물"이 됨
+  useEffect(() => {
+    const ids = (new URLSearchParams(location.search).get("ids") ?? "").split(",").filter(Boolean).slice(0, 4);
+    for (const id of ids) if (!Compare_hasSafe(id)) cmp.toggle(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  // 비교함 상태를 URL에 반영(새로고침·공유 유지)
+  useEffect(() => {
+    const p = new URLSearchParams(location.search);
+    if (cmp.count > 0) p.set("ids", cmp.all().join(",")); else p.delete("ids");
+    history.replaceState(null, "", `?${p}`);
+  }, [cmp.count]);
   const items = cmp.all().map((id) => index.get(id)).filter(Boolean) as Platform[];
   if (items.length === 0) return (
     <div className="page container"><h1>비교</h1>
@@ -335,6 +350,7 @@ export function Compare() {
     <div className="page container">
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <h1 style={{ margin: 0 }}>비교 <span className="mono faint" style={{ fontSize: 16 }}>{items.length}/4</span></h1>
+        <ShareButton title={`세모플 비교 — ${items.map((p) => p.name).join(" vs ")}`} />
         <button className="linklike" style={{ marginLeft: "auto" }} onClick={() => cmp.clear()}>비우기</button>
       </div>
       <div className="cmp-scroll">

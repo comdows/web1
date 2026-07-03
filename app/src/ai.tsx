@@ -1,9 +1,9 @@
 /* AI 도구 찾기 — "내 상황에 필요한 AI가 뭔지 모르겠다"를 푸는 상황 기반 마법사.
  * 목적 → 상황 → 시작 조합(범용 챗봇 1 + 분야 도구) 추천. 원격 미시드 시 정적 데이터로 폴백. */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { platforms as staticPlatforms, categoryById } from "./data";
 import type { Platform } from "./data";
-import { Badge, PlatformCard } from "./components";
+import { Badge, PlatformCard, ShareButton } from "./components";
 import { useNav } from "./nav";
 import { usePlatforms } from "./lib/platforms";
 
@@ -41,8 +41,16 @@ const SITUATIONS = [
 export function AiFinder() {
   const go = useNav();
   const remote = usePlatforms();
-  const [goalId, setGoalId] = useState<string | null>(null);
-  const [sits, setSits] = useState<Set<string>>(new Set());
+  // 공유 링크(?goal=…&sit=…) 복원 → 선택 상태를 URL에 유지
+  const sp0 = new URLSearchParams(location.search);
+  const [goalId, setGoalId] = useState<string | null>(sp0.get("goal"));
+  const [sits, setSits] = useState<Set<string>>(new Set((sp0.get("sit") ?? "").split(",").filter(Boolean)));
+  useEffect(() => {
+    const p = new URLSearchParams(location.search);
+    if (goalId) p.set("goal", goalId); else p.delete("goal");
+    if (sits.size) p.set("sit", [...sits].join(",")); else p.delete("sit");
+    history.replaceState(null, "", `?${p}`);
+  }, [goalId, sits]);
   const goal = GOALS.find((g) => g.id === goalId) ?? null;
 
   // 원격 데이터에 AI 분야가 아직 없으면(시드 전) 정적 데이터로 폴백
@@ -96,6 +104,9 @@ export function AiFinder() {
         <div className="empty">위에서 해결하고 싶은 일을 고르면 추천이 나타나요.</div>
       ) : (
         <>
+          <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
+            <ShareButton title={`AI 도구 추천 — ${goal.label} | 세모플`} />
+          </div>
           <div className="banner" style={{ marginBottom: 14 }}>
             💡 <b>시작 팁</b> — {goal.tip}
             {extraTips.map((t) => <div key={t} style={{ marginTop: 6 }}>{t}</div>)}
