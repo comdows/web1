@@ -11,6 +11,7 @@ const DIST = path.join(ROOT, "dist");
 const SITE = "https://comdows.github.io/web1";
 
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.json"), "utf8"));
+const EN = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.en.json"), "utf8")); // 영어 쌍둥이 존재 판정(hreflang)
 const template = fs.readFileSync(path.join(DIST, "index.html"), "utf8");
 const catById = new Map(data.categories.map((c) => [c.id, c]));
 
@@ -45,7 +46,7 @@ function pageFor(p) {
     .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${esc(title)}$2`)
     .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${esc(desc)}$2`)
     .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonical}$2`)
-    .replace("</head>", `  <link rel="canonical" href="${canonical}">\n  <script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "세모플", item: SITE + "/" }, { "@type": "ListItem", position: 2, name: cat?.name ?? "분야", item: `${SITE}/c/${p.category}/` }, { "@type": "ListItem", position: 3, name: p.name, item: canonical }] })}</script>\n  </head>`)
+    .replace("</head>", `  <link rel="canonical" href="${canonical}">\n${EN.platforms[p.id] ? `  <link rel="alternate" hreflang="ko" href="${canonical}">\n  <link rel="alternate" hreflang="en" href="${SITE}/en/p/${p.id}/">\n  <link rel="alternate" hreflang="x-default" href="${canonical}">\n` : ""}  <script type="application/ld+json">${JSON.stringify({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [{ "@type": "ListItem", position: 1, name: "세모플", item: SITE + "/" }, { "@type": "ListItem", position: 2, name: cat?.name ?? "분야", item: `${SITE}/c/${p.category}/` }, { "@type": "ListItem", position: 3, name: p.name, item: canonical }] })}</script>\n  </head>`)
     .replace(/(<div id="root">)(<\/div>)/, `$1${staticBody}$2`);
 }
 

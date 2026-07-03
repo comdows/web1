@@ -1,0 +1,37 @@
+{
+  "sell-on-korean-marketplaces": {
+    "title": "How to Sell on Korean Marketplaces — a Structured Overview",
+    "desc": "The main routes for foreign sellers and brands into Korean e-commerce: marketplace types, what each requires, and where logistics and payments fit.",
+    "intro": "Korea is one of the world's largest e-commerce markets, but almost all platform information is published in Korean only. This guide maps the landscape by structure — what kinds of platforms exist and how they differ — so you can shortlist channels before engaging local partners. It describes process, not legal or tax advice.",
+    "steps": [
+      { "t": "Choose your marketplace type", "d": "General open marketplaces reach the widest audience and typically require a Korean business registration; vertical malls (fashion, food, handmade) curate sellers more tightly but convert better in their niche.", "cats": ["openmarket", "fashion", "food", "handmade"] },
+      { "t": "Consider social and group-buying channels", "d": "Korea has strong social commerce — group-buying apps and gift commerce move high volume at low price points. These suit consumer products with clear price appeal.", "cats": ["social", "live"] },
+      { "t": "Plan fulfillment early", "d": "Same-day and next-day delivery is the consumer baseline in Korea. Most foreign sellers use a local fulfillment partner or a marketplace's own logistics program rather than shipping cross-border per order.", "cats": ["fulfillment"] },
+      { "t": "Check entry requirements on official sites", "d": "Fee schedules, settlement cycles, and seller eligibility change frequently and differ by category. Always verify on each platform's official seller page — this directory links to every official site and does not republish fee tables in English.", "cats": ["openmarket", "wholesale"] }
+    ],
+    "note": "Common entry barriers to research before committing: Korean business registration (사업자등록), product safety certification (KC) for many categories, and Korean-language customer service expectations. Most foreign brands enter via a local distributor, agency, or cross-border program first."
+  },
+  "fulfillment-and-logistics-korea": {
+    "title": "Fulfillment & Logistics for Selling in Korea",
+    "desc": "How order fulfillment works in Korean e-commerce and the platform categories that handle storage, packing, shipping, and cross-border flows.",
+    "intro": "Korean consumers expect delivery speed that is hard to meet from overseas warehouses. This page explains the structural options — marketplace logistics programs, third-party fulfillment, and cross-border services — and links to the platforms in each category.",
+    "steps": [
+      { "t": "Marketplace-run logistics", "d": "Some large marketplaces operate their own fulfillment programs: you inbound stock to their warehouses and they handle storage, delivery, and returns. Fastest consumer experience, tightest requirements.", "cats": ["openmarket"] },
+      { "t": "Third-party fulfillment (3PL)", "d": "Independent fulfillment providers store inventory and ship to any channel you sell on — useful when selling across several marketplaces at once.", "cats": ["fulfillment"] },
+      { "t": "Cross-border and export/import services", "d": "For test-selling without local inventory, cross-border programs and trade platforms connect overseas sellers with Korean demand, at slower delivery speeds.", "cats": ["global", "wholesale"] }
+    ],
+    "note": "Delivery speed expectations vary by category — fresh food and daily necessities are effectively same/next-day markets, while niche imports tolerate longer lead times."
+  },
+  "korean-ecommerce-overview": {
+    "title": "Korean E-commerce: a Platform Landscape Overview",
+    "desc": "A structural map of Korea's online commerce platforms — marketplaces, verticals, social commerce, wholesale, and the supporting infrastructure.",
+    "intro": "This directory catalogs 1,600+ Korean business platforms in a single 45-category taxonomy. The English layer covers the commerce and trade categories most relevant to foreign sellers. Each entry links to the official site; details like fees and eligibility should always be checked there.",
+    "steps": [
+      { "t": "General marketplaces & malls", "d": "The high-traffic center of Korean e-commerce — open marketplaces, price-comparison-driven malls, and app-first players.", "cats": ["openmarket", "social"] },
+      { "t": "Vertical commerce", "d": "Category-specialist channels with curated sellers: fashion, beauty, food & fresh, handmade, kids, and more.", "cats": ["fashion", "food", "handmade"] },
+      { "t": "Wholesale & sourcing", "d": "B2B platforms where retailers source inventory — also the route many foreign brands use to reach many Korean retailers at once.", "cats": ["wholesale", "global"] },
+      { "t": "Store builders & infrastructure", "d": "If you run your own Korean web store instead of (or alongside) marketplaces: hosted mall builders and the fulfillment layer behind them.", "cats": ["mallbuilder", "fulfillment"] }
+    ],
+    "note": "The full directory (including services, funding, content, and AI tools categories) is currently Korean-only. Partnership matching and the business-transfer board serve Korea-based businesses in Korean, under Korean law."
+  }
+}

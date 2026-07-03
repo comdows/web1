@@ -16,7 +16,8 @@
 - SPA 라우팅: 쿼리 파라미터(`?view=...`) + 프리렌더 경로(`/p/<id>/`). 새 화면 = nav.tsx ViewName + App.tsx 라우팅/타이틀 + (필요시) 푸터 링크.
 - 데이터: `app/src/data/platforms.json`이 단일 소스. 원격(Supabase)이 로드되면 정적 시드를 교체(`lib/platforms.ts`) — **정적 데이터만 추가하면 라이브에 안 보임**, 멱등 마이그레이션(000N)도 함께 만들 것. 0003은 `node backend/seed/build-seed.mjs`로 재생성(직접 수정 금지), ALL.sql은 0001~000N 연결로 재생성.
 - API: `lib/api.ts` rest() 단일 지점 — supabase-js 없음, 권한은 전부 RLS. 관리 기능도 클라이언트 호출 + RLS(is_admin).
-- 프리렌더: `app/scripts/prerender.mjs`가 build에 연결됨 — index.html 구조(title/og/#root) 바꾸면 프리렌더 치환 정규식 확인.
+- 프리렌더: `app/scripts/prerender.mjs`(ko) + `prerender-en.mjs`(en)가 build에 연결됨 — index.html 구조(title/og/#root) 바꾸면 두 스크립트의 치환 정규식 확인.
+- **영문 레이어(/en/) 방화벽**: EN 페이지는 SPA 스크립트를 제거한 완전 정적 HTML. 제휴·거래소·가치진단·약관을 EN에 링크·번역 금지(한국법 전제 — prerender-en.mjs가 금지 링크 grep으로 빌드 차단). EN 데이터는 platforms.en.json만, 수수료·정산 조건 영문 게재 금지.
 
 ## 검증 패턴 (필수)
 
