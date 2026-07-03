@@ -206,8 +206,8 @@ export function Compare() {
         <table className="cmp-table">
           <thead><tr><th></th>{items.map((p) => (
             <th key={p.id}>
-              <div className="cmp-h"><span className="pname" onClick={() => go("detail", { id: p.id })}>{p.name}</span>
-                <button className="linklike" onClick={() => cmp.toggle(p.id)}>✕</button></div>
+              <div className="cmp-h"><button className="pname" onClick={() => go("detail", { id: p.id })}>{p.name}</button>
+                <button className="linklike" onClick={() => cmp.toggle(p.id)} aria-label="비교에서 제거">✕</button></div>
             </th>
           ))}</tr></thead>
           <tbody>{rows.map((r) => (

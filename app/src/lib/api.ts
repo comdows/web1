@@ -23,7 +23,15 @@ async function rest<T>(pathAndQuery: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
-    throw new Error(`API ${res.status}${detail ? `: ${detail.slice(0, 200)}` : ""}`);
+    if (detail) console.warn(`API ${res.status} ${pathAndQuery.split("?")[0]}:`, detail); // 원문은 콘솔에만
+    const msg = res.status === 401 || res.status === 403 ? "권한이 없어요. 다시 로그인해 주세요."
+      : res.status === 400 || res.status === 409 || res.status === 422 ? "입력값을 확인해 주세요."
+      : res.status === 404 ? "대상을 찾을 수 없어요."
+      : res.status === 429 ? "요청이 많아요. 잠시 후 다시 시도해 주세요."
+      : "문제가 생겼어요. 잠시 후 다시 시도해 주세요.";
+    const err = new Error(msg) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
   }
   const text = await res.text();
   return (text ? JSON.parse(text) : undefined) as T; // return=minimal은 빈 본문
