@@ -23,9 +23,11 @@ const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeU
 
 function readParams() {
   const p = new URLSearchParams(location.search);
+  // SEO 프리렌더 경로(/p/<id>/)로 진입하면 상세 뷰로 부팅 (scripts/prerender.mjs)
+  const pre = location.pathname.match(/\/p\/([a-z0-9-]+)\/?$/);
   return {
-    view: (p.get("view") as ViewName) || "home",
-    id: p.get("id") || "",
+    view: pre ? ("detail" as ViewName) : (p.get("view") as ViewName) || "home",
+    id: pre ? pre[1] : p.get("id") || "",
     q: p.get("q") || "",
     group: p.get("group") || "",
     fav: p.get("fav") === "1",
@@ -94,7 +96,8 @@ export default function App() {
     if (v !== "home") sp.set("view", v);
     if (v === "detail" && params?.id) sp.set("id", params.id);
     if (v === "search" && params?.q) sp.set("q", params.q);
-    history.pushState(null, "", sp.toString() ? `?${sp}` : location.pathname);
+    // 프리렌더 경로(/p/<id>/)에서 이동해도 항상 앱 기본 경로로 복귀
+    history.pushState(null, "", import.meta.env.BASE_URL + (sp.toString() ? `?${sp}` : ""));
     window.scrollTo(0, 0);
   }, []);
 
