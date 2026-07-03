@@ -130,6 +130,29 @@ export function Partners() {
         );
       })}
 
+      {/* ── 요금 안내 (stage2-monetization-plan.md) ── */}
+      <div className="sec-title">요금 안내</div>
+      <div className="banner" style={{ marginBottom: 14 }}>
+        ✅ <b>지금은 전면 무료(베타)</b>입니다. 유료화는 매칭이 충분히 활발해진 뒤(공개 기준 충족 시) 단계적으로 시작하며,
+        진행 중인 제휴는 무료로 마무리됩니다.
+      </div>
+      <div className="card-grid" style={{ marginBottom: 14 }}>
+        <div className="pcard"><h4>무료 <Badge kind="good">현재</Badge></h4>
+          <p>등재·제휴 프로필·매칭 신청·배너교환형 제휴 무제한. 소개까지 전 과정 무료.</p></div>
+        <div className="pcard"><h4>스폰서 노출 <Badge kind="soon">준비중</Badge></h4>
+          <p>매칭 보드 상단 고정 슬롯(월 정액, <b>AD 표기</b>). 디렉토리 검색·비교 결과는 판매하지 않습니다.</p></div>
+        <div className="pcard"><h4>연결료 <Badge kind="soon">준비중</Badge></h4>
+          <p>양측 동의 후 <b>연락처를 상호 공유하는 순간</b>에만 소액 정액(방식 유형별 차등). 신청·매칭 확인까지는 무료,
+            소개가 이행되지 않으면 전액 환불.</p></div>
+        <div className="pcard"><h4>멤버십 <Badge kind="soon">예정</Badge></h4>
+          <p>파트너 검색 무제한·검증 배지·트래킹 대시보드·매칭 큐레이션(월 정액).</p></div>
+      </div>
+      <p className="sub faint" style={{ fontSize: 12.5, marginBottom: 6 }}>
+        원칙 — ① 세모플은 <b>소개(연결)를 팔지, 성사를 팔지 않습니다</b>(제휴 체결·성과는 당사자 몫).
+        ② 디렉토리 정보(검색·비교·순위)는 어떤 경우에도 판매하지 않습니다.
+        ③ 제휴 대금·정산에는 일절 관여하지 않습니다 — 세모플 명의의 서비스 이용료만 받습니다.
+      </p>
+
       {/* ── 매칭 보드 ── */}
       <div className="sec-title">제휴 매칭 보드</div>
       {!boardOn ? (

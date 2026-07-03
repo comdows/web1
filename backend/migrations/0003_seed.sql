@@ -1660,6 +1660,12 @@ insert into public.deals (id, category_id, region, revenue_band, mode, summary, 
   ('D-003', 'content', 'domestic', '연매출 1억 미만', '자산 양수도(회원·콘텐츠)', '니치 취미 클래스 플랫폼. 콘텐츠 라이브러리와 회원 DB 중심의 자산 매각.', 'in_progress', true, '2026-06-05')
 on conflict (id) do nothing;
 
+insert into public.plans (id, label, monthly_price, descr, active, sort) values
+  ('free',    'Free',    0,      '등재·제휴 프로필·배너교환형 무제한·월 무료 크레딧', true,  0),
+  ('pro',     'Pro',     70000,  '연결 크레딧 포함·파트너 검색 무제한·검증 배지·트래킹 대시보드', false, 1),
+  ('premium', 'Premium', 250000, '매칭 매니저 큐레이션·깊은연동 우선 소개·계약 템플릿·성과 리포트', false, 2)
+on conflict (id) do nothing;
+
 insert into public.boost_tiers (id, name, placement, cpm, est_ctr, sort) values
   ('home_hero',   '홈 상단 고정',     '홈 히어로 아래 첫 카드 슬롯', 8000, 0.0200, 0),
   ('cat_top',     '분야 상단 노출',   '해당 분야 목록 최상단',       5000, 0.0150, 1),

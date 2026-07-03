@@ -123,6 +123,27 @@ create policy "related read order" on public.boost_orders for select
 create policy "admin manage order" on public.boost_orders for update
   using (public.is_admin()) with check (public.is_admin());
 
+-- ── 과금: plans 공개 읽기 / 지갑·구독·청구는 소유자+admin ─────
+alter table public.plans          enable row level security;
+alter table public.subscriptions  enable row level security;
+alter table public.credit_ledger  enable row level security;
+alter table public.charges        enable row level security;
+create policy "public read plans" on public.plans for select using (true);
+create policy "admin write plans" on public.plans for all
+  using (public.is_admin()) with check (public.is_admin());
+create policy "own subscriptions" on public.subscriptions for select
+  using (user_id = auth.uid() or public.is_admin());
+create policy "admin manage subscriptions" on public.subscriptions for all
+  using (public.is_admin()) with check (public.is_admin());
+create policy "own credit ledger" on public.credit_ledger for select
+  using (user_id = auth.uid() or public.is_admin());
+create policy "admin write credit ledger" on public.credit_ledger for insert
+  with check (public.is_admin());   -- 충전·차감은 서버(RPC/관리자)만 기록
+create policy "own charges" on public.charges for select
+  using (user_id = auth.uid() or public.is_admin());
+create policy "admin manage charges" on public.charges for all
+  using (public.is_admin()) with check (public.is_admin());
+
 -- ── events: 누구나 기록 가능(익명 분석), 읽기는 admin만 ───────
 alter table public.events enable row level security;
 create policy "anyone insert event" on public.events for insert with check (true);

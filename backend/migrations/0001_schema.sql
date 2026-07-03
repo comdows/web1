@@ -262,6 +262,7 @@ create table public.proposals (
   get_text         text not null default '',   -- 상대에게 원하는 것
   size_text        text not null default '',   -- 규모 밴드
   status           proposal_status_t not null default 'pending',
+  introduced_at    timestamptz,                -- 소개 실행(연락처 상호 공유) 시점 = 연결료 과금 트리거
   created_by       uuid not null references public.profiles(id),
   created_at       timestamptz not null default now(),
   responded_at     timestamptz,
@@ -340,6 +341,62 @@ language sql stable as $$
     (p_daily_budget * p_days * (1 + 0.1 * coalesce(array_length(p_addons,1),0)))::int
   from public.boost_tiers t where t.id = p_tier;
 $$;
+
+-- ============================================================
+-- 9.5) 과금 (stage2-monetization-plan.md — 3층 하이브리드)
+--  ⚠️ 자금 미보유 원칙: 여기 기록되는 금액은 전부 "세모플 명의 서비스 이용료"
+--     (연결료·노출·구독·리스팅료)이며, 제휴·M&A 대금은 절대 다루지 않는다.
+--  과금 트리거 = proposals.introduced_at (소개 실행 시점, 성사 아님)
+-- ============================================================
+create type charge_kind_t   as enum ('connection_fee','boost','subscription','listing_fee','success_report'); -- success_report=성사 자진신고 보상 기록(과금 아님, 배지·할인 근거)
+create type charge_status_t as enum ('quoted','invoiced','paid','waived','refunded','canceled');
+create type sub_status_t    as enum ('active','past_due','canceled');
+
+create table public.plans (                    -- 구독 멤버십(T3)
+  id            text primary key,              -- 'free','pro','premium'
+  label         text not null,
+  monthly_price int  not null default 0,       -- VAT 별도(원)
+  descr         text not null default '',
+  active        boolean not null default false,-- 게이트 통과 전 false(예고만)
+  sort          int not null default 0
+);
+
+create table public.subscriptions (
+  id         uuid primary key default gen_random_uuid(),
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  plan_id    text not null references public.plans(id),
+  status     sub_status_t not null default 'active',
+  started_at timestamptz not null default now(),
+  ends_at    timestamptz
+);
+create index idx_subs_user on public.subscriptions(user_id, status);
+
+create table public.credit_ledger (            -- 선불 크레딧 지갑(연결료 차감·환급) — 합계=잔액
+  id         bigint generated always as identity primary key,
+  user_id    uuid not null references public.profiles(id) on delete cascade,
+  delta      int not null,                     -- +충전/보너스/환급, -차감
+  reason     text not null,                    -- 'topup','bonus','connection_fee','refund','free_monthly'
+  ref_id     uuid,                             -- 관련 charge/proposal id
+  created_at timestamptz not null default now()
+);
+create index idx_credit_user on public.credit_ledger(user_id, created_at desc);
+
+create table public.charges (                  -- 세모플 이용료 청구·수납 기록(세금계산서 근거)
+  id          uuid primary key default gen_random_uuid(),
+  kind        charge_kind_t not null,
+  user_id     uuid not null references public.profiles(id),
+  platform_id text references public.platforms(id),
+  proposal_id uuid references public.proposals(id),  -- connection_fee의 근거(소개 실행 건)
+  deal_id     text references public.deals(id),      -- listing_fee의 근거(3단계)
+  amount      int not null check (amount >= 0),      -- 공급가(원)
+  vat         int not null default 0,                -- 부가세(원)
+  status      charge_status_t not null default 'quoted',
+  invoice_no  text,                                  -- 세금계산서 번호(자동발행 API 연동)
+  memo        text,
+  created_at  timestamptz not null default now(),
+  paid_at     timestamptz
+);
+create index idx_charges_user on public.charges(user_id, status, created_at desc);
 
 -- ============================================================
 -- 10) 분석 이벤트 (append-only) + 집계 뷰
