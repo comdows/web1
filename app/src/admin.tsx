@@ -7,12 +7,12 @@ import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
 import {
   createPlatform, getPendingCount, getPlatformLifecycle, getPopularSearches, getStats,
-  LIFECYCLE_NEXT, listBuyerBriefs, listDealInterests, listDealSubmissions, listPartnerInterests,
+  LIFECYCLE_NEXT, listAdminIntroQueue, listBuyerBriefs, listDealSubmissions,
   listPartnerPosts, listSubmissions, markIntroduced, publishDeal, remoteEnabled,
   reviewDealSubmission, reviewPartnerPost, reviewSubmission, transitionPlatform,
 } from "./lib/api";
 import type {
-  BuyerBriefRow, DealSubmissionRow, InterestRow, Lifecycle, PartnerPostAdmin, Submission,
+  BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin, Submission,
 } from "./lib/api";
 import { partnerTypes } from "./data";
 
@@ -289,43 +289,53 @@ function DealSubQueue() {
   );
 }
 
-/* ── 소개 대기(매칭 신청·인수 관심·브리프) ── */
+/* ── 소개 대기(매칭 신청·인수 관심·브리프) — 양측 이메일로 실제 소개 이행 ── */
 function IntroQueue() {
-  const [pInts, setPInts] = useState<InterestRow[]>([]);
-  const [dInts, setDInts] = useState<InterestRow[]>([]);
+  const [rows, setRows] = useState<IntroQueueRow[] | null>(null);
   const [briefs, setBriefs] = useState<BuyerBriefRow[]>([]);
+  const [loadErr, setLoadErr] = useState(false);
   const reload = useCallback(() => {
-    listPartnerInterests().then(setPInts).catch(() => setPInts([]));
-    listDealInterests().then(setDInts).catch(() => setDInts([]));
+    setLoadErr(false);
+    listAdminIntroQueue().then(setRows).catch(() => { setRows(null); setLoadErr(true); });
     listBuyerBriefs().then(setBriefs).catch(() => setBriefs([]));
   }, []);
   useEffect(reload, [reload]);
-  const done = async (table: "partner_post_interests" | "deal_interests", id: string) => {
-    await markIntroduced(table, id).catch(() => { /* noop */ });
+  const done = async (kind: "partner" | "deal", id: string) => {
+    await markIntroduced(kind === "partner" ? "partner_post_interests" : "deal_interests", id).catch(() => { /* noop */ });
     reload();
   };
-  if (pInts.length === 0 && dInts.length === 0 && briefs.length === 0)
-    return <div className="empty">소개 대기 건이 없습니다 ✓</div>;
+  const mailDraft = (r: IntroQueueRow) => {
+    const to = [r.applicant_email, r.counterpart_email].filter(Boolean).join(",");
+    const subject = `[세모플 소개] ${r.target_title}`;
+    const body = `안녕하세요, 세모플입니다.\n\n양측 동의에 따라 서로를 소개드립니다.\n- 신청: ${r.platform_name || r.applicant_email} (${r.applicant_email})\n- 상대: ${r.target_title} (${r.counterpart_email})\n- 제안 요지: ${r.message}\n\n이후 협의는 두 분이 직접 진행해 주세요. 세모플의 역할은 여기까지입니다.\n(정산·계약에 세모플은 관여하지 않습니다)`;
+    return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+  if (loadErr) return <div className="empty">소개 큐를 불러오지 못했어요(0005 마이그레이션 필요 여부 확인). <button className="linklike" onClick={reload}>다시 시도</button></div>;
+  if (rows === null) return <div className="empty">불러오는 중…</div>;
+  if (rows.length === 0 && briefs.length === 0) return <div className="empty">소개 대기 건이 없습니다 ✓</div>;
   return (
     <>
-      {pInts.map((i) => (
-        <div className="sub-item" key={i.id}>
-          <div style={{ minWidth: 0 }}>
-            <b>🤝 매칭 신청</b> — {i.platform_name} → "{i.partner_posts?.title ?? i.post_id}"
-            <div className="frm-note">{i.pitch} · {i.size_text}</div>
+      {rows.map((r) => {
+        const ready = Boolean(r.applicant_email && r.counterpart_email && r.contact_consent_at);
+        return (
+          <div className="sub-item" key={`${r.kind}-${r.id}`}>
+            <div style={{ minWidth: 0 }}>
+              <b>{r.kind === "partner" ? "🤝 매칭 신청" : "🏦 인수 관심"}</b>
+              {" — "}{r.platform_name ? `${r.platform_name} → ` : ""}"{r.target_title}"
+              <div className="frm-note">{r.message}</div>
+              <div className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>
+                {r.applicant_email ?? "이메일 없음"} ↔ {r.counterpart_email ?? "이메일 없음"}
+                {r.contact_consent_at ? " · 동의 ✓" : " · ⚠ 이메일 공유 동의 없음(구버전 신청)"}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+              {ready && <a className="btn primary sm" href={mailDraft(r)}>메일 초안</a>}
+              <button className="btn ghost sm" disabled={!ready} title={ready ? "" : "양측 이메일·동의가 있어야 소개할 수 있어요"}
+                onClick={() => done(r.kind, r.id)}>소개 완료</button>
+            </div>
           </div>
-          <button className="btn ghost sm" onClick={() => done("partner_post_interests", i.id)}>소개 완료</button>
-        </div>
-      ))}
-      {dInts.map((i) => (
-        <div className="sub-item" key={i.id}>
-          <div style={{ minWidth: 0 }}>
-            <b>🏦 인수 관심</b> — 매물 {i.deal_id}
-            <div className="frm-note">{i.intro}</div>
-          </div>
-          <button className="btn ghost sm" onClick={() => done("deal_interests", i.id)}>소개 완료</button>
-        </div>
-      ))}
+        );
+      })}
       {briefs.map((b) => (
         <div className="sub-item" key={b.id}>
           <div style={{ minWidth: 0 }}>
