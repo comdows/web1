@@ -90,6 +90,12 @@
   --on-brand: #FFFFFF;
 
   --brand-soft: #2445D4;             /* links read darker on light */
+  /* 시맨틱·액센트: 라이트 배경 대비 확보(작은 텍스트 AA 근접) */
+  --teal:    #0E8A76;
+  --cyan:    #0876AC;
+  --success: #1B7F5C;
+  --warn:    #A3690A;
+  --danger:  #C2372E;
   --brand-tint: rgba(61, 99, 255, .10);
   --grid-line: rgba(36, 69, 212, .05);
   --tick: rgba(36, 69, 212, .28);

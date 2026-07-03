@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, useCallback } from "react";
 import type { ReactNode, KeyboardEvent } from "react";
 import { groups, categories, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
-import { Logo, StatTile, PlatformCard, Footer } from "./components";
+import { Logo, LogoMark, StatTile, PlatformCard, Footer } from "./components";
 import { usePlatforms, usePlatformStats, usePlatformIndex } from "./lib/platforms";
 import { sortByRelevance } from "./lib/search";
 import { useFavs, useCompare } from "./lib/store";
@@ -164,6 +164,7 @@ export default function App() {
         : (
         <main className="container">
           <section className="hero">
+            <div className="hero-bp" aria-hidden><LogoMark size={300} /></div>
             <div className="eyebrow">SEMOPL · 세상의 모든 플랫폼</div>
             <h1>어떤 분야에 어떤 플랫폼이 있을까?</h1>
             <p className="sub">사업자가 나가서 붙을 수 있는 플랫폼을 <b>같은 기준으로</b> 정리했습니다. 이름과 개략 설명을 빠르게 훑고, ★로 저장하세요.</p>
@@ -244,7 +245,13 @@ export default function App() {
                           <span className="ic">{c.icon}</span><span className="nm">{c.name}</span>
                           <span className="ct">{stats.counts.get(c.id) ?? 0}</span><span className="chev">▸</span>
                         </button>
-                        {isOpen && <div className="acc-b"><div className="card-grid">{platforms.filter((p) => p.category === c.id).map((p) => <PlatformCard key={p.id} p={p} showCat={false} />)}</div></div>}
+                        {isOpen && (
+                          <div className="acc-b">
+                            {(stats.counts.get(c.id) ?? 0) === 0
+                              ? <div className="empty">이 분야는 아직 비어 있어요. <button className="linklike" onClick={() => go("submit")}>+ 첫 플랫폼 제보하기</button></div>
+                              : <div className="card-grid">{platforms.filter((p) => p.category === c.id).map((p) => <PlatformCard key={p.id} p={p} showCat={false} />)}</div>}
+                          </div>
+                        )}
                       </div>
                     );
                   })}

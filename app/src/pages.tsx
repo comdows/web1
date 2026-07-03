@@ -255,8 +255,15 @@ export function Partners() {
         { t: "당사자 직접 진행", d: "실행·정산·계약은 두 플랫폼이 직접" },
       ]} />
 
+      {/* 섹션 목차(앵커) */}
+      <div className="chips-row" style={{ marginBottom: 4 }}>
+        {[["p-catalog", "카탈로그"], ["ppost-form", "제안 등록"], ["p-pricing", "요금"], ["p-board", "매칭 보드"]].map(([id, l]) => (
+          <a key={id} className="fchip" href={`#${id}`}>{l}</a>
+        ))}
+      </div>
+
       {/* ── 제휴 방식 카탈로그 (공개) ── */}
-      <div className="sec-title">제휴 방식 카탈로그 · {partnerTypes.length}가지</div>
+      <div className="sec-title" id="p-catalog">제휴 방식 카탈로그 · {partnerTypes.length}가지</div>
       <div className="chips-row">
         <button className={`fchip ${goal === "" ? "on" : ""}`} onClick={() => setGoal("")}>전체</button>
         {partnerGoals.map((g) => (
@@ -310,7 +317,7 @@ export function Partners() {
       {!remoteEnabled ? (
         <div className="banner">백엔드 미연결 빌드 — <a href={ISSUE("[제휴 제안]", "제휴 방식:\n플랫폼 이름:\nGive:\nGet:", "stage2,제휴제안")} target="_blank" rel="noopener noreferrer">GitHub 이슈로 제안</a></div>
       ) : posted ? (
-        <div className="empty" style={{ borderColor: "var(--success)", padding: 24 }}>
+        <div className="done-card">
           접수됐어요 ✓ 검수(중복·연락처 확인) 후 보드에 게시됩니다. 진행 상태는 계정 → 내 활동에서 확인할 수 있어요.
           {FLAGS.contactEmail && <div className="frm-note" style={{ marginTop: 6 }}>문의: <a href={`mailto:${FLAGS.contactEmail}`}>{FLAGS.contactEmail}</a></div>}
           <div style={{ marginTop: 10 }}><button className="btn ghost sm" onClick={() => setPosted(false)}>하나 더 등록</button></div>
@@ -327,7 +334,7 @@ export function Partners() {
       )}
 
       {/* ── 요금 안내 (stage2-monetization-plan.md) ── */}
-      <div className="sec-title">요금 안내</div>
+      <div className="sec-title" id="p-pricing">요금 안내</div>
       <div className="banner" style={{ marginBottom: 14 }}>
         ✅ <b>지금은 전면 무료(베타)</b>입니다. 유료화는 매칭이 충분히 활발해진 뒤(공개 기준 충족 시) 단계적으로 시작하며,
         진행 중인 제휴는 무료로 마무리됩니다.
@@ -350,7 +357,7 @@ export function Partners() {
       </p>
 
       {/* ── 매칭 보드 ── */}
-      <div className="sec-title">제휴 매칭 보드</div>
+      <div className="sec-title" id="p-board">제휴 매칭 보드</div>
       <div className="chips-row">
         <button className={`fchip ${boardType === "" ? "on" : ""}`} onClick={() => setBoardType("")}>전체</button>
         {Object.values(legacyMap).map((id) => (
@@ -388,7 +395,7 @@ export function Partners() {
           </div>
         ))}
         {demoItems.map((l) => (
-          <div className="pcard" key={l.id} style={{ opacity: .82 }}>
+          <div className="pcard demo" key={l.id}>
             <div className="top"><div style={{ minWidth: 0 }}>
               <h4>{l.title} <Badge kind="muted">데모</Badge>
                 {l.status === "matched" && <Badge kind="good">성사</Badge>}</h4>
@@ -581,6 +588,12 @@ export function Exchange() {
         세모플은 게시·연결만 하며 중개·자문·실사·가치평가를 하지 않습니다 — 계약은 당사자와 전문 자문사(로펌·회계법인)가 직접.
       </p>
 
+      <div className="chips-row" style={{ marginBottom: 4 }}>
+        {[["x-why", "중개하지 않는 이유"], ["x-reg", "등록"], ["x-pricing", "요금"], ["x-board", "매물 보드"]].map(([id, l]) => (
+          <a key={id} className="fchip" href={`#${id}`}>{l}</a>
+        ))}
+      </div>
+
       <ProcessStrip steps={[
         { t: "익명 등록", d: "검수 후 코드명(D-101)으로만 게시 — 실명·연락처 없음" },
         { t: "관심 수집", d: "인수 희망자의 관심 등록 + 브리프 매칭 알림" },
@@ -589,7 +602,7 @@ export function Exchange() {
       ]} />
 
       {/* 왜 중개하지 않는가 (stage3-exchange-plan.md §1) */}
-      <div className="sec-title">세모플이 "중개"하지 않는 이유</div>
+      <div className="sec-title" id="x-why">세모플이 "중개"하지 않는 이유</div>
       <div className="card-grid" style={{ marginBottom: 12 }}>
         <div className="pcard"><h4>⚖️ 법이 그렇게 정합니다</h4>
           <p>플랫폼 매각은 대부분 <b>주식(지분) 양수도</b> — 자본시장법상 증권 거래입니다. 인가 없이 이를
@@ -626,11 +639,11 @@ export function Exchange() {
       </div>
 
       {/* ── 등록(매각 접수 · 인수 브리프) ── */}
-      <div className="sec-title">등록</div>
+      <div className="sec-title" id="x-reg">등록</div>
       {!remoteEnabled ? (
         <div className="banner">백엔드 미연결 빌드 — <a href={ISSUE("[거래소 등록]", "구분(매각/인수):\n분야:\n밴드:", "stage3")} target="_blank" rel="noopener noreferrer">GitHub 이슈로 등록</a></div>
       ) : done ? (
-        <div className="empty" style={{ borderColor: "var(--success)", padding: 24 }}>
+        <div className="done-card">
           {done === "sell"
             ? "접수됐어요 ✓ 검수·익명화 후 코드명(D-1xx)으로 게시됩니다. 진행 상태는 계정 → 내 활동에서 확인할 수 있어요."
             : "브리프 등록 완료 ✓ 조건에 맞는 신규 매물이 올라오면 우선 안내드립니다."}
@@ -651,7 +664,7 @@ export function Exchange() {
       )}
 
       {/* 요금 안내 (stage3-exchange-plan.md §3) */}
-      <div className="sec-title">요금 안내</div>
+      <div className="sec-title" id="x-pricing">요금 안내</div>
       <div className="card-grid" style={{ marginBottom: 6 }}>
         <div className="pcard"><h4>무료 <Badge kind="good">현재</Badge></h4>
           <p>매물 등록(검수·익명화 포함)·인수 브리프·소개까지 전 과정 무료(베타).</p></div>
@@ -665,7 +678,7 @@ export function Exchange() {
       </p>
 
       {/* ── 매물 보드 ── */}
-      <div className="sec-title">매물 보드</div>
+      <div className="sec-title" id="x-board">매물 보드</div>
       <div className="result-meta">매물 {shown.length}건 (익명 리스팅{shown.every((d) => d.demo) ? " — 아직 데모 예시" : ""})</div>
       <div className="card-grid">
         {shown.map((d) => (
