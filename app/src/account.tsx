@@ -4,7 +4,7 @@ import type { FormEvent } from "react";
 import { groups, categoriesByGroup } from "./data";
 import { Badge } from "./components";
 import { useNav } from "./nav";
-import { signIn, signOut, signUp, useSession, refreshProfile } from "./lib/auth";
+import { consumeHashNotice, resendConfirmation, signIn, signOut, signUp, useSession, refreshProfile } from "./lib/auth";
 import { createSubmission, listMySubmissions, remoteEnabled, updateDisplayName } from "./lib/api";
 import type { Submission } from "./lib/api";
 
@@ -34,23 +34,35 @@ export function AuthPanel({ compact = false }: { compact?: boolean }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
+  const [needsConfirm, setNeedsConfirm] = useState(false); // 확인 메일 재발송 노출 여부
+
+  // 확인 메일 링크로 돌아온 경우의 안내(완료/만료)를 1회 표시
+  useEffect(() => { const n = consumeHashNotice(); if (n) setOk(n); }, []);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    setErr(""); setOk(""); setBusy(true);
+    setErr(""); setOk(""); setNeedsConfirm(false); setBusy(true);
     try {
       if (mode === "in") {
         await signIn(email.trim(), pw);
       } else {
         const r = await signUp(email.trim(), pw);
-        if (r.needsConfirm) setOk("확인 메일을 보냈어요. 메일의 링크를 누른 뒤 여기서 로그인하세요.");
+        if (r.needsConfirm) { setOk("확인 메일을 보냈어요. 메일의 링크를 누른 뒤 여기서 로그인하세요."); setNeedsConfirm(true); }
       }
     } catch (ex) {
       const m = ex instanceof Error ? ex.message : String(ex);
-      setErr(/invalid login credentials/i.test(m) ? "이메일 또는 비밀번호가 맞지 않습니다."
+      if (/email not confirmed/i.test(m)) { setErr("이메일 확인이 필요해요. 받은 메일의 링크를 먼저 눌러주세요."); setNeedsConfirm(true); }
+      else setErr(/invalid login credentials/i.test(m) ? "이메일 또는 비밀번호가 맞지 않습니다."
         : /already registered/i.test(m) ? "이미 가입된 이메일입니다. 로그인해 주세요."
         : /at least 6/i.test(m) ? "비밀번호는 6자 이상이어야 합니다." : m);
     } finally { setBusy(false); }
+  };
+
+  const resend = async () => {
+    setErr(""); setBusy(true);
+    try { await resendConfirmation(email.trim()); setOk("확인 메일을 다시 보냈어요. 메일함(스팸함 포함)을 확인해 주세요."); }
+    catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(false); }
   };
 
   return (
@@ -74,6 +86,11 @@ export function AuthPanel({ compact = false }: { compact?: boolean }) {
         <button className="btn primary" disabled={busy} type="submit">
           {busy ? "처리 중…" : mode === "in" ? "로그인" : "가입하기"}
         </button>
+        {needsConfirm && (
+          <button type="button" className="btn ghost sm" disabled={busy || !email.trim()} onClick={resend}>
+            확인 메일 재발송
+          </button>
+        )}
         <div className="frm-note">가입하면 즐겨찾기가 계정에 저장되고, 플랫폼 제보를 남길 수 있어요.</div>
       </form>
     </div>
