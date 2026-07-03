@@ -41,6 +41,13 @@ jobs:
 
       - name: Build (Vite, base=/web1/)
         working-directory: app
+        # Supabase 연결값은 app/.env.production 에 커밋되어 있다(anon 키는 설계상 공개 키 —
+        # 어차피 브라우저 번들에 실려 나가며, 실제 보호는 RLS가 담당). Vite가 빌드 시 자동 로드.
+        # 키를 git에 두기 싫으면 이 파일을 지우고 아래 env로 Secrets 주입하면 된다(둘 중 하나만):
+        #   env:
+        #     VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+        #     VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+        # service_role 키는 절대 커밋·주입하지 않는다.
         run: npm run build
 
       - name: Setup Pages
