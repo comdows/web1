@@ -50,7 +50,7 @@ const FOOTER = `
   <p><b>SEMOPL</b> — Korean business platforms, organized. Directory information only; not legal, financial, or tax advice.
   Fees, eligibility, and terms change — always verify on each platform's official site.</p>
   <p>The partnership board and business-transfer exchange serve Korea-based businesses in Korean, under Korean law, and are not offered in English.</p>
-  <p><a href="https://github.com/comdows/web1/issues/new?title=${encodeURIComponent("[EN] Report an error / Ask about entering Korea")}" style="color:#7C97FF">Report an error or ask a question →</a> · <a href="/web1/" style="color:#7C97FF">한국어 사이트</a></p>
+  <p><a href="https://github.com/comdows/web1/issues/new?title=${encodeURIComponent("[EN] Report an error / Ask about entering Korea")}" style="color:#7C97FF">Report an error or ask a question →</a> · <a href="/web1/en/about/" style="color:#7C97FF">About &amp; methodology</a> · <a href="/web1/" style="color:#7C97FF">한국어 사이트</a></p>
 </footer>`;
 
 function shell({ title, desc, canonical, koUrl, ld, body }) {
@@ -74,10 +74,16 @@ const card = (p) => `<li style="margin:0 0 14px"><a href="/web1/en/p/${p.id}/" s
 const write = (rel, html) => { const d = path.join(DIST, rel); fs.mkdirSync(d, { recursive: true }); fs.writeFileSync(path.join(d, "index.html"), html); };
 
 /* ── /en/ 랜딩 ── */
+const landingLd = JSON.stringify({ "@context": "https://schema.org", "@graph": [
+  { "@type": "WebSite", name: "SEMOPL (English)", url: `${SITE}/en/`, inLanguage: "en" },
+  { "@type": "Dataset", name: "Korean commerce & trade platforms (English directory)",
+    description: `${enPlats.length} Korean commerce and trade platforms with English names and one-line descriptions, each linked to its official site. Neutral directory — no paid placement.`,
+    url: `${SITE}/en/`, license: "https://creativecommons.org/licenses/by/4.0/", isAccessibleForFree: true,
+    distribution: [{ "@type": "DataDownload", encodingFormat: "application/json", contentUrl: `${SITE}/en/data/platforms.json` }] } ] });
 write("en", shell({
   title: "Korean Business Platforms in English — SEMOPL",
   desc: `A structured English directory of Korean commerce & trade platforms (${enPlats.length} entries, ${enCats.length} categories) for foreign sellers and businesses entering Korea.`,
-  canonical: `${SITE}/en/`, koUrl: `${SITE}/`,
+  canonical: `${SITE}/en/`, koUrl: `${SITE}/`, ld: landingLd,
   body: `${MAIN}
   <h1>Korean Business Platforms, in English</h1>
   <p>Korea is one of the world's largest e-commerce markets — but its platform landscape is documented almost entirely in Korean.
@@ -93,7 +99,7 @@ for (const c of enCats) {
   const list = byCat.get(c.id);
   const ce = catEn(c.id);
   const ld = JSON.stringify({ "@context": "https://schema.org", "@type": "ItemList", name: `${ce.name} — Korean platforms`, numberOfItems: list.length,
-    itemListElement: list.slice(0, 30).map((p, i) => ({ "@type": "ListItem", position: i + 1, name: en(p.id).name, url: `${SITE}/en/p/${p.id}/` })) });
+    itemListElement: list.map((p, i) => ({ "@type": "ListItem", position: i + 1, name: en(p.id).name, url: `${SITE}/en/p/${p.id}/` })) });
   write(`en/c/${c.id}`, shell({
     title: `${ce.name} in Korea — ${list.length} Platforms | SEMOPL`,
     desc: `${ce.desc} ${list.length} Korean platforms in this category, each linked to its official site.`.slice(0, 155),
@@ -131,7 +137,7 @@ for (const p of enPlats) {
 for (const [slug, g] of Object.entries(GUIDES)) {
   write(`en/guide/${slug}`, shell({
     title: `${g.title} | SEMOPL`, desc: g.desc.slice(0, 155),
-    canonical: `${SITE}/en/guide/${slug}/`, koUrl: `${SITE}/`,
+    canonical: `${SITE}/en/guide/${slug}/`,
     body: `${MAIN}${NAV}
     <h1>${esc(g.title)}</h1>
     <p>${esc(g.intro)}</p>
@@ -141,10 +147,61 @@ for (const [slug, g] of Object.entries(GUIDES)) {
 </main>` }));
 }
 
+/* ── /en/about/ 신뢰·방법론 페이지 (중립성은 대행사가 채택 불가능한 자산 — 명문화) ── */
+write("en/about", shell({
+  title: "About & Methodology — SEMOPL English Directory",
+  desc: "How this directory is built: neutral listing criteria, why we never republish fees, and how to report errors.",
+  canonical: `${SITE}/en/about/`,
+  body: `${MAIN}${NAV}
+  <h1>About this directory</h1>
+  <p>SEMOPL catalogs 1,600+ Korean business platforms in Korean; this English layer covers the ${enPlats.length} commerce and trade platforms most relevant to businesses researching the Korean market.</p>
+  <h2>Neutrality</h2>
+  <p><b>No platform or agency pays to be listed, ranked, or described.</b> There are no affiliate links, no paid placements, and no consulting funnel behind this directory. Every entry ends with a direct link to the platform's own official site.</p>
+  <h2>Why we never republish fees</h2>
+  <p>Commission rates, settlement cycles, and seller requirements change frequently and differ by category. Republishing them in English would go stale within months — so instead of copying numbers, we link you to the official source that is always current. If a page here disagrees with an official site, the official site is right.</p>
+  <h2>Listing criteria & updates</h2>
+  <p>Platforms are included when a business can sell, source, ship, or promote through them. The underlying dataset is maintained weekly in Korean (new platforms are collected, reviewed by a human, then added); English entries follow after translation review. Dead links are checked monthly.</p>
+  <h2>Corrections</h2>
+  <p><a href="https://github.com/comdows/web1/issues/new?title=${encodeURIComponent("[EN] Correction")}" style="color:#7C97FF">Report an error on GitHub →</a> — corrections ship in the next build.</p>
+</main>` }));
+
+/* ── AI 인용 레이어: llms.txt + 공개 데이터셋(JSON) — DA 0에서 가장 유리한 전장 ── */
+const today0 = new Date().toISOString().slice(0, 10);
+fs.writeFileSync(path.join(DIST, "llms.txt"), [
+  `# SEMOPL — Korean Business Platforms (English directory)`,
+  ``,
+  `> Neutral English directory of ${enPlats.length} Korean commerce & trade platforms in ${enCats.length} categories,`,
+  `> each linked to its official site. No paid placement, no affiliate links, no consulting funnel.`,
+  `> Fees and requirements are never republished — every entry links to the official source. Built ${today0}.`,
+  ``,
+  `## Pages`,
+  `- ${SITE}/en/ : landing & category index`,
+  `- ${SITE}/en/about/ : methodology & neutrality`,
+  ...Object.keys(GUIDES).map((g) => `- ${SITE}/en/guide/${g}/ : guide`),
+  ...enCats.map((c) => `- ${SITE}/en/c/${c.id}/ : ${catEn(c.id).name} (${byCat.get(c.id).length} platforms)`),
+  ``,
+  `## Dataset`,
+  `- ${SITE}/en/data/platforms.json : full machine-readable dataset (CC BY 4.0)`,
+  ``,
+  `## Platforms`,
+  ...enPlats.map((p) => `- ${SITE}/en/p/${p.id}/ : ${en(p.id).name} — ${en(p.id).blurb}`),
+].join("\n") + "\n");
+
+fs.mkdirSync(path.join(DIST, "en/data"), { recursive: true });
+fs.writeFileSync(path.join(DIST, "en/data/platforms.json"), JSON.stringify({
+  meta: { title: "Korean commerce & trade platforms (SEMOPL English directory)", built: today0,
+    license: "CC BY 4.0 — attribution: SEMOPL (comdows.github.io/web1/en)", count: enPlats.length,
+    note: "Neutral directory. Fees/requirements intentionally omitted — see each official site." },
+  platforms: enPlats.map((p) => ({ id: p.id, name: en(p.id).name, category: p.category,
+    categoryName: catEn(p.category).name, region: p.region === "해외" ? "global" : "korea",
+    blurb: en(p.id).blurb, officialUrl: p.url, page: `${SITE}/en/p/${p.id}/` })),
+}, null, 1));
+fs.appendFileSync(path.join(DIST, "robots.txt"), `# AI crawlers: see ${SITE}/llms.txt\n`);
+
 /* ── sitemap.xml에 EN URL 삽입 ── */
 const smPath = path.join(DIST, "sitemap.xml");
 const today = new Date().toISOString().slice(0, 10);
-const enUrls = [`${SITE}/en/`,
+const enUrls = [`${SITE}/en/`, `${SITE}/en/about/`,
   ...enCats.map((c) => `${SITE}/en/c/${c.id}/`),
   ...enPlats.map((p) => `${SITE}/en/p/${p.id}/`),
   ...Object.keys(GUIDES).map((s) => `${SITE}/en/guide/${s}/`)];
@@ -152,7 +209,7 @@ fs.writeFileSync(smPath, fs.readFileSync(smPath, "utf8").replace("</urlset>",
   enUrls.map((u) => `  <url><loc>${u}</loc><lastmod>${today}</lastmod></url>`).join("\n") + "\n</urlset>"));
 
 /* 금지 링크 최종 검사: EN 표면에 제휴·거래소·약관 경로가 없어야 한다 */
-const banned = /view=partners|view=exchange|view=value-check|view=deal-guide|view=terms|view=privacy/;
+const banned = /view=partners|view=exchange|view=value-check|view=deal-guide|view=terms|view=privacy|shopping mall/i;
 let bannedHit = 0;
 const walk = (dir) => { for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
   const fp = path.join(dir, f.name);
