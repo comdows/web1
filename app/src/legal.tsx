@@ -3,7 +3,7 @@
 import { FLAGS } from "./config";
 import { useNav } from "./nav";
 
-export const TERMS_VERSION = "2026-07";
+export const TERMS_VERSION = "2026-07.1"; // .1: 거래소 범위를 자산·사업 양수도로 한정(지분·투자유치 게시·소개 안 함)
 
 function LegalShell({ title, children }: { title: string; children: React.ReactNode }) {
   const go = useNav();
@@ -31,6 +31,9 @@ export function Terms() {
         <p><b>세모플은 정보의 게시와 쌍방 동의에 따른 소개(연락 연결)까지만 제공하며, 제휴·거래의 당사자가 아닙니다.</b>{" "}
           제휴의 실행·정산·계약, 매각·인수의 협상·실사·계약·대금 지급은 전적으로 당사자 간에 이루어지며,
           세모플은 중개·주선·대리·자문·가치평가·실사를 수행하지 않습니다.</p>
+        <p><b>거래소는 자산·사업 양수도에 한해 게시·소개합니다.</b> 지분(주식) 매매·투자유치·주식 거래에 관한 정보는
+          게시·소개하지 않으며, 로펌·회계법인 등 전문 자문 이용에 대한 일반적 안내만 제공합니다.
+          세모플은 이 안내의 대가를 어떤 형태로도 받지 않습니다.</p>
       </section>
       <section>
         <h3>2. "성사"의 정의와 세모플 역할의 종료</h3>

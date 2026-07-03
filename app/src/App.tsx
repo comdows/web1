@@ -7,7 +7,7 @@ import { usePlatforms, usePlatformStats, usePlatformIndex } from "./lib/platform
 import { sortByRelevance } from "./lib/search";
 import { useFavs, useCompare } from "./lib/store";
 import { FLAGS } from "./config";
-import { Partners, Exchange } from "./pages";
+import { Partners, Exchange, DealGuide } from "./pages";
 import { NavContext } from "./nav";
 import type { ViewName } from "./nav";
 import { PlatformDetail, SearchResults, Compare, Onboarding } from "./discovery";
@@ -83,7 +83,7 @@ export default function App() {
     const titles: Partial<Record<ViewName, string>> = {
       search: "검색", partners: "제휴 매칭", exchange: "플랫폼 거래소", compare: "비교",
       onboarding: "맞춤 추천", account: "계정", submit: "플랫폼 제보", admin: "관리 콘솔",
-      terms: "이용약관", privacy: "개인정보처리방침",
+      terms: "이용약관", privacy: "개인정보처리방침", "deal-guide": "양수도 가이드",
     };
     document.title = titles[v] ? `${titles[v]} — 세모플` : "세모플 — 세상의 모든 플랫폼";
     if (params?.id !== undefined) setDetailId(params.id);
@@ -152,6 +152,7 @@ export default function App() {
 
       {view === "partners" ? <Partners />
         : view === "exchange" ? <Exchange />
+        : view === "deal-guide" ? <DealGuide />
         : view === "detail" ? <PlatformDetail id={detailId} />
         : view === "search" ? <SearchResults initialQ={searchQ} />
         : view === "compare" ? <Compare />

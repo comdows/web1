@@ -6,11 +6,11 @@ import { Badge, StatTile } from "./components";
 import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
 import {
-  createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner, getPendingCount,
-  getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT, listAdminIntroQueue,
-  listBuyerBriefs, listDealsAdmin, listDealSubmissions, listPartnerPosts, listSubmissions,
-  markIntroduced, publishDeal, remoteEnabled, reviewDealSubmission, reviewPartnerPost,
-  reviewSubmission, transitionPlatform, updateDealStatus,
+  briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
+  getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
+  listAdminIntroQueue, listBuyerBriefs, listDealsAdmin, listDealSubmissions, listPartnerPosts,
+  listSubmissions, markIntroduced, publishDeal, remoteEnabled, reviewDealSubmission,
+  reviewPartnerPost, reviewSubmission, transitionPlatform, updateDealStatus,
 } from "./lib/api";
 import type {
   BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin, Submission,
@@ -223,6 +223,17 @@ function PartnerPostQueue() {
   );
 }
 
+/* 지분·투자유치 접수 감지 — 게시 금지(무인가 투자중개 회피), 반려 사유 프리셋 안내 */
+const isEquitySub = (mode?: string) => /지분|투자|주식/.test(mode ?? "");
+const EQUITY_REJECT = "지분 매매·투자유치는 게시 대상이 아닙니다. 로펌·회계법인 등 전문 자문과 진행해 주세요(자산·사업 양수도는 다시 접수하실 수 있어요).";
+/* 자산 체크리스트 → 게시 하이라이트 칩 초안(자산·인수인계는 카드의 핵심 신뢰 신호) */
+function assetChips(p: { assets?: string[]; handover?: string }): string[] {
+  const chips: string[] = [];
+  if (p.assets?.length) chips.push(`자산: ${p.assets.map((a) => a.split("(")[0].trim()).join("·")}`);
+  if (p.handover && !/없음/.test(p.handover)) chips.push(`인수인계 ${p.handover}`);
+  return chips;
+}
+
 /* ── 매물 검수 큐 (deal_submissions → 익명화·코드명 부여 후 게시) ── */
 function DealSubQueue() {
   const [items, setItems] = useState<DealSubmissionRow[] | null>(null);
@@ -244,7 +255,8 @@ function DealSubQueue() {
         rows.forEach((r, i) => {
           if (!n[r.id]) n[r.id] = {
             code: `D-${base + i}`, summary: r.payload.summary ?? "",
-            highlights: r.payload.highlights ?? "", reason: "",
+            highlights: [r.payload.highlights, ...assetChips(r.payload)].filter(Boolean).join(", "),
+            reason: isEquitySub(r.payload.mode) ? EQUITY_REJECT : "",
           };
         });
         return n;
@@ -292,17 +304,38 @@ function DealSubQueue() {
       {items.map((s) => {
         const d = drafts[s.id] ?? { code: "", summary: "", highlights: "", reason: "" };
         const set = (patch: Partial<typeof d>) => setDrafts((r) => ({ ...r, [s.id]: { ...d, ...patch } }));
+        const equity = isEquitySub(s.payload.mode);
         return (
           <div className="admin-card" key={s.id}>
             <div className="admin-card-h">
               <b>매각 접수</b>
               <Badge kind="soon">{s.payload.revenue_band ?? "?"}</Badge>
               <Badge kind="muted">{s.payload.mode ?? "?"}</Badge>
+              {equity && <Badge kind="muted">⚠ 지분 — 게시 불가</Badge>}
+              <Badge kind={s.payload.contact_consent_at ? "verify" : "muted"}>
+                {s.payload.contact_consent_at ? "이메일 공유 동의 ✓" : "⚠ 동의 없음(구버전)"}
+              </Badge>
               <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: "auto" }}>{s.created_at.slice(0, 10)}</span>
             </div>
             <p style={{ margin: "6px 0", fontSize: 13, color: "var(--muted)" }}>
               원문: {s.payload.summary}{s.payload.sale_reason ? ` (사유: ${s.payload.sale_reason})` : ""}
             </p>
+            {(s.payload.assets?.length || s.payload.handover) && (
+              <p style={{ margin: "2px 0 6px", fontSize: 12.5, color: "var(--muted)" }}>
+                자산: {s.payload.assets?.length ? s.payload.assets.join(", ") : "미기재"} · 인수인계: {s.payload.handover ?? "미기재"}
+              </p>
+            )}
+            {s.payload.verify_note && (
+              <div className="frm-note" style={{ marginBottom: 6 }}>
+                🔒 비공개 검증 자료(게시에 복사 금지): <span className="mono" style={{ fontSize: 12 }}>{s.payload.verify_note}</span>
+                {" — "}확인되면 하이라이트에 "운영자 확인 ✓" 칩을 직접 추가하세요.
+              </div>
+            )}
+            {equity && (
+              <div className="err" style={{ fontSize: 12.5 }}>
+                지분·투자유치 접수 건 — 게시하면 무인가 투자중개 리스크가 있어 게시 버튼이 잠깁니다. 아래 프리셋 사유로 반려하세요.
+              </div>
+            )}
             <div className="admin-form">
               <label>코드명 <input value={d.code} onChange={(e) => set({ code: e.target.value })} placeholder="D-201" /></label>
               <label style={{ flex: 2, minWidth: 240 }}>게시용 익명 요약(재작성)
@@ -313,7 +346,8 @@ function DealSubQueue() {
             </div>
             {errs[s.id] && <div className="err">{errs[s.id]}</div>}
             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-              <button className="btn primary sm" disabled={busy === s.id} onClick={() => approve(s)}>✓ 익명화 게시</button>
+              <button className="btn primary sm" disabled={busy === s.id || equity} title={equity ? "지분 접수 건은 게시할 수 없어요" : ""}
+                onClick={() => approve(s)}>✓ 익명화 게시</button>
               <button className="btn ghost sm" disabled={busy === s.id} onClick={() => reject(s)}>반려</button>
             </div>
           </div>
@@ -323,36 +357,53 @@ function DealSubQueue() {
   );
 }
 
-/* ── 소개 대기(매칭 신청·인수 관심·브리프) — 양측 이메일로 실제 소개 이행 ── */
+/* ── 소개 대기(매칭 신청·인수 관심·브리프) — 양측 이메일로 실제 소개 이행 ──
+ * 거래소 건은 2단 SOP: ① 매도자 의사 확인(단독 수신) → 회신 후 ② 소개 초안(양측 수신, NDA·§27 안내 포함) */
 function IntroQueue() {
   const [rows, setRows] = useState<IntroQueueRow[] | null>(null);
   const [briefs, setBriefs] = useState<BuyerBriefRow[]>([]);
+  const [deals, setDeals] = useState<{ id: string; status: string; is_demo: boolean; category_id: string; mode: string }[]>([]);
+  const [mailed, setMailed] = useState<Set<string>>(new Set()); // 소개 초안을 연 건만 '소개 완료' 활성화
   const [loadErr, setLoadErr] = useState(false);
   const reload = useCallback(() => {
     setLoadErr(false);
     listAdminIntroQueue().then(setRows).catch(() => { setRows(null); setLoadErr(true); });
     listBuyerBriefs().then(setBriefs).catch(() => setBriefs([]));
+    listDealsAdmin().then(setDeals).catch(() => setDeals([]));
   }, []);
   useEffect(reload, [reload]);
   const done = async (kind: "partner" | "deal", id: string) => {
     await markIntroduced(kind === "partner" ? "partner_post_interests" : "deal_interests", id).catch(() => { /* noop */ });
     reload();
   };
+  const guideUrl = `${location.origin}${import.meta.env.BASE_URL}?view=deal-guide`;
+  /* ① 매도자 의사 확인 — 관심자 정보는 익명 요지만, 소개 여부 회신 요청(현황 알림 겸용) */
+  const sellerConfirmDraft = (r: IntroQueueRow) => {
+    const subject = `[세모플] ${r.target_title} 인수 관심 접수 — 소개 진행 여부 회신 요청`;
+    const body = `안녕하세요, 세모플입니다.\n\n회원님이 게시하신 매물 ${r.target_title}에 인수 관심 1건이 접수됐습니다.\n- 관심자 소개(익명 요지): ${r.message}\n\n소개(상호 이메일 공유)를 진행해도 될지 이 메일에 회신으로 알려주세요.\n진행을 원치 않으시면 사유 없이 "진행하지 않겠습니다"라고만 회신하셔도 됩니다.\n\n세모플 드림`;
+    return `mailto:${r.counterpart_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  };
+  /* ② 소개 초안 — 거래소 건은 NDA·§27·다음 단계 안내 포함(소개 후 막다른 길 방지) */
   const mailDraft = (r: IntroQueueRow) => {
     const to = [r.applicant_email, r.counterpart_email].filter(Boolean).join(",");
     const subject = `[세모플 소개] ${r.target_title}`;
-    const body = `안녕하세요, 세모플입니다.\n\n양측 동의에 따라 서로를 소개드립니다.\n- 신청: ${r.platform_name || r.applicant_email} (${r.applicant_email})\n- 상대: ${r.target_title} (${r.counterpart_email})\n- 제안 요지: ${r.message}\n\n이후 협의는 두 분이 직접 진행해 주세요. 세모플의 역할은 여기까지입니다.\n(정산·계약에 세모플은 관여하지 않습니다)`;
+    const common = `안녕하세요, 세모플입니다.\n\n양측 동의에 따라 서로를 소개드립니다.\n- 신청: ${r.platform_name || r.applicant_email} (${r.applicant_email})\n- 상대: ${r.target_title} (${r.counterpart_email})\n- 제안 요지: ${r.message}\n`;
+    const dealNext = `\n다음 단계(권장):\n1) 상호 NDA 체결 후 자료 교환(자산 목록·매출 증빙) — 참고 가이드: ${guideUrl}\n2) 실사·계약·대금은 전문 자문(로펌·회계법인)과 직접 진행하세요.\n3) 회원 DB 이전 시 개인정보보호법 제27조(영업양도 통지) 절차가 필요합니다.\n`;
+    const body = common + (r.kind === "deal" ? dealNext : "") +
+      `\n이후 협의는 두 분이 직접 진행해 주세요. 세모플의 역할은 여기까지입니다.\n(협상·가격·정산·계약에 세모플은 관여하지 않습니다)`;
     return `mailto:${to}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
   if (loadErr) return <div className="empty">소개 큐를 불러오지 못했어요(0005 마이그레이션 필요 여부 확인). <button className="linklike" onClick={reload}>다시 시도</button></div>;
   if (rows === null) return <div className="empty">불러오는 중…</div>;
   if (rows.length === 0 && briefs.length === 0) return <div className="empty">소개 대기 건이 없습니다 ✓</div>;
+  const activeDeals = deals.filter((d) => !d.is_demo && d.status !== "closed");
   return (
     <>
       {rows.map((r) => {
+        const key = `${r.kind}-${r.id}`;
         const ready = Boolean(r.applicant_email && r.counterpart_email && r.contact_consent_at);
         return (
-          <div className="sub-item" key={`${r.kind}-${r.id}`}>
+          <div className="sub-item" key={key}>
             <div style={{ minWidth: 0 }}>
               <b>{r.kind === "partner" ? "🤝 매칭 신청" : "🏦 인수 관심"}</b>
               {" — "}{r.platform_name ? `${r.platform_name} → ` : ""}"{r.target_title}"
@@ -362,26 +413,40 @@ function IntroQueue() {
                 {r.contact_consent_at ? " · 동의 ✓" : " · ⚠ 이메일 공유 동의 없음(구버전 신청)"}
               </div>
             </div>
-            <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-              {ready && <a className="btn primary sm" href={mailDraft(r)}>메일 초안</a>}
-              <button className="btn ghost sm" disabled={!ready} title={ready ? "" : "양측 이메일·동의가 있어야 소개할 수 있어요"}
+            <div style={{ display: "flex", gap: 6, flexShrink: 0, flexWrap: "wrap" }}>
+              {r.kind === "deal" && r.counterpart_email && (
+                <a className="btn ghost sm" href={sellerConfirmDraft(r)} title="매도자에게 관심 접수 현황을 알리고 소개 진행 여부를 확인">① 매도자 확인</a>
+              )}
+              {ready && (
+                <a className="btn primary sm" href={mailDraft(r)} onClick={() => setMailed((s) => new Set(s).add(key))}>
+                  {r.kind === "deal" ? "② 소개 초안" : "메일 초안"}
+                </a>
+              )}
+              <button className="btn ghost sm" disabled={!ready || !mailed.has(key)}
+                title={!ready ? "양측 이메일·동의가 있어야 소개할 수 있어요" : !mailed.has(key) ? "소개 초안을 먼저 발송하세요" : ""}
                 onClick={() => done(r.kind, r.id)}>소개 완료</button>
             </div>
           </div>
         );
       })}
-      {briefs.map((b) => (
-        <div className="sub-item" key={b.id}>
-          <div style={{ minWidth: 0 }}>
-            <b>📮 인수 브리프</b> — {b.entity} · {b.budget_band} · {b.mode}
-            <div className="frm-note">{b.categories.length ? b.categories.join(", ") : "분야 무관"}{b.note ? ` — ${b.note}` : ""}</div>
+      {briefs.map((b) => {
+        const matches = activeDeals.filter((d) => briefMatchesDeal(b, d));
+        return (
+          <div className="sub-item" key={b.id}>
+            <div style={{ minWidth: 0 }}>
+              <b>📮 인수 브리프</b> — {b.entity} · {b.budget_band} · {b.mode}
+              <div className="frm-note">{b.categories.length ? b.categories.join(", ") : "분야 무관"}{b.note ? ` — ${b.note}` : ""}</div>
+              <div className="mono" style={{ fontSize: 11, color: matches.length ? "var(--teal)" : "var(--faint)" }}>
+                {matches.length ? `맞는 매물: ${matches.map((m) => m.id).join(", ")}` : "맞는 매물 없음(게시 중 기준)"}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+              <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{b.created_at.slice(0, 10)}</span>
+              <button className="btn ghost sm" onClick={async () => { await deactivateBrief(b.id).catch(() => { /* 0005 필요 */ }); reload(); }}>안내 완료</button>
+            </div>
           </div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
-            <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{b.created_at.slice(0, 10)}</span>
-            <button className="btn ghost sm" onClick={async () => { await deactivateBrief(b.id).catch(() => { /* 0005 필요 */ }); reload(); }}>안내 완료</button>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 }

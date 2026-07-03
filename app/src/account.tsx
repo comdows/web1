@@ -11,10 +11,11 @@ import {
 import { TERMS_VERSION } from "./legal";
 import { FLAGS } from "./config";
 import {
-  createSubmission, listMyBriefs, listMyDealInterests, listMyDealSubmissions,
-  listMyPartnerInterests, listMyPartnerPosts, listMySubmissions, remoteEnabled, updateDisplayName,
+  briefMatchesDeal, createSubmission, fetchDeals, listMyBriefs, listMyDealInterests,
+  listMyDealSubmissions, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions,
+  remoteEnabled, updateDisplayName,
 } from "./lib/api";
-import type { BuyerBriefRow, DealSubmissionRow, MyInterestRow, PartnerPostAdmin, Submission } from "./lib/api";
+import type { BuyerBriefRow, DealSubmissionRow, MyInterestRow, PartnerPostAdmin, PublicDeal, Submission } from "./lib/api";
 
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
 
@@ -151,6 +152,7 @@ export function Account() {
   const [recovery] = useState(() => consumeRecoveryPending()); // 재설정 링크로 복귀한 경우
   const [acts, setActs] = useState<{ pp: PartnerPostAdmin[]; ds: DealSubmissionRow[]; pi: MyInterestRow[]; di: MyInterestRow[]; br: BuyerBriefRow[] } | null>(null);
   const [actsErr, setActsErr] = useState(false);
+  const [briefDeals, setBriefDeals] = useState<PublicDeal[]>([]); // 브리프 조건 대조용(공개 뷰)
 
   useEffect(() => { setName(profile?.display_name ?? ""); }, [profile?.display_name]);
   useEffect(() => {
@@ -162,7 +164,12 @@ export function Account() {
       .catch(() => { if (alive) { setSubsError(true); setSubs(null); } });
     setActsErr(false);
     Promise.all([listMyPartnerPosts(), listMyDealSubmissions(), listMyPartnerInterests(), listMyDealInterests(), listMyBriefs()])
-      .then(([pp, ds, pi, di, br]) => { if (alive) setActs({ pp, ds, pi, di, br }); })
+      .then(([pp, ds, pi, di, br]) => {
+        if (!alive) return;
+        setActs({ pp, ds, pi, di, br });
+        // 활성 브리프가 있으면 공개 매물과 조건 대조("우선 안내" 약속의 인앱 이행)
+        if (br.some((b) => b.active)) fetchDeals().then((d) => { if (alive) setBriefDeals(d.filter((x) => !x.is_demo)); }).catch(() => { /* noop */ });
+      })
       .catch(() => { if (alive) { setActsErr(true); setActs(null); } });
     return () => { alive = false; };
   }, [session, reload]);
@@ -278,7 +285,18 @@ export function Account() {
       ) : acts === null ? <div className="empty">불러오는 중…</div>
       : (acts.pp.length + acts.ds.length + acts.pi.length + acts.di.length + acts.br.length) === 0 ? (
         <div className="empty">제휴 제안·매각 접수·매칭 신청·관심 등록이 여기에 표시됩니다.</div>
-      ) : (
+      ) : (() => {
+        const matchedIds = [...new Set(
+          acts.br.filter((b) => b.active).flatMap((b) => briefDeals.filter((d) => briefMatchesDeal(b, d)).map((d) => d.id))
+        )];
+        return (
+        <>
+        {matchedIds.length > 0 && (
+          <div className="banner" style={{ marginBottom: 10 }}>
+            📮 브리프 조건과 맞는 매물 <b>{matchedIds.length}건</b>({matchedIds.slice(0, 5).join(", ")}) —{" "}
+            <button className="linklike" onClick={() => go("exchange")}>거래소에서 확인 →</button>
+          </div>
+        )}
         <div className="sub-list">
           {acts.pp.map((p) => {
             const b = p.status === "pending" ? { k: "soon" as const, l: "검수 중" }
@@ -299,9 +317,17 @@ export function Account() {
               : s.status === "hold" ? { k: "muted" as const, l: "보류" }
               : s.status === "approved" ? { k: "verify" as const, l: `게시됨${s.approved_deal_id ? ` · ${s.approved_deal_id}` : ""}` }
               : { k: "muted" as const, l: "반려" };
+            const days = Math.floor((Date.now() - new Date(s.created_at).getTime()) / 86400000);
             return (
               <div className="sub-item" key={s.id}>
                 <div style={{ minWidth: 0 }}>🏦 <b>매각 접수</b> — {s.payload.revenue_band ?? ""} {s.payload.mode ?? ""}
+                  {s.status === "pending" && (
+                    <div className="frm-note">
+                      {days === 0 ? "오늘 접수" : `접수 ${days}일 경과`} — 검수는 보통 3영업일 이내(1인 운영 · 순차 검수)예요.
+                      {days >= 5 && FLAGS.contactEmail && <> 오래 걸리면 <a href={`mailto:${FLAGS.contactEmail}?subject=${encodeURIComponent("[세모플] 매각 접수 검수 문의")}`}>문의</a>해 주세요.</>}
+                    </div>
+                  )}
+                  {s.status === "approved" && <div className="frm-note">관심이 들어오면 세모플이 이메일로 소개 진행 여부를 확인드려요 — 메일함을 확인해 주세요.</div>}
                   {s.status === "rejected" && s.review_reason && <div className="frm-note">반려 사유: {s.review_reason}</div>}
                 </div>
                 <Badge kind={b.k}>{b.l}</Badge>
@@ -316,7 +342,14 @@ export function Account() {
           ))}
           {acts.di.map((i) => (
             <div className="sub-item" key={i.id}>
-              <div style={{ minWidth: 0 }}>🏦 <b>인수 관심</b> — 매물 {i.deal_id}</div>
+              <div style={{ minWidth: 0 }}>🏦 <b>인수 관심</b> — 매물 {i.deal_id}
+                {i.status === "introduced" && (
+                  <div className="frm-note">
+                    소개 메일이 발송됐어요 — 메일함(스팸함 포함)을 확인하세요.
+                    {FLAGS.contactEmail && <> 24시간 내 미도착 시 <a href={`mailto:${FLAGS.contactEmail}?subject=${encodeURIComponent(`[세모플] 소개 메일 미도착 — ${i.deal_id ?? ""}`)}`}>문의</a>.</>}
+                  </div>
+                )}
+              </div>
               <Badge kind={i.status === "introduced" ? "verify" : "soon"}>{i.status === "introduced" ? "소개 완료" : "접수됨"}</Badge>
             </div>
           ))}
@@ -327,7 +360,9 @@ export function Account() {
             </div>
           ))}
         </div>
-      )}
+        </>
+        );
+      })()}
     </main>
   );
 }

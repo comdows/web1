@@ -231,6 +231,9 @@ button{font-family:inherit}
 .tabbar{display:flex;gap:8px;margin-bottom:16px}
 .frm{display:flex;flex-direction:column;gap:12px}
 .frm label{display:flex;flex-direction:column;gap:6px;font-size:12px;font-weight:var(--w-semibold);color:var(--muted)}
+/* 폼 안의 체크박스 옵션(동의·자산 선택)은 세로 스택 대신 체크박스+텍스트 인라인 흐름 */
+.frm label.facet-opt{display:block;font-weight:400;line-height:1.6;color:var(--text)}
+.frm label.facet-opt input{vertical-align:middle;margin-right:6px}
 .frm input,.frm textarea,.frm select{background:var(--surface-2);border:1px solid var(--line);color:var(--text);
   border-radius:10px;padding:10px 12px;font-family:inherit;font-size:14px;outline:none}
 .frm input:focus,.frm textarea:focus,.frm select:focus{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-tint)}
