@@ -1,6 +1,6 @@
 -- ============================================================
 -- 세모플 시드 v1 — build-seed.mjs 생성물 (직접 수정 금지)
--- 그룹 5 · 분야 35 · 플랫폼 1559
+-- 그룹 6 · 분야 45 · 플랫폼 1637
 -- ============================================================
 
 insert into public.groups (id, name, icon, description, sort) values
@@ -8,7 +8,8 @@ insert into public.groups (id, name, icon, description, sort) values
   ('trade', '해외·B2B·유통', '🚢', '수출입·도매·물류·기업 구매', 1),
   ('service', '서비스·전문가·일자리', '🧑‍💼', '일감·인력·생활서비스·전문가 매칭', 2),
   ('life', '생활·여가·예약', '🏝️', '여행·예약·차·집·가족·건강', 3),
-  ('money', '자금·콘텐츠·창작', '💰', '자금조달·금융·콘텐츠 수익화·창작물 판매', 4)
+  ('money', '자금·콘텐츠·창작', '💰', '자금조달·금융·콘텐츠 수익화·창작물 판매', 4),
+  ('ai', 'AI 도구', '🧠', '일·콘텐츠·개발을 도와주는 전 세계 AI 도구', 5)
 on conflict (id) do nothing;
 
 insert into public.categories (id, group_id, name, icon, description, sort) values
@@ -46,7 +47,17 @@ insert into public.categories (id, group_id, name, icon, description, sort) valu
   ('legaltax', 'service', '법률·세무·전문서비스', '⚖️', '변호사·세무·노무·전자계약·심리상담 매칭', 31),
   ('finance', 'money', '금융·대출·보험 비교', '💳', '대출·보험·카드·해외송금·정책자금 비교/중개', 32),
   ('rental', 'life', '렌탈·구독', '🔄', '가전·가구·명품·차량·장비 렌탈·구독', 33),
-  ('office', 'trade', '사무·MRO·산업재 B2B', '🖇️', '사무용품·MRO·공구·전자부품·건자재·포장재', 34)
+  ('office', 'trade', '사무·MRO·산업재 B2B', '🖇️', '사무용품·MRO·공구·전자부품·건자재·포장재', 34),
+  ('ai_chat', 'ai', '범용 AI 챗봇', '🤖', '글쓰기·조사·아이디어까지 두루 시키는 범용 어시스턴트', 35),
+  ('ai_writing', 'ai', '글쓰기·문서 AI', '✍️', '카피·블로그·보고서·발표자료 작성을 돕는 도구', 36),
+  ('ai_image', 'ai', '이미지·디자인 AI', '🎨', '이미지 생성·배경 제거·디자인 제작 도구', 37),
+  ('ai_video', 'ai', '영상 AI', '🎬', '영상 생성·아바타·자막·편집 도구', 38),
+  ('ai_audio', 'ai', '음성·음악 AI', '🎙️', 'AI 성우·더빙·음악 생성·오디오 보정', 39),
+  ('ai_code', 'ai', '개발·코딩 AI', '💻', '코드 작성·앱 생성을 돕는 개발 도구', 40),
+  ('ai_meeting', 'ai', '회의·기록 AI', '📝', '회의 녹음을 텍스트·요약으로 바꾸는 도구', 41),
+  ('ai_marketing', 'ai', '마케팅·고객응대 AI', '📣', '광고 소재·SNS·SEO·AI 상담봇', 42),
+  ('ai_auto', 'ai', '자동화·AI 에이전트', '⚙️', '반복 업무 연결·자동화와 AI 에이전트 구축', 43),
+  ('ai_research', 'ai', '리서치·번역 AI', '🔍', '출처 기반 검색·논문 조사·번역 도구', 44)
 on conflict (id) do nothing;
 
 insert into public.platforms (id, name, category_id, region, url, blurb, is_new) values
@@ -430,7 +441,7 @@ insert into public.platforms (id, name, category_id, region, url, blurb, is_new)
   ('stibee', '스티비', 'content', 'domestic', 'https://stibee.com/', '유료 구독 기능을 갖춘 국내 뉴스레터 발행·구독자 관리 플랫폼.', false),
   ('maily', '메일리', 'content', 'domestic', 'https://maily.so/', '멤버십 유료 콘텐츠 수익화를 지원하는 뉴스레터 발행 플랫폼.', false),
   ('airklass', '에어클래스', 'content', 'domestic', 'https://www.airklass.com/', '마스터(강사)가 클래스를 개설·판매하는 온라인 강의 플랫폼.', false),
-  ('typecast', '타입캐스트', 'content', 'domestic', 'https://typecast.ai/', '감정 표현 TTS 기반의 AI 성우 음성 생성 서비스.', false),
+  ('typecast', '타입캐스트', 'ai_audio', 'domestic', 'https://typecast.ai/', '감정 표현 TTS 기반의 AI 성우 음성 생성 서비스.', false),
   ('pozalabs', '포자랩스', 'content', 'domestic', 'https://www.pozalabs.com/', '저작권 이슈 없는 AI 생성 배경음악을 제작·유통하는 음악 플랫폼.', false),
   ('britg', '브릿G', 'content', 'domestic', 'https://britg.kr/', '장편·중단편 소설을 장르 구분 없이 자유 연재·판매하는 플랫폼.', false),
   ('ctee', '크티', 'content', 'overseas', 'https://ctee.kr', '최근 성장 중인 신생 크리에이터 수익화 플랫폼으로 멤버십·후원·상품 판매를 플랫폼 수수료 0%로 지원한다.', true),
@@ -1562,7 +1573,7 @@ insert into public.platforms (id, name, category_id, region, url, blurb, is_new)
   ('sooplive2', '숲', 'social', 'domestic', 'https://www.sooplive.com', '1인 방송·라이브 스트리밍 플랫폼(구 아프리카TV).', false),
   ('spooncast', '스푼', 'social', 'domestic', 'https://www.spooncast.net/kr', '목소리로 소통하는 오디오 라이브 방송 앱.', false),
   ('vworld', '브이월드', 'social', 'domestic', 'https://v-world.io', '버튜버 팬 커뮤니티 플랫폼.', false),
-  ('vrew', '브루', 'assets', 'domestic', 'https://vrew.ai/ko', 'AI 자동 자막·음성인식 기반 영상 편집 툴.', false),
+  ('vrew', '브루', 'ai_video', 'domestic', 'https://vrew.ai/ko', 'AI 자동 자막·음성인식 기반 영상 편집 툴.', false),
   ('aistudios', 'AI스튜디오스', 'assets', 'domestic', 'https://www.aistudios.com', 'AI 아바타·텍스트 투 비디오 제작 SaaS.', false),
   ('videomonster', '비디오몬스터', 'assets', 'domestic', 'https://www.videomonster.com', '템플릿 기반 자동 영상 제작 SaaS.', false),
   ('dental', '치과웨건', 'beautyhealth', 'domestic', 'https://dental.pricewagon.net/', '내 주변 임플란트·교정 치과 가격비교 사이트.', false),
@@ -1617,7 +1628,85 @@ insert into public.platforms (id, name, category_id, region, url, blurb, is_new)
   ('gs25', '우리동네GS', 'delivery', 'domestic', 'https://gs25.gsretail.com/', '동네 편의점 즉시배송 퀵커머스.', false),
   ('dongnemom', '동네맘', 'social', 'domestic', 'http://dongnemom.com/', '우리동네 지역·육아 정보 공유 맘 커뮤니티.', false),
   ('mcafe', '맘카페', 'social', 'domestic', 'https://mcafe.me/', '전국 동네 맘 커뮤니티, 지역 정보·나눔 게시판.', false),
-  ('incheoneum2', '인천e음', 'social', 'domestic', 'https://incheoneum.or.kr/', '인천시 지역화폐, 동네 가맹점 캐시백 카드.', false)
+  ('incheoneum2', '인천e음', 'social', 'domestic', 'https://incheoneum.or.kr/', '인천시 지역화폐, 동네 가맹점 캐시백 카드.', false),
+  ('chatgpt', 'ChatGPT', 'ai_chat', 'overseas', 'https://chatgpt.com', 'OpenAI의 범용 AI 챗봇 — 글쓰기·분석·이미지 생성까지 가장 널리 쓰이는 기본기.', true),
+  ('claude-ai', 'Claude', 'ai_chat', 'overseas', 'https://claude.ai', 'Anthropic의 AI 어시스턴트 — 긴 문서 이해와 꼼꼼한 글쓰기·코딩에 강점.', true),
+  ('gemini', 'Gemini', 'ai_chat', 'overseas', 'https://gemini.google.com', '구글의 AI 챗봇 — 검색·지메일·유튜브 등 구글 서비스와 연동.', true),
+  ('ms-copilot', 'Microsoft Copilot', 'ai_chat', 'overseas', 'https://copilot.microsoft.com', '윈도우·엣지·오피스에 내장되는 마이크로소프트의 AI 비서.', true),
+  ('wrtn', '뤼튼', 'ai_chat', 'domestic', 'https://wrtn.ai', '국내 대표 AI 포털 — 챗봇·이미지·과제 도구를 한국어 중심으로 제공.', true),
+  ('clova-x', 'CLOVA X', 'ai_chat', 'domestic', 'https://clova-x.naver.com', '네이버의 한국어 특화 AI 챗봇 — 국내 정보·쇼핑 맥락 이해.', true),
+  ('grok', 'Grok', 'ai_chat', 'overseas', 'https://grok.com', 'xAI의 AI 챗봇 — X(트위터) 실시간 정보 반영이 특징.', true),
+  ('lechat', 'Le Chat', 'ai_chat', 'overseas', 'https://chat.mistral.ai', '유럽 미스트랄의 챗봇 — 빠른 응답 속도와 넓은 무료 사용 폭.', true),
+  ('notion-ai', 'Notion AI', 'ai_writing', 'overseas', 'https://www.notion.com/product/ai', '노션 문서 안에서 요약·초안·번역을 처리하는 업무용 글쓰기 AI.', true),
+  ('gamma-app', 'Gamma', 'ai_writing', 'overseas', 'https://gamma.app', '프롬프트 한 줄로 발표자료·문서·웹페이지를 만들어 주는 생성 도구.', true),
+  ('jasper', 'Jasper', 'ai_writing', 'overseas', 'https://www.jasper.ai', '브랜드 톤을 학습해 마케팅 카피·블로그를 쓰는 기업용 글쓰기 AI.', true),
+  ('copy-ai', 'Copy.ai', 'ai_writing', 'overseas', 'https://www.copy.ai', '광고 카피·세일즈 문구 템플릿이 풍부한 카피라이팅 AI.', true),
+  ('writesonic', 'Writesonic', 'ai_writing', 'overseas', 'https://writesonic.com', 'SEO 블로그·광고 문구를 빠르게 뽑는 콘텐츠 생성 AI.', true),
+  ('grammarly', 'Grammarly', 'ai_writing', 'overseas', 'https://www.grammarly.com', '영문 문법·톤 교정 — 영어 이메일·문서 품질을 올려주는 도구.', true),
+  ('deepl-write', 'DeepL Write', 'ai_writing', 'overseas', 'https://www.deepl.com/write', '영어·독일어 문장을 자연스럽게 다듬어 주는 교정 AI.', true),
+  ('sudowrite', 'Sudowrite', 'ai_writing', 'overseas', 'https://www.sudowrite.com', '소설·창작 글쓰기에 특화된 스토리텔링 AI.', true),
+  ('midjourney', 'Midjourney', 'ai_image', 'overseas', 'https://www.midjourney.com', '예술적 완성도로 유명한 이미지 생성 AI.', true),
+  ('adobe-firefly', 'Adobe Firefly', 'ai_image', 'overseas', 'https://firefly.adobe.com', '상업 사용을 고려한 어도비의 이미지 생성 — 포토샵과 연동.', true),
+  ('canva', 'Canva AI', 'ai_image', 'overseas', 'https://www.canva.com', '디자인 툴 캔바에 내장된 이미지 생성·매직 편집 기능.', true),
+  ('ideogram', 'Ideogram', 'ai_image', 'overseas', 'https://ideogram.ai', '이미지 속 글자(타이포그래피) 표현에 강한 생성 AI.', true),
+  ('leonardo-ai', 'Leonardo.Ai', 'ai_image', 'overseas', 'https://leonardo.ai', '게임·제품 컨셉 아트에 강한 이미지 생성 스튜디오.', true),
+  ('stability-ai', 'Stable Diffusion', 'ai_image', 'overseas', 'https://stability.ai', '오픈소스 이미지 생성 모델 — 직접 설치·커스터마이즈 가능.', true),
+  ('flux-bfl', 'FLUX', 'ai_image', 'overseas', 'https://bfl.ai', '고품질 오픈 가중치 이미지 생성 모델 FLUX 시리즈.', true),
+  ('recraft', 'Recraft', 'ai_image', 'overseas', 'https://www.recraft.ai', '벡터·브랜드 스타일 유지에 강한 디자이너용 생성 AI.', true),
+  ('remove-bg', 'remove.bg', 'ai_image', 'overseas', 'https://www.remove.bg', '사진 배경을 자동으로 지워 주는 원클릭 도구.', true),
+  ('photoroom', 'PhotoRoom', 'ai_image', 'overseas', 'https://www.photoroom.com', '상품 사진 배경 제거·연출에 특화 — 쇼핑몰 상세컷 제작에 유용.', true),
+  ('sora', 'Sora', 'ai_video', 'overseas', 'https://sora.com', 'OpenAI의 텍스트→영상 생성 서비스.', true),
+  ('runway', 'Runway', 'ai_video', 'overseas', 'https://runwayml.com', '영상 생성·편집(제거·확장) 도구의 선두 주자.', true),
+  ('kling', 'Kling AI', 'ai_video', 'overseas', 'https://klingai.com', '인물 동작 표현에 강한 고품질 영상 생성 AI.', true),
+  ('pika', 'Pika', 'ai_video', 'overseas', 'https://pika.art', '짧은 밈·효과 영상 생성에 강한 도구.', true),
+  ('luma', 'Luma Dream Machine', 'ai_video', 'overseas', 'https://lumalabs.ai', '사실적인 텍스트→영상 생성 모델.', true),
+  ('heygen', 'HeyGen', 'ai_video', 'overseas', 'https://www.heygen.com', 'AI 아바타가 대본을 읽어 주는 영상 — 강의·홍보 영상 제작.', true),
+  ('synthesia', 'Synthesia', 'ai_video', 'overseas', 'https://www.synthesia.io', '기업 교육용 AI 아바타 영상 제작 플랫폼.', true),
+  ('descript', 'Descript', 'ai_video', 'overseas', 'https://www.descript.com', '문서를 고치듯 영상·팟캐스트를 편집하는 도구.', true),
+  ('capcut', 'CapCut', 'ai_video', 'overseas', 'https://www.capcut.com', '자동 자막·템플릿으로 숏폼을 빠르게 만드는 편집 앱.', true),
+  ('elevenlabs', 'ElevenLabs', 'ai_audio', 'overseas', 'https://elevenlabs.io', '자연스러운 AI 성우·더빙 — 다국어 보이스오버 제작.', true),
+  ('suno', 'Suno', 'ai_audio', 'overseas', 'https://suno.com', '가사만 쓰면 노래를 만들어 주는 음악 생성 AI.', true),
+  ('udio', 'Udio', 'ai_audio', 'overseas', 'https://www.udio.com', '장르·보컬 스타일을 지정하는 고음질 음악 생성 AI.', true),
+  ('supertone', '수퍼톤', 'ai_audio', 'domestic', 'https://supertone.ai', '하이브 계열 음성 합성·변환 기술 — 콘텐츠용 보이스 제작.', true),
+  ('murf', 'Murf AI', 'ai_audio', 'overseas', 'https://murf.ai', '비즈니스 나레이션용 AI 보이스 스튜디오.', true),
+  ('adobe-podcast', 'Adobe Podcast', 'ai_audio', 'overseas', 'https://podcast.adobe.com', '녹음 잡음을 스튜디오 품질로 보정해 주는 도구.', true),
+  ('github-copilot', 'GitHub Copilot', 'ai_code', 'overseas', 'https://github.com/features/copilot', 'IDE 안에서 코드를 제안하는 코드 자동완성의 표준.', true),
+  ('cursor', 'Cursor', 'ai_code', 'overseas', 'https://cursor.com', 'AI 중심으로 설계된 코드 에디터 — 코드베이스와 대화하며 수정.', true),
+  ('claude-code', 'Claude Code', 'ai_code', 'overseas', 'https://claude.com/claude-code', '터미널·IDE에서 작업을 통째로 맡기는 Anthropic의 코딩 에이전트.', true),
+  ('windsurf', 'Windsurf', 'ai_code', 'overseas', 'https://windsurf.com', '멀티파일 작업을 자동화하는 에이전트형 AI IDE.', true),
+  ('replit', 'Replit', 'ai_code', 'overseas', 'https://replit.com', '브라우저에서 앱을 만들고 배포까지 — AI 에이전트 내장.', true),
+  ('v0', 'v0', 'ai_code', 'overseas', 'https://v0.dev', '프롬프트로 웹 UI(리액트)를 생성하는 Vercel의 도구.', true),
+  ('lovable', 'Lovable', 'ai_code', 'overseas', 'https://lovable.dev', '대화만으로 웹 서비스를 만들어 주는 AI 앱 빌더.', true),
+  ('bolt-new', 'Bolt.new', 'ai_code', 'overseas', 'https://bolt.new', '브라우저에서 풀스택 앱을 생성·실행하는 AI 빌더.', true),
+  ('devin', 'Devin', 'ai_code', 'overseas', 'https://devin.ai', '이슈를 맡기면 스스로 코딩하는 AI 소프트웨어 엔지니어.', true),
+  ('clova-note', '클로바노트', 'ai_meeting', 'domestic', 'https://clovanote.naver.com', '네이버의 회의 녹음→텍스트·요약 — 한국어 인식에 강점.', true),
+  ('daglo', '다글로', 'ai_meeting', 'domestic', 'https://daglo.ai', '회의록·인터뷰 전사에 쓰는 국내 음성 기록 서비스.', true),
+  ('otter', 'Otter.ai', 'ai_meeting', 'overseas', 'https://otter.ai', '영어 회의 실시간 전사·요약의 대표 서비스.', true),
+  ('fireflies', 'Fireflies.ai', 'ai_meeting', 'overseas', 'https://fireflies.ai', '줌·미트 회의에 참여해 회의록을 자동 작성.', true),
+  ('fathom', 'Fathom', 'ai_meeting', 'overseas', 'https://fathom.video', '무료 사용 폭이 넓은 회의 요약 — 하이라이트 클립 생성.', true),
+  ('tldv', 'tl;dv', 'ai_meeting', 'overseas', 'https://tldv.io', '회의 녹화·타임스탬프 요약 — 여러 회의 도구 지원.', true),
+  ('channeltalk', '채널톡', 'ai_marketing', 'domestic', 'https://channel.io', '국내 대표 채팅상담 — AI 상담봇으로 응대를 자동화.', true),
+  ('intercom', 'Intercom Fin', 'ai_marketing', 'overseas', 'https://www.intercom.com', '고객 문의를 스스로 해결하는 AI 상담 에이전트.', true),
+  ('zendesk-ai', 'Zendesk AI', 'ai_marketing', 'overseas', 'https://www.zendesk.com', '헬프데스크에 내장된 AI 응대·문의 분류.', true),
+  ('tidio', 'Tidio', 'ai_marketing', 'overseas', 'https://www.tidio.com', '소규모 쇼핑몰용 챗봇·라이브챗 — 간단하게 도입.', true),
+  ('adcreative', 'AdCreative.ai', 'ai_marketing', 'overseas', 'https://www.adcreative.ai', '광고 배너·소재를 대량 생성하는 퍼포먼스 마케팅 AI.', true),
+  ('predis', 'Predis.ai', 'ai_marketing', 'overseas', 'https://predis.ai', 'SNS 게시물(이미지+카피)을 자동 생성·예약하는 도구.', true),
+  ('surfer', 'Surfer', 'ai_marketing', 'overseas', 'https://surferseo.com', 'SEO 점수를 기준으로 글을 최적화하는 콘텐츠 도구.', true),
+  ('zapier', 'Zapier', 'ai_auto', 'overseas', 'https://zapier.com', '수천 개 앱을 연결하는 업무 자동화 — AI 액션 내장.', true),
+  ('make-com', 'Make', 'ai_auto', 'overseas', 'https://www.make.com', '시각적 시나리오로 짜는 자동화 — 복잡한 흐름에 강점.', true),
+  ('n8n', 'n8n', 'ai_auto', 'overseas', 'https://n8n.io', '오픈소스 자동화 — AI 에이전트 워크플로 구축·자체 호스팅 가능.', true),
+  ('lindy', 'Lindy', 'ai_auto', 'overseas', 'https://www.lindy.ai', '이메일·일정 등 업무를 맡기는 노코드 AI 비서 빌더.', true),
+  ('relevance-ai', 'Relevance AI', 'ai_auto', 'overseas', 'https://relevanceai.com', '영업·리서치용 AI 에이전트 팀을 만드는 플랫폼.', true),
+  ('manus', 'Manus', 'ai_auto', 'overseas', 'https://manus.im', '조사·작업을 자율 수행하는 범용 AI 에이전트.', true),
+  ('dify', 'Dify', 'ai_auto', 'overseas', 'https://dify.ai', '오픈소스 LLM 앱·에이전트 빌더 — 사내 챗봇 구축에 활용.', true),
+  ('perplexity', 'Perplexity', 'ai_research', 'overseas', 'https://www.perplexity.ai', '출처 링크와 함께 답하는 AI 검색 — 최신 정보 조사에 특화.', true),
+  ('notebooklm', 'NotebookLM', 'ai_research', 'overseas', 'https://notebooklm.google.com', '내 자료를 올려 근거 기반으로 질문하는 구글의 리서치 도구.', true),
+  ('liner', '라이너', 'ai_research', 'domestic', 'https://getliner.com', '출처 신뢰도를 강조하는 국내 AI 검색·하이라이트 서비스.', true),
+  ('deepl', 'DeepL', 'ai_research', 'overseas', 'https://www.deepl.com', '자연스러운 번역 품질로 유명한 번역기.', true),
+  ('papago', '파파고', 'ai_research', 'domestic', 'https://papago.naver.com', '네이버 번역 — 한국어 번역 쌍에 강점.', true),
+  ('flitto-ai', '플리토', 'ai_research', 'domestic', 'https://www.flitto.com', '전문 번역과 AI 번역 데이터를 함께 다루는 번역 플랫폼.', true),
+  ('elicit', 'Elicit', 'ai_research', 'overseas', 'https://elicit.com', '논문을 찾아 표로 정리해 주는 연구 특화 AI.', true),
+  ('consensus', 'Consensus', 'ai_research', 'overseas', 'https://consensus.app', '논문 근거로 질문에 답하는 학술 검색 AI.', true)
 on conflict (id) do nothing;
 
 insert into public.partner_type_groups (id, label, descr, sort) values
@@ -1655,9 +1744,9 @@ insert into public.partner_types (id, group_id, label, descr, mechanics, example
 on conflict (id) do nothing;
 
 insert into public.deals (id, category_id, region, revenue_band, mode, summary, status, is_demo, posted) values
-  ('D-001', 'handmade', 'domestic', '연매출 1~5억', '지분 전량 매각', '운영 6년차 수공예 버티컬 마켓. 작가 풀·단골 고객 보유, 운영자 이직으로 매각 희망.', 'open', true, '2026-06-15'),
-  ('D-002', 'delivery', 'domestic', '연매출 5~10억', '지분 일부 + 운영 승계', '지역 기반 배달 중개. 가맹점 네트워크 안정적, 확장 자본 유치 또는 매각 병행 검토.', 'open', true, '2026-06-22'),
-  ('D-003', 'content', 'domestic', '연매출 1억 미만', '자산 양수도(회원·콘텐츠)', '니치 취미 클래스 플랫폼. 콘텐츠 라이브러리와 회원 DB 중심의 자산 매각.', 'in_progress', true, '2026-06-05')
+  ('D-001', 'handmade', 'domestic', '연매출 1~5억', '자산 전부 양수도(운영 승계 포함)', '운영 6년차 수공예 버티컬 마켓. 작가 풀·단골 고객 보유, 운영자 이직으로 매각 희망.', 'open', true, '2026-06-15'),
+  ('D-002', 'delivery', 'domestic', '연매출 5~10억', '자산 선별 양수도', '지역 기반 배달 중개. 가맹점 네트워크·주문 시스템 등 핵심 자산 중심의 인수 협의 희망.', 'open', true, '2026-06-22'),
+  ('D-003', 'content', 'domestic', '연매출 1억 미만', '자산 선별 양수도', '니치 취미 클래스 플랫폼. 콘텐츠 라이브러리와 회원 DB 중심의 자산 매각.', 'in_progress', true, '2026-06-05')
 on conflict (id) do nothing;
 
 insert into public.plans (id, label, monthly_price, descr, active, sort) values

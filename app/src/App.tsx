@@ -13,6 +13,7 @@ import type { ViewName } from "./nav";
 import { PlatformDetail, SearchResults, Compare, Onboarding } from "./discovery";
 import { Account, Submit } from "./account";
 import { Admin } from "./admin";
+import { AiFinder } from "./ai";
 import { Terms, Privacy } from "./legal";
 import { useSession } from "./lib/auth";
 import { remoteEnabled, trackEvent } from "./lib/api";
@@ -84,6 +85,7 @@ export default function App() {
       search: "검색", partners: "제휴 매칭", exchange: "플랫폼 거래소", compare: "비교",
       onboarding: "맞춤 추천", account: "계정", submit: "플랫폼 제보", admin: "관리 콘솔",
       terms: "이용약관", privacy: "개인정보처리방침", "deal-guide": "양수도 가이드", "value-check": "가치 자가 진단",
+      "ai-finder": "AI 도구 찾기",
     };
     document.title = titles[v] ? `${titles[v]} — 세모플` : "세모플 — 세상의 모든 플랫폼";
     if (params?.id !== undefined) setDetailId(params.id);
@@ -154,6 +156,7 @@ export default function App() {
         : view === "exchange" ? <Exchange />
         : view === "deal-guide" ? <DealGuide />
         : view === "value-check" ? <ValueCheck />
+        : view === "ai-finder" ? <AiFinder />
         : view === "detail" ? <PlatformDetail id={detailId} />
         : view === "search" ? <SearchResults initialQ={searchQ} />
         : view === "compare" ? <Compare />
@@ -239,6 +242,12 @@ export default function App() {
               {shownGroups.map((g) => (
                 <div key={g.id} style={{ marginBottom: 24 }}>
                   <h3 style={{ fontSize: 16, margin: "18px 0 10px" }}>{g.icon} {g.name}</h3>
+                  {g.id === "ai" && (
+                    <div className="banner" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
+                      <span>🧭 어떤 AI가 필요한지 모르겠다면 — 해결하고 싶은 일만 고르면 시작 조합을 추천해 드려요.</span>
+                      <button className="btn primary sm" onClick={() => go("ai-finder")}>AI 도구 찾기 →</button>
+                    </div>
+                  )}
                   {categoriesByGroup(g.id).map((c) => {
                     const isOpen = open.has(c.id);
                     return (
