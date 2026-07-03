@@ -32,6 +32,10 @@ export function PlatformDetail({ id }: { id?: string }) {
   }, [id, local]);
 
   const p = local ?? remote ?? undefined;
+  useEffect(() => {
+    if (p) document.title = `${p.name} — 세모플`;
+    return () => { document.title = "세모플 — 세상의 모든 플랫폼"; };
+  }, [p]);
   if (!p) {
     if (fetching || (!loaded && remoteEnabled)) return <div className="page container"><div className="empty">불러오는 중…</div></div>;
     return <div className="page container"><div className="empty">플랫폼을 찾을 수 없습니다. <button className="linklike" onClick={() => go("home")}>← 홈으로</button></div></div>;
