@@ -80,6 +80,12 @@ export default function App() {
 
   const go = useCallback<(v: ViewName, params?: { id?: string; q?: string }) => void>((v, params) => {
     setView(v);
+    const titles: Partial<Record<ViewName, string>> = {
+      search: "검색", partners: "제휴 매칭", exchange: "플랫폼 거래소", compare: "비교",
+      onboarding: "맞춤 추천", account: "계정", submit: "플랫폼 제보", admin: "관리 콘솔",
+      terms: "이용약관", privacy: "개인정보처리방침",
+    };
+    document.title = titles[v] ? `${titles[v]} — 세모플` : "세모플 — 세상의 모든 플랫폼";
     if (params?.id !== undefined) setDetailId(params.id);
     if (params?.q !== undefined) setSearchQ(params.q);
     const sp = new URLSearchParams();
@@ -184,6 +190,20 @@ export default function App() {
               <StatTile n={String(stats.newCount)} l="신규" tone="t" />
             </div>
           </section>
+
+          {/* 2·3단계 진입점 — 헤더 아이콘 외에 홈 본문에서 처음 노출 */}
+          <div className="promo-grid">
+            <button className="gcard promo" onClick={() => go("partners")}>
+              <div className="g-ic">🤝</div><h4>제휴 매칭 <span className="badge good">오픈</span></h4>
+              <div className="g-cats">배너 교환·회원 상호송출·레퍼럴 — 22가지 방식으로 다른 플랫폼과 함께 크세요. 무료 베타.</div>
+              <div className="g-meta" style={{ marginTop: 8 }}>제안 등록 → 검수 게시 → 세모플이 소개</div>
+            </button>
+            <button className="gcard promo" onClick={() => go("exchange")}>
+              <div className="g-ic">🏦</div><h4>플랫폼 거래소 <span className="badge good">오픈</span></h4>
+              <div className="g-cats">운영하던 플랫폼의 매각·인수를 익명 리스팅으로. 코드명 게시, 쌍방 동의 시에만 소개.</div>
+              <div className="g-meta" style={{ marginTop: 8 }}>매각 접수(비공개) · 인수 브리프</div>
+            </button>
+          </div>
 
           {flatMode ? (
             <>

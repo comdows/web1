@@ -280,3 +280,8 @@ a.foot-link{display:inline-block}
 .legal p,.legal li{font-size:13.5px;color:var(--muted);line-height:1.7}
 .legal ul{margin:6px 0;padding-left:20px}
 .legal a{color:var(--brand-soft);text-decoration:underline}
+
+/* 홈 프로모(2·3단계 진입점) */
+.promo-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:-6px 0 8px}
+@media(max-width:640px){.promo-grid{grid-template-columns:1fr}}
+.gcard.promo h4{display:flex;align-items:center;gap:8px}
