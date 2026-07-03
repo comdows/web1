@@ -10,8 +10,11 @@ import {
 } from "./lib/auth";
 import { TERMS_VERSION } from "./legal";
 import { FLAGS } from "./config";
-import { createSubmission, listMySubmissions, remoteEnabled, updateDisplayName } from "./lib/api";
-import type { Submission } from "./lib/api";
+import {
+  createSubmission, listMyBriefs, listMyDealInterests, listMyDealSubmissions,
+  listMyPartnerInterests, listMyPartnerPosts, listMySubmissions, remoteEnabled, updateDisplayName,
+} from "./lib/api";
+import type { BuyerBriefRow, DealSubmissionRow, MyInterestRow, PartnerPostAdmin, Submission } from "./lib/api";
 
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
 
@@ -146,6 +149,8 @@ export function Account() {
   const [pwBusy, setPwBusy] = useState(false);
   const [pwMsg, setPwMsg] = useState<{ ok?: string; err?: string }>({});
   const [recovery] = useState(() => consumeRecoveryPending()); // 재설정 링크로 복귀한 경우
+  const [acts, setActs] = useState<{ pp: PartnerPostAdmin[]; ds: DealSubmissionRow[]; pi: MyInterestRow[]; di: MyInterestRow[]; br: BuyerBriefRow[] } | null>(null);
+  const [actsErr, setActsErr] = useState(false);
 
   useEffect(() => { setName(profile?.display_name ?? ""); }, [profile?.display_name]);
   useEffect(() => {
@@ -155,6 +160,10 @@ export function Account() {
     listMySubmissions()
       .then((s) => { if (alive) setSubs(s); })
       .catch(() => { if (alive) { setSubsError(true); setSubs(null); } });
+    setActsErr(false);
+    Promise.all([listMyPartnerPosts(), listMyDealSubmissions(), listMyPartnerInterests(), listMyDealInterests(), listMyBriefs()])
+      .then(([pp, ds, pi, di, br]) => { if (alive) setActs({ pp, ds, pi, di, br }); })
+      .catch(() => { if (alive) { setActsErr(true); setActs(null); } });
     return () => { alive = false; };
   }, [session, reload]);
 
@@ -262,6 +271,63 @@ export function Account() {
             })}
           </div>
         )}
+
+      <div className="sec-title" style={{ marginTop: 28 }}>내 활동 (제휴·거래소)</div>
+      {actsErr ? (
+        <div className="empty">활동 내역을 불러오지 못했어요. <button className="linklike" onClick={() => setReload((n) => n + 1)}>다시 시도</button></div>
+      ) : acts === null ? <div className="empty">불러오는 중…</div>
+      : (acts.pp.length + acts.ds.length + acts.pi.length + acts.di.length + acts.br.length) === 0 ? (
+        <div className="empty">제휴 제안·매각 접수·매칭 신청·관심 등록이 여기에 표시됩니다.</div>
+      ) : (
+        <div className="sub-list">
+          {acts.pp.map((p) => {
+            const b = p.status === "pending" ? { k: "soon" as const, l: "검수 중" }
+              : p.status === "published" ? { k: "good" as const, l: "게시 중" }
+              : p.status === "matched" ? { k: "verify" as const, l: "성사" }
+              : p.status === "rejected" ? { k: "muted" as const, l: "반려" } : { k: "muted" as const, l: "마감" };
+            return (
+              <div className="sub-item" key={p.id}>
+                <div style={{ minWidth: 0 }}>🤝 <b>{p.title}</b> <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{p.created_at.slice(0, 10)}</span>
+                  {p.status === "rejected" && p.review_reason && <div className="frm-note">반려 사유: {p.review_reason}</div>}
+                </div>
+                <Badge kind={b.k}>{b.l}</Badge>
+              </div>
+            );
+          })}
+          {acts.ds.map((s) => {
+            const b = s.status === "pending" ? { k: "soon" as const, l: "검수 중" }
+              : s.status === "hold" ? { k: "muted" as const, l: "보류" }
+              : s.status === "approved" ? { k: "verify" as const, l: `게시됨${s.approved_deal_id ? ` · ${s.approved_deal_id}` : ""}` }
+              : { k: "muted" as const, l: "반려" };
+            return (
+              <div className="sub-item" key={s.id}>
+                <div style={{ minWidth: 0 }}>🏦 <b>매각 접수</b> — {s.payload.revenue_band ?? ""} {s.payload.mode ?? ""}
+                  {s.status === "rejected" && s.review_reason && <div className="frm-note">반려 사유: {s.review_reason}</div>}
+                </div>
+                <Badge kind={b.k}>{b.l}</Badge>
+              </div>
+            );
+          })}
+          {acts.pi.map((i) => (
+            <div className="sub-item" key={i.id}>
+              <div style={{ minWidth: 0 }}>🤝 <b>매칭 신청</b> — "{i.partner_posts?.title ?? i.post_id}"</div>
+              <Badge kind={i.status === "introduced" ? "verify" : "soon"}>{i.status === "introduced" ? "소개 완료" : "접수됨"}</Badge>
+            </div>
+          ))}
+          {acts.di.map((i) => (
+            <div className="sub-item" key={i.id}>
+              <div style={{ minWidth: 0 }}>🏦 <b>인수 관심</b> — 매물 {i.deal_id}</div>
+              <Badge kind={i.status === "introduced" ? "verify" : "soon"}>{i.status === "introduced" ? "소개 완료" : "접수됨"}</Badge>
+            </div>
+          ))}
+          {acts.br.map((b) => (
+            <div className="sub-item" key={b.id}>
+              <div style={{ minWidth: 0 }}>📮 <b>인수 브리프</b> — {b.budget_band} · {b.mode}</div>
+              <Badge kind={b.active ? "soon" : "muted"}>{b.active ? "대기 중" : "안내 완료"}</Badge>
+            </div>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

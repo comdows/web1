@@ -335,6 +335,7 @@ export async function reviewPartnerPost(id: string, patch: { status: string; rev
 export interface DealSubmissionRow {
   id: string; payload: Partial<DealSubPayload>; status: "pending" | "hold" | "approved" | "rejected";
   review_reason: string | null; submitter_id: string; created_at: string;
+  approved_deal_id?: string | null;
 }
 export async function listDealSubmissions(statuses: string[]): Promise<DealSubmissionRow[]> {
   return rest<DealSubmissionRow[]>(`deal_submissions?status=in.(${statuses.join(",")})&select=id,payload,status,review_reason,submitter_id,created_at&order=created_at.asc&limit=100`);
@@ -383,6 +384,34 @@ export interface IntroQueueRow {
 export async function listAdminIntroQueue(): Promise<IntroQueueRow[]> {
   return rest<IntroQueueRow[]>("v_admin_intro_queue?status=eq.pending&select=*&order=created_at.asc&limit=100");
 }
+/* ── 내 활동(본인 RLS + uid 필터 — admin 계정도 자기 것만) ── */
+export async function listMyPartnerPosts(): Promise<PartnerPostAdmin[]> {
+  const uid = getSession()?.user.id;
+  if (!uid) return [];
+  return rest<PartnerPostAdmin[]>(`partner_posts?created_by=eq.${uid}&select=id,title,category_id,type_id,give_text,get_text,want_categories,size_text,detail,status,review_reason,created_at&order=created_at.desc&limit=50`);
+}
+export async function listMyDealSubmissions(): Promise<DealSubmissionRow[]> {
+  const uid = getSession()?.user.id;
+  if (!uid) return [];
+  return rest<DealSubmissionRow[]>(`deal_submissions?submitter_id=eq.${uid}&select=id,payload,status,review_reason,approved_deal_id,submitter_id,created_at&order=created_at.desc&limit=50`);
+}
+export interface MyInterestRow { id: string; post_id?: string; deal_id?: string; status: string; created_at: string; pitch?: string; intro?: string; partner_posts?: { title: string } | null }
+export async function listMyPartnerInterests(): Promise<MyInterestRow[]> {
+  const uid = getSession()?.user.id;
+  if (!uid) return [];
+  return rest<MyInterestRow[]>(`partner_post_interests?user_id=eq.${uid}&select=id,post_id,status,created_at,pitch,partner_posts(title)&order=created_at.desc&limit=50`);
+}
+export async function listMyDealInterests(): Promise<MyInterestRow[]> {
+  const uid = getSession()?.user.id;
+  if (!uid) return [];
+  return rest<MyInterestRow[]>(`deal_interests?user_id=eq.${uid}&select=id,deal_id,status,created_at,intro&order=created_at.desc&limit=50`);
+}
+export async function listMyBriefs(): Promise<BuyerBriefRow[]> {
+  const uid = getSession()?.user.id;
+  if (!uid) return [];
+  return rest<BuyerBriefRow[]>(`buyer_briefs?user_id=eq.${uid}&select=id,categories,budget_band,mode,entity,note,active,created_at&order=created_at.desc&limit=50`);
+}
+
 /* 최신 코드명(D-###) — 매물 게시 기본값 제안용(세션 인덱스 대신 DB 기준) */
 export async function fetchLatestDealCode(): Promise<string | null> {
   const rows = await rest<{ id: string }[]>("deals?select=id&order=id.desc&limit=1");

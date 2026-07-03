@@ -8,7 +8,8 @@ import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
 import {
   applyToPartnerPost, createBuyerBrief, createDealSubmission, createPartnerPost,
-  fetchDeals, fetchPartnerPosts, registerDealInterest, remoteEnabled,
+  fetchDeals, fetchPartnerPosts, listMyDealInterests, listMyPartnerInterests,
+  registerDealInterest, remoteEnabled,
 } from "./lib/api";
 import type { PartnerPost, PublicDeal } from "./lib/api";
 
@@ -214,6 +215,11 @@ export function Partners() {
     if (!remoteEnabled) { setPosts([]); return; }
     fetchPartnerPosts().then(setPosts).catch(() => setPosts([]));
   }, [posted]);
+  // 내가 이미 신청한 제안 표시(새로고침에도 유지)
+  useEffect(() => {
+    if (!remoteEnabled || !session) return;
+    listMyPartnerInterests().then((rows) => setApplied(new Set(rows.map((r) => r.post_id ?? "").filter(Boolean)))).catch(() => { /* noop */ });
+  }, [session]);
 
   const visibleTypes = useMemo(
     () => (goal ? partnerTypes.filter((t) => t.goals.includes(goal)) : partnerTypes),
@@ -305,7 +311,7 @@ export function Partners() {
         <div className="banner">백엔드 미연결 빌드 — <a href={ISSUE("[제휴 제안]", "제휴 방식:\n플랫폼 이름:\nGive:\nGet:", "stage2,제휴제안")} target="_blank" rel="noopener noreferrer">GitHub 이슈로 제안</a></div>
       ) : posted ? (
         <div className="empty" style={{ borderColor: "var(--success)", padding: 24 }}>
-          접수됐어요 ✓ 검수(중복·연락처 확인) 후 보드에 게시됩니다. 진행 상태는 세모플이 계정 이메일로 안내드려요.
+          접수됐어요 ✓ 검수(중복·연락처 확인) 후 보드에 게시됩니다. 진행 상태는 계정 → 내 활동에서 확인할 수 있어요.
           {FLAGS.contactEmail && <div className="frm-note" style={{ marginTop: 6 }}>문의: <a href={`mailto:${FLAGS.contactEmail}`}>{FLAGS.contactEmail}</a></div>}
           <div style={{ marginTop: 10 }}><button className="btn ghost sm" onClick={() => setPosted(false)}>하나 더 등록</button></div>
         </div>
@@ -368,7 +374,7 @@ export function Partners() {
             <p style={{ fontSize: 12.5 }}><b>Give</b> {p.give_text}<br /><b>Get</b> {p.get_text}<br />
               <span className="faint">{p.size_text}{p.posted ? ` · ${p.posted}` : ""}</span></p>
             {p.status === "published" && (
-              applied.has(p.id) ? <div className="ok" style={{ fontSize: 13 }}>신청 완료 ✓ 세모플이 확인 후 안내드립니다</div>
+              applied.has(p.id) ? <div className="ok" style={{ fontSize: 13 }}>신청 완료 ✓ 진행 상태는 계정 → 내 활동에서 확인하세요</div>
               : applyTo === p.id ? (
                 !session
                   ? <div className="frm-note">매칭 신청에는 로그인이 필요해요. <button className="linklike" onClick={() => go("account")}>로그인 →</button></div>
@@ -555,6 +561,11 @@ export function Exchange() {
     if (!remoteEnabled) { setDeals(null); return; }
     fetchDeals().then(setDeals).catch(() => setDeals(null));
   }, []);
+  // 내가 이미 관심 등록한 매물 표시(새로고침에도 유지)
+  useEffect(() => {
+    if (!remoteEnabled || !session) return;
+    listMyDealInterests().then((rows) => setInterested(new Set(rows.map((r) => r.deal_id ?? "").filter(Boolean)))).catch(() => { /* noop */ });
+  }, [session]);
 
   // 원격 실패/미연결 시 정적 데모로 폴백
   const shown: { id: string; category: string; region: string; revenue: string; mode: string; summary: string; status: string; demo: boolean; posted: string; highlights?: string[]; sale_reason?: string | null }[] =
@@ -621,7 +632,7 @@ export function Exchange() {
       ) : done ? (
         <div className="empty" style={{ borderColor: "var(--success)", padding: 24 }}>
           {done === "sell"
-            ? "접수됐어요 ✓ 검수·익명화 후 코드명(D-1xx)으로 게시됩니다. 진행 상태는 계정 이메일로 안내드려요."
+            ? "접수됐어요 ✓ 검수·익명화 후 코드명(D-1xx)으로 게시됩니다. 진행 상태는 계정 → 내 활동에서 확인할 수 있어요."
             : "브리프 등록 완료 ✓ 조건에 맞는 신규 매물이 올라오면 우선 안내드립니다."}
           {FLAGS.contactEmail && <div className="frm-note" style={{ marginTop: 6 }}>문의: <a href={`mailto:${FLAGS.contactEmail}`}>{FLAGS.contactEmail}</a></div>}
           <div style={{ marginTop: 10 }}><button className="btn ghost sm" onClick={() => { setDone(""); setForm(""); }}>확인</button></div>
@@ -669,7 +680,7 @@ export function Exchange() {
             <p style={{ fontSize: 12.5 }} className="faint">{d.region} · {d.revenue} · {d.mode} · {d.posted}
               {d.sale_reason ? ` · 사유: ${d.sale_reason}` : ""}</p>
             {d.status === "open" && !d.demo && (
-              interested.has(d.id) ? <div className="ok" style={{ fontSize: 13 }}>관심 등록 완료 ✓ 세모플이 확인 후 안내드립니다</div>
+              interested.has(d.id) ? <div className="ok" style={{ fontSize: 13 }}>관심 등록 완료 ✓ 진행 상태는 계정 → 내 활동에서 확인하세요</div>
               : interestIn === d.id ? (
                 !session
                   ? <div className="frm-note">관심 등록에는 로그인이 필요해요. <button className="linklike" onClick={() => go("account")}>로그인 →</button></div>
