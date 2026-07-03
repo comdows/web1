@@ -29,6 +29,12 @@
       "name": "자금·콘텐츠·창작",
       "icon": "💰",
       "desc": "자금조달·금융·콘텐츠 수익화·창작물 판매"
+    },
+    {
+      "id": "ai",
+      "name": "AI 도구",
+      "icon": "🧠",
+      "desc": "일·콘텐츠·개발을 도와주는 전 세계 AI 도구"
     }
   ],
   "categories": [
@@ -276,6 +282,76 @@
       "name": "사무·MRO·산업재 B2B",
       "icon": "🖇️",
       "desc": "사무용품·MRO·공구·전자부품·건자재·포장재"
+    },
+    {
+      "id": "ai_chat",
+      "group": "ai",
+      "name": "범용 AI 챗봇",
+      "icon": "🤖",
+      "desc": "글쓰기·조사·아이디어까지 두루 시키는 범용 어시스턴트"
+    },
+    {
+      "id": "ai_writing",
+      "group": "ai",
+      "name": "글쓰기·문서 AI",
+      "icon": "✍️",
+      "desc": "카피·블로그·보고서·발표자료 작성을 돕는 도구"
+    },
+    {
+      "id": "ai_image",
+      "group": "ai",
+      "name": "이미지·디자인 AI",
+      "icon": "🎨",
+      "desc": "이미지 생성·배경 제거·디자인 제작 도구"
+    },
+    {
+      "id": "ai_video",
+      "group": "ai",
+      "name": "영상 AI",
+      "icon": "🎬",
+      "desc": "영상 생성·아바타·자막·편집 도구"
+    },
+    {
+      "id": "ai_audio",
+      "group": "ai",
+      "name": "음성·음악 AI",
+      "icon": "🎙️",
+      "desc": "AI 성우·더빙·음악 생성·오디오 보정"
+    },
+    {
+      "id": "ai_code",
+      "group": "ai",
+      "name": "개발·코딩 AI",
+      "icon": "💻",
+      "desc": "코드 작성·앱 생성을 돕는 개발 도구"
+    },
+    {
+      "id": "ai_meeting",
+      "group": "ai",
+      "name": "회의·기록 AI",
+      "icon": "📝",
+      "desc": "회의 녹음을 텍스트·요약으로 바꾸는 도구"
+    },
+    {
+      "id": "ai_marketing",
+      "group": "ai",
+      "name": "마케팅·고객응대 AI",
+      "icon": "📣",
+      "desc": "광고 소재·SNS·SEO·AI 상담봇"
+    },
+    {
+      "id": "ai_auto",
+      "group": "ai",
+      "name": "자동화·AI 에이전트",
+      "icon": "⚙️",
+      "desc": "반복 업무 연결·자동화와 AI 에이전트 구축"
+    },
+    {
+      "id": "ai_research",
+      "group": "ai",
+      "name": "리서치·번역 AI",
+      "icon": "🔍",
+      "desc": "출처 기반 검색·논문 조사·번역 도구"
     }
   ],
   "platforms": [
@@ -3358,7 +3434,7 @@
     {
       "id": "typecast",
       "name": "타입캐스트",
-      "category": "content",
+      "category": "ai_audio",
       "region": "국내",
       "url": "https://typecast.ai/",
       "blurb": "감정 표현 TTS 기반의 AI 성우 음성 생성 서비스."
@@ -12404,7 +12480,7 @@
     {
       "id": "vrew",
       "name": "브루",
-      "category": "assets",
+      "category": "ai_video",
       "region": "국내",
       "url": "https://vrew.ai/ko",
       "blurb": "AI 자동 자막·음성인식 기반 영상 편집 툴."
@@ -12848,6 +12924,708 @@
       "region": "국내",
       "url": "https://incheoneum.or.kr/",
       "blurb": "인천시 지역화폐, 동네 가맹점 캐시백 카드."
+    },
+    {
+      "id": "chatgpt",
+      "name": "ChatGPT",
+      "category": "ai_chat",
+      "region": "해외",
+      "url": "https://chatgpt.com",
+      "blurb": "OpenAI의 범용 AI 챗봇 — 글쓰기·분석·이미지 생성까지 가장 널리 쓰이는 기본기.",
+      "new": true
+    },
+    {
+      "id": "claude-ai",
+      "name": "Claude",
+      "category": "ai_chat",
+      "region": "해외",
+      "url": "https://claude.ai",
+      "blurb": "Anthropic의 AI 어시스턴트 — 긴 문서 이해와 꼼꼼한 글쓰기·코딩에 강점.",
+      "new": true
+    },
+    {
+      "id": "gemini",
+      "name": "Gemini",
+      "category": "ai_chat",
+      "region": "해외",
+      "url": "https://gemini.google.com",
+      "blurb": "구글의 AI 챗봇 — 검색·지메일·유튜브 등 구글 서비스와 연동.",
+      "new": true
+    },
+    {
+      "id": "ms-copilot",
+      "name": "Microsoft Copilot",
+      "category": "ai_chat",
+      "region": "해외",
+      "url": "https://copilot.microsoft.com",
+      "blurb": "윈도우·엣지·오피스에 내장되는 마이크로소프트의 AI 비서.",
+      "new": true
+    },
+    {
+      "id": "wrtn",
+      "name": "뤼튼",
+      "category": "ai_chat",
+      "region": "국내",
+      "url": "https://wrtn.ai",
+      "blurb": "국내 대표 AI 포털 — 챗봇·이미지·과제 도구를 한국어 중심으로 제공.",
+      "new": true
+    },
+    {
+      "id": "clova-x",
+      "name": "CLOVA X",
+      "category": "ai_chat",
+      "region": "국내",
+      "url": "https://clova-x.naver.com",
+      "blurb": "네이버의 한국어 특화 AI 챗봇 — 국내 정보·쇼핑 맥락 이해.",
+      "new": true
+    },
+    {
+      "id": "grok",
+      "name": "Grok",
+      "category": "ai_chat",
+      "region": "해외",
+      "url": "https://grok.com",
+      "blurb": "xAI의 AI 챗봇 — X(트위터) 실시간 정보 반영이 특징.",
+      "new": true
+    },
+    {
+      "id": "lechat",
+      "name": "Le Chat",
+      "category": "ai_chat",
+      "region": "해외",
+      "url": "https://chat.mistral.ai",
+      "blurb": "유럽 미스트랄의 챗봇 — 빠른 응답 속도와 넓은 무료 사용 폭.",
+      "new": true
+    },
+    {
+      "id": "notion-ai",
+      "name": "Notion AI",
+      "category": "ai_writing",
+      "region": "해외",
+      "url": "https://www.notion.com/product/ai",
+      "blurb": "노션 문서 안에서 요약·초안·번역을 처리하는 업무용 글쓰기 AI.",
+      "new": true
+    },
+    {
+      "id": "gamma-app",
+      "name": "Gamma",
+      "category": "ai_writing",
+      "region": "해외",
+      "url": "https://gamma.app",
+      "blurb": "프롬프트 한 줄로 발표자료·문서·웹페이지를 만들어 주는 생성 도구.",
+      "new": true
+    },
+    {
+      "id": "jasper",
+      "name": "Jasper",
+      "category": "ai_writing",
+      "region": "해외",
+      "url": "https://www.jasper.ai",
+      "blurb": "브랜드 톤을 학습해 마케팅 카피·블로그를 쓰는 기업용 글쓰기 AI.",
+      "new": true
+    },
+    {
+      "id": "copy-ai",
+      "name": "Copy.ai",
+      "category": "ai_writing",
+      "region": "해외",
+      "url": "https://www.copy.ai",
+      "blurb": "광고 카피·세일즈 문구 템플릿이 풍부한 카피라이팅 AI.",
+      "new": true
+    },
+    {
+      "id": "writesonic",
+      "name": "Writesonic",
+      "category": "ai_writing",
+      "region": "해외",
+      "url": "https://writesonic.com",
+      "blurb": "SEO 블로그·광고 문구를 빠르게 뽑는 콘텐츠 생성 AI.",
+      "new": true
+    },
+    {
+      "id": "grammarly",
+      "name": "Grammarly",
+      "category": "ai_writing",
+      "region": "해외",
+      "url": "https://www.grammarly.com",
+      "blurb": "영문 문법·톤 교정 — 영어 이메일·문서 품질을 올려주는 도구.",
+      "new": true
+    },
+    {
+      "id": "deepl-write",
+      "name": "DeepL Write",
+      "category": "ai_writing",
+      "region": "해외",
+      "url": "https://www.deepl.com/write",
+      "blurb": "영어·독일어 문장을 자연스럽게 다듬어 주는 교정 AI.",
+      "new": true
+    },
+    {
+      "id": "sudowrite",
+      "name": "Sudowrite",
+      "category": "ai_writing",
+      "region": "해외",
+      "url": "https://www.sudowrite.com",
+      "blurb": "소설·창작 글쓰기에 특화된 스토리텔링 AI.",
+      "new": true
+    },
+    {
+      "id": "midjourney",
+      "name": "Midjourney",
+      "category": "ai_image",
+      "region": "해외",
+      "url": "https://www.midjourney.com",
+      "blurb": "예술적 완성도로 유명한 이미지 생성 AI.",
+      "new": true
+    },
+    {
+      "id": "adobe-firefly",
+      "name": "Adobe Firefly",
+      "category": "ai_image",
+      "region": "해외",
+      "url": "https://firefly.adobe.com",
+      "blurb": "상업 사용을 고려한 어도비의 이미지 생성 — 포토샵과 연동.",
+      "new": true
+    },
+    {
+      "id": "canva",
+      "name": "Canva AI",
+      "category": "ai_image",
+      "region": "해외",
+      "url": "https://www.canva.com",
+      "blurb": "디자인 툴 캔바에 내장된 이미지 생성·매직 편집 기능.",
+      "new": true
+    },
+    {
+      "id": "ideogram",
+      "name": "Ideogram",
+      "category": "ai_image",
+      "region": "해외",
+      "url": "https://ideogram.ai",
+      "blurb": "이미지 속 글자(타이포그래피) 표현에 강한 생성 AI.",
+      "new": true
+    },
+    {
+      "id": "leonardo-ai",
+      "name": "Leonardo.Ai",
+      "category": "ai_image",
+      "region": "해외",
+      "url": "https://leonardo.ai",
+      "blurb": "게임·제품 컨셉 아트에 강한 이미지 생성 스튜디오.",
+      "new": true
+    },
+    {
+      "id": "stability-ai",
+      "name": "Stable Diffusion",
+      "category": "ai_image",
+      "region": "해외",
+      "url": "https://stability.ai",
+      "blurb": "오픈소스 이미지 생성 모델 — 직접 설치·커스터마이즈 가능.",
+      "new": true
+    },
+    {
+      "id": "flux-bfl",
+      "name": "FLUX",
+      "category": "ai_image",
+      "region": "해외",
+      "url": "https://bfl.ai",
+      "blurb": "고품질 오픈 가중치 이미지 생성 모델 FLUX 시리즈.",
+      "new": true
+    },
+    {
+      "id": "recraft",
+      "name": "Recraft",
+      "category": "ai_image",
+      "region": "해외",
+      "url": "https://www.recraft.ai",
+      "blurb": "벡터·브랜드 스타일 유지에 강한 디자이너용 생성 AI.",
+      "new": true
+    },
+    {
+      "id": "remove-bg",
+      "name": "remove.bg",
+      "category": "ai_image",
+      "region": "해외",
+      "url": "https://www.remove.bg",
+      "blurb": "사진 배경을 자동으로 지워 주는 원클릭 도구.",
+      "new": true
+    },
+    {
+      "id": "photoroom",
+      "name": "PhotoRoom",
+      "category": "ai_image",
+      "region": "해외",
+      "url": "https://www.photoroom.com",
+      "blurb": "상품 사진 배경 제거·연출에 특화 — 쇼핑몰 상세컷 제작에 유용.",
+      "new": true
+    },
+    {
+      "id": "sora",
+      "name": "Sora",
+      "category": "ai_video",
+      "region": "해외",
+      "url": "https://sora.com",
+      "blurb": "OpenAI의 텍스트→영상 생성 서비스.",
+      "new": true
+    },
+    {
+      "id": "runway",
+      "name": "Runway",
+      "category": "ai_video",
+      "region": "해외",
+      "url": "https://runwayml.com",
+      "blurb": "영상 생성·편집(제거·확장) 도구의 선두 주자.",
+      "new": true
+    },
+    {
+      "id": "kling",
+      "name": "Kling AI",
+      "category": "ai_video",
+      "region": "해외",
+      "url": "https://klingai.com",
+      "blurb": "인물 동작 표현에 강한 고품질 영상 생성 AI.",
+      "new": true
+    },
+    {
+      "id": "pika",
+      "name": "Pika",
+      "category": "ai_video",
+      "region": "해외",
+      "url": "https://pika.art",
+      "blurb": "짧은 밈·효과 영상 생성에 강한 도구.",
+      "new": true
+    },
+    {
+      "id": "luma",
+      "name": "Luma Dream Machine",
+      "category": "ai_video",
+      "region": "해외",
+      "url": "https://lumalabs.ai",
+      "blurb": "사실적인 텍스트→영상 생성 모델.",
+      "new": true
+    },
+    {
+      "id": "heygen",
+      "name": "HeyGen",
+      "category": "ai_video",
+      "region": "해외",
+      "url": "https://www.heygen.com",
+      "blurb": "AI 아바타가 대본을 읽어 주는 영상 — 강의·홍보 영상 제작.",
+      "new": true
+    },
+    {
+      "id": "synthesia",
+      "name": "Synthesia",
+      "category": "ai_video",
+      "region": "해외",
+      "url": "https://www.synthesia.io",
+      "blurb": "기업 교육용 AI 아바타 영상 제작 플랫폼.",
+      "new": true
+    },
+    {
+      "id": "descript",
+      "name": "Descript",
+      "category": "ai_video",
+      "region": "해외",
+      "url": "https://www.descript.com",
+      "blurb": "문서를 고치듯 영상·팟캐스트를 편집하는 도구.",
+      "new": true
+    },
+    {
+      "id": "capcut",
+      "name": "CapCut",
+      "category": "ai_video",
+      "region": "해외",
+      "url": "https://www.capcut.com",
+      "blurb": "자동 자막·템플릿으로 숏폼을 빠르게 만드는 편집 앱.",
+      "new": true
+    },
+    {
+      "id": "elevenlabs",
+      "name": "ElevenLabs",
+      "category": "ai_audio",
+      "region": "해외",
+      "url": "https://elevenlabs.io",
+      "blurb": "자연스러운 AI 성우·더빙 — 다국어 보이스오버 제작.",
+      "new": true
+    },
+    {
+      "id": "suno",
+      "name": "Suno",
+      "category": "ai_audio",
+      "region": "해외",
+      "url": "https://suno.com",
+      "blurb": "가사만 쓰면 노래를 만들어 주는 음악 생성 AI.",
+      "new": true
+    },
+    {
+      "id": "udio",
+      "name": "Udio",
+      "category": "ai_audio",
+      "region": "해외",
+      "url": "https://www.udio.com",
+      "blurb": "장르·보컬 스타일을 지정하는 고음질 음악 생성 AI.",
+      "new": true
+    },
+    {
+      "id": "supertone",
+      "name": "수퍼톤",
+      "category": "ai_audio",
+      "region": "국내",
+      "url": "https://supertone.ai",
+      "blurb": "하이브 계열 음성 합성·변환 기술 — 콘텐츠용 보이스 제작.",
+      "new": true
+    },
+    {
+      "id": "murf",
+      "name": "Murf AI",
+      "category": "ai_audio",
+      "region": "해외",
+      "url": "https://murf.ai",
+      "blurb": "비즈니스 나레이션용 AI 보이스 스튜디오.",
+      "new": true
+    },
+    {
+      "id": "adobe-podcast",
+      "name": "Adobe Podcast",
+      "category": "ai_audio",
+      "region": "해외",
+      "url": "https://podcast.adobe.com",
+      "blurb": "녹음 잡음을 스튜디오 품질로 보정해 주는 도구.",
+      "new": true
+    },
+    {
+      "id": "github-copilot",
+      "name": "GitHub Copilot",
+      "category": "ai_code",
+      "region": "해외",
+      "url": "https://github.com/features/copilot",
+      "blurb": "IDE 안에서 코드를 제안하는 코드 자동완성의 표준.",
+      "new": true
+    },
+    {
+      "id": "cursor",
+      "name": "Cursor",
+      "category": "ai_code",
+      "region": "해외",
+      "url": "https://cursor.com",
+      "blurb": "AI 중심으로 설계된 코드 에디터 — 코드베이스와 대화하며 수정.",
+      "new": true
+    },
+    {
+      "id": "claude-code",
+      "name": "Claude Code",
+      "category": "ai_code",
+      "region": "해외",
+      "url": "https://claude.com/claude-code",
+      "blurb": "터미널·IDE에서 작업을 통째로 맡기는 Anthropic의 코딩 에이전트.",
+      "new": true
+    },
+    {
+      "id": "windsurf",
+      "name": "Windsurf",
+      "category": "ai_code",
+      "region": "해외",
+      "url": "https://windsurf.com",
+      "blurb": "멀티파일 작업을 자동화하는 에이전트형 AI IDE.",
+      "new": true
+    },
+    {
+      "id": "replit",
+      "name": "Replit",
+      "category": "ai_code",
+      "region": "해외",
+      "url": "https://replit.com",
+      "blurb": "브라우저에서 앱을 만들고 배포까지 — AI 에이전트 내장.",
+      "new": true
+    },
+    {
+      "id": "v0",
+      "name": "v0",
+      "category": "ai_code",
+      "region": "해외",
+      "url": "https://v0.dev",
+      "blurb": "프롬프트로 웹 UI(리액트)를 생성하는 Vercel의 도구.",
+      "new": true
+    },
+    {
+      "id": "lovable",
+      "name": "Lovable",
+      "category": "ai_code",
+      "region": "해외",
+      "url": "https://lovable.dev",
+      "blurb": "대화만으로 웹 서비스를 만들어 주는 AI 앱 빌더.",
+      "new": true
+    },
+    {
+      "id": "bolt-new",
+      "name": "Bolt.new",
+      "category": "ai_code",
+      "region": "해외",
+      "url": "https://bolt.new",
+      "blurb": "브라우저에서 풀스택 앱을 생성·실행하는 AI 빌더.",
+      "new": true
+    },
+    {
+      "id": "devin",
+      "name": "Devin",
+      "category": "ai_code",
+      "region": "해외",
+      "url": "https://devin.ai",
+      "blurb": "이슈를 맡기면 스스로 코딩하는 AI 소프트웨어 엔지니어.",
+      "new": true
+    },
+    {
+      "id": "clova-note",
+      "name": "클로바노트",
+      "category": "ai_meeting",
+      "region": "국내",
+      "url": "https://clovanote.naver.com",
+      "blurb": "네이버의 회의 녹음→텍스트·요약 — 한국어 인식에 강점.",
+      "new": true
+    },
+    {
+      "id": "daglo",
+      "name": "다글로",
+      "category": "ai_meeting",
+      "region": "국내",
+      "url": "https://daglo.ai",
+      "blurb": "회의록·인터뷰 전사에 쓰는 국내 음성 기록 서비스.",
+      "new": true
+    },
+    {
+      "id": "otter",
+      "name": "Otter.ai",
+      "category": "ai_meeting",
+      "region": "해외",
+      "url": "https://otter.ai",
+      "blurb": "영어 회의 실시간 전사·요약의 대표 서비스.",
+      "new": true
+    },
+    {
+      "id": "fireflies",
+      "name": "Fireflies.ai",
+      "category": "ai_meeting",
+      "region": "해외",
+      "url": "https://fireflies.ai",
+      "blurb": "줌·미트 회의에 참여해 회의록을 자동 작성.",
+      "new": true
+    },
+    {
+      "id": "fathom",
+      "name": "Fathom",
+      "category": "ai_meeting",
+      "region": "해외",
+      "url": "https://fathom.video",
+      "blurb": "무료 사용 폭이 넓은 회의 요약 — 하이라이트 클립 생성.",
+      "new": true
+    },
+    {
+      "id": "tldv",
+      "name": "tl;dv",
+      "category": "ai_meeting",
+      "region": "해외",
+      "url": "https://tldv.io",
+      "blurb": "회의 녹화·타임스탬프 요약 — 여러 회의 도구 지원.",
+      "new": true
+    },
+    {
+      "id": "channeltalk",
+      "name": "채널톡",
+      "category": "ai_marketing",
+      "region": "국내",
+      "url": "https://channel.io",
+      "blurb": "국내 대표 채팅상담 — AI 상담봇으로 응대를 자동화.",
+      "new": true
+    },
+    {
+      "id": "intercom",
+      "name": "Intercom Fin",
+      "category": "ai_marketing",
+      "region": "해외",
+      "url": "https://www.intercom.com",
+      "blurb": "고객 문의를 스스로 해결하는 AI 상담 에이전트.",
+      "new": true
+    },
+    {
+      "id": "zendesk-ai",
+      "name": "Zendesk AI",
+      "category": "ai_marketing",
+      "region": "해외",
+      "url": "https://www.zendesk.com",
+      "blurb": "헬프데스크에 내장된 AI 응대·문의 분류.",
+      "new": true
+    },
+    {
+      "id": "tidio",
+      "name": "Tidio",
+      "category": "ai_marketing",
+      "region": "해외",
+      "url": "https://www.tidio.com",
+      "blurb": "소규모 쇼핑몰용 챗봇·라이브챗 — 간단하게 도입.",
+      "new": true
+    },
+    {
+      "id": "adcreative",
+      "name": "AdCreative.ai",
+      "category": "ai_marketing",
+      "region": "해외",
+      "url": "https://www.adcreative.ai",
+      "blurb": "광고 배너·소재를 대량 생성하는 퍼포먼스 마케팅 AI.",
+      "new": true
+    },
+    {
+      "id": "predis",
+      "name": "Predis.ai",
+      "category": "ai_marketing",
+      "region": "해외",
+      "url": "https://predis.ai",
+      "blurb": "SNS 게시물(이미지+카피)을 자동 생성·예약하는 도구.",
+      "new": true
+    },
+    {
+      "id": "surfer",
+      "name": "Surfer",
+      "category": "ai_marketing",
+      "region": "해외",
+      "url": "https://surferseo.com",
+      "blurb": "SEO 점수를 기준으로 글을 최적화하는 콘텐츠 도구.",
+      "new": true
+    },
+    {
+      "id": "zapier",
+      "name": "Zapier",
+      "category": "ai_auto",
+      "region": "해외",
+      "url": "https://zapier.com",
+      "blurb": "수천 개 앱을 연결하는 업무 자동화 — AI 액션 내장.",
+      "new": true
+    },
+    {
+      "id": "make-com",
+      "name": "Make",
+      "category": "ai_auto",
+      "region": "해외",
+      "url": "https://www.make.com",
+      "blurb": "시각적 시나리오로 짜는 자동화 — 복잡한 흐름에 강점.",
+      "new": true
+    },
+    {
+      "id": "n8n",
+      "name": "n8n",
+      "category": "ai_auto",
+      "region": "해외",
+      "url": "https://n8n.io",
+      "blurb": "오픈소스 자동화 — AI 에이전트 워크플로 구축·자체 호스팅 가능.",
+      "new": true
+    },
+    {
+      "id": "lindy",
+      "name": "Lindy",
+      "category": "ai_auto",
+      "region": "해외",
+      "url": "https://www.lindy.ai",
+      "blurb": "이메일·일정 등 업무를 맡기는 노코드 AI 비서 빌더.",
+      "new": true
+    },
+    {
+      "id": "relevance-ai",
+      "name": "Relevance AI",
+      "category": "ai_auto",
+      "region": "해외",
+      "url": "https://relevanceai.com",
+      "blurb": "영업·리서치용 AI 에이전트 팀을 만드는 플랫폼.",
+      "new": true
+    },
+    {
+      "id": "manus",
+      "name": "Manus",
+      "category": "ai_auto",
+      "region": "해외",
+      "url": "https://manus.im",
+      "blurb": "조사·작업을 자율 수행하는 범용 AI 에이전트.",
+      "new": true
+    },
+    {
+      "id": "dify",
+      "name": "Dify",
+      "category": "ai_auto",
+      "region": "해외",
+      "url": "https://dify.ai",
+      "blurb": "오픈소스 LLM 앱·에이전트 빌더 — 사내 챗봇 구축에 활용.",
+      "new": true
+    },
+    {
+      "id": "perplexity",
+      "name": "Perplexity",
+      "category": "ai_research",
+      "region": "해외",
+      "url": "https://www.perplexity.ai",
+      "blurb": "출처 링크와 함께 답하는 AI 검색 — 최신 정보 조사에 특화.",
+      "new": true
+    },
+    {
+      "id": "notebooklm",
+      "name": "NotebookLM",
+      "category": "ai_research",
+      "region": "해외",
+      "url": "https://notebooklm.google.com",
+      "blurb": "내 자료를 올려 근거 기반으로 질문하는 구글의 리서치 도구.",
+      "new": true
+    },
+    {
+      "id": "liner",
+      "name": "라이너",
+      "category": "ai_research",
+      "region": "국내",
+      "url": "https://getliner.com",
+      "blurb": "출처 신뢰도를 강조하는 국내 AI 검색·하이라이트 서비스.",
+      "new": true
+    },
+    {
+      "id": "deepl",
+      "name": "DeepL",
+      "category": "ai_research",
+      "region": "해외",
+      "url": "https://www.deepl.com",
+      "blurb": "자연스러운 번역 품질로 유명한 번역기.",
+      "new": true
+    },
+    {
+      "id": "papago",
+      "name": "파파고",
+      "category": "ai_research",
+      "region": "국내",
+      "url": "https://papago.naver.com",
+      "blurb": "네이버 번역 — 한국어 번역 쌍에 강점.",
+      "new": true
+    },
+    {
+      "id": "flitto-ai",
+      "name": "플리토",
+      "category": "ai_research",
+      "region": "국내",
+      "url": "https://www.flitto.com",
+      "blurb": "전문 번역과 AI 번역 데이터를 함께 다루는 번역 플랫폼.",
+      "new": true
+    },
+    {
+      "id": "elicit",
+      "name": "Elicit",
+      "category": "ai_research",
+      "region": "해외",
+      "url": "https://elicit.com",
+      "blurb": "논문을 찾아 표로 정리해 주는 연구 특화 AI.",
+      "new": true
+    },
+    {
+      "id": "consensus",
+      "name": "Consensus",
+      "category": "ai_research",
+      "region": "해외",
+      "url": "https://consensus.app",
+      "blurb": "논문 근거로 질문에 답하는 학술 검색 AI.",
+      "new": true
     }
   ]
 }

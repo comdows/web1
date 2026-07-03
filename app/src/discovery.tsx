@@ -64,6 +64,8 @@ export function PlatformDetail({ id }: { id?: string }) {
         </div>
       </div>
 
+      {p.blurb && <p className="lead" style={{ maxWidth: 640, marginTop: 4 }}>{p.blurb}</p>}
+
       <div className="facts">
         <div className="fact"><div className="k">분야</div><div className="v">{cat?.icon} {cat?.name}</div></div>
         <div className="fact"><div className="k">지역</div><div className="v">{p.region}</div></div>
