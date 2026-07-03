@@ -111,8 +111,14 @@ create policy "admin manage interest" on public.deal_interests for update
 
 -- 익명 공개 뷰(owner_id 등 내부 필드 제외) — 프론트는 이 뷰만 읽는다
 create or replace view public.v_deals_public as
-  select id, category_id, region, revenue_band, mode, summary, status, is_demo, posted
+  select id, category_id, region, revenue_band, mode, summary, highlights, sale_reason, status, is_demo, posted
   from public.deals where status <> 'closed';
+
+-- buyer_briefs: 소유자 전용(수요 정보는 비공개 자산), admin 열람
+alter table public.buyer_briefs enable row level security;
+create policy "own briefs" on public.buyer_briefs for all
+  using (user_id = auth.uid()) with check (user_id = auth.uid());
+create policy "admin read briefs" on public.buyer_briefs for select using (public.is_admin());
 
 -- ── boost_orders: 해당 플랫폼 운영자 + admin ──────────────────
 alter table public.boost_orders enable row level security;

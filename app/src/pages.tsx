@@ -210,9 +210,9 @@ export function Partners() {
 export function Exchange() {
   const boardOn = FLAGS.stage3 || isLocalAdmin();
   const sellReg = ISSUE("[거래소 사전등록 — 매각]",
-    "구분: 매각 희망\n분야:\n규모(연매출 밴드):\n희망 형태(지분매각/자산양수도 등):\n익명 요약(1~2줄):", "stage3,사전등록");
-  const buyReg = ISSUE("[거래소 사전등록 — 인수·투자]",
-    "구분: 인수·투자 희망\n관심 분야:\n예산 규모(대략):\n인수 주체(개인/법인):", "stage3,사전등록");
+    "구분: 매각 희망\n분야:\n지역(광역 단위):\n연매출 밴드(예: 1~5억):\n희망 형태(지분 전량/지분 일부+운영승계/자산 양수도):\n익명 요약(1~2줄 — 플랫폼명·URL 유추 표현 금지):\n하이라이트(범주·밴드 표현만, 예: 재방문율 상위):\n매각 사유(선택):", "stage3,사전등록,매각");
+  const buyReg = ISSUE("[인수 희망 브리프 등록]",
+    "구분: 인수·투자 희망\n관심 분야(복수 가능):\n예산 밴드(예: ~1억 / 1~5억):\n희망 형태(지분/자산 등):\n인수 주체(개인/법인):\n간단한 소개:", "stage3,인수브리프");
 
   return (
     <div className="page container">
@@ -223,16 +223,62 @@ export function Exchange() {
       </p>
 
       <ProcessStrip steps={[
-        { t: "익명 등록", d: "매물은 코드명(D-101)으로만 게시 — 실명·연락처 없음" },
-        { t: "관심 수집", d: "인수 희망자가 관심을 등록합니다" },
-        { t: "양측 확인 후 소개", d: "쌍방 동의 시에만 세모플이 소개" },
-        { t: "당사자 직접 협상", d: "실사·계약·정산은 당사자와 자문사가 직접" },
+        { t: "익명 등록", d: "검수 후 코드명(D-101)으로만 게시 — 실명·연락처 없음" },
+        { t: "관심 수집", d: "인수 희망자의 관심 등록 + 브리프 매칭 알림" },
+        { t: "양측 확인 후 소개", d: "쌍방 동의 시에만 소개(NDA 양식 안내)" },
+        { t: "당사자 직접 협상", d: "가격·실사·계약·정산은 당사자와 자문사가 직접" },
       ]} />
+
+      {/* 왜 중개하지 않는가 (stage3-exchange-plan.md §1) */}
+      <div className="sec-title">세모플이 "중개"하지 않는 이유</div>
+      <div className="card-grid" style={{ marginBottom: 12 }}>
+        <div className="pcard"><h4>⚖️ 법이 그렇게 정합니다</h4>
+          <p>플랫폼 매각은 대부분 <b>주식(지분) 양수도</b> — 자본시장법상 증권 거래입니다. 인가 없이 이를
+            중개·주선하면 <b>무인가 투자중개업(형사처벌 대상)</b>이 될 수 있어, 세모플은 정보 게시와
+            쌍방 동의 소개까지만 합니다.</p></div>
+        <div className="pcard"><h4>💰 그래서 수수료도 정액뿐</h4>
+          <p>거래액에 연동한 성공보수는 "사실상 중개 보수"로 해석될 수 있습니다. 세모플은
+            <b>거래 성사·금액과 무관한 정액 이용료</b>(리스팅·열람)만 받고, 가격 협상에 일절 개입하지 않습니다.</p></div>
+        <div className="pcard"><h4>🛡️ 그게 거래자에게도 안전합니다</h4>
+          <p>가치평가·실사·계약은 자격 있는 전문가(로펌·회계법인)의 영역입니다. 세모플이 어설프게 개입하지 않는
+            구조라서, 책임 소재가 명확하고 거래가 깨끗해집니다.</p></div>
+      </div>
+
+      {/* 거래 형태 가이드 */}
+      <div className="sec-title">거래 형태 가이드 <span style={{ textTransform: "none", letterSpacing: 0 }}>(일반 정보 — 법률·세무 자문 아님)</span></div>
+      <div className="card-grid" style={{ marginBottom: 12 }}>
+        <div className="pcard"><h4>지분(주식) 양수도</h4>
+          <p>회사를 통째로 넘기는 방식 — 계약·자산·부채·직원이 함께 이전됩니다. 절차가 단순한 대신
+            <b>숨은 부채까지 인수</b>하므로 실사가 중요합니다.</p></div>
+        <div className="pcard"><h4>자산(사업) 양수도</h4>
+          <p>도메인·코드·상표·계약 등 <b>자산을 골라 인수</b>하는 방식. 부채 리스크가 작은 대신 이전 절차가 건별로
+            필요하고, <b>회원 DB 이전은 개인정보보호법 §27(영업양도 통지)</b> 절차를 반드시 거쳐야 합니다.</p></div>
+      </div>
+
+      <div className="banner" style={{ marginBottom: 12 }}>
+        🕶️ <b>익명성 규칙</b> — 게시 전 검수에서 전부 확인합니다:
+        플랫폼명·URL 유추 표현 금지 · 정확한 수치 대신 밴드(연매출 1~5억) · 지역은 광역 단위 ·
+        <b>희망 가격은 게시하지 않음</b>(소개 후 당사자 협상) · 연락처·개인정보 금지.
+      </div>
 
       <div className="banner" style={{ marginBottom: 18 }}>
         📋 <b>매각 준비 체크리스트</b> — 소개가 빨라집니다:
         ① 최근 12개월 매출·비용 증빙 ② 회원·트래픽 지표(MAU·재방문) ③ 이전 가능한 자산 목록(도메인·코드·계약·회원DB 이전 시 개인정보보호법 검토) ④ 매각 사유와 희망 형태.
       </div>
+
+      {/* 요금 안내 (stage3-exchange-plan.md §3) */}
+      <div className="sec-title">요금 안내</div>
+      <div className="card-grid" style={{ marginBottom: 6 }}>
+        <div className="pcard"><h4>무료 <Badge kind="good">현재</Badge></h4>
+          <p>매물 등록(검수·익명화 포함)·인수 브리프·소개까지 전 과정 무료(베타).</p></div>
+        <div className="pcard"><h4>매물 리스팅료 <Badge kind="soon">예정</Badge></h4>
+          <p>게재 90일 정액(검수·익명화 포함). <b>성사·거래액과 무관</b> — 팔리든 안 팔리든 같은 금액.</p></div>
+        <div className="pcard"><h4>인수자 멤버십 <Badge kind="soon">예정</Badge></h4>
+          <p>신규 매물 우선 알림·브리프 무제한(월 정액).</p></div>
+      </div>
+      <p className="sub faint" style={{ fontSize: 12.5, marginBottom: 18 }}>
+        금지 원칙 — 성공보수(%)·성사 연동 과금·가격 협상 개입 대가는 받지 않습니다(위 "중개하지 않는 이유" 참조).
+      </p>
 
       {!boardOn ? (
         <div className="banner" style={{ padding: 22 }}>
@@ -242,13 +288,17 @@ export function Exchange() {
           </p>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <a className="btn primary" target="_blank" rel="noopener noreferrer" href={sellReg}>매각 사전등록</a>
-            <a className="btn ghost" target="_blank" rel="noopener noreferrer" href={buyReg}>인수·투자 사전등록</a>
+            <a className="btn ghost" target="_blank" rel="noopener noreferrer" href={buyReg}>인수 희망 브리프 등록</a>
           </div>
         </div>
       ) : (
         <>
           {isLocalAdmin() && !FLAGS.stage3 && <AdminBanner label="이 매물 보드" />}
-          <div className="result-meta">매물 {listings.deals.length}건 (익명 리스팅)</div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
+            <div className="result-meta" style={{ margin: 0 }}>매물 {listings.deals.length}건 (익명 리스팅)</div>
+            <a className="btn primary sm" style={{ marginLeft: "auto" }} target="_blank" rel="noopener noreferrer" href={sellReg}>+ 매물 등록</a>
+            <a className="btn ghost sm" target="_blank" rel="noopener noreferrer" href={buyReg}>인수 희망 브리프 등록</a>
+          </div>
           <div className="card-grid">
             {listings.deals.map((d) => (
               <div className="pcard" key={d.id}>
