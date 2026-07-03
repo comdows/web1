@@ -115,3 +115,23 @@ export function Footer() {
     </div></footer>
   );
 }
+
+/* 공유 버튼 — 모바일은 시스템 공유 시트, 데스크톱은 링크 복사(폴백) */
+export function ShareButton({ title, url, small = true }: { title: string; url?: string; small?: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const target = () => url ?? location.href;
+  const share = async () => {
+    const u = target();
+    try {
+      if (navigator.share) { await navigator.share({ title, url: u }); return; }
+      throw new Error("no-share");
+    } catch {
+      try { await navigator.clipboard.writeText(u); setCopied(true); setTimeout(() => setCopied(false), 2000); } catch { /* noop */ }
+    }
+  };
+  return (
+    <button className={`btn ghost ${small ? "sm" : ""}`} onClick={share}>
+      {copied ? "✓ 링크 복사됨" : "🔗 공유"}
+    </button>
+  );
+}

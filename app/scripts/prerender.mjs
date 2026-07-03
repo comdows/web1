@@ -59,7 +59,7 @@ for (const p of data.platforms) {
 
 /* 사이트맵 + robots */
 const today = new Date().toISOString().slice(0, 10);
-const staticUrls = ["", "?view=partners", "?view=exchange", "?view=ai-finder", "?view=onboarding", "?view=deal-guide", "?view=value-check"];
+const staticUrls = ["", "?view=partners", "?view=exchange", "?view=ai-finder", "?view=packs", "?view=weekly", "?view=onboarding", "?view=deal-guide", "?view=value-check"];
 const urls = [
   ...staticUrls.map((u) => `${SITE}/${u}`),
   ...data.platforms.map((p) => `${SITE}/p/${p.id}/`),

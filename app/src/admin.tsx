@@ -8,7 +8,7 @@ import { useSession } from "./lib/auth";
 import {
   briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
-  fetchOutboundCounts, getPlatformFull, listAdminIntroQueue, listBuyerBriefs, listDealsAdmin,
+  fetchAdminMetrics, fetchOutboundCounts, getPlatformFull, listAdminIntroQueue, listBuyerBriefs, listDealsAdmin,
   listDealSubmissions, listOperatorClaims,
   listPartnerPosts, listSubmissions, markIntroduced, publishDeal, remoteEnabled,
   reviewDealSubmission, reviewOperatorClaim, reviewPartnerPost, reviewSubmission,
@@ -672,12 +672,14 @@ export function Admin() {
   const [stats, setStats] = useState<{ platforms: number; categories: number; newCount: number } | null>(null);
   const [pending, setPending] = useState(0);
   const [popular, setPopular] = useState<{ query: string; cnt: number }[]>([]);
+  const [metrics, setMetrics] = useState<Awaited<ReturnType<typeof fetchAdminMetrics>> | null>(null);
 
   const reload = useCallback(() => {
     listSubmissions(["pending", "hold"]).then(setQueue).catch(() => setQueue([]));
     getStats().then(setStats).catch(() => { /* noop */ });
     getPendingCount().then(setPending).catch(() => { /* noop */ });
     getPopularSearches().then(setPopular).catch(() => { /* noop */ });
+    fetchAdminMetrics().then(setMetrics).catch(() => { /* noop */ });
   }, []);
   useEffect(() => { if (isAdmin) reload(); }, [isAdmin, reload]);
 
@@ -699,10 +701,18 @@ export function Admin() {
     <main className="page container">
       <h1>관리 콘솔</h1>
 
-      <div className="stats" style={{ marginBottom: 20 }}>
+      <div className="stats" style={{ marginBottom: 10 }}>
         <StatTile n={stats ? stats.platforms.toLocaleString() : "—"} l="플랫폼" tone="b" />
         <StatTile n={String(pending)} l="검수 대기" tone="t" />
         <StatTile n={stats ? String(stats.newCount) : "—"} l="신규" />
+      </div>
+      <div className="stats" style={{ marginBottom: 20 }}>
+        <StatTile n={metrics ? String(metrics.members) : "—"} l="회원" tone="b" />
+        <StatTile n={metrics ? String(metrics.favs) : "—"} l="계정 즐겨찾기" />
+        <StatTile n={metrics ? String(metrics.searches7d) : "—"} l="검색(7일)" />
+        <StatTile n={metrics ? String(metrics.outbound7d) : "—"} l="외부클릭(7일)" />
+        <StatTile n={metrics ? String(metrics.livePosts + metrics.liveDeals) : "—"} l="게시 중(제안+매물)" />
+        <StatTile n={metrics ? String(metrics.introduced) : "—"} l="누적 소개" tone="t" />
       </div>
 
       <div className="sec-title">제보 검수 큐 {queue ? `· ${queue.length}건` : ""}</div>
