@@ -467,6 +467,18 @@ export async function listBuyerBriefs(): Promise<BuyerBriefRow[]> {
   return rest<BuyerBriefRow[]>("buyer_briefs?active=is.true&select=id,categories,budget_band,mode,entity,note,active,created_at&order=created_at.desc&limit=100");
 }
 
+/* 최근 등재(주간 다이제스트) — created_at 포함, 실패 시 정적 신규 폴백 */
+export async function fetchRecentPlatforms(limit = 60): Promise<{ p: Platform; created: string }[]> {
+  const local = () => platforms.filter((x) => x.new).slice(0, limit).map((p) => ({ p, created: "" }));
+  if (!remoteEnabled) return local();
+  try {
+    const rows = await rest<(DbPlatform & { created_at: string })[]>(
+      `platforms?select=${PLATFORM_COLS},created_at&order=created_at.desc&limit=${limit}`
+    );
+    return rows.map((r) => ({ p: fromDb(r), created: r.created_at }));
+  } catch { return local(); }
+}
+
 /* ── 운영자 클레임 (operator_claims / platform_operators — 0001 스키마 재사용) ──
  * 플랫폼 운영자가 "우리 플랫폼"을 인증 신청 → 관리자 승인 시 운영자 지정 + 검증 배지 */
 export interface OperatorClaim {
