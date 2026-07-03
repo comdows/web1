@@ -178,7 +178,7 @@ export default function App() {
             <div className="hero-bp" aria-hidden><LogoMark size={300} /></div>
             <div className="eyebrow">SEMOPL · 세상의 모든 플랫폼</div>
             <h1>어떤 분야에 어떤 플랫폼이 있을까?</h1>
-            <p className="sub">사업자가 나가서 붙을 수 있는 플랫폼을 <b>같은 기준으로</b> 정리했습니다. 이름과 개략 설명을 빠르게 훑고, ★로 저장하세요.</p>
+            <p className="sub">사업자가 나가서 붙을 수 있는 플랫폼과 <b>일을 도와주는 AI 도구</b>까지, 같은 기준으로 정리했습니다. 빠르게 훑고 ★로 저장하세요.</p>
             <div className="search">
               <button type="button" className="ico" aria-label="검색" onClick={() => { if (q.trim()) { trackEvent("search", undefined, q.trim()); go("search", { q }); } }}>⌕</button>
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="플랫폼·분야 검색 (예: 쿠팡, 크라우드펀딩, 수출)"

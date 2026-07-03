@@ -3,7 +3,7 @@
 import { FLAGS } from "./config";
 import { useNav } from "./nav";
 
-export const TERMS_VERSION = "2026-07.2"; // .2: 요금·환불 조항 구체화(가격정책 v1) / .1: 거래소 범위 자산·사업 양수도 한정
+export const TERMS_VERSION = "2026-07.3"; // .3: 운영자 인증(업무용 이메일 수집) 반영 / .2: 요금·환불 구체화 / .1: 거래소 자산 양수도 한정
 
 function LegalShell({ title, children }: { title: string; children: React.ReactNode }) {
   const go = useNav();
@@ -97,6 +97,7 @@ export function Privacy() {
         <ul>
           <li><b>계정</b>: 이메일, 비밀번호(암호화 저장), 표시 이름 — 회원 식별, 로그인, 진행 상태 안내</li>
           <li><b>이용 기록</b>: 즐겨찾기, 플랫폼 제보, 제휴 제안·매칭 신청, 매각 접수·인수 브리프·관심 등록 내용 — 서비스 제공(검수·게시·소개)</li>
+          <li><b>운영자 인증</b>: 업무용(도메인) 이메일 — 플랫폼 운영자 여부 확인·검증 배지 부여 목적으로만 사용하며 공개되지 않음</li>
           <li><b>자동 수집</b>: 익명 이용 통계(검색어·클릭 등, 계정과 결합하지 않음) — 서비스 개선</li>
         </ul>
         <p>연락처·주민등록번호 등 그 외 개인정보는 수집하지 않으며, 게시물에 연락처를 적지 않도록 안내하고 검수에서 제거합니다.</p>
