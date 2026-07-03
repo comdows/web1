@@ -28,7 +28,7 @@ button{font-family:inherit}
 
 /* Hero */
 .hero{padding:44px 0 8px}
-.hero .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand-soft)}
+.hero .eyebrow{font-family:var(--font-mono);font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--brand-soft)}
 .hero h1{font-size:var(--fs-display);font-weight:var(--w-black);letter-spacing:var(--tracking-tight);line-height:var(--lh-tight);margin:14px 0 10px}
 .hero p.sub{font-size:17px;color:var(--muted);max-width:620px;margin:0 0 22px}
 
@@ -63,10 +63,11 @@ button{font-family:inherit}
 .stat .n.b{color:var(--brand-soft)}.stat .n.t{color:var(--teal)}
 .stat .l{font-size:12px;color:var(--muted);margin-top:2px}
 
-/* Section title */
-.sec-title{font-family:var(--font-mono);font-size:12px;letter-spacing:var(--tracking-wide);text-transform:uppercase;
-  color:var(--faint);margin:34px 0 16px;padding-bottom:9px;border-bottom:1px solid var(--line-soft);display:flex;gap:10px;align-items:center}
-.sec-title::before{content:"";width:8px;height:8px;border:1.5px solid var(--cyan);transform:rotate(45deg)}
+/* Section title — 한글 가독성 우선: 자간 벌리기 최소화·본문 폰트·대비 강화(마커·라틴 대문자로 블루프린트 느낌 유지) */
+.sec-title{font-family:var(--font-sans);font-size:13.5px;font-weight:var(--w-bold);letter-spacing:normal;
+  color:var(--text);margin:34px 0 16px;padding-bottom:9px;border-bottom:1px solid var(--line-soft);display:flex;gap:10px;align-items:center}
+.sec-title :is(.mono,.faint){letter-spacing:var(--tracking-wide);text-transform:uppercase}
+.sec-title::before{content:"";width:8px;height:8px;border:1.5px solid var(--cyan);transform:rotate(45deg);flex:0 0 auto}
 
 /* Horizontal strip (new / recent) */
 .hstrip{display:flex;gap:12px;overflow-x:auto;padding:4px 2px 12px;scroll-snap-type:x proximity}
@@ -211,7 +212,10 @@ button{font-family:inherit}
 @media(max-width:760px){ .search-layout{flex-direction:column} .facets{position:static;flex:1;width:100%;max-height:none} }
 @media(max-width:640px){
   .hero h1{font-size:30px}
-  .stats{grid-template-columns:1fr 1fr}
+  /* 3개 짧은 지표는 3열 유지가 균형 좋음(2열이면 셋째 타일만 홀로 떠서 어색) */
+  .stats{grid-template-columns:repeat(3,1fr);gap:8px}
+  .stats .stat{padding:12px 12px}
+  .stats .n{font-size:22px}
   /* 헤더: 로고는 유지, 내비는 아이콘만 남기고 가로 스크롤 가능하게 —
      항목이 넘쳐도 페이지 전체가 가로로 밀리지 않게 방어 */
   .site-header .inner{gap:8px}
