@@ -113,7 +113,7 @@ export default function App() {
       <header className="site-header"><div className="container inner">
         <a onClick={() => go("home")} style={{ cursor: "pointer" }}><Logo /></a>
         <nav>
-          <a className={view === "home" ? "active" : ""} onClick={() => go("home")}>분야별</a>
+          <a className={view === "home" ? "active" : ""} onClick={() => go("home")}>📂 <span className="navlbl">분야별</span></a>
           <a className={view === "search" ? "active" : ""} onClick={() => go("search")}>🔎 <span className="navlbl">검색</span></a>
           <a className={view === "onboarding" ? "active" : ""} onClick={() => go("onboarding")}>✨ <span className="navlbl">추천</span></a>
           <a className={view === "partners" ? "active" : ""} onClick={() => go("partners")}>🤝 <span className="navlbl">제휴</span>{!FLAGS.stage2 && <span className="soon">준비중</span>}</a>
