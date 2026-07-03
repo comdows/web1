@@ -14,6 +14,7 @@ import { PlatformDetail, SearchResults, Compare, Onboarding } from "./discovery"
 import { Account, Submit } from "./account";
 import { Admin } from "./admin";
 import { AiFinder } from "./ai";
+import { Weekly, Packs } from "./growth";
 import { Terms, Privacy } from "./legal";
 import { useSession } from "./lib/auth";
 import { remoteEnabled, trackEvent } from "./lib/api";
@@ -87,7 +88,7 @@ export default function App() {
       search: "검색", partners: "제휴 매칭", exchange: "플랫폼 거래소", compare: "비교",
       onboarding: "맞춤 추천", account: "계정", submit: "플랫폼 제보", admin: "관리 콘솔",
       terms: "이용약관", privacy: "개인정보처리방침", "deal-guide": "양수도 가이드", "value-check": "가치 자가 진단",
-      "ai-finder": "AI 도구 찾기",
+      "ai-finder": "AI 도구 찾기", weekly: "새로 나온 플랫폼·AI", packs: "업종별 시작 조합",
     };
     document.title = titles[v] ? `${titles[v]} — 세모플` : "세모플 — 세상의 모든 플랫폼";
     if (params?.id !== undefined) setDetailId(params.id);
@@ -160,6 +161,8 @@ export default function App() {
         : view === "deal-guide" ? <DealGuide />
         : view === "value-check" ? <ValueCheck />
         : view === "ai-finder" ? <AiFinder />
+        : view === "weekly" ? <Weekly />
+        : view === "packs" ? <Packs />
         : view === "detail" ? <PlatformDetail id={detailId} />
         : view === "search" ? <SearchResults initialQ={searchQ} />
         : view === "compare" ? <Compare />
@@ -224,7 +227,7 @@ export default function App() {
           ) : (
             <>
               {newPlatforms.length > 0 && (<>
-                <div className="sec-title">🆕 새로 나온 플랫폼</div>
+                <div className="sec-title">🆕 새로 나온 플랫폼 <button className="linklike" style={{ textTransform: "none", letterSpacing: 0 }} onClick={() => go("weekly")}>주간 아카이브 →</button></div>
                 <div className="hstrip">{newPlatforms.map((p) => <PlatformCard key={p.id} p={p} />)}</div>
               </>)}
               <div className="sec-title">분야 한눈에 보기</div>
@@ -240,6 +243,10 @@ export default function App() {
                     </button>
                   );
                 })}
+              </div>
+              <div className="banner" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", margin: "6px 0 14px" }}>
+                <span>🧰 무엇부터 붙어야 할지 막막하다면 — 업종별 시작 조합(판매채널+AI 도구)을 정리해 뒀어요.</span>
+                <button className="btn primary sm" onClick={() => go("packs")}>업종별 시작 조합 →</button>
               </div>
               <div className="sec-title">디렉토리</div>
               {shownGroups.map((g) => (

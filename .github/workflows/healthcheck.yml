@@ -1,0 +1,26 @@
+# 등재 URL 헬스체크 — 매월 1일 07:00 KST(전월 말일 22:00 UTC) + 수동 실행
+# 접속 불가 링크를 GitHub 이슈로 리포트(자동 삭제 없음 — 관리자 확인 후 조치)
+name: healthcheck
+
+on:
+  schedule:
+    - cron: "0 22 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Probe all listed URLs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node backend/collect/healthcheck.mjs
