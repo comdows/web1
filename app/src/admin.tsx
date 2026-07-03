@@ -6,10 +6,11 @@ import { Badge, StatTile } from "./components";
 import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
 import {
-  createPlatform, getPendingCount, getPlatformLifecycle, getPopularSearches, getStats,
-  LIFECYCLE_NEXT, listAdminIntroQueue, listBuyerBriefs, listDealSubmissions,
-  listPartnerPosts, listSubmissions, markIntroduced, publishDeal, remoteEnabled,
-  reviewDealSubmission, reviewPartnerPost, reviewSubmission, transitionPlatform,
+  createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner, getPendingCount,
+  getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT, listAdminIntroQueue,
+  listBuyerBriefs, listDealsAdmin, listDealSubmissions, listPartnerPosts, listSubmissions,
+  markIntroduced, publishDeal, remoteEnabled, reviewDealSubmission, reviewPartnerPost,
+  reviewSubmission, transitionPlatform, updateDealStatus,
 } from "./lib/api";
 import type {
   BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin, Submission,
@@ -169,17 +170,22 @@ function LifecyclePanel() {
 function PartnerPostQueue() {
   const [items, setItems] = useState<PartnerPostAdmin[] | null>(null);
   const [reasons, setReasons] = useState<Record<string, string>>({});
+  const [errs, setErrs] = useState<Record<string, string>>({});
+  const [loadErr, setLoadErr] = useState(false);
   const [busy, setBusy] = useState("");
   const reload = useCallback(() => {
-    listPartnerPosts(["pending"]).then(setItems).catch(() => setItems([]));
+    setLoadErr(false);
+    listPartnerPosts(["pending"]).then(setItems).catch(() => { setItems(null); setLoadErr(true); });
   }, []);
   useEffect(reload, [reload]);
   const act = async (id: string, status: "published" | "rejected") => {
-    setBusy(id);
+    setBusy(id); setErrs((e) => ({ ...e, [id]: "" }));
     try { await reviewPartnerPost(id, { status, review_reason: reasons[id] || undefined }); reload(); }
+    catch (ex) { setErrs((e) => ({ ...e, [id]: ex instanceof Error ? ex.message : String(ex) })); }
     finally { setBusy(""); }
   };
   const tLabel = (id: string) => partnerTypes.find((t) => t.id === id)?.label ?? id;
+  if (loadErr) return <div className="empty">큐를 불러오지 못했어요. <button className="linklike" onClick={reload}>다시 시도</button></div>;
   if (items === null) return <div className="empty">불러오는 중…</div>;
   if (items.length === 0) return <div className="empty">대기 중인 제휴 제안이 없습니다 ✓</div>;
   return (
@@ -197,6 +203,7 @@ function PartnerPostQueue() {
           <div className="admin-form">
             <label style={{ flex: 1 }}>반려 사유 <input value={reasons[p.id] ?? ""} onChange={(e) => setReasons((r) => ({ ...r, [p.id]: e.target.value }))} placeholder="반려 시(연락처 포함 등)" /></label>
           </div>
+          {errs[p.id] && <div className="err">{errs[p.id]}</div>}
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             <button className="btn primary sm" disabled={busy === p.id} onClick={() => act(p.id, "published")}>✓ 게시</button>
             <button className="btn ghost sm" disabled={busy === p.id} onClick={() => act(p.id, "rejected")}>반려</button>
@@ -211,46 +218,64 @@ function PartnerPostQueue() {
 function DealSubQueue() {
   const [items, setItems] = useState<DealSubmissionRow[] | null>(null);
   const [drafts, setDrafts] = useState<Record<string, { code: string; summary: string; highlights: string; reason: string }>>({});
+  const [errs, setErrs] = useState<Record<string, string>>({});
+  const [loadErr, setLoadErr] = useState(false);
   const [busy, setBusy] = useState("");
-  const [err, setErr] = useState("");
   const reload = useCallback(() => {
-    listDealSubmissions(["pending", "hold"]).then((rows) => {
+    setLoadErr(false);
+    Promise.all([
+      listDealSubmissions(["pending", "hold"]),
+      fetchLatestDealCode().catch(() => null),
+    ]).then(([rows, latest]) => {
       setItems(rows);
+      // 코드명 기본값: DB의 최신 D-### 다음 번호부터(세션 인덱스 기반은 재접속 시 PK 충돌)
+      const base = latest && /^D-(\d+)$/.test(latest) ? parseInt(latest.slice(2), 10) + 1 : 201;
       setDrafts((d) => {
         const n = { ...d };
         rows.forEach((r, i) => {
           if (!n[r.id]) n[r.id] = {
-            code: `D-${200 + i}`, summary: r.payload.summary ?? "",
+            code: `D-${base + i}`, summary: r.payload.summary ?? "",
             highlights: r.payload.highlights ?? "", reason: "",
           };
         });
         return n;
       });
-    }).catch(() => setItems([]));
+    }).catch(() => { setItems(null); setLoadErr(true); });
   }, []);
   useEffect(reload, [reload]);
 
   const approve = async (s: DealSubmissionRow) => {
     const d = drafts[s.id];
-    setErr(""); setBusy(s.id);
+    setErrs((e) => ({ ...e, [s.id]: "" })); setBusy(s.id);
+    const code = d.code.trim();
     try {
-      await publishDeal({
-        id: d.code.trim(), category_id: s.payload.category_id ?? "", region: s.payload.region ?? "domestic",
-        revenue_band: s.payload.revenue_band ?? "", mode: s.payload.mode ?? "",
-        summary: d.summary.trim(), highlights: d.highlights ? d.highlights.split(",").map((x) => x.trim()).filter(Boolean) : [],
-        sale_reason: s.payload.sale_reason || null, owner_id: s.submitter_id,
-      });
-      await reviewDealSubmission(s.id, { status: "approved", approved_deal_id: d.code.trim() });
+      try {
+        await publishDeal({
+          id: code, category_id: s.payload.category_id ?? "", region: s.payload.region ?? "domestic",
+          revenue_band: s.payload.revenue_band ?? "", mode: s.payload.mode ?? "",
+          summary: d.summary.trim(), highlights: d.highlights ? d.highlights.split(",").map((x) => x.trim()).filter(Boolean) : [],
+          sale_reason: s.payload.sale_reason || null, owner_id: s.submitter_id,
+        });
+      } catch (pubEx) {
+        // 코드명 충돌: 같은 접수의 재승인(이미 게시됨)이면 게시를 건너뛰고 접수 상태만 갱신
+        if ((pubEx as { status?: number }).status === 409) {
+          const owner = await getDealOwner(code).catch(() => null);
+          if (owner !== s.submitter_id) throw new Error(`코드명 ${code}가 이미 사용 중이에요 — 다른 번호를 입력하세요.`);
+        } else throw pubEx;
+      }
+      await reviewDealSubmission(s.id, { status: "approved", approved_deal_id: code });
       reload();
-    } catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+    } catch (ex) { setErrs((e) => ({ ...e, [s.id]: ex instanceof Error ? ex.message : String(ex) })); }
     finally { setBusy(""); }
   };
   const reject = async (s: DealSubmissionRow) => {
-    setBusy(s.id);
+    setErrs((e) => ({ ...e, [s.id]: "" })); setBusy(s.id);
     try { await reviewDealSubmission(s.id, { status: "rejected", review_reason: drafts[s.id]?.reason || "익명성 규칙 미충족" }); reload(); }
+    catch (ex) { setErrs((e) => ({ ...e, [s.id]: ex instanceof Error ? ex.message : String(ex) })); }
     finally { setBusy(""); }
   };
 
+  if (loadErr) return <div className="empty">큐를 불러오지 못했어요. <button className="linklike" onClick={reload}>다시 시도</button></div>;
   if (items === null) return <div className="empty">불러오는 중…</div>;
   if (items.length === 0) return <div className="empty">대기 중인 매각 접수가 없습니다 ✓</div>;
   return (
@@ -277,7 +302,7 @@ function DealSubQueue() {
                 <input value={d.highlights} onChange={(e) => set({ highlights: e.target.value })} /></label>
               <label>반려 사유 <input value={d.reason} onChange={(e) => set({ reason: e.target.value })} placeholder="반려 시" /></label>
             </div>
-            {err && busy !== s.id && <div className="err">{err}</div>}
+            {errs[s.id] && <div className="err">{errs[s.id]}</div>}
             <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
               <button className="btn primary sm" disabled={busy === s.id} onClick={() => approve(s)}>✓ 익명화 게시</button>
               <button className="btn ghost sm" disabled={busy === s.id} onClick={() => reject(s)}>반려</button>
@@ -342,7 +367,61 @@ function IntroQueue() {
             <b>📮 인수 브리프</b> — {b.entity} · {b.budget_band} · {b.mode}
             <div className="frm-note">{b.categories.length ? b.categories.join(", ") : "분야 무관"}{b.note ? ` — ${b.note}` : ""}</div>
           </div>
-          <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{b.created_at.slice(0, 10)}</span>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+            <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{b.created_at.slice(0, 10)}</span>
+            <button className="btn ghost sm" onClick={async () => { await deactivateBrief(b.id).catch(() => { /* 0005 필요 */ }); reload(); }}>안내 완료</button>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/* ── 게시물 상태 전이(제안 성사/마감 · 매물 진행/마감) ──
+   성사돼도 '모집 중'으로 남아 신규 신청이 계속 들어오던 문제 해결 */
+function LivePanel() {
+  const [posts, setPosts] = useState<PartnerPostAdmin[]>([]);
+  const [deals, setDeals] = useState<{ id: string; status: string; summary: string; is_demo: boolean }[]>([]);
+  const [busy, setBusy] = useState("");
+  const reload = useCallback(() => {
+    listPartnerPosts(["published", "matched"]).then(setPosts).catch(() => setPosts([]));
+    listDealsAdmin().then((d) => setDeals(d.filter((x) => !x.is_demo && x.status !== "closed"))).catch(() => setDeals([]));
+  }, []);
+  useEffect(reload, [reload]);
+  const movePost = async (id: string, status: string) => {
+    setBusy(id);
+    try { await reviewPartnerPost(id, { status }); reload(); } finally { setBusy(""); }
+  };
+  const moveDeal = async (id: string, status: "open" | "in_progress" | "closed") => {
+    setBusy(id);
+    try { await updateDealStatus(id, status); reload(); } finally { setBusy(""); }
+  };
+  if (posts.length === 0 && deals.length === 0) return <div className="empty">게시 중인 제안·매물이 없습니다.</div>;
+  return (
+    <>
+      {posts.map((p) => (
+        <div className="sub-item" key={p.id}>
+          <div style={{ minWidth: 0 }}>
+            <b>🤝 {p.title}</b> <Badge kind={p.status === "matched" ? "good" : "soon"}>{p.status === "matched" ? "성사" : "게시 중"}</Badge>
+            <div className="frm-note">Give {p.give_text} / Get {p.get_text}</div>
+          </div>
+          <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+            {p.status === "published" && <button className="btn ghost sm" disabled={busy === p.id} onClick={() => movePost(p.id, "matched")}>성사 처리</button>}
+            <button className="btn ghost sm" disabled={busy === p.id} onClick={() => movePost(p.id, "closed")}>마감(내리기)</button>
+          </div>
+        </div>
+      ))}
+      {deals.map((d) => (
+        <div className="sub-item" key={d.id}>
+          <div style={{ minWidth: 0 }}>
+            <b>🏦 {d.id}</b> <Badge kind={d.status === "in_progress" ? "soon" : "good"}>{d.status === "in_progress" ? "진행 중" : "모집 중"}</Badge>
+            <div className="frm-note">{d.summary.slice(0, 60)}</div>
+          </div>
+          <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+            {d.status === "open" && <button className="btn ghost sm" disabled={busy === d.id} onClick={() => moveDeal(d.id, "in_progress")}>진행 중으로</button>}
+            {d.status === "in_progress" && <button className="btn ghost sm" disabled={busy === d.id} onClick={() => moveDeal(d.id, "open")}>모집 중으로</button>}
+            <button className="btn ghost sm" disabled={busy === d.id} onClick={() => moveDeal(d.id, "closed")}>마감(내리기)</button>
+          </div>
         </div>
       ))}
     </>
@@ -403,6 +482,9 @@ export function Admin() {
 
       <div className="sec-title">📮 소개 대기 (매칭 신청 · 인수 관심 · 브리프)</div>
       <IntroQueue />
+
+      <div className="sec-title">📡 게시 중 (상태 전이 — 성사·진행·마감)</div>
+      <LivePanel />
 
       <div className="sec-title">라이프사이클 전이</div>
       <p className="lead" style={{ maxWidth: 620, marginTop: -6 }}>

@@ -24,6 +24,11 @@ const SETTLE: Record<PartnerType["settlement"], { label: string; kind: "good" | 
 };
 const EFFORT: Record<PartnerType["effort"], string> = { light: "가볍게 시작", mid: "보통", heavy: "깊은 연동" };
 
+/* 연락처·식별정보 패턴(0005 서버 check와 동일) — 폼에서 선차단해 친절히 안내 */
+const CONTACT_RE = /(@|https?:\/\/|www\.|010[- ]?\d{3,4}[- ]?\d{4}|카카오톡|카톡|kakao|텔레그램|telegram)/i;
+const hasContact = (...texts: (string | undefined)[]) => texts.some((t) => t && CONTACT_RE.test(t));
+const CONTACT_MSG = "연락처·이메일·URL·메신저 ID는 적을 수 없어요 — 소개는 세모플이 비공개로 진행합니다.";
+
 const SIZE_BANDS = ["월 방문 ~1만", "월 방문 1~5만", "월 방문 5~20만", "월 방문 20만+", "밝히지 않음"];
 const REVENUE_BANDS = ["연매출 1억 미만", "연매출 1~5억", "연매출 5~20억", "연매출 20억+"];
 const DEAL_MODES = ["지분 전량 매각", "지분 일부+운영 승계", "자산 양수도(선별 인수)"];
@@ -88,6 +93,7 @@ function PartnerPostForm({ typeId, onDone }: { typeId: string; onDone: () => voi
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (hasContact(title, give, get, detail)) { setErr(CONTACT_MSG); return; }
     setErr(""); setBusy(true);
     try {
       await createPartnerPost({
@@ -161,6 +167,7 @@ function ApplyForm({ postId, onDone }: { postId: string; onDone: () => void }) {
   const [err, setErr] = useState("");
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (hasContact(name, pitch)) { setErr(CONTACT_MSG); return; }
     setErr(""); setBusy(true);
     try {
       await applyToPartnerPost(postId, { platform_name: name.trim(), category_id: cat || undefined, size_text: size, pitch: pitch.trim() });
@@ -411,6 +418,7 @@ function SellForm({ onDone }: { onDone: () => void }) {
   const [err, setErr] = useState("");
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (hasContact(summary, highlights, reason)) { setErr(CONTACT_MSG); return; }
     setErr(""); setBusy(true);
     try {
       await createDealSubmission({
@@ -473,6 +481,7 @@ function BriefForm({ onDone }: { onDone: () => void }) {
   const [err, setErr] = useState("");
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (hasContact(note)) { setErr(CONTACT_MSG); return; }
     setErr(""); setBusy(true);
     try {
       await createBuyerBrief({ categories: cat ? [cat] : [], budget_band: budget, mode, entity, note: note.trim() });
@@ -513,6 +522,7 @@ function InterestForm({ dealId, onDone }: { dealId: string; onDone: () => void }
   const [err, setErr] = useState("");
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    if (hasContact(intro)) { setErr(CONTACT_MSG); return; }
     setErr(""); setBusy(true);
     try { await registerDealInterest(dealId, intro.trim()); onDone(); }
     catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
