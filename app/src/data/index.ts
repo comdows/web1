@@ -4,7 +4,12 @@ import partnerTypesData from "./partnerTypes.json";
 
 export interface Group { id: string; name: string; icon: string; desc: string }
 export interface Category { id: string; group: string; name: string; icon: string; desc: string }
-export interface Platform { id: string; name: string; category: string; region: string; url: string; blurb: string; new?: boolean }
+export interface Platform {
+  id: string; name: string; category: string; region: string; url: string; blurb: string; new?: boolean;
+  /* 리치 필드(DB nullable — 검수에서 점진 축적, 정적 데이터엔 없음) */
+  verified?: boolean; fee_band?: "low" | "mid" | "high" | null; fee_text?: string | null;
+  settle_text?: string | null; enter_text?: string | null; strength?: string | null;
+}
 export interface Partnership { id: string; type: string; from: string; want: string[]; title: string; detail: string; give: string; get: string; size: string; posted: string; status: string; verified?: boolean; demo?: boolean }
 export interface Deal { id: string; category: string; region: string; revenue: string; mode: string; summary: string; posted: string; status: string; demo?: boolean }
 export interface Listings { partnerTypes: string[]; partnerships: Partnership[]; deals: Deal[] }

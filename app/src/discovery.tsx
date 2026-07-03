@@ -9,6 +9,10 @@ import { sortByRelevance } from "./lib/search";
 import { useFavs, useCompare, Recent } from "./lib/store";
 import { useNav } from "./nav";
 
+const FEE_LABEL: Record<string, { l: string; k: "good" | "soon" | "muted" }> = {
+  low: { l: "낮음", k: "good" }, mid: { l: "중간", k: "soon" }, high: { l: "높음", k: "muted" },
+};
+
 /* ─────────────── Platform Detail ─────────────── */
 export function PlatformDetail({ id }: { id?: string }) {
   const go = useNav();
@@ -50,7 +54,7 @@ export function PlatformDetail({ id }: { id?: string }) {
       <div className="detail-hero">
         <Avatar name={p.name} url={p.url} size="lg" />
         <div style={{ flex: 1, minWidth: 0 }}>
-          <h1>{p.name} {p.new && <Badge kind="new">NEW</Badge>}</h1>
+          <h1>{p.name} {p.verified && <Badge kind="verify">검증</Badge>}{p.new && <Badge kind="new">NEW</Badge>}</h1>
           <div className="cat">{cat?.icon} <span className="linklike" onClick={() => go("search", { q: cat?.name ?? "" })}>{cat?.name}</span> · {p.region}</div>
           <div className="detail-cta">
             <a className="btn primary" href={p.url} target="_blank" rel="noopener noreferrer" onClick={() => { Recent.push(p.id); trackEvent("outbound", p.id); }}>공식 사이트 방문 ↗</a>
@@ -65,6 +69,14 @@ export function PlatformDetail({ id }: { id?: string }) {
         <div className="fact"><div className="k">지역</div><div className="v">{p.region}</div></div>
         <div className="fact"><div className="k">신규 여부</div><div className="v">{p.new ? "🆕 최근 등록" : "기존 등록"}</div></div>
         <div className="fact"><div className="k">공식 주소</div><div className="v mono" style={{ fontSize: 12, wordBreak: "break-all" }}>{p.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</div></div>
+        {p.fee_band && (
+          <div className="fact"><div className="k">수수료대</div><div className="v">
+            <Badge kind={FEE_LABEL[p.fee_band].k}>{FEE_LABEL[p.fee_band].l}</Badge>{p.fee_text ? ` ${p.fee_text}` : ""}
+          </div></div>
+        )}
+        {p.settle_text && <div className="fact"><div className="k">정산 주기</div><div className="v">{p.settle_text}</div></div>}
+        {p.enter_text && <div className="fact"><div className="k">입점 조건</div><div className="v">{p.enter_text}</div></div>}
+        {p.strength && <div className="fact"><div className="k">강점</div><div className="v">{p.strength}</div></div>}
       </div>
 
       <div className="panel-note banner">
@@ -214,8 +226,13 @@ export function Compare() {
     { k: "지역", render: (p) => p.region },
     { k: "신규", render: (p) => (p.new ? "🆕" : "—") },
     { k: "설명", render: (p) => <span style={{ fontSize: 13 }}>{p.blurb}</span> },
-    { k: "공식", render: (p) => <a className="ext" href={p.url} target="_blank" rel="noopener noreferrer">방문 ↗</a> },
   ];
+  // 리치 필드: 비교 대상 중 하나라도 값이 있으면 행 생성(전원 null 행은 숨김)
+  if (items.some((p) => p.fee_band)) rows.push({ k: "수수료대", render: (p) => p.fee_band ? `${FEE_LABEL[p.fee_band].l}${p.fee_text ? ` (${p.fee_text})` : ""}` : "—" });
+  if (items.some((p) => p.settle_text)) rows.push({ k: "정산 주기", render: (p) => p.settle_text ?? "—" });
+  if (items.some((p) => p.enter_text)) rows.push({ k: "입점 조건", render: (p) => p.enter_text ?? "—" });
+  if (items.some((p) => p.strength)) rows.push({ k: "강점", render: (p) => p.strength ?? "—" });
+  rows.push({ k: "공식", render: (p) => <a className="ext" href={p.url} target="_blank" rel="noopener noreferrer">방문 ↗</a> });
   return (
     <div className="page container">
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

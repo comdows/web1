@@ -42,11 +42,16 @@ async function rest<T>(pathAndQuery: string, init?: RequestInit): Promise<T> {
 interface DbPlatform {
   id: string; name: string; category_id: string; region: "domestic" | "overseas";
   url: string; blurb: string; is_new: boolean;
+  verified?: boolean; fee_band?: "low" | "mid" | "high" | null; fee_text?: string | null;
+  settle_text?: string | null; enter_text?: string | null; strength?: string | null;
 }
+const PLATFORM_COLS = "id,name,category_id,region,url,blurb,is_new,verified,fee_band,fee_text,settle_text,enter_text,strength";
 const fromDb = (r: DbPlatform): Platform => ({
   id: r.id, name: r.name, category: r.category_id,
   region: r.region === "overseas" ? "해외" : "국내",
   url: r.url, blurb: r.blurb, new: r.is_new || undefined,
+  verified: r.verified || undefined, fee_band: r.fee_band ?? undefined, fee_text: r.fee_text ?? undefined,
+  settle_text: r.settle_text ?? undefined, enter_text: r.enter_text ?? undefined, strength: r.strength ?? undefined,
 });
 
 export interface SearchParams {
@@ -75,7 +80,7 @@ function searchLocal(p: SearchParams): Platform[] {
 export async function searchPlatforms(p: SearchParams): Promise<Platform[]> {
   if (!remoteEnabled) return searchLocal(p);
   try {
-    const qs = new URLSearchParams({ select: "id,name,category_id,region,url,blurb,is_new" });
+    const qs = new URLSearchParams({ select: PLATFORM_COLS });
     if (p.categories?.length) qs.set("category_id", `in.(${p.categories.join(",")})`);
     if (p.region && p.region !== "all") qs.set("region", `eq.${p.region === "해외" ? "overseas" : "domestic"}`);
     if (p.onlyNew) qs.set("is_new", "is.true");
@@ -95,10 +100,10 @@ export async function getPlatform(id: string): Promise<(Platform & { similar: Pl
   };
   if (!remoteEnabled) return local();
   try {
-    const rows = await rest<DbPlatform[]>(`platforms?id=eq.${encodeURIComponent(id)}&select=id,name,category_id,region,url,blurb,is_new`);
+    const rows = await rest<DbPlatform[]>(`platforms?id=eq.${encodeURIComponent(id)}&select=${PLATFORM_COLS}`);
     if (!rows[0]) return null;
     const p = fromDb(rows[0]);
-    const sim = await rest<DbPlatform[]>(`platforms?category_id=eq.${encodeURIComponent(p.category)}&id=neq.${encodeURIComponent(id)}&limit=6&select=id,name,category_id,region,url,blurb,is_new`);
+    const sim = await rest<DbPlatform[]>(`platforms?category_id=eq.${encodeURIComponent(p.category)}&id=neq.${encodeURIComponent(id)}&limit=6&select=${PLATFORM_COLS}`);
     return { ...p, similar: sim.map(fromDb) };
   } catch { return local(); }
 }
@@ -111,7 +116,7 @@ export async function fetchAllPlatforms(): Promise<Platform[]> {
   const out: Platform[] = [];
   for (let offset = 0; ; offset += pageSize) {
     const rows = await rest<DbPlatform[]>(
-      `platforms?select=id,name,category_id,region,url,blurb,is_new&order=name.asc&limit=${pageSize}&offset=${offset}`
+      `platforms?select=${PLATFORM_COLS}&order=name.asc&limit=${pageSize}&offset=${offset}`
     );
     out.push(...rows.map(fromDb));
     if (rows.length < pageSize) break;
@@ -197,6 +202,7 @@ export async function reviewSubmission(id: string, patch: {
 }
 export async function createPlatform(row: {
   id: string; name: string; category_id: string; region: "domestic" | "overseas"; url: string; blurb: string;
+  fee_band?: "low" | "mid" | "high" | null; fee_text?: string | null;
 }): Promise<void> {
   await rest("platforms", {
     method: "POST", headers: { Prefer: "return=minimal" },

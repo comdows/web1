@@ -42,6 +42,8 @@ function dupCandidates(name: string, url: string): string[] {
 function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
   const [id, setId] = useState(() => suggestId(s.payload.url));
   const [cat, setCat] = useState(s.payload.category_id || "");
+  const [feeBand, setFeeBand] = useState("");
+  const [feeText, setFeeText] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -58,6 +60,7 @@ function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
     await createPlatform({
       id: id.trim(), name: s.payload.name, category_id: cat,
       region: s.payload.region, url: s.payload.url, blurb: s.payload.desc || "",
+      fee_band: (feeBand || null) as "low" | "mid" | "high" | null, fee_text: feeText.trim() || null,
     });
     await reviewSubmission(s.id, { status: "approved", approved_platform_id: id.trim() });
   });
@@ -84,6 +87,12 @@ function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
             ))}
           </select>
         </label>
+        <label>수수료대
+          <select value={feeBand} onChange={(e) => setFeeBand(e.target.value)}>
+            <option value="">모름</option><option value="low">낮음</option><option value="mid">중간</option><option value="high">높음</option>
+          </select>
+        </label>
+        <label>수수료 표기 <input value={feeText} onChange={(e) => setFeeText(e.target.value)} placeholder="예: ~4–10.8%" /></label>
         <label>반려/보류 사유 <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="반려·보류 시" /></label>
       </div>
       {err && <div className="err">{err}</div>}
