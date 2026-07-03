@@ -5,6 +5,8 @@ import { groups, categoriesByGroup } from "./data";
 import { Badge } from "./components";
 import { useNav } from "./nav";
 import { consumeHashNotice, resendConfirmation, signIn, signOut, signUp, useSession, refreshProfile } from "./lib/auth";
+import { TERMS_VERSION } from "./legal";
+import { FLAGS } from "./config";
 import { createSubmission, listMySubmissions, remoteEnabled, updateDisplayName } from "./lib/api";
 import type { Submission } from "./lib/api";
 
@@ -46,7 +48,7 @@ export function AuthPanel({ compact = false }: { compact?: boolean }) {
       if (mode === "in") {
         await signIn(email.trim(), pw);
       } else {
-        const r = await signUp(email.trim(), pw);
+        const r = await signUp(email.trim(), pw, TERMS_VERSION);
         if (r.needsConfirm) { setOk("확인 메일을 보냈어요. 메일의 링크를 누른 뒤 여기서 로그인하세요."); setNeedsConfirm(true); }
       }
     } catch (ex) {
@@ -91,9 +93,26 @@ export function AuthPanel({ compact = false }: { compact?: boolean }) {
             확인 메일 재발송
           </button>
         )}
-        <div className="frm-note">가입하면 즐겨찾기가 계정에 저장되고, 플랫폼 제보를 남길 수 있어요.</div>
+        {mode === "up" ? (
+          <div className="frm-note">
+            <b>가입하기</b>를 누르면 세모플 <ConsentLinks />에 동의하는 것으로 봅니다.
+            가입하면 즐겨찾기가 계정에 저장되고, 플랫폼 제보·제휴 제안을 남길 수 있어요.
+          </div>
+        ) : (
+          <div className="frm-note">가입하면 즐겨찾기가 계정에 저장되고, 플랫폼 제보를 남길 수 있어요.</div>
+        )}
       </form>
     </div>
+  );
+}
+
+function ConsentLinks() {
+  const go = useNav();
+  return (
+    <>
+      <button type="button" className="linklike" style={{ textDecoration: "underline" }} onClick={() => go("terms")}>이용약관</button>과{" "}
+      <button type="button" className="linklike" style={{ textDecoration: "underline" }} onClick={() => go("privacy")}>개인정보처리방침</button>
+    </>
   );
 }
 
@@ -172,6 +191,15 @@ export function Account() {
           <button className="btn ghost sm" onClick={() => signOut()}>로그아웃</button>
           {checked && !isAdmin && <span className="frm-note" style={{ alignSelf: "center" }}>아직 일반 회원이에요. Supabase에서 admin 지정 후 눌러보세요.</span>}
         </div>
+        {FLAGS.contactEmail && (
+          <div className="frm-note" style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line-soft)" }}>
+            회원 탈퇴(개인정보 전체 삭제)를 원하시면{" "}
+            <a href={`mailto:${FLAGS.contactEmail}?subject=${encodeURIComponent("[세모플] 회원 탈퇴 요청")}&body=${encodeURIComponent(`가입 이메일: ${session.user.email ?? ""}\n탈퇴 및 개인정보 삭제를 요청합니다.`)}`}>
+              {FLAGS.contactEmail}
+            </a>
+            로 요청해 주세요 — 지체 없이 처리합니다.
+          </div>
+        )}
       </div>
 
       <div className="sec-title" style={{ marginTop: 28 }}>내 제보</div>

@@ -12,6 +12,7 @@ import type { ViewName } from "./nav";
 import { PlatformDetail, SearchResults, Compare, Onboarding } from "./discovery";
 import { Account, Submit } from "./account";
 import { Admin } from "./admin";
+import { Terms, Privacy } from "./legal";
 import { useSession } from "./lib/auth";
 import { remoteEnabled, trackEvent } from "./lib/api";
 
@@ -149,6 +150,8 @@ export default function App() {
         : view === "account" ? <Account />
         : view === "submit" ? <Submit />
         : view === "admin" ? <Admin />
+        : view === "terms" ? <Terms />
+        : view === "privacy" ? <Privacy />
         : (
         <main className="container">
           <section className="hero">

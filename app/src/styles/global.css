@@ -264,3 +264,19 @@ button{font-family:inherit}
 /* 키보드 포커스 링 통일(감사 P3) — 마우스 클릭엔 안 뜨고 Tab 이동 때만 */
 :focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:3px}
 .admin-form input:focus-visible,.admin-form select:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+
+/* ── 푸터 3열 + 법적 페이지 (감사2 배치1) ─────────────────── */
+.foot-grid{display:grid;grid-template-columns:1.2fr 0.7fr 1.3fr;gap:28px;margin-bottom:18px}
+@media(max-width:700px){.foot-grid{grid-template-columns:1fr;gap:18px}}
+.foot-h{font-family:var(--font-mono);font-size:11px;letter-spacing:var(--tracking-wide);text-transform:uppercase;
+  color:var(--faint);margin-bottom:8px}
+.foot-desc{font-size:12.5px;color:var(--faint);line-height:1.6;margin:6px 0 8px}
+.foot-link{display:block;background:none;border:none;padding:2px 0;font-size:12.5px;color:var(--muted);cursor:pointer;text-align:left}
+.foot-link:hover{color:var(--text)}
+a.foot-link{display:inline-block}
+.foot-cap{font-size:10.5px;letter-spacing:.12em;color:var(--faint);border-top:1px solid var(--line-soft);padding-top:12px}
+.legal section{max-width:720px;margin-bottom:22px}
+.legal h3{font-size:15px;margin:0 0 8px;color:var(--text)}
+.legal p,.legal li{font-size:13.5px;color:var(--muted);line-height:1.7}
+.legal ul{margin:6px 0;padding-left:20px}
+.legal a{color:var(--brand-soft);text-decoration:underline}
