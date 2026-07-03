@@ -101,7 +101,7 @@ export function PlatformDetail({ id }: { id?: string }) {
     if (!id || local || !remoteEnabled) return;
     let alive = true;
     setFetching(true);
-    getPlatform(id).then((r) => { if (alive) setRemote(r); }).finally(() => { if (alive) setFetching(false); });
+    getPlatform(id).then((r) => { if (alive) setRemote(r); }).catch(() => { /* 폴백은 local */ }).finally(() => { if (alive) setFetching(false); });
     return () => { alive = false; };
   }, [id, local]);
 
@@ -199,8 +199,10 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
   const go = useNav();
   // URL에서 필터 복원(새로고침·공유·뒤로가기에 필터 유지)
   const sp0 = new URLSearchParams(location.search);
+  const pathCat = location.pathname.match(/\/c\/([a-z0-9_-]+)\/?$/)?.[1]; // 분야 허브(/c/) 진입
   const [q, setQ] = useState(initialQ || sp0.get("q") || "");
-  const [cats, setCats] = useState<Set<string>>(() => new Set((sp0.get("cats") ?? "").split(",").filter(Boolean)));
+  const [cats, setCats] = useState<Set<string>>(() => new Set([...(sp0.get("cats") ?? "").split(",").filter(Boolean), ...(pathCat ? [pathCat] : [])]));
+  const [showFilters, setShowFilters] = useState(false); // 모바일: 필터 접이식(결과 먼저)
   const [region, setRegion] = useState<string>(sp0.get("region") ?? "all");
   const [onlyNew, setOnlyNew] = useState(sp0.get("new") === "1");
   const [sort, setSort] = useState<Sort>((sp0.get("sort") as Sort) || "relevance");
@@ -258,7 +260,10 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
         <span className="ico">⌕</span>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="플랫폼·분야 검색" autoFocus />
       </div>
-      <div className="search-layout">
+      <button className="btn ghost sm filters-toggle" onClick={() => setShowFilters((v) => !v)}>
+        {showFilters ? "필터 접기 ▴" : `필터 열기${activeChips.length ? ` (${activeChips.length}개 적용 중)` : ""} ▾`}
+      </button>
+      <div className={`search-layout ${showFilters ? "filters-open" : ""}`}>
         <aside className="facets">
           <div className="facet-group">
             <div className="facet-title">지역</div>

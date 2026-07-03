@@ -85,7 +85,7 @@ export function Footer() {
       <div className="foot-grid">
         <div>
           <span className="logo" style={{ marginBottom: 8 }}><LogoMark size={20} /><span className="word" style={{ fontSize: 16 }}>세모<b>플</b></span></span>
-          <p className="foot-desc">세상의 모든 플랫폼 — 발견하고, 제휴하고, 거래하는 사업자 채널 인프라.
+          <p className="foot-desc">세상의 모든 플랫폼 — 사업자를 위한 플랫폼·AI 도구 안내소. 발견하고, 제휴하고, 거래하세요.
             각 설명은 개략 소개이며 상세는 공식 사이트에서 확인하세요.</p>
         </div>
         <div>

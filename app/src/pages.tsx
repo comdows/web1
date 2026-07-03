@@ -274,7 +274,7 @@ export function Partners() {
     <div className="page container">
       <h1>🤝 제휴 매칭 <Badge kind="good">오픈 · 무료 베타</Badge></h1>
       <p className="lead">
-        플랫폼끼리 배너를 맞바꾸고, 회원을 서로 보내고, 레퍼럴 수수료로 함께 크는 곳.
+        플랫폼끼리 광고 자리를 맞바꾸고, 회원을 서로 보내고, 소개 보상(레퍼럴)으로 함께 크는 곳.
         세모플은 <b>연결·소개만</b> 하고 정산·계약은 두 플랫폼이 직접 합니다(자금 미보유 원칙).
       </p>
 
@@ -544,7 +544,7 @@ function SellForm({ onDone }: { onDone: () => void }) {
           </label>
           <label>익명 요약 * <span style={{ fontWeight: 400, color: "var(--faint)" }}>(플랫폼명·URL 유추 표현 금지 — 접수 시 자동 점검, 검수에서 재작성될 수 있음)</span>
             <textarea required rows={3} value={summary} onChange={(e) => { setSummary(e.target.value); setWarnAck(false); }} maxLength={300}
-              placeholder="예: 운영 6년차 수공예 버티컬. 작가 풀과 재방문 회원층 보유." />
+              placeholder="예: 운영 6년차 수공예 전문 쇼핑몰. 작가 풀과 재방문 회원층 보유." />
           </label>
           <label>하이라이트 <span style={{ fontWeight: 400, color: "var(--faint)" }}>(범주·밴드 표현만, 쉼표 구분)</span>
             <input value={highlights} onChange={(e) => { setHighlights(e.target.value); setWarnAck(false); }} maxLength={150} placeholder="예: 작가 풀 보유, 재방문율 상위" />
