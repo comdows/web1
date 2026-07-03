@@ -12,6 +12,8 @@ import {
   registerDealInterest, remoteEnabled,
 } from "./lib/api";
 import type { PartnerPost, PublicDeal } from "./lib/api";
+import { checkAnonymity, hasBlocking, hasContact } from "./lib/anonymity";
+import type { AnonFinding } from "./lib/anonymity";
 
 const ISSUE = (title: string, body: string, labels?: string) =>
   `https://github.com/comdows/web1/issues/new?title=${encodeURIComponent(title)}` +
@@ -25,9 +27,6 @@ const SETTLE: Record<PartnerType["settlement"], { label: string; kind: "good" | 
 };
 const EFFORT: Record<PartnerType["effort"], string> = { light: "가볍게 시작", mid: "보통", heavy: "깊은 연동" };
 
-/* 연락처·식별정보 패턴(0005 서버 check와 동일) — 폼에서 선차단해 친절히 안내 */
-const CONTACT_RE = /(@|https?:\/\/|www\.|010[- ]?\d{3,4}[- ]?\d{4}|카카오톡|카톡|kakao|텔레그램|telegram)/i;
-const hasContact = (...texts: (string | undefined)[]) => texts.some((t) => t && CONTACT_RE.test(t));
 const CONTACT_MSG = "연락처·이메일·URL·메신저 ID는 적을 수 없어요 — 소개는 세모플이 비공개로 진행합니다.";
 
 const SIZE_BANDS = ["월 방문 ~1만", "월 방문 1~5만", "월 방문 5~20만", "월 방문 20만+", "밝히지 않음"];
@@ -465,12 +464,17 @@ function SellForm({ onDone }: { onDone: () => void }) {
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [findings, setFindings] = useState<AnonFinding[]>([]); // 익명성 자동 점검 결과
+  const [warnAck, setWarnAck] = useState(false);               // 경고 확인 후 2단 제출
   const toggleAsset = (a: string) => setAssets((s) => { const n = new Set(s); if (n.has(a)) n.delete(a); else n.add(a); return n; });
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    // verify(비공개 검증 자료)는 URL·이메일 기입이 목적이라 연락처 검사에서 제외 — 게시·공유되지 않음
-    if (hasContact(summary, highlights, reasonNote)) { setErr(CONTACT_MSG); return; }
+    // verify(비공개 검증 자료)는 URL·이메일 기입이 목적이라 익명성 검사에서 제외 — 게시·공유되지 않음
+    const fs = checkAnonymity(summary, highlights, reasonNote);
+    setFindings(fs);
+    if (hasBlocking(fs)) { setErr(CONTACT_MSG); return; }
     if (assets.size === 0) { setErr("이전할 자산을 1개 이상 선택해 주세요 — 매수자가 가장 먼저 확인하는 정보예요."); return; }
+    if (fs.length > 0 && !warnAck) { setWarnAck(true); setErr(""); return; } // 경고 노출 → 재확인 제출
     setErr(""); setBusy(true);
     try {
       await createDealSubmission({
@@ -530,19 +534,19 @@ function SellForm({ onDone }: { onDone: () => void }) {
           <label>운영 인수인계
             <select value={handover} onChange={(e) => setHandover(e.target.value)}>{HANDOVER_OPTS.map((h) => <option key={h} value={h}>{h}</option>)}</select>
           </label>
-          <label>익명 요약 * <span style={{ fontWeight: 400, color: "var(--faint)" }}>(플랫폼명·URL 유추 표현 금지 — 검수에서 재작성될 수 있음)</span>
-            <textarea required rows={3} value={summary} onChange={(e) => setSummary(e.target.value)} maxLength={300}
+          <label>익명 요약 * <span style={{ fontWeight: 400, color: "var(--faint)" }}>(플랫폼명·URL 유추 표현 금지 — 접수 시 자동 점검, 검수에서 재작성될 수 있음)</span>
+            <textarea required rows={3} value={summary} onChange={(e) => { setSummary(e.target.value); setWarnAck(false); }} maxLength={300}
               placeholder="예: 운영 6년차 수공예 버티컬. 작가 풀과 재방문 회원층 보유." />
           </label>
           <label>하이라이트 <span style={{ fontWeight: 400, color: "var(--faint)" }}>(범주·밴드 표현만, 쉼표 구분)</span>
-            <input value={highlights} onChange={(e) => setHighlights(e.target.value)} maxLength={150} placeholder="예: 작가 풀 보유, 재방문율 상위" />
+            <input value={highlights} onChange={(e) => { setHighlights(e.target.value); setWarnAck(false); }} maxLength={150} placeholder="예: 작가 풀 보유, 재방문율 상위" />
           </label>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <label style={{ minWidth: 160 }}>매각 사유 *
               <select value={reasonPreset} onChange={(e) => setReasonPreset(e.target.value)}>{SALE_REASONS.map((r) => <option key={r} value={r}>{r}</option>)}</select>
             </label>
             <label style={{ flex: 1, minWidth: 180 }}>사유 보충(선택)
-              <input value={reasonNote} onChange={(e) => setReasonNote(e.target.value)} maxLength={80} placeholder="한 줄 보충 — 신뢰 재료가 됩니다" />
+              <input value={reasonNote} onChange={(e) => { setReasonNote(e.target.value); setWarnAck(false); }} maxLength={80} placeholder="한 줄 보충 — 신뢰 재료가 됩니다" />
             </label>
           </div>
           <label>검증 자료(선택 · 비공개) <span style={{ fontWeight: 400, color: "var(--faint)" }}>— 게시·공유되지 않고 운영자 확인에만 사용</span>
@@ -557,8 +561,18 @@ function SellForm({ onDone }: { onDone: () => void }) {
             <input type="checkbox" required checked={consent} onChange={() => setConsent((v) => !v)} />
             인수 관심자와 쌍방 확인 시 상대에게 <b>내 계정 이메일이 공유</b>되는 데 동의합니다. *
           </label>
+          {findings.length > 0 && !hasBlocking(findings) && warnAck && (
+            <div className="banner">
+              🕶️ <b>익명성 자동 점검</b> — 아래 표현이 신원을 유추하게 할 수 있어요. 수정을 권장하며, 그대로 접수하면 검수에서 재작성될 수 있어요.
+              <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 13 }}>
+                {findings.map((f) => <li key={f.type + f.snippet}><b>"{f.snippet}"</b> — {f.hint}</li>)}
+              </ul>
+            </div>
+          )}
           {err && <div className="err">{err}</div>}
-          <button className="btn primary" disabled={busy} type="submit">{busy ? "접수 중…" : "매각 접수(비공개)"}</button>
+          <button className="btn primary" disabled={busy} type="submit">
+            {busy ? "접수 중…" : warnAck && findings.length > 0 ? "확인했어요 — 그대로 접수" : "매각 접수(비공개)"}
+          </button>
           <div className="frm-note">검수는 보통 <b>3영업일 이내</b>예요(1인 운영 · 순차 검수). 진행 상태는 계정 → 내 활동에서 확인할 수 있어요.</div>
         </>
       )}
