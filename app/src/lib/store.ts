@@ -44,6 +44,8 @@ export const Favs = {
     lsSet(FAV_KEY, JSON.stringify(next));
     emit();
   },
+  /* 계정 경계에서 로컬 즐겨찾기 비우기(로그아웃·계정 전환 시 이전 사용자 데이터 제거) */
+  clear() { lsSet(FAV_KEY, JSON.stringify([])); emit(); },
 };
 
 export const Recent = {

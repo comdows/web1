@@ -4,7 +4,7 @@ import { categories, groups, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import { Avatar, Badge, PlatformCard } from "./components";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
-import { getPlatform, remoteEnabled } from "./lib/api";
+import { getPlatform, remoteEnabled, trackEvent } from "./lib/api";
 import { useFavs, useCompare, Recent } from "./lib/store";
 import { useNav } from "./nav";
 
@@ -48,7 +48,7 @@ export function PlatformDetail({ id }: { id?: string }) {
           <h1>{p.name} {p.new && <Badge kind="new">NEW</Badge>}</h1>
           <div className="cat">{cat?.icon} <span className="linklike" onClick={() => go("search", { q: cat?.name ?? "" })}>{cat?.name}</span> · {p.region}</div>
           <div className="detail-cta">
-            <a className="btn primary" href={p.url} target="_blank" rel="noopener noreferrer" onClick={() => Recent.push(p.id)}>공식 사이트 방문 ↗</a>
+            <a className="btn primary" href={p.url} target="_blank" rel="noopener noreferrer" onClick={() => { Recent.push(p.id); trackEvent("outbound", p.id); }}>공식 사이트 방문 ↗</a>
             <button className={`btn ghost ${on ? "on" : ""}`} onClick={() => favs.toggle(p.id)}>{on ? "★ 저장됨" : "☆ 즐겨찾기"}</button>
             <button className={`btn ghost ${inCmp ? "on" : ""}`} disabled={!inCmp && cmp.full} onClick={() => cmp.toggle(p.id)}>{inCmp ? "✓ 비교 담김" : "+ 비교 담기"}</button>
           </div>
@@ -89,6 +89,14 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
   const stats = usePlatformStats();
 
   const toggleCat = (id: string) => setCats((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+
+  // 검색어가 멈추면 이벤트 기록(관리자 '인기 검색어' 근거) — 원격 모드에서만, 실패 무시
+  useEffect(() => {
+    const query = q.trim();
+    if (query.length < 2) return;
+    const id = setTimeout(() => trackEvent("search", undefined, query), 600);
+    return () => clearTimeout(id);
+  }, [q]);
 
   const results = useMemo(() => {
     const query = q.trim().toLowerCase();

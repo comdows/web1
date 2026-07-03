@@ -12,7 +12,7 @@ import { PlatformDetail, SearchResults, Compare, Onboarding } from "./discovery"
 import { Account, Submit } from "./account";
 import { Admin } from "./admin";
 import { useSession } from "./lib/auth";
-import { remoteEnabled } from "./lib/api";
+import { remoteEnabled, trackEvent } from "./lib/api";
 
 type Sort = "default" | "new" | "name";
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
@@ -147,7 +147,7 @@ export default function App() {
             <div className="search">
               <span className="ico">⌕</span>
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="플랫폼·분야 검색 (예: 쿠팡, 크라우드펀딩, 수출)"
-                onKeyDown={(e) => { if (e.key === "Enter" && q.trim()) go("search", { q }); }} />
+                onKeyDown={(e) => { if (e.key === "Enter" && q.trim()) { trackEvent("search", undefined, q.trim()); go("search", { q }); } }} />
             </div>
             <div className="toolbar">
               <select className="select" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
