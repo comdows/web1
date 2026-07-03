@@ -26,3 +26,25 @@ export function sortByRelevance(list: Platform[], query: string): Platform[] {
     (a, b) => scorePlatform(query, b) - scorePlatform(query, a) || a.name.localeCompare(b.name, "ko")
   );
 }
+
+/* 관심 조건(그룹/분야) 기반 추천 — 분야별 라운드로빈으로 특정 분야 독식 방지.
+ * 온보딩 step3와 홈 "내 관심 분야" 스트립이 공유한다. */
+export function pickRecommended(
+  platforms: Platform[], groupIds: string[], catIds: string[], newPref: boolean, n = 12
+): Platform[] {
+  let list = platforms.filter((p) =>
+    catIds.length ? catIds.includes(p.category)
+    : groupIds.length ? groupIds.includes(categoryById(p.category)?.group ?? "")
+    : false);
+  if (newPref) list = [...list].sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0));
+  const byCat = new Map<string, Platform[]>();
+  for (const p of list) { const arr = byCat.get(p.category) ?? []; arr.push(p); byCat.set(p.category, arr); }
+  const out: Platform[] = [];
+  const buckets = [...byCat.values()];
+  for (let i = 0; out.length < n; i++) {
+    let added = false;
+    for (const b of buckets) { if (b[i]) { out.push(b[i]); added = true; if (out.length >= n) break; } }
+    if (!added) break;
+  }
+  return out;
+}

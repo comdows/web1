@@ -6,8 +6,8 @@ import { Avatar, Badge, PlatformCard } from "./components";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
 import { amOperatorOf, createOperatorClaim, getMyClaim, getPlatform, remoteEnabled, trackEvent } from "./lib/api";
 import type { OperatorClaim } from "./lib/api";
-import { sortByRelevance } from "./lib/search";
-import { useFavs, useCompare, Recent } from "./lib/store";
+import { pickRecommended, sortByRelevance } from "./lib/search";
+import { Favs, Interests, Recent, useCompare, useFavs } from "./lib/store";
 import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
 
@@ -105,9 +105,15 @@ export function PlatformDetail({ id }: { id?: string }) {
 
   const p = local ?? remote ?? undefined;
   useEffect(() => {
-    if (p) document.title = `${p.name} — 세모플`;
+    if (p) { document.title = `${p.name} — 세모플`; Recent.push(p.id); } // 열람 이력 기록(최근 본)
     return () => { document.title = "세모플 — 세상의 모든 플랫폼"; };
   }, [p]);
+  // 검색엔진(/p/ 프리렌더 경로)으로 들어온 첫 방문에만 사이트 소개 배너 1회 노출
+  const [seoCtx] = useState(() => {
+    if (!/\/p\/[a-z0-9-]+\/?$/.test(location.pathname)) return false;
+    try { if (sessionStorage.getItem("sm.seen.v1")) return false; sessionStorage.setItem("sm.seen.v1", "1"); } catch { /* noop */ }
+    return true;
+  });
   if (!p) {
     if (fetching || (!loaded && remoteEnabled)) return <div className="page container"><div className="empty">불러오는 중…</div></div>;
     return <div className="page container"><div className="empty">플랫폼을 찾을 수 없습니다. <button className="linklike" onClick={() => go("home")}>← 홈으로</button></div></div>;
@@ -118,6 +124,13 @@ export function PlatformDetail({ id }: { id?: string }) {
   const related = (local ? list : (remote?.similar ?? [])).filter((x) => x.category === p.category && x.id !== p.id).slice(0, 6);
   return (
     <div className="page container">
+      {seoCtx && (
+        <div className="banner" style={{ marginBottom: 12 }}>
+          △ <b>세모플</b> — 1,600여 개 플랫폼·AI 도구를 같은 기준으로 정리한 무료 디렉토리예요. 비교하고 ★로 저장해 보세요.{" "}
+          <button className="linklike" onClick={() => go("home")}>전체 디렉토리 →</button>{" "}
+          <button className="linklike" onClick={() => go("ai-finder")}>AI 도구 찾기 →</button>
+        </div>
+      )}
       <button className="linklike" onClick={() => history.length > 1 ? history.back() : go("home")}>← 뒤로</button>
       <div className="detail-hero">
         <Avatar name={p.name} url={p.url} size="lg" />
@@ -162,6 +175,17 @@ export function PlatformDetail({ id }: { id?: string }) {
           <div className="card-grid">{related.map((r) => <PlatformCard key={r.id} p={r} showCat={false} />)}</div>
         </>
       )}
+      {(() => {
+        const rec = Recent.list().filter((x) => x !== p.id).map((x) => index.get(x)).filter(Boolean).slice(0, 4) as Platform[];
+        if (rec.length < 2) return null;
+        return (
+          <>
+            <div className="sec-title">🕘 최근 본 플랫폼</div>
+            <div className="card-grid">{rec.map((r) => <PlatformCard key={r.id} p={r} />)}</div>
+            <p className="sub faint" style={{ fontSize: 12.5 }}>★로 저장하면 로그인 시 계정에 동기화돼요.</p>
+          </>
+        );
+      })()}
     </div>
   );
 }
@@ -169,6 +193,7 @@ export function PlatformDetail({ id }: { id?: string }) {
 /* ─────────────── Search Results ─────────────── */
 type Sort = "relevance" | "new" | "name";
 export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
+  const go = useNav();
   // URL에서 필터 복원(새로고침·공유·뒤로가기에 필터 유지)
   const sp0 = new URLSearchParams(location.search);
   const [q, setQ] = useState(initialQ || sp0.get("q") || "");
@@ -274,7 +299,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
             </div>
           )}
           {results.length === 0
-            ? <div className="empty">조건에 맞는 플랫폼이 없습니다. 필터를 줄여보세요.</div>
+            ? <div className="empty">조건에 맞는 플랫폼이 없습니다. 필터를 줄여보세요. 찾는 플랫폼이 없다면 <button className="linklike" onClick={() => go("submit")}>+ 제보</button>해 주시면 검수 후 등재해 드려요.</div>
             : <div className="card-grid">{results.slice(0, 300).map((p) => <PlatformCard key={p.id} p={p} />)}</div>}
           {results.length > 300 && <div className="result-meta">상위 300개 표시 · 검색어·필터로 좁혀보세요.</div>}
         </div>
@@ -333,29 +358,17 @@ export function Compare() {
 export function Onboarding() {
   const go = useNav();
   const platforms = usePlatforms();
+  const saved = Interests.get(); // 이전 온보딩 선택 복원(관심 프로필)
   const [step, setStep] = useState(0);
-  const [gsel, setGsel] = useState<Set<string>>(new Set());
-  const [csel, setCsel] = useState<Set<string>>(new Set());
-  const [newPref, setNewPref] = useState(false);
+  const [gsel, setGsel] = useState<Set<string>>(new Set(saved?.groups ?? []));
+  const [csel, setCsel] = useState<Set<string>>(new Set(saved?.cats ?? []));
+  const [newPref, setNewPref] = useState(saved?.newPref ?? false);
+  const [savedAll, setSavedAll] = useState(false);
 
   const availCats = useMemo(() => categories.filter((c) => gsel.size === 0 || gsel.has(c.group)), [gsel]);
   const toggle = (set: Set<string>, id: string, fn: (s: Set<string>) => void) => { const n = new Set(set); if (n.has(id)) n.delete(id); else n.add(id); fn(n); };
 
-  const recs = useMemo(() => {
-    let list = platforms.filter((p) => (csel.size ? csel.has(p.category) : gsel.size ? gsel.has(categoryById(p.category)?.group ?? "") : false));
-    if (newPref) list = [...list].sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0));
-    // 분야별 라운드로빈 — 특정 분야(가나다 상위)가 추천을 독식하지 않게
-    const byCat = new Map<string, typeof list>();
-    for (const p of list) { const arr = byCat.get(p.category) ?? []; arr.push(p); byCat.set(p.category, arr); }
-    const out: typeof list = [];
-    const buckets = [...byCat.values()];
-    for (let i = 0; out.length < 12; i++) {
-      let added = false;
-      for (const b of buckets) { if (b[i]) { out.push(b[i]); added = true; if (out.length >= 12) break; } }
-      if (!added) break;
-    }
-    return out;
-  }, [gsel, csel, newPref, platforms]);
+  const recs = useMemo(() => pickRecommended(platforms, [...gsel], [...csel], newPref, 12), [gsel, csel, newPref, platforms]);
 
   const steps = ["관심 영역", "세부 분야", "선호", "추천"];
   return (
@@ -390,7 +403,7 @@ export function Onboarding() {
         <div className="ob-panel">
           <h2>선호를 알려주세요</h2>
           <label className="facet-opt" style={{ fontSize: 15 }}><input type="checkbox" checked={newPref} onChange={() => setNewPref((v) => !v)} /> 🆕 새로 나온 플랫폼을 우선 추천</label>
-          <div className="ob-nav"><button className="btn ghost" onClick={() => setStep(1)}>← 이전</button><button className="btn primary" onClick={() => setStep(3)}>추천 보기 →</button></div>
+          <div className="ob-nav"><button className="btn ghost" onClick={() => setStep(1)}>← 이전</button><button className="btn primary" onClick={() => { Interests.set({ groups: [...gsel], cats: [...csel], newPref }); setStep(3); }}>추천 보기 →</button></div>
         </div>
       )}
 
@@ -400,7 +413,16 @@ export function Onboarding() {
           <p className="muted">고르신 조건에 맞는 플랫폼입니다. ★로 저장하거나 상세를 확인하세요.</p>
           {recs.length === 0 ? <div className="empty">조건에 맞는 플랫폼이 없습니다. <button className="linklike" onClick={() => setStep(0)}>다시 고르기</button></div>
             : <div className="card-grid">{recs.map((p) => <PlatformCard key={p.id} p={p} />)}</div>}
-          <div className="ob-nav"><button className="btn ghost" onClick={() => setStep(0)}>처음부터</button><button className="btn primary" onClick={() => go("home")}>전체 디렉토리 보기</button></div>
+          <div className="frm-note" style={{ marginTop: 8 }}>선택하신 관심 분야는 저장돼요 — 홈과 "새로 나온 것"에서 내 분야 위주로 볼 수 있습니다.</div>
+          <div className="ob-nav">
+            <button className="btn ghost" onClick={() => setStep(0)}>처음부터</button>
+            {recs.length > 0 && (
+              <button className="btn ghost" disabled={savedAll} onClick={() => { recs.forEach((p) => { if (!Favs.has(p.id)) Favs.toggle(p.id); }); setSavedAll(true); }}>
+                {savedAll ? "★ 저장됨" : "★ 추천 전체 저장"}
+              </button>
+            )}
+            <button className="btn primary" onClick={() => go("home")}>전체 디렉토리 보기</button>
+          </div>
         </div>
       )}
     </div>
