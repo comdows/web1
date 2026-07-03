@@ -467,6 +467,54 @@ export async function listBuyerBriefs(): Promise<BuyerBriefRow[]> {
   return rest<BuyerBriefRow[]>("buyer_briefs?active=is.true&select=id,categories,budget_band,mode,entity,note,active,created_at&order=created_at.desc&limit=100");
 }
 
+/* ── 운영자 클레임 (operator_claims / platform_operators — 0001 스키마 재사용) ──
+ * 플랫폼 운영자가 "우리 플랫폼"을 인증 신청 → 관리자 승인 시 운영자 지정 + 검증 배지 */
+export interface OperatorClaim {
+  id: string; platform_id: string; business_email: string | null;
+  status: "pending" | "code_sent" | "verified" | "rejected"; created_at: string;
+  platforms?: { name: string; url: string } | null;
+}
+export async function createOperatorClaim(platformId: string, businessEmail: string): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  await rest("operator_claims", {
+    method: "POST", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ platform_id: platformId, user_id: uid, method: "email", business_email: businessEmail }),
+  });
+}
+export async function getMyClaim(platformId: string): Promise<OperatorClaim | null> {
+  const uid = getSession()?.user.id;
+  if (!uid) return null;
+  const rows = await rest<OperatorClaim[]>(`operator_claims?platform_id=eq.${encodeURIComponent(platformId)}&user_id=eq.${uid}&select=id,platform_id,business_email,status,created_at&order=created_at.desc&limit=1`);
+  return rows[0] ?? null;
+}
+export async function amOperatorOf(platformId: string): Promise<boolean> {
+  const uid = getSession()?.user.id;
+  if (!uid) return false;
+  const rows = await rest<{ platform_id: string }[]>(`platform_operators?platform_id=eq.${encodeURIComponent(platformId)}&user_id=eq.${uid}&select=platform_id`);
+  return rows.length > 0;
+}
+/* 관리자: 대기 클레임 목록(플랫폼 이름·URL 조인) + 승인/반려 */
+export async function listOperatorClaims(): Promise<(OperatorClaim & { user_id: string })[]> {
+  return rest(`operator_claims?status=in.(pending,code_sent)&select=id,platform_id,user_id,business_email,status,created_at,platforms(name,url)&order=created_at.asc&limit=100`);
+}
+export async function reviewOperatorClaim(c: { id: string; platform_id: string; user_id: string }, approve: boolean): Promise<void> {
+  const uid = getSession()?.user.id;
+  await rest(`operator_claims?id=eq.${c.id}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ status: approve ? "verified" : "rejected", reviewed_by: uid, ...(approve ? { verified_at: new Date().toISOString() } : {}) }),
+  });
+  if (approve) {
+    await rest("platform_operators?on_conflict=platform_id,user_id", {
+      method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+      body: JSON.stringify({ platform_id: c.platform_id, user_id: c.user_id }),
+    });
+    await rest(`platforms?id=eq.${encodeURIComponent(c.platform_id)}`, {
+      method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ verified: true }),
+    });
+  }
+}
+
 /* 분석 이벤트(fire-and-forget) — 원격 모드에서만 기록. 실패 무시. */
 let sessionId = "";
 export function trackEvent(type: "impression" | "click" | "outbound" | "favorite" | "search", platformId?: string, query?: string): void {

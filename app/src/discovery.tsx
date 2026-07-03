@@ -4,14 +4,82 @@ import { categories, groups, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import { Avatar, Badge, PlatformCard } from "./components";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
-import { getPlatform, remoteEnabled, trackEvent } from "./lib/api";
+import { amOperatorOf, createOperatorClaim, getMyClaim, getPlatform, remoteEnabled, trackEvent } from "./lib/api";
+import type { OperatorClaim } from "./lib/api";
 import { sortByRelevance } from "./lib/search";
 import { useFavs, useCompare, Recent } from "./lib/store";
 import { useNav } from "./nav";
+import { useSession } from "./lib/auth";
 
 const FEE_LABEL: Record<string, { l: string; k: "good" | "soon" | "muted" }> = {
   low: { l: "낮음", k: "good" }, mid: { l: "중간", k: "soon" }, high: { l: "높음", k: "muted" },
 };
+
+/* ── 운영자 인증 신청(클레임) — 승인 시 운영자 지정 + 검증 배지, 제휴·거래소의 B2B 접점 ── */
+function OperatorClaimBox({ platformId, platformUrl }: { platformId: string; platformUrl: string }) {
+  const go = useNav();
+  const { session } = useSession();
+  const [claim, setClaim] = useState<OperatorClaim | null>(null);
+  const [isOp, setIsOp] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [email, setEmail] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    setClaim(null); setIsOp(false); setOpen(false); setDone(false);
+    if (!session || !remoteEnabled) return;
+    let alive = true;
+    getMyClaim(platformId).then((c) => { if (alive) setClaim(c); }).catch(() => { /* noop */ });
+    amOperatorOf(platformId).then((v) => { if (alive) setIsOp(v); }).catch(() => { /* noop */ });
+    return () => { alive = false; };
+  }, [platformId, session]);
+  if (!remoteEnabled) return null;
+
+  let host = "";
+  try { host = new URL(platformUrl).hostname.replace(/^www\./, ""); } catch { /* noop */ }
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErr(""); setBusy(true);
+    try { await createOperatorClaim(platformId, email.trim()); setDone(true); setOpen(false); }
+    catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(false); }
+  };
+
+  return (
+    <div className="banner" style={{ margin: "14px 0" }}>
+      {isOp ? (
+        <>✓ <b>운영자 인증 완료</b> — 이 플랫폼에 검증 배지가 표시됩니다. 정보 수정은 정정 제보 또는 문의로 반영돼요.</>
+      ) : done || claim?.status === "pending" || claim?.status === "code_sent" ? (
+        <>🏷 <b>운영자 인증 검수 중</b> — 도메인 이메일 확인 후 승인되면 검증 배지가 붙어요. 진행 상태는 이 페이지에서 확인할 수 있어요.</>
+      ) : claim?.status === "verified" ? (
+        <>✓ <b>운영자 인증 완료</b> — 검증 배지가 표시됩니다.</>
+      ) : claim?.status === "rejected" ? (
+        <>🏷 운영자 인증이 반려됐어요 — 도메인 이메일로 다시 신청하거나 문의해 주세요.
+          <button className="btn ghost sm" style={{ marginLeft: 8 }} onClick={() => { setClaim(null); setOpen(true); }}>다시 신청</button></>
+      ) : !session ? (
+        <>🏷 <b>이 플랫폼의 운영자이신가요?</b> 인증하면 검증 배지가 붙고, 제휴 제안을 공식으로 받을 수 있어요.{" "}
+          <button className="linklike" onClick={() => go("account")}>로그인 후 신청 →</button></>
+      ) : !open ? (
+        <>🏷 <b>이 플랫폼의 운영자이신가요?</b> 인증하면 검증 배지가 붙고, 제휴 제안을 공식으로 받을 수 있어요.{" "}
+          <button className="btn ghost sm" onClick={() => setOpen(true)}>운영자 인증 신청</button></>
+      ) : (
+        <form className="frm" style={{ marginTop: 6 }} onSubmit={submit}>
+          <label>업무용 이메일 *
+            <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)}
+              placeholder={host ? `예: name@${host}` : "도메인 이메일"} />
+          </label>
+          <div className="frm-note">플랫폼 도메인({host || "공식 도메인"})과 일치하는 이메일이면 검수가 빨라요. 서류 인증이 필요하면 검수 중에 안내드립니다.</div>
+          {err && <div className="err">{err}</div>}
+          <div style={{ display: "flex", gap: 8 }}>
+            <button className="btn primary sm" disabled={busy} type="submit">{busy ? "신청 중…" : "인증 신청"}</button>
+            <button className="btn ghost sm" type="button" onClick={() => setOpen(false)}>취소</button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
 
 /* ─────────────── Platform Detail ─────────────── */
 export function PlatformDetail({ id }: { id?: string }) {
@@ -80,6 +148,8 @@ export function PlatformDetail({ id }: { id?: string }) {
         {p.enter_text && <div className="fact"><div className="k">입점 조건</div><div className="v">{p.enter_text}</div></div>}
         {p.strength && <div className="fact"><div className="k">강점</div><div className="v">{p.strength}</div></div>}
       </div>
+
+      <OperatorClaimBox platformId={p.id} platformUrl={p.url} />
 
       <div className="panel-note banner">
         ⓘ 세모플의 설명은 <b>개략 소개</b>입니다. 수수료·정산·입점 조건 등 상세는 <b>공식 사이트</b>에서 확인하세요.

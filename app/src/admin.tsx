@@ -8,9 +8,10 @@ import { useSession } from "./lib/auth";
 import {
   briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
-  listAdminIntroQueue, listBuyerBriefs, listDealsAdmin, listDealSubmissions, listPartnerPosts,
-  listSubmissions, markIntroduced, publishDeal, remoteEnabled, reviewDealSubmission,
-  reviewPartnerPost, reviewSubmission, transitionPlatform, updateDealStatus,
+  listAdminIntroQueue, listBuyerBriefs, listDealsAdmin, listDealSubmissions, listOperatorClaims,
+  listPartnerPosts, listSubmissions, markIntroduced, publishDeal, remoteEnabled,
+  reviewDealSubmission, reviewOperatorClaim, reviewPartnerPost, reviewSubmission,
+  transitionPlatform, updateDealStatus,
 } from "./lib/api";
 import type {
   BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin, Submission,
@@ -463,6 +464,54 @@ function IntroQueue() {
   );
 }
 
+/* ── 운영자 클레임 검수 — 승인 시 운영자 지정 + 검증 배지(platforms.verified) ── */
+function OperatorClaimQueue() {
+  const [items, setItems] = useState<Awaited<ReturnType<typeof listOperatorClaims>> | null>(null);
+  const [errs, setErrs] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState("");
+  const reload = useCallback(() => {
+    listOperatorClaims().then(setItems).catch(() => setItems([]));
+  }, []);
+  useEffect(reload, [reload]);
+  const act = async (c: (typeof items extends (infer T)[] | null ? T : never), approve: boolean) => {
+    setBusy(c.id); setErrs((e) => ({ ...e, [c.id]: "" }));
+    try { await reviewOperatorClaim(c, approve); reload(); }
+    catch (ex) { setErrs((e) => ({ ...e, [c.id]: ex instanceof Error ? ex.message : String(ex) })); }
+    finally { setBusy(""); }
+  };
+  const domainMatch = (c: { business_email: string | null; platforms?: { url: string } | null }) => {
+    try {
+      const host = new URL(c.platforms?.url ?? "").hostname.replace(/^www\./, "");
+      const dom = (c.business_email ?? "").split("@")[1]?.toLowerCase() ?? "";
+      return dom && (dom === host || host.endsWith("." + dom) || dom.endsWith("." + host) || host.includes(dom.split(".")[0]));
+    } catch { return false; }
+  };
+  if (items === null) return <div className="empty">불러오는 중…</div>;
+  if (items.length === 0) return <div className="empty">대기 중인 운영자 인증 신청이 없습니다 ✓</div>;
+  return (
+    <>
+      {items.map((c) => (
+        <div className="sub-item" key={c.id}>
+          <div style={{ minWidth: 0 }}>
+            <b>🏷 {c.platforms?.name ?? c.platform_id}</b>{" "}
+            <a href={c.platforms?.url} target="_blank" rel="noopener noreferrer" className="mono" style={{ fontSize: 12 }}>{c.platforms?.url} ↗</a>
+            <div className="mono" style={{ fontSize: 12 }}>
+              {c.business_email ?? "이메일 미기재"}{" "}
+              <Badge kind={domainMatch(c) ? "verify" : "muted"}>{domainMatch(c) ? "도메인 일치" : "⚠ 도메인 불일치 — 추가 확인"}</Badge>
+            </div>
+            {errs[c.id] && <div className="err">{errs[c.id]}</div>}
+          </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+            <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{c.created_at.slice(0, 10)}</span>
+            <button className="btn primary sm" disabled={busy === c.id} onClick={() => act(c, true)}>✓ 승인(배지 부여)</button>
+            <button className="btn ghost sm" disabled={busy === c.id} onClick={() => act(c, false)}>반려</button>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
 /* ── 게시물 상태 전이(제안 성사/마감 · 매물 진행/마감) ──
    성사돼도 '모집 중'으로 남아 신규 신청이 계속 들어오던 문제 해결 */
 function LivePanel() {
@@ -565,6 +614,9 @@ export function Admin() {
 
       <div className="sec-title">🏦 매물 검수 (익명화 → 코드명 게시)</div>
       <DealSubQueue />
+
+      <div className="sec-title">🏷 운영자 인증 신청</div>
+      <OperatorClaimQueue />
 
       <div className="sec-title">📮 소개 대기 (매칭 신청 · 인수 관심 · 브리프)</div>
       <IntroQueue />
