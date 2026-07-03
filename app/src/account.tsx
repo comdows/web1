@@ -361,7 +361,7 @@ export function Submit() {
     return (
       <main className="page container">
         <h1>플랫폼 제보</h1>
-        <div className="empty" style={{ borderColor: "var(--success)" }}>
+        <div className="done-card">
           접수됐어요 ✓ 검수 후 등재되며, 진행 상태는 <a onClick={() => go("account")} style={{ cursor: "pointer" }}>계정 → 내 제보</a>에서 볼 수 있어요.
           <div style={{ marginTop: 12 }}><button className="btn ghost sm" onClick={() => { setDone(false); setName(""); setUrl(""); setDesc(""); }}>하나 더 제보</button></div>
         </div>

@@ -176,8 +176,9 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
               <div key={g.id} className="facet-sub">
                 <div className="facet-sub-title">{g.icon} {g.name}</div>
                 {categoriesByGroup(g.id).map((c) => (
-                  <label key={c.id} className="facet-opt sm">
-                    <input type="checkbox" checked={cats.has(c.id)} onChange={() => toggleCat(c.id)} /> {c.name}
+                  <label key={c.id} className="facet-opt sm" style={(stats.counts.get(c.id) ?? 0) === 0 ? { opacity: .45 } : undefined}>
+                    <input type="checkbox" disabled={(stats.counts.get(c.id) ?? 0) === 0 && !cats.has(c.id)}
+                      checked={cats.has(c.id)} onChange={() => toggleCat(c.id)} /> {c.name}
                     <span className="facet-ct">{stats.counts.get(c.id) ?? 0}</span>
                   </label>
                 ))}
@@ -271,7 +272,17 @@ export function Onboarding() {
   const recs = useMemo(() => {
     let list = platforms.filter((p) => (csel.size ? csel.has(p.category) : gsel.size ? gsel.has(categoryById(p.category)?.group ?? "") : false));
     if (newPref) list = [...list].sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0));
-    return list.slice(0, 12);
+    // 분야별 라운드로빈 — 특정 분야(가나다 상위)가 추천을 독식하지 않게
+    const byCat = new Map<string, typeof list>();
+    for (const p of list) { const arr = byCat.get(p.category) ?? []; arr.push(p); byCat.set(p.category, arr); }
+    const out: typeof list = [];
+    const buckets = [...byCat.values()];
+    for (let i = 0; out.length < 12; i++) {
+      let added = false;
+      for (const b of buckets) { if (b[i]) { out.push(b[i]); added = true; if (out.length >= 12) break; } }
+      if (!added) break;
+    }
+    return out;
   }, [gsel, csel, newPref, platforms]);
 
   const steps = ["관심 영역", "세부 분야", "선호", "추천"];

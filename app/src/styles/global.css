@@ -285,3 +285,17 @@ a.foot-link{display:inline-block}
 .promo-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:-6px 0 8px}
 @media(max-width:640px){.promo-grid{grid-template-columns:1fr}}
 .gcard.promo h4{display:flex;align-items:center;gap:8px}
+
+/* ── 배치9: 완료 카드·빈 상태·데모 카드 위계 ─────────────── */
+.done-card{border:1px solid var(--success);background:var(--success-tint);border-radius:var(--r-md);
+  padding:22px 24px;color:var(--text);font-size:14.5px;line-height:1.6}
+.empty{border:1px dashed var(--line);border-radius:var(--r-md);padding:36px 20px}
+.empty::before{content:"△";display:block;font-size:22px;color:var(--faint);opacity:.55;margin-bottom:8px}
+.pcard.demo{border-style:dashed;opacity:.88}
+.pcard.demo:hover{border-color:var(--line)}
+
+/* 배치10: 히어로 브랜드 워터마크 + 앵커 스크롤 여백 */
+.hero{position:relative;overflow:visible}
+.hero-bp{position:absolute;right:-30px;top:-20px;opacity:.09;pointer-events:none}
+@media(max-width:640px){.hero-bp{display:none}}
+.sec-title{scroll-margin-top:76px}
