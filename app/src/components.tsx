@@ -55,7 +55,7 @@ export function PlatformCard({ p, showCat = true }: { p: Platform; showCat?: boo
       <div className="top">
         <Avatar name={p.name} url={p.url} />
         <div style={{ minWidth: 0 }}>
-          <h4><span className="pname" onClick={() => go("detail", { id: p.id })}>{p.name}</span>{p.new && <Badge kind="new">NEW</Badge>}</h4>
+          <h4><button className="pname" onClick={() => go("detail", { id: p.id })}>{p.name}</button>{p.new && <Badge kind="new">NEW</Badge>}</h4>
           {showCat && cat && <div className="cat">{cat.icon} {cat.name}</div>}
         </div>
         <button className={`star ${on ? "on" : ""}`} aria-label="즐겨찾기"

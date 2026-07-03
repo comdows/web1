@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
+import type { ReactNode, KeyboardEvent } from "react";
 import { groups, categories, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import { Logo, StatTile, PlatformCard, Footer } from "./components";
@@ -34,6 +35,16 @@ function sortPlatforms(list: Platform[], sort: Sort): Platform[] {
   if (sort === "new") return [...list].sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0));
   if (sort === "name") return [...list].sort((a, b) => a.name.localeCompare(b.name, "ko"));
   return list;
+}
+/* 접근성 있는 헤더 내비 항목 — role/tabIndex/키보드로 마우스 없이도 이동 가능,
+   모바일에선 라벨이 숨겨지므로 aria-label로 스크린리더 대응 */
+function NavItem({ active, onClick, label, children }: { active?: boolean; onClick: () => void; label: string; children: ReactNode }) {
+  const key = (e: KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } };
+  return (
+    <a className={active ? "active" : ""} role="button" tabIndex={0} aria-label={label} onClick={onClick} onKeyDown={key}>
+      {children}
+    </a>
+  );
 }
 function useTheme() {
   const [theme, setTheme] = useState<string>(() => { try { return localStorage.getItem("sm.theme") || "dark"; } catch { return "dark"; } });
@@ -111,21 +122,21 @@ export default function App() {
   return (
     <NavContext.Provider value={go}>
       <header className="site-header"><div className="container inner">
-        <a onClick={() => go("home")} style={{ cursor: "pointer" }}><Logo /></a>
+        <NavItem onClick={() => go("home")} label="홈"><Logo /></NavItem>
         <nav>
-          <a className={view === "home" ? "active" : ""} onClick={() => go("home")}>📂 <span className="navlbl">분야별</span></a>
-          <a className={view === "search" ? "active" : ""} onClick={() => go("search")}>🔎 <span className="navlbl">검색</span></a>
-          <a className={view === "onboarding" ? "active" : ""} onClick={() => go("onboarding")}>✨ <span className="navlbl">추천</span></a>
-          <a className={view === "partners" ? "active" : ""} onClick={() => go("partners")}>🤝 <span className="navlbl">제휴</span>{!FLAGS.stage2 && <span className="soon">준비중</span>}</a>
-          <a className={view === "exchange" ? "active" : ""} onClick={() => go("exchange")}>🏦 <span className="navlbl">거래소</span>{!FLAGS.stage3 && <span className="soon">준비중</span>}</a>
-          <a onClick={() => { setFav(true); go("home"); }}>★ {favs.count}</a>
+          <NavItem active={view === "home"} onClick={() => go("home")} label="분야별">📂 <span className="navlbl">분야별</span></NavItem>
+          <NavItem active={view === "search"} onClick={() => go("search")} label="검색">🔎 <span className="navlbl">검색</span></NavItem>
+          <NavItem active={view === "onboarding"} onClick={() => go("onboarding")} label="추천">✨ <span className="navlbl">추천</span></NavItem>
+          <NavItem active={view === "partners"} onClick={() => go("partners")} label="제휴">🤝 <span className="navlbl">제휴</span>{!FLAGS.stage2 && <span className="soon">준비중</span>}</NavItem>
+          <NavItem active={view === "exchange"} onClick={() => go("exchange")} label="거래소">🏦 <span className="navlbl">거래소</span>{!FLAGS.stage3 && <span className="soon">준비중</span>}</NavItem>
+          <NavItem onClick={() => { setFav(true); go("home"); }} label={`즐겨찾기 ${favs.count}개`}>★ {favs.count}</NavItem>
           {remoteEnabled && (
-            <a className={view === "account" || view === "admin" ? "active" : ""} onClick={() => go("account")}>
+            <NavItem active={view === "account" || view === "admin"} onClick={() => go("account")} label={session ? "내 계정" : "로그인"}>
               👤 <span className="navlbl">{session ? (profile?.display_name || "내 계정") : "로그인"}</span>
               {isAdmin && <span className="soon" style={{ background: "var(--teal-tint)", color: "var(--teal)" }}>admin</span>}
-            </a>
+            </NavItem>
           )}
-          <button className="theme-btn" onClick={theme.toggle} aria-label="테마">◐</button>
+          <button className="theme-btn" onClick={theme.toggle} aria-label="테마 전환">◐</button>
         </nav>
       </div></header>
 
@@ -145,7 +156,7 @@ export default function App() {
             <h1>어떤 분야에 어떤 플랫폼이 있을까?</h1>
             <p className="sub">사업자가 나가서 붙을 수 있는 플랫폼을 <b>같은 기준으로</b> 정리했습니다. 이름과 개략 설명을 빠르게 훑고, ★로 저장하세요.</p>
             <div className="search">
-              <span className="ico">⌕</span>
+              <button type="button" className="ico" aria-label="검색" onClick={() => { if (q.trim()) { trackEvent("search", undefined, q.trim()); go("search", { q }); } }}>⌕</button>
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="플랫폼·분야 검색 (예: 쿠팡, 크라우드펀딩, 수출)"
                 onKeyDown={(e) => { if (e.key === "Enter" && q.trim()) { trackEvent("search", undefined, q.trim()); go("search", { q }); } }} />
             </div>
