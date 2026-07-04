@@ -14,6 +14,7 @@ const SITE = "https://comdows.github.io/web1";
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.json"), "utf8"));
 const EN = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.en.json"), "utf8"));
 const GUIDES = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/guides.en.json"), "utf8"));
+const AI = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/ai-stack.en.json"), "utf8"));
 
 /* ── 검증: 미존재 id 참조·빈 필드·과장 길이는 빌드 실패(미번역은 생략일 뿐 오류 아님) ── */
 const koById = new Map(data.platforms.map((p) => [p.id, p]));
@@ -27,6 +28,18 @@ for (const c of data.categories) if (!EN.categories[c.id]?.name) errs.push(`분�
 for (const g of data.groups) if (!EN.groups[g.id]?.name) errs.push(`그룹 번역 누락: ${g.id}`);
 for (const g of Object.values(GUIDES)) for (const s of g.steps) for (const c of s.cats)
   if (!EN.categories[c]) errs.push(`가이드가 없는 분야 참조: ${c}`);
+/* AI 스택 검증 — 가격 수치·Top N 프레이밍은 스키마 단계에서 금지(방화벽), 필드 실측 필수 */
+const aiIds = new Set(AI.tools.map((t) => t.id));
+for (const t of AI.tools) {
+  if (!/^[a-z0-9-]+$/.test(t.id)) errs.push(`AI id 형식 위반: ${t.id}`);
+  if (!t.name?.trim() || !t.blurb?.trim() || !t.officialUrl || !t.lastVerified) errs.push(`AI 필수 필드 누락: ${t.id}`);
+  if ((t.blurb ?? "").length > 175) errs.push(`AI blurb 과장(${t.blurb.length}자): ${t.id}`);
+  if (!["confirmed", "unknown"].includes(t.paymentAbroad)) errs.push(`AI paymentAbroad 값 위반: ${t.id}`);
+}
+if (AI.tools.length !== aiIds.size) errs.push(`AI id 중복`);
+for (const pid of Object.keys(AI.profiles)) if (!aiIds.has(pid)) errs.push(`프로필의 미등재 도구: ${pid}`);
+for (const g of AI.guides) for (const s of g.sections) for (const tid of s.toolIds ?? [])
+  if (!aiIds.has(tid)) errs.push(`AI 가이드가 없는 도구 참조: ${g.slug} → ${tid}`);
 if (errs.length) { errs.slice(0, 20).forEach((e) => console.error(`  ✗ ${e}`)); process.exit(1); }
 
 const enPlats = data.platforms.filter((p) => EN.platforms[p.id]);
@@ -99,6 +112,9 @@ write("en", shell({
   SEMOPL catalogs 1,600+ Korean business platforms in one taxonomy; this English layer covers the <b>${enPlats.length} commerce &amp; trade platforms</b> most relevant to foreign sellers, each linked to its official site.</p>
   <h2>Guides</h2>
   <ul>${Object.entries(GUIDES).map(([slug, g]) => `<li style="margin-bottom:10px"><a href="/web1/en/guide/${slug}/" style="color:#7C97FF;font-weight:700">${esc(g.title)}</a> — ${esc(g.desc)}</li>`).join("")}</ul>
+  <h2>AI tools for the Korean market</h2>
+  <p><a href="/web1/en/ai/" style="color:#7C97FF;font-weight:700">${AI.tools.length} AI tools verified for Korean →</a> —
+  Korean-made B2B tools and global tools with documented Korean support: English docs, evidence links, and payment-from-abroad status for each.</p>
   <h2>Browse by category</h2>
   <ul>${enCats.map((c) => `<li style="margin-bottom:8px"><a href="/web1/en/c/${c.id}/" style="color:#7C97FF;font-weight:700">${esc(catEn(c.id).name)}</a> (${byCat.get(c.id).length}) — ${esc(catEn(c.id).desc)}</li>`).join("")}</ul>
   ${inquiryCta("")}
@@ -204,6 +220,92 @@ write("en/partner-inquiry", shell({
   See <a href="/web1/en/about/" style="color:#7C97FF">About &amp; methodology</a> for how this directory is run — no paid placement, no consulting funnel.</small></p>
 </main>` }));
 
+/* ── Korea AI Stack(/en/ai/) — 0단계 실측이 확인한 인용 공백만 겨냥:
+ * '한국어 지원 필터'와 '한국 진출용 스택'. covered 영역(TTS 라운드업·번역기 비교·Naver SEO)은 집필하지 않음.
+ * 차별화 = 검증 필드 3종(영문 문서·한국어 실증 URL·해외결제 확인/불명) + last verified 날짜 ── */
+const AI_CATS = { writing: "Writing & copy", document: "Documents & OCR", voice: "Voice & speech",
+  video: "Video", "chatbot-cs": "Chatbots & customer service", translation: "Translation",
+  data: "Data & analytics", "dev-infra": "Developer & infrastructure" };
+const aiCatLabel = (c) => AI_CATS[c] ?? "Other";
+const aiToolLink = (id) => {
+  const t = AI.tools.find((x) => x.id === id);
+  if (!t) return "";
+  return AI.profiles[id]
+    ? `<a href="/web1/en/ai/${id}/" style="color:#7C97FF">${esc(t.name)}</a>`
+    : `<a href="${esc(t.officialUrl)}" rel="noopener" style="color:#7C97FF">${esc(t.name)}</a>`;
+};
+const aiVerifyLine = (t) => [
+  `Korean: ${esc(t.koreanNote)}${t.koreanEvidence ? ` (<a href="${esc(t.koreanEvidence)}" rel="noopener" style="color:#7C97FF">evidence</a>)` : ""}`,
+  t.enDocs ? `English docs: <a href="${esc(t.enDocs)}" rel="noopener" style="color:#7C97FF">yes</a>` : "English docs: none found",
+  `Payment from abroad: <b>${t.paymentAbroad}</b>${t.paymentNote ? ` — ${esc(t.paymentNote)}` : ""}`,
+  `verified ${t.lastVerified}`,
+].join(" · ");
+
+const aiByCat = new Map();
+for (const t of AI.tools) { const a = aiByCat.get(t.category) ?? []; a.push(t); aiByCat.set(t.category, a); }
+const aiDirLd = JSON.stringify({ "@context": "https://schema.org", "@type": "ItemList",
+  name: "AI tools verified for the Korean market", numberOfItems: AI.tools.length,
+  itemListElement: AI.tools.map((t, i) => ({ "@type": "ListItem", position: i + 1, name: t.name,
+    url: AI.profiles[t.id] ? `${SITE}/en/ai/${t.id}/` : t.officialUrl })) });
+write("en/ai", shell({
+  title: `AI Tools Verified for the Korean Market — ${AI.tools.length} Entries | SEMOPL`,
+  desc: "AI tools that actually work in Korean, verified: official English docs, Korean-support evidence links, and whether you can pay from abroad. Not a learning-app list.",
+  canonical: `${SITE}/en/ai/`, ld: aiDirLd,
+  body: `${MAIN}${NAV}
+  <h1>AI Tools, Verified for the Korean Market</h1>
+  <p>Searching for "AI tools with Korean support" returns language-learning apps; global directories list Korean in a dropdown without checking it.
+  This page is different: <b>${AI.tools.length} tools a business can actually use in or for Korea</b> — Korean-made B2B tools and global tools whose Korean support we could verify in official documentation.
+  Each entry shows what we checked and when. No paid placement.</p>
+  <p><b>How to read the fields</b> — <i>Korean</i>: what the Korean support actually is, with an official evidence link · <i>English docs</i>: whether an English UI/manual exists ·
+  <i>Payment from abroad</i>: <b>confirmed</b> only when the official site shows self-serve checkout usable outside Korea; <b>unknown</b> means we could not verify without signing up.</p>
+  <h2>Guides</h2>
+  <ul>${AI.guides.map((g) => `<li style="margin-bottom:8px"><a href="/web1/en/guide/${g.slug}/" style="color:#7C97FF;font-weight:700">${esc(g.title)}</a> — ${esc(g.desc)}</li>`).join("")}</ul>
+  ${[...aiByCat.entries()].map(([cat, list]) => `
+  <h2>${esc(aiCatLabel(cat))}</h2>
+  <ul>${list.map((t) => `<li style="margin:0 0 16px">
+    ${AI.profiles[t.id] ? `<a href="/web1/en/ai/${t.id}/" style="color:#7C97FF;font-weight:700">${esc(t.name)}</a>` : `<b>${esc(t.name)}</b>`}
+    <small>(${t.origin === "korean" ? "Korean" : "global"})</small> — ${esc(t.blurb)}
+    <br><small style="opacity:.8">${aiVerifyLine(t)} · <a href="${esc(t.officialUrl)}" rel="noopener" style="color:#7C97FF">official site →</a></small>
+  </li>`).join("")}</ul>`).join("")}
+  ${inquiryCta("AI & software")}
+</main>` }));
+
+/* /en/ai/<id>/ 프로필 — 영문 독립 리뷰 0건인 한국 B2B 도구의 유일한 영문 출처가 될 수 있음: 검증 사실만 */
+for (const [pid, prof] of Object.entries(AI.profiles)) {
+  const t = AI.tools.find((x) => x.id === pid);
+  const ld = JSON.stringify({ "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
+    { "@type": "ListItem", position: 1, name: "SEMOPL (EN)", item: `${SITE}/en/` },
+    { "@type": "ListItem", position: 2, name: "AI tools for Korea", item: `${SITE}/en/ai/` },
+    { "@type": "ListItem", position: 3, name: t.name, item: `${SITE}/en/ai/${pid}/` }] });
+  write(`en/ai/${pid}`, shell({
+    title: `${t.name} — ${aiCatLabel(t.category)} | Korea AI Stack | SEMOPL`,
+    desc: t.blurb.slice(0, 155),
+    canonical: `${SITE}/en/ai/${pid}/`, ld,
+    body: `${MAIN}${NAV}
+    <p><a href="/web1/en/ai/" style="color:#7C97FF">AI tools for Korea</a> · ${esc(aiCatLabel(t.category))}${t.origin === "korean" ? " · Korean" : " · global"}</p>
+    <h1>${esc(t.name)}</h1>
+    <p>${esc(t.blurb)}</p>
+    <p style="padding:12px 14px;border:1px solid #2a3350;border-radius:10px"><small>${aiVerifyLine(t)}</small></p>
+    ${prof.sections.map((s) => `<h2>${esc(s.h)}</h2><p>${esc(s.body)}</p>`).join("")}
+    <p><a href="${esc(t.officialUrl)}" rel="noopener" style="color:#7C97FF;font-weight:700">Official site →</a></p>
+</main>` }));
+}
+
+/* AI 가이드 — gap 판정 질의 직격 4편 */
+for (const g of AI.guides) {
+  write(`en/guide/${g.slug}`, shell({
+    title: `${g.title} | SEMOPL`, desc: g.desc.slice(0, 155),
+    canonical: `${SITE}/en/guide/${g.slug}/`,
+    body: `${MAIN}${NAV}
+    <h1>${esc(g.title)}</h1>
+    <p>${esc(g.intro)}</p>
+    ${g.sections.map((s) => `<h2>${esc(s.h)}</h2><p>${esc(s.body)}</p>
+      ${(s.toolIds ?? []).length ? `<p>Tools: ${s.toolIds.map(aiToolLink).filter(Boolean).join(" · ")}</p>` : ""}`).join("")}
+    <p><b>Note:</b> ${esc(g.note)}</p>
+    <p><a href="/web1/en/ai/" style="color:#7C97FF">See all verified AI tools for the Korean market →</a></p>
+</main>` }));
+}
+
 /* ── AI 인용 레이어: llms.txt + 공개 데이터셋(JSON) — DA 0에서 가장 유리한 전장 ── */
 const today0 = new Date().toISOString().slice(0, 10);
 fs.writeFileSync(path.join(DIST, "llms.txt"), [
@@ -217,11 +319,17 @@ fs.writeFileSync(path.join(DIST, "llms.txt"), [
   `- ${SITE}/en/ : landing & category index`,
   `- ${SITE}/en/about/ : methodology & neutrality`,
   `- ${SITE}/en/partner-inquiry/ : free partner inquiry for businesses entering Korea`,
+  `- ${SITE}/en/ai/ : AI tools verified for the Korean market (${AI.tools.length} entries)`,
   ...Object.keys(GUIDES).map((g) => `- ${SITE}/en/guide/${g}/ : guide`),
+  ...AI.guides.map((g) => `- ${SITE}/en/guide/${g.slug}/ : guide (AI for Korea)`),
   ...enCats.map((c) => `- ${SITE}/en/c/${c.id}/ : ${catEn(c.id).name} (${byCat.get(c.id).length} platforms)`),
   ``,
   `## Dataset`,
   `- ${SITE}/en/data/platforms.json : full machine-readable dataset (CC BY 4.0)`,
+  `- ${SITE}/en/data/ai-stack.json : AI tools verified for Korean — machine-readable (CC BY 4.0)`,
+  ``,
+  `## AI tools verified for Korean`,
+  ...AI.tools.map((t) => `- ${AI.profiles[t.id] ? `${SITE}/en/ai/${t.id}/` : t.officialUrl} : ${t.name} — ${t.blurb}`),
   ``,
   `## Platforms`,
   ...enPlats.map((p) => `- ${SITE}/en/p/${p.id}/ : ${en(p.id).name} — ${en(p.id).blurb}`),
@@ -236,20 +344,28 @@ fs.writeFileSync(path.join(DIST, "en/data/platforms.json"), JSON.stringify({
     categoryName: catEn(p.category).name, region: p.region === "해외" ? "global" : "korea",
     blurb: en(p.id).blurb, officialUrl: p.url, page: `${SITE}/en/p/${p.id}/` })),
 }, null, 1));
+fs.writeFileSync(path.join(DIST, "en/data/ai-stack.json"), JSON.stringify({
+  meta: { title: "AI tools verified for the Korean market (SEMOPL)", built: today0,
+    license: "CC BY 4.0 — attribution: SEMOPL (comdows.github.io/web1/en/ai)", count: AI.tools.length,
+    note: "Fields verified against official sources on lastVerified date. Pricing intentionally omitted. paymentAbroad=unknown means not verifiable without signup." },
+  tools: AI.tools.map((t) => ({ ...t, page: AI.profiles[t.id] ? `${SITE}/en/ai/${t.id}/` : null })),
+}, null, 1));
 fs.appendFileSync(path.join(DIST, "robots.txt"), `# AI crawlers: see ${SITE}/llms.txt\n`);
 
 /* ── sitemap.xml에 EN URL 삽입 ── */
 const smPath = path.join(DIST, "sitemap.xml");
 const today = new Date().toISOString().slice(0, 10);
-const enUrls = [`${SITE}/en/`, `${SITE}/en/about/`, `${SITE}/en/partner-inquiry/`,
+const enUrls = [`${SITE}/en/`, `${SITE}/en/about/`, `${SITE}/en/partner-inquiry/`, `${SITE}/en/ai/`,
   ...enCats.map((c) => `${SITE}/en/c/${c.id}/`),
   ...enPlats.map((p) => `${SITE}/en/p/${p.id}/`),
-  ...Object.keys(GUIDES).map((s) => `${SITE}/en/guide/${s}/`)];
+  ...Object.keys(GUIDES).map((s) => `${SITE}/en/guide/${s}/`),
+  ...AI.guides.map((g) => `${SITE}/en/guide/${g.slug}/`),
+  ...Object.keys(AI.profiles).map((id) => `${SITE}/en/ai/${id}/`)];
 fs.writeFileSync(smPath, fs.readFileSync(smPath, "utf8").replace("</urlset>",
   enUrls.map((u) => `  <url><loc>${u}</loc><lastmod>${today}</lastmod></url>`).join("\n") + "\n</urlset>"));
 
-/* 금지 링크 최종 검사: EN 표면에 제휴·거래소·약관 경로가 없어야 한다 */
-const banned = /view=partners|view=exchange|view=value-check|view=deal-guide|view=terms|view=privacy|shopping mall/i;
+/* 금지 링크 최종 검사: EN 표면에 제휴·거래소·약관 경로·가격 수치가 없어야 한다 */
+const banned = /view=partners|view=exchange|view=value-check|view=deal-guide|view=terms|view=privacy|shopping mall|\$\s?\d|KRW|₩/i;
 let bannedHit = 0;
 const walk = (dir) => { for (const f of fs.readdirSync(dir, { withFileTypes: true })) {
   const fp = path.join(dir, f.name);
@@ -259,4 +375,4 @@ const walk = (dir) => { for (const f of fs.readdirSync(dir, { withFileTypes: tru
 walk(path.join(DIST, "en"));
 if (bannedHit) process.exit(1);
 
-console.log(`EN 프리렌더 — 랜딩 1 + 허브 ${enCats.length} + 상세 ${enPlats.length} + 가이드 ${Object.keys(GUIDES).length} · sitemap +${enUrls.length} · 금지 링크 0`);
+console.log(`EN 프리렌더 — 랜딩 1 + 허브 ${enCats.length} + 상세 ${enPlats.length} + 가이드 ${Object.keys(GUIDES).length + AI.guides.length} + AI(${AI.tools.length}도구·프로필 ${Object.keys(AI.profiles).length}) · sitemap +${enUrls.length} · 금지 링크 0`);
