@@ -69,6 +69,15 @@ function shell({ title, desc, canonical, koUrl, ld, body }) {
 }
 const MAIN = `<main style="max-width:760px;margin:32px auto;padding:0 20px">`;
 const NAV = `<p style="font-family:monospace;font-size:12px"><a href="/web1/en/" style="color:#7C97FF">SEMOPL — Korean platforms in English</a></p>`;
+/* Korea Entry Inquiry(0단계 수요 계측) — 접수는 GitHub Issue Form, 소개 이행·과금은 전부 한국어 레이어.
+ * EN 표면은 'inquiry' 프레이밍만: 제휴 보드·연결료·약관 비노출(방화벽 불변) */
+const INQUIRY_URL = "https://github.com/comdows/web1/issues/new?template=korea-partner-inquiry.yml";
+const inquiryCta = (topic) => `
+<p style="margin:28px 0;padding:14px 16px;border:1px solid #2a3350;border-radius:10px">
+  <b>Looking for a Korean partner${topic ? ` in ${esc(topic)}` : ""}?</b>
+  We review inquiries from businesses entering Korea and, where there is a fit, introduce them to platforms in this directory —
+  free for the inquiring business. <a href="/web1/en/partner-inquiry/" style="color:#7C97FF;font-weight:700">Submit an inquiry →</a>
+</p>`;
 const card = (p) => `<li style="margin:0 0 14px"><a href="/web1/en/p/${p.id}/" style="color:#7C97FF;font-weight:700">${esc(en(p.id).name)}</a>${p.region === "해외" ? " <small>(global)</small>" : ""} — ${esc(en(p.id).blurb)}</li>`;
 
 const write = (rel, html) => { const d = path.join(DIST, rel); fs.mkdirSync(d, { recursive: true }); fs.writeFileSync(path.join(d, "index.html"), html); };
@@ -92,6 +101,7 @@ write("en", shell({
   <ul>${Object.entries(GUIDES).map(([slug, g]) => `<li style="margin-bottom:10px"><a href="/web1/en/guide/${slug}/" style="color:#7C97FF;font-weight:700">${esc(g.title)}</a> — ${esc(g.desc)}</li>`).join("")}</ul>
   <h2>Browse by category</h2>
   <ul>${enCats.map((c) => `<li style="margin-bottom:8px"><a href="/web1/en/c/${c.id}/" style="color:#7C97FF;font-weight:700">${esc(catEn(c.id).name)}</a> (${byCat.get(c.id).length}) — ${esc(catEn(c.id).desc)}</li>`).join("")}</ul>
+  ${inquiryCta("")}
 </main>` }));
 
 /* ── /en/c/<id>/ 분야 허브 ── */
@@ -108,6 +118,7 @@ for (const c of enCats) {
     <h1>${esc(ce.name)} — Korean Platforms</h1>
     <p>${esc(ce.desc)}</p>
     <ul>${list.map(card).join("")}</ul>
+    ${inquiryCta(ce.name)}
 </main>` }));
 }
 
@@ -129,6 +140,7 @@ for (const p of enPlats) {
     <p>${esc(e.blurb)}</p>
     <p><a href="${esc(p.url)}" rel="noopener" style="color:#7C97FF;font-weight:700">Official site →</a></p>
     <p><i>See the official site for fees, settlement cycles, and seller requirements — these change frequently and are not republished here.</i></p>
+    <p><a href="/web1/en/partner-inquiry/" style="color:#7C97FF">Looking to partner with Korean platforms like this? Submit an inquiry (free) →</a></p>
     ${similar.length ? `<h2>Similar platforms</h2><ul>${similar.map(card).join("")}</ul>` : ""}
 </main>` }));
 }
@@ -165,6 +177,33 @@ write("en/about", shell({
   <p><a href="https://github.com/comdows/web1/issues/new?title=${encodeURIComponent("[EN] Correction")}" style="color:#7C97FF">Report an error on GitHub →</a> — corrections ship in the next build.</p>
 </main>` }));
 
+/* ── /en/partner-inquiry/ — Korea Entry Inquiry 접수 안내(0단계 수요 계측).
+ * 접수는 GitHub Issue Form(공개·en-inbound 라벨), 검토·소개·과금은 전부 한국어 레이어에서.
+ * 외국 측 무과금 · 지분/펀딩/증권 명시 배제 · 동의 없는 연락처 공유 없음 ── */
+write("en/partner-inquiry", shell({
+  title: "Find a Korean Platform Partner — Free Inquiry | SEMOPL",
+  desc: "Free inquiry for businesses entering Korea: we review your request and, where there is a fit, introduce you to Korean platforms — only with both parties' consent.",
+  canonical: `${SITE}/en/partner-inquiry/`,
+  body: `${MAIN}${NAV}
+  <h1>Find a Korean Platform Partner</h1>
+  <p>SEMOPL maintains the largest structured directory of Korean business platforms (1,600+ entries; ${enPlats.length} documented in English).
+  If your business is entering Korea and needs a platform partner — a sales channel, a distributor, a fulfillment provider, or an integration partner —
+  you can submit an inquiry below. It is <b>free for the inquiring business</b>.</p>
+  <h2>How it works</h2>
+  <ol>
+    <li><b>Submit</b> — a short public inquiry via the form below (no confidential details needed).</li>
+    <li><b>Review</b> — we check it against the directory and follow up on the same thread if there is a plausible fit.</li>
+    <li><b>Introduction</b> — we contact the Korean platform first; an introduction happens <b>only when both sides consent</b>. Contact details are never shared without explicit consent.</li>
+  </ol>
+  <h2>Scope</h2>
+  <p>In scope: marketplace listing, distribution &amp; wholesale, fulfillment &amp; logistics, technology/API integration, co-marketing.</p>
+  <p><b>Out of scope:</b> equity investment, fundraising, and securities of any kind — such inquiries are closed without review.
+  Business-transfer (M&amp;A) listings are not available through this channel.</p>
+  <p style="margin:28px 0"><a href="${INQUIRY_URL}" rel="noopener" style="display:inline-block;padding:12px 18px;border:1px solid #3D63FF;border-radius:10px;color:#7C97FF;font-weight:700">Submit an inquiry on GitHub →</a></p>
+  <p><small>The form is public. For sensitive matters, email <a href="mailto:comdows@hanmail.net" style="color:#7C97FF">comdows@hanmail.net</a> instead.
+  See <a href="/web1/en/about/" style="color:#7C97FF">About &amp; methodology</a> for how this directory is run — no paid placement, no consulting funnel.</small></p>
+</main>` }));
+
 /* ── AI 인용 레이어: llms.txt + 공개 데이터셋(JSON) — DA 0에서 가장 유리한 전장 ── */
 const today0 = new Date().toISOString().slice(0, 10);
 fs.writeFileSync(path.join(DIST, "llms.txt"), [
@@ -177,6 +216,7 @@ fs.writeFileSync(path.join(DIST, "llms.txt"), [
   `## Pages`,
   `- ${SITE}/en/ : landing & category index`,
   `- ${SITE}/en/about/ : methodology & neutrality`,
+  `- ${SITE}/en/partner-inquiry/ : free partner inquiry for businesses entering Korea`,
   ...Object.keys(GUIDES).map((g) => `- ${SITE}/en/guide/${g}/ : guide`),
   ...enCats.map((c) => `- ${SITE}/en/c/${c.id}/ : ${catEn(c.id).name} (${byCat.get(c.id).length} platforms)`),
   ``,
@@ -201,7 +241,7 @@ fs.appendFileSync(path.join(DIST, "robots.txt"), `# AI crawlers: see ${SITE}/llm
 /* ── sitemap.xml에 EN URL 삽입 ── */
 const smPath = path.join(DIST, "sitemap.xml");
 const today = new Date().toISOString().slice(0, 10);
-const enUrls = [`${SITE}/en/`, `${SITE}/en/about/`,
+const enUrls = [`${SITE}/en/`, `${SITE}/en/about/`, `${SITE}/en/partner-inquiry/`,
   ...enCats.map((c) => `${SITE}/en/c/${c.id}/`),
   ...enPlats.map((p) => `${SITE}/en/p/${p.id}/`),
   ...Object.keys(GUIDES).map((s) => `${SITE}/en/guide/${s}/`)];

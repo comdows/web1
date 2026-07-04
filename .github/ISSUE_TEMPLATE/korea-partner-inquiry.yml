@@ -1,0 +1,95 @@
+name: "Korea partner inquiry (free)"
+description: "For businesses outside Korea looking for a Korean platform partner — listing, distribution, integration, or co-marketing."
+title: "[Inquiry] <your company> — <what you are looking for>"
+labels: ["en-inbound"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **This inquiry is posted publicly on GitHub.** Keep it to a short, non-confidential summary — that is enough for a first review.
+        For sensitive matters, email **comdows@hanmail.net** instead of filing an issue.
+
+        **Scope** — business partnerships with Korean platforms: marketplace listing, distribution/wholesale, fulfillment, technology integration, co-marketing.
+        **Out of scope** — equity investment, fundraising, and securities of any kind: such inquiries will be closed without review. Business-transfer (M&A) listings are likewise not available through this channel.
+
+        How it works: we review your inquiry → if there is a plausible fit in our directory of 1,600+ Korean platforms, we contact the Korean platform first → an introduction is made **only when both sides consent**. This inquiry and any introduction are **free for the inquiring business**. Contact details are never shared without explicit consent.
+  - type: input
+    id: company
+    attributes:
+      label: Company name
+      placeholder: "Acme GmbH"
+    validations:
+      required: true
+  - type: input
+    id: website
+    attributes:
+      label: Company website
+      placeholder: "https://example.com"
+    validations:
+      required: true
+  - type: input
+    id: country
+    attributes:
+      label: Country / region of registration
+      placeholder: "Germany"
+    validations:
+      required: true
+  - type: dropdown
+    id: category
+    attributes:
+      label: Which category of Korean platform are you interested in?
+      options:
+        - Open marketplaces (general e-commerce)
+        - Wholesale & sourcing (B2B)
+        - Fulfillment & logistics
+        - Cross-border / global commerce
+        - Fashion vertical
+        - Food & fresh vertical
+        - Handmade / craft vertical
+        - Store builders & commerce infrastructure
+        - Social / group-buying commerce
+        - Other / not sure yet
+    validations:
+      required: true
+  - type: dropdown
+    id: partner-type
+    attributes:
+      label: What kind of partnership are you looking for?
+      options:
+        - Sales channel (sell our products in Korea)
+        - Distribution / wholesale partner
+        - Fulfillment & logistics partner
+        - Technology / API integration
+        - Co-marketing or cross-promotion
+        - Not sure yet — need orientation
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Your proposal in one paragraph
+      description: "What you offer + what you are looking for. No confidential details, no contact information — we will follow up on this issue."
+      placeholder: "We manufacture X, sell in the EU and US, and are looking for a Korean marketplace or distributor to launch with. We can offer …"
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: How did you find SEMOPL?
+      options:
+        - Google or other search engine
+        - ChatGPT / Claude / Perplexity or another AI assistant
+        - GitHub
+        - Referral / word of mouth
+        - Other
+    validations:
+      required: true
+  - type: checkboxes
+    id: consent
+    attributes:
+      label: Confirmations
+      options:
+        - label: I understand this inquiry is public, and I have not included confidential information or contact details.
+          required: true
+        - label: I understand this concerns business partnerships only — no equity, fundraising, or securities matters.
+          required: true
