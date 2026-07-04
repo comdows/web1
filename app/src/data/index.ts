@@ -29,6 +29,7 @@ export interface PartnerType {
   settlement: "none" | "direct" | "share";
   effort: "light" | "mid" | "heavy";
   goals: string[];
+  feeTier: "A" | "B" | "C"; // 연결료 등급(0011 partner_types.fee_tier와 동일 매핑 — A 무료/B 22,000/C 77,000 VAT포함)
 }
 export const partnerGoals = partnerTypesData.goals as PartnerGoal[];
 export const partnerGroups = partnerTypesData.groups as PartnerGroup[];

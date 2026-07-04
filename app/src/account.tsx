@@ -12,11 +12,13 @@ import { TERMS_VERSION } from "./legal";
 import { FLAGS } from "./config";
 import {
   briefMatchesDeal, cancelDealSubmission, cancelSubmission, closeMyPost, createSubmission,
-  deactivateBrief, deleteMyAccount, fetchDeals, listMyBriefs, listMyDealInterests,
+  deactivateBrief, deleteMyAccount, fetchDeals, listInterestsOnMyPosts, listMyBriefs, listMyDealInterests,
   listMyDealSubmissions, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions,
-  remoteEnabled, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
+  placeOrder, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
 } from "./lib/api";
-import type { BuyerBriefRow, DealSubmissionRow, MyInterestRow, PartnerPostAdmin, PublicDeal, Submission } from "./lib/api";
+import { bankTransferProvider } from "./lib/billing";
+import type { DepositInstructions } from "./lib/billing";
+import type { BuyerBriefRow, DealSubmissionRow, MyInterestRow, MyPostInterest, PartnerPostAdmin, PublicDeal, Submission } from "./lib/api";
 
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
 
@@ -177,6 +179,8 @@ export function Account() {
   const [delErr, setDelErr] = useState("");
   const [showDel, setShowDel] = useState(false);
   const [actBusy, setActBusy] = useState("");         // 취소·마감 진행 중인 항목 id
+  const [inbox, setInbox] = useState<MyPostInterest[]>([]);              // 내 제안에 달린 신청(익명)
+  const [deposit, setDeposit] = useState<DepositInstructions | null>(null); // 스폰서 주문 무통장 안내
   const [acts, setActs] = useState<{ pp: PartnerPostAdmin[]; ds: DealSubmissionRow[]; pi: MyInterestRow[]; di: MyInterestRow[]; br: BuyerBriefRow[] } | null>(null);
   const [actsErr, setActsErr] = useState(false);
   const [briefDeals, setBriefDeals] = useState<PublicDeal[]>([]); // 브리프 조건 대조용(공개 뷰)
@@ -190,6 +194,7 @@ export function Account() {
       .then((s) => { if (alive) setSubs(s); })
       .catch(() => { if (alive) { setSubsError(true); setSubs(null); } });
     setActsErr(false);
+    listInterestsOnMyPosts().then((r) => { if (alive) setInbox(r); }).catch(() => { /* noop */ });
     Promise.all([listMyPartnerPosts(), listMyDealSubmissions(), listMyPartnerInterests(), listMyDealInterests(), listMyBriefs()])
       .then(([pp, ds, pi, di, br]) => {
         if (!alive) return;
@@ -360,6 +365,43 @@ export function Account() {
           </div>
         )}
 
+      {deposit && (
+        <div className="banner" style={{ marginTop: 20 }}>
+          🧾 <b>스폰서 주문 접수 — 무통장 입금 안내</b>: {deposit.bank} · <b>{deposit.totalKrw.toLocaleString()}원</b>(VAT 포함) ·
+          입금자명 <b>{deposit.depositorRule}</b> · 기한 {deposit.deadlineDays}일. 입금 확인 후 게재가 시작되며 미이행 시 전액 환불됩니다.
+        </div>
+      )}
+
+      {inbox.length > 0 && (
+        <>
+          <div className="sec-title" style={{ marginTop: 28 }}>받은 매칭 신청 (내 제안에 대한 응답)</div>
+          <div className="sub-list">
+            {inbox.map((i) => (
+              <div className="sub-item" key={i.id}>
+                <div style={{ minWidth: 0 }}>
+                  📥 <b>"{i.post_title}"</b>에 신청 — {i.platform_name} {i.size_text && <span className="faint">({i.size_text})</span>}
+                  <div className="frm-note">{i.pitch}</div>
+                </div>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, flexWrap: "wrap" }}>
+                  {i.status === "pending" && !i.owner_confirmed_at && (
+                    <>
+                      <button className="btn primary sm" disabled={actBusy === i.id}
+                        title="동의하면 세모플이 양측 이메일로 소개를 진행합니다"
+                        onClick={() => doAct(i.id, () => respondToInterest(i.id, true))}>소개 진행 동의</button>
+                      <button className="btn ghost sm" disabled={actBusy === i.id}
+                        onClick={() => doAct(i.id, () => respondToInterest(i.id, false))}>거절</button>
+                    </>
+                  )}
+                  <Badge kind={i.status === "introduced" ? "verify" : i.status === "declined" ? "muted" : i.owner_confirmed_at ? "good" : "soon"}>
+                    {i.status === "introduced" ? "소개 완료" : i.status === "declined" ? "거절함" : i.owner_confirmed_at ? "동의함 — 소개 대기" : "응답 대기"}
+                  </Badge>
+                </div>
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
       <div className="sec-title" style={{ marginTop: 28 }}>내 활동 (제휴·거래소)</div>
       {actsErr ? (
         <div className="empty">활동 내역을 불러오지 못했어요. <button className="linklike" onClick={() => setReload((n) => n + 1)}>다시 시도</button></div>
@@ -389,7 +431,15 @@ export function Account() {
                 <div style={{ minWidth: 0 }}>🤝 <b>{p.title}</b> <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{p.created_at.slice(0, 10)}</span>
                   {p.status === "rejected" && p.review_reason && <div className="frm-note">반려 사유: {p.review_reason}</div>}
                 </div>
-                <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, flexWrap: "wrap" }}>
+                  {FLAGS.billing.sponsor && p.status === "published" && (
+                    <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === p.id}
+                      title="보드 상단 고정(월 99,000원 · AD 표기) — 무통장 입금 후 게재"
+                      onClick={() => doAct(p.id, async () => {
+                        const cid = await placeOrder("boost", undefined, p.id);
+                        setDeposit(await bankTransferProvider.instruct(cid, 99000, `스폰서 ${p.title.slice(0, 8)}`));
+                      })}>🪧 상단 고정 신청</button>
+                  )}
                   {(p.status === "pending" || p.status === "published") && (
                     <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === p.id}
                       onClick={() => doAct(p.id, () => closeMyPost(p.id))}>{p.status === "pending" ? "철회" : "마감"}</button>

@@ -23,7 +23,7 @@ export function Logo() {
   );
 }
 
-export function Badge({ kind, children }: { kind: "new" | "good" | "soon" | "muted" | "verify"; children: ReactNode }) {
+export function Badge({ kind, children }: { kind: "new" | "good" | "soon" | "muted" | "verify" | "ad"; children: ReactNode }) {
   return <span className={`badge ${kind}`}>{children}</span>;
 }
 
