@@ -93,6 +93,41 @@ for (const p of data.platforms) {
   count++;
 }
 
+/* 원본 템플릿을 prerender-en.mjs에 전달 — 아래에서 루트 index.html을 재작성하면
+ * #root가 더 이상 비어 있지 않아 EN 셸의 치환 정규식이 조용히 실패한다.
+ * EN 스크립트가 이 파일을 읽고 마지막에 삭제한다(배포 산출물에 남지 않음). */
+fs.writeFileSync(path.join(DIST, "_template.html"), template);
+
+/* 루트 index.html 재작성 — 크롤러가 보는 홈이 빈 <div id="root">였다(내부 링크 2,300+개의 종착지가 공백).
+ * /p/ 페이지와 동일 패턴: 정적 콘텐츠를 #root에 넣고, 사람에겐 SPA가 부팅되며 교체된다. */
+const homeBody = `
+<main style="max-width:720px;margin:32px auto;padding:0 20px">
+  <h1>세모플 — 세상의 모든 플랫폼</h1>
+  <p>${data.platforms.length.toLocaleString()}개 한국 비즈니스 플랫폼·AI 도구를 ${data.categories.length}개 분야, 같은 기준으로 정리한 B2B 디렉토리입니다.
+  사업자가 입점·판매·홍보·소싱할 곳을 찾고, 플랫폼끼리 제휴하고, 사업을 넘길 곳을 만나는 인프라입니다.</p>
+  <h2>분야별 플랫폼 목록</h2>
+  <ul>${data.categories.map((c) => `<li><a href="/web1/c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a> — ${esc(c.desc)}</li>`).join("")}</ul>
+  <p><a href="/web1/?view=partners">제휴 매칭</a> · <a href="/web1/?view=exchange">플랫폼 거래소</a> · <a href="/web1/?view=ai-finder">AI 도구 찾기</a> · <a href="/web1/en/">English directory</a></p>
+</main>`;
+fs.writeFileSync(path.join(DIST, "index.html"), template
+  .replace("</head>", `  <link rel="canonical" href="${SITE}/">\n  </head>`)
+  .replace(/(<div id="root">)(<\/div>)/, `$1${homeBody}$2`));
+
+/* 404.html — GitHub Pages가 미존재 경로에 서빙(삭제된 /p/ 등). 브랜드 안내 + 복귀 경로 + SPA 부팅 유지 */
+const nfBody = `
+<main style="max-width:720px;margin:32px auto;padding:0 20px">
+  <h1>페이지를 찾을 수 없어요</h1>
+  <p>주소가 바뀌었거나 삭제된 페이지예요. 찾으시던 플랫폼은 검색으로 다시 찾을 수 있습니다.</p>
+  <p><a href="/web1/">← 세모플 홈</a> · <a href="/web1/?view=search">플랫폼 검색</a></p>
+  <h2>분야로 찾기</h2>
+  <ul>${data.categories.slice(0, 12).map((c) => `<li><a href="/web1/c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a></li>`).join("")}</ul>
+</main>`;
+fs.writeFileSync(path.join(DIST, "404.html"), template
+  .replace(/<title>[^<]*<\/title>/, `<title>페이지를 찾을 수 없어요 | 세모플</title>`)
+  .replace(/(<meta name="description" content=")[^"]*(")/, `$1주소가 바뀌었거나 삭제된 페이지 — 세모플에서 다시 찾아보세요.$2`)
+  .replace("</head>", `  <meta name="robots" content="noindex">\n  </head>`)
+  .replace(/(<div id="root">)(<\/div>)/, `$1${nfBody}$2`));
+
 /* 사이트맵 + robots */
 const today = new Date().toISOString().slice(0, 10);
 const staticUrls = ["", "?view=partners", "?view=exchange", "?view=ai-finder", "?view=packs", "?view=weekly", "?view=onboarding", "?view=deal-guide", "?view=value-check"];

@@ -51,7 +51,12 @@ async function gotrue(path: string, body: unknown): Promise<TokenResponse> {
     body: JSON.stringify(body),
   });
   const data = (await res.json().catch(() => ({}))) as TokenResponse & { msg?: string; error_description?: string; message?: string };
-  if (!res.ok) throw new Error(data.msg || data.error_description || data.message || `AUTH ${res.status}`);
+  if (!res.ok) {
+    // status를 부착해 갱신 실패의 원인(확정 무효 4xx vs 순단 5xx/네트워크)을 구분할 수 있게 한다
+    const err = new Error(data.msg || data.error_description || data.message || `AUTH ${res.status}`) as Error & { status?: number };
+    err.status = res.status;
+    throw err;
+  }
   return data;
 }
 function toSession(d: TokenResponse): Session | null {
@@ -102,17 +107,37 @@ export async function updatePassword(password: string): Promise<void> {
   const data = (await res.json().catch(() => ({}))) as { msg?: string; error_description?: string };
   if (!res.ok) throw new Error(data.msg || data.error_description || `AUTH ${res.status}`);
 }
+/* 이메일 변경 — GoTrue가 신·구 주소로 확인 메일을 보내고, 새 주소의 링크 클릭 시 완료된다.
+ * 소개는 계정 이메일로만 이뤄지므로(v_admin_intro_queue) 이 경로가 없으면 이직·메일 폐기 시 연락 두절. */
+export async function updateEmail(newEmail: string): Promise<void> {
+  const token = await getAccessToken();
+  if (!token) throw new Error("로그인이 필요합니다");
+  const res = await fetch(`${SB_URL}/auth/v1/user${redirectQ}`, {
+    method: "PUT",
+    headers: { apikey: SB_KEY!, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ email: newEmail }),
+  });
+  const data = (await res.json().catch(() => ({}))) as { msg?: string; error_description?: string };
+  if (!res.ok) throw new Error(data.msg || data.error_description || `AUTH ${res.status}`);
+}
 export function signOut(): void { save(null); }
 
-/* 유효한 액세스 토큰 — 만료 임박 시 갱신, 갱신 실패 시 로그아웃 처리 */
+/* 유효한 액세스 토큰 — 만료 임박 시 갱신.
+ * 갱신 실패는 원인을 구분한다: 4xx(invalid_grant 등)는 확정 무효라 세션 폐기,
+ * 네트워크 예외·5xx는 순단일 수 있으므로 refresh_token을 보존하고 다음 호출에서 재시도
+ * (긴 폼 작성 중 모바일 순단 한 번에 강제 로그아웃되는 사고 방지). */
 export async function getAccessToken(): Promise<string | null> {
   if (!session) return null;
   if (session.expires_at - 60 > Date.now() / 1000) return session.access_token;
   try {
     const s = toSession(await gotrue("token?grant_type=refresh_token", { refresh_token: session.refresh_token }));
     if (s) { save(s); return s.access_token; }
-  } catch { /* 갱신 실패 → 아래에서 세션 폐기 */ }
-  save(null);
+    save(null); // 응답은 정상인데 세션 형태가 아님 — 확정 무효로 간주
+  } catch (e) {
+    const status = (e as Error & { status?: number }).status;
+    if (status !== undefined && status >= 400 && status < 500) save(null);
+    // 그 외(네트워크 reject·5xx): 세션 유지 — 이번 호출만 실패 처리
+  }
   return null;
 }
 export const getSession = (): Session | null => session;
@@ -166,6 +191,9 @@ function consumeAuthHash(): void {
       if (h.get("type") === "recovery") {
         recoveryPending = true;
         hashNotice = "본인 확인 완료 — 아래에서 새 비밀번호를 설정해 주세요.";
+        // 복구 링크는 홈으로 돌아오는데 비밀번호 폼은 계정 화면에만 있다 — 막다른 길 방지 라우팅
+        history.replaceState(null, "", location.pathname + "?view=account");
+        return;
       } else if (h.get("provider_token")) {
         hashNotice = "소셜 계정으로 로그인됐어요.";
         // OAuth 첫 로그인엔 가입 폼이 없으므로 약관 동의 버전을 메타데이터로 기록(멱등)

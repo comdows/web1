@@ -12,8 +12,10 @@ export interface AnonFinding {
   hint: string;
 }
 
-/* 연락처·식별정보 패턴(0005 서버 check와 동일) — 폼에서 선차단해 친절히 안내 */
-export const CONTACT_RE = /(@|https?:\/\/|www\.|010[- ]?\d{3,4}[- ]?\d{4}|카카오톡|카톡|kakao|텔레그램|telegram)/i;
+/* 연락처·식별정보 패턴(0009 서버 check와 동일 기준 — 양쪽을 반드시 함께 갱신) — 폼에서 선차단해 친절히 안내.
+ * 확장(0009): 일반 국번 전화(070·02·031… — 기존 010 패턴 포섭), 공일공(한글 풀어쓰기),
+ * 인스타·디스코드·라인 아이디·위챗·지메일. insta/line id는 단어 경계로 instant·airline 오탐 방지. */
+export const CONTACT_RE = /(@|https?:\/\/|www\.|0\d{1,2}[-. ]?\d{3,4}[-. ]?\d{4}|공일공|카카오톡|카톡|kakao|텔레그램|텔레그람|telegram|인스타|\binsta(gram)?\b|디스코드|discord|(^|[^가-힣])라인\s?아이디|\bline[ -]?id\b|위챗|wechat|지메일)/i;
 export const hasContact = (...texts: (string | undefined)[]) => texts.some((t) => t && CONTACT_RE.test(t));
 
 const DOMAIN_RE = /\b[a-z0-9][a-z0-9-]{1,30}\.(com|net|kr|io|co|shop|store|me|app)\b/i;

@@ -21,12 +21,26 @@ async function login() {
   return (await res.json()).access_token;
 }
 
-/* PostgREST count=exact — 본문 없이 Content-Range 헤더로 개수만 */
+/* 센티널: 봇이 admin 롤을 상실하면 RLS가 401이 아니라 '0행 성공'을 준다 —
+ * 그대로 진행하면 매일 '대기 0건'으로 집계되고 알림 이슈까지 자동 폐쇄되는
+ * '고장 = 이상 없음' 오작동이 된다. 롤을 명시 확인하고 아니면 런을 실패시킨다. */
+async function assertAdmin(token) {
+  const sub = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString()).sub;
+  const res = await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${sub}&select=role`, {
+    headers: { apikey: SB_KEY, Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`봇 롤 확인 실패: ${res.status}`);
+  const rows = await res.json();
+  if (rows[0]?.role !== "admin") throw new Error(`봇 계정이 admin 롤이 아님(role=${rows[0]?.role ?? "없음"}) — 다이제스트 신뢰 불가`);
+}
+
+/* PostgREST count=exact — 본문 없이 Content-Range 헤더로 개수만.
+ * 실패는 throw(fail-loud): 0으로 조용히 넘기면 '대기 없음'으로 오인돼 이슈가 닫힌다. */
 async function count(token, pathQ) {
   const res = await fetch(`${SB_URL}/rest/v1/${pathQ}`, {
     headers: { apikey: SB_KEY, Authorization: `Bearer ${token}`, Prefer: "count=exact", Range: "0-0" },
   });
-  if (!res.ok) { console.warn(`[skip] ${pathQ.split("?")[0]}: ${res.status}`); return 0; }
+  if (!res.ok) throw new Error(`${pathQ.split("?")[0]} count 실패: ${res.status} ${await res.text()}`);
   return parseInt((res.headers.get("content-range") ?? "0/0").split("/")[1], 10) || 0;
 }
 async function oldest(token, table, filter) {
@@ -40,6 +54,7 @@ async function oldest(token, table, filter) {
 const waitDays = (iso) => iso ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000) : 0;
 
 const token = await login();
+await assertAdmin(token);
 const QUEUES = [
   { label: "플랫폼 제보", table: "submissions", filter: "status=in.(pending,hold)" },
   { label: "제휴 제안 검수", table: "partner_posts", filter: "status=eq.pending" },

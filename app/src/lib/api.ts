@@ -398,6 +398,26 @@ export interface IntroQueueRow {
 export async function listAdminIntroQueue(): Promise<IntroQueueRow[]> {
   return rest<IntroQueueRow[]>("v_admin_intro_queue?status=eq.pending&select=*&order=created_at.asc&limit=100");
 }
+/* ── 계정 자기결정권(0009) — 셀프 취소·마감·탈퇴 (권한은 전부 RLS/RPC가 판정) ── */
+export async function cancelSubmission(id: string): Promise<void> {
+  await rest(`submissions?id=eq.${id}&status=eq.pending`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+}
+export async function cancelDealSubmission(id: string): Promise<void> {
+  await rest(`deal_submissions?id=eq.${id}&status=eq.pending`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+}
+export async function withdrawPartnerInterest(id: string): Promise<void> {
+  await rest(`partner_post_interests?id=eq.${id}&status=eq.pending`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+}
+export async function withdrawDealInterest(id: string): Promise<void> {
+  await rest(`deal_interests?id=eq.${id}&status=eq.pending`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+}
+export async function closeMyPost(postId: string): Promise<void> {
+  await rest("rpc/close_my_post", { method: "POST", body: JSON.stringify({ p_post_id: postId }) });
+}
+export async function deleteMyAccount(): Promise<void> {
+  await rest("rpc/delete_my_account", { method: "POST", body: "{}" });
+}
+
 /* ── 내 활동(본인 RLS + uid 필터 — admin 계정도 자기 것만) ── */
 export async function listMyPartnerPosts(): Promise<PartnerPostAdmin[]> {
   const uid = getSession()?.user.id;

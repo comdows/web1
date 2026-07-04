@@ -51,12 +51,14 @@ const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").
 const en = (id) => EN.platforms[id];
 const catEn = (id) => EN.categories[id] ?? { name: id, desc: "" };
 
-/* SPA 부팅 차단: 모듈 스크립트·프리로드 제거 + lang 치환 — EN 방화벽의 핵심 */
-const template = fs.readFileSync(path.join(DIST, "index.html"), "utf8")
+/* SPA 부팅 차단: 모듈 스크립트·프리로드 제거 + lang 치환 — EN 방화벽의 핵심.
+ * 템플릿은 _template.html(원본) — dist/index.html은 prerender.mjs가 홈 정적 콘텐츠로 재작성해 #root가 비어 있지 않다. */
+const template = fs.readFileSync(path.join(DIST, "_template.html"), "utf8")
   .replace(/<script type="module"[^>]*><\/script>\s*/g, "")
   .replace(/<link rel="modulepreload"[^>]*>\s*/g, "")
   .replace('lang="ko"', 'lang="en"');
 if (/type="module"/.test(template)) { console.error("✗ EN 템플릿에 모듈 스크립트 잔존"); process.exit(1); }
+if (!/<div id="root"><\/div>/.test(template)) { console.error("✗ EN 템플릿 #root가 비어 있지 않음 — 치환 실패 위험"); process.exit(1); }
 
 const FOOTER = `
 <footer style="max-width:760px;margin:48px auto 32px;padding:20px;border-top:1px solid #2a3350;font-size:13px;opacity:.75">
@@ -374,5 +376,7 @@ const walk = (dir) => { for (const f of fs.readdirSync(dir, { withFileTypes: tru
 } };
 walk(path.join(DIST, "en"));
 if (bannedHit) process.exit(1);
+
+fs.rmSync(path.join(DIST, "_template.html")); // 전달용 원본 템플릿 — 배포 산출물에서 제거
 
 console.log(`EN 프리렌더 — 랜딩 1 + 허브 ${enCats.length} + 상세 ${enPlats.length} + 가이드 ${Object.keys(GUIDES).length + AI.guides.length} + AI(${AI.tools.length}도구·프로필 ${Object.keys(AI.profiles).length}) · sitemap +${enUrls.length} · 금지 링크 0`);
