@@ -1,0 +1,896 @@
+{
+  "tools": [
+    {
+      "id": "allganize-alli",
+      "name": "Allganize Alli (올거나이즈)",
+      "origin": "korean",
+      "category": "document",
+      "blurb": "Enterprise document-understanding and agentic RAG platform (Alli) that answers questions from internal documents; deployable as SaaS, private cloud, or on-premise.",
+      "koreanNote": "Provides Korean-specialized LLMs and RAG (e.g. Alpha-Instruct) for the Korean market and runs a dedicated official Korean site (allganize.ai/ko).",
+      "koreanEvidence": "https://www.allganize.ai/ko/home",
+      "enDocs": "https://www.allganize.ai/en/alli-llm-enabler",
+      "paymentAbroad": "unknown",
+      "paymentNote": "Enterprise demo/sales-contact flow on the official site; no public self-serve checkout found.",
+      "officialUrl": "https://www.allganize.ai/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "bigin",
+      "name": "Bigin (빅인)",
+      "origin": "korean",
+      "category": "data",
+      "blurb": "E-commerce CRM marketing automation platform that segments customers from behavior data and runs AI-recommended targeted campaigns across channels.",
+      "koreanNote": "Korean-native solution; official site, resources, and dedicated-manager support are provided in Korean.",
+      "koreanEvidence": "https://bigin.io/",
+      "enDocs": null,
+      "paymentAbroad": "unknown",
+      "paymentNote": "Sales-contact oriented B2B plans; no international self-serve checkout verifiable from the official site.",
+      "officialUrl": "https://bigin.io/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "channel-talk-alf",
+      "name": "Channel Talk ALF (채널톡 알프)",
+      "origin": "korean",
+      "category": "chatbot-cs",
+      "blurb": "AI customer service agent inside Channel Talk's business messenger; answers inquiries from a company's knowledge base and escalates to human agents when needed.",
+      "koreanNote": "Korean-native product by Channel Corp; Korean UI, help docs, and support are the primary language, with ALF officially launched from the Korean market.",
+      "koreanEvidence": "https://channel.io/ko",
+      "enDocs": "https://docs.channel.io/help/en",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "Official billing docs state credit-card payment with Stripe as the payment gateway for international payments.",
+      "officialUrl": "https://channel.io/en",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "clova-ocr",
+      "name": "CLOVA OCR (네이버클라우드)",
+      "origin": "korean",
+      "category": "document",
+      "blurb": "NAVER Cloud Platform OCR service that extracts text and structured fields from documents and images, with template-based and specialized document models.",
+      "koreanNote": "Per official docs, NAVER Cloud's Korean-native OCR supports Korean printed and handwritten text recognition (English and Japanese also supported).",
+      "koreanEvidence": "https://guide.ncloud-docs.com/docs/en/clovaocr-spec",
+      "enDocs": "https://guide.ncloud-docs.com/docs/en/clovaocr-overview",
+      "paymentAbroad": "unknown",
+      "paymentNote": "Requires a NAVER Cloud Platform account; English console exists but overseas card checkout is not verifiable without signup.",
+      "officialUrl": "https://www.ncloud.com/product/aiService/ocr",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "clova-studio",
+      "name": "CLOVA Studio (클로바 스튜디오)",
+      "origin": "korean",
+      "category": "dev-infra",
+      "blurb": "NAVER Cloud Platform's development environment and REST APIs for building on HyperCLOVA X models (chat completion, tuning, embeddings, and related tools).",
+      "koreanNote": "Serves NAVER's HyperCLOVA X models, positioned by NAVER as proficient in Korean with deep coverage of Korean-language data and cultural context.",
+      "koreanEvidence": "https://guide.ncloud-docs.com/docs/en/clovastudio-overview",
+      "enDocs": "https://api.ncloud-docs.com/docs/en/ai-naver-clovastudio-summary",
+      "paymentAbroad": "unknown",
+      "paymentNote": "Billed through the NAVER Cloud Platform console; overseas card acceptance not verifiable without an account.",
+      "officialUrl": "https://clova.ai/en/clova-studio",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "clova-x",
+      "name": "CLOVA X (클로바 X)",
+      "origin": "korean",
+      "category": "chatbot-cs",
+      "blurb": "NAVER's conversational AI chatbot built on the HyperCLOVA X large language model, answering questions and generating text with strong Korean-language grounding.",
+      "koreanNote": "Runs on HyperCLOVA X, which NAVER states was trained on substantially more Korean data than comparable models and covers Korean law, institutions, and cultural context.",
+      "koreanEvidence": "https://clova.ai/en/hyperclova",
+      "enDocs": "https://clova.ai/en",
+      "paymentAbroad": "unknown",
+      "paymentNote": "Consumer service requiring a NAVER account; no international self-serve billing verifiable without signup.",
+      "officialUrl": "https://clova-x.naver.com",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "daglo",
+      "name": "Daglo (다글로)",
+      "origin": "korean",
+      "category": "voice",
+      "blurb": "AI notetaker by Korean company ActionPower that transcribes meetings, lectures, and audio files into text with summaries, and offers a transcription API for developers.",
+      "koreanNote": "Korean service specialized in Korean speech recognition, with Korean UI and API guides by default and multilingual transcription including Korean.",
+      "koreanEvidence": "https://daglo.ai/",
+      "enDocs": "https://developers.daglo.ai/guide/en/",
+      "paymentAbroad": "unknown",
+      "paymentNote": "Listed on the US App Store, but overseas card checkout on the official website is not verifiable without signup.",
+      "officialUrl": "https://daglo.ai/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "datarize",
+      "name": "Datarize (데이터라이즈)",
+      "origin": "korean",
+      "category": "data",
+      "blurb": "AI-powered e-commerce CRM and analytics: behavior-based segmentation, personalized on-site popups, and automated campaigns across email, KakaoTalk, and LINE.",
+      "koreanNote": "Korean-native commerce tool with Korean site and channel support for KakaoTalk, used by Korean online stores.",
+      "koreanEvidence": "https://www.datarize.ai/",
+      "enDocs": "https://www.datarize.ai/en/",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "Listed on the Shopify App Store (apps.shopify.com/datarize-public), where merchant billing for non-Korean stores runs through Shopify.",
+      "officialUrl": "https://www.datarize.ai/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "deepbrain-ai-studios",
+      "name": "AI Studios by DeepBrain AI (딥브레인AI)",
+      "origin": "korean",
+      "category": "video",
+      "blurb": "AI avatar video platform by Seoul-based DeepBrain AI that turns scripts, documents, or URLs into presenter-led videos with TTS narration and lip-sync.",
+      "koreanNote": "Founded and headquartered in Seoul; offers native Korean TTS avatars and a dedicated Korean (South Korea) text-to-speech page.",
+      "koreanEvidence": "https://www.deepbrain.io/language/korean-south-korea",
+      "enDocs": "https://www.aistudios.com/",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "USD self-serve plans with free tier on the official pricing page (aistudios.com/pricing).",
+      "officialUrl": "https://www.aistudios.com",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "deepl",
+      "name": "DeepL (딥엘)",
+      "origin": "global",
+      "category": "translation",
+      "blurb": "Machine translation service and API supporting Korean as a full source and target language, with document translation, glossaries, and voice features.",
+      "koreanNote": "Official developer docs list Korean among fully supported languages, and Korean is included in style-rule and voice-translation coverage; DeepL Pro is sold in South Korea.",
+      "koreanEvidence": "https://developers.deepl.com/docs/getting-started/supported-languages",
+      "enDocs": "https://developers.deepl.com/docs",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "Self-serve Pro/API subscription checkout on the official site, with availability announced for South Korea.",
+      "officialUrl": "https://www.deepl.com",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "elevenlabs",
+      "name": "ElevenLabs (일레븐랩스)",
+      "origin": "global",
+      "category": "voice",
+      "blurb": "AI voice platform for text-to-speech, voice cloning, and dubbing; multilingual models cover 70+ languages with a developer API and documentation.",
+      "koreanNote": "Official docs list Korean among supported languages for multilingual TTS models (Multilingual v2, Eleven v3), dubbing (90+ languages), and speech-to-text.",
+      "koreanEvidence": "https://help.elevenlabs.io/hc/en-us/articles/13313366263441-What-languages-do-you-support",
+      "enDocs": "https://elevenlabs.io/docs/overview/intro",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "USD self-serve subscription checkout on the official site.",
+      "officialUrl": "https://elevenlabs.io",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "flitto",
+      "name": "Flitto (플리토)",
+      "origin": "korean",
+      "category": "translation",
+      "blurb": "Korean language-data and translation company offering enterprise translation APIs, AI interpretation, and crowdsourced human translation fallback.",
+      "koreanNote": "Korea-headquartered platform whose translation APIs and language-data business are built around Korean and other Asian language pairs.",
+      "koreanEvidence": "https://about.flitto.com/service-api",
+      "enDocs": "https://support.flitto.com/hc/en-us",
+      "paymentAbroad": "unknown",
+      "paymentNote": "Enterprise API and B2B solutions are sales-contact driven; no public self-serve checkout verifiable.",
+      "officialUrl": "https://www.flitto.com/business/api-solution",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "heygen",
+      "name": "HeyGen",
+      "origin": "global",
+      "category": "video",
+      "blurb": "AI avatar video generator; official help center lists Korean among supported platform voices and as an input/output language for lip-synced video translation.",
+      "koreanNote": "Official help center lists Korean (Korea) among supported voice languages and video-translation input/output languages.",
+      "koreanEvidence": "https://help.heygen.com/en/articles/11391932-voice-languages-we-support",
+      "enDocs": "https://help.heygen.com/en/",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "USD self-serve checkout on official site.",
+      "officialUrl": "https://www.heygen.com/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "hyperclova-x-api",
+      "name": "HyperCLOVA X API / CLOVA Studio (하이퍼클로바X)",
+      "origin": "korean",
+      "category": "dev-infra",
+      "blurb": "NAVER Cloud's CLOVA Studio exposes the HyperCLOVA X Korean-first LLM family as RESTful APIs, with tuning, playground, and agent-building features on NAVER Cloud Platform.",
+      "koreanNote": "HyperCLOVA X is a Korean-first foundation model trained by NAVER; CLOVA Studio is offered as a Korean NAVER Cloud Platform AI service.",
+      "koreanEvidence": "https://www.ncloud.com/product/aiService/clovaStudio",
+      "enDocs": "https://api.ncloud-docs.com/docs/en/ai-naver-clovastudio-summary",
+      "paymentAbroad": "unknown",
+      "paymentNote": "Requires a NAVER Cloud Platform account; overseas self-serve payment for CLOVA Studio is not verifiable from public documentation.",
+      "officialUrl": "https://www.ncloud.com/product/aiService/clovaStudio",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "intercom-fin",
+      "name": "Intercom Fin",
+      "origin": "global",
+      "category": "chatbot-cs",
+      "blurb": "Intercom's AI agent for customer service that resolves support conversations using help-center and knowledge content across chat, email, and other channels.",
+      "koreanNote": "Official help docs list Korean among Fin AI Agent's supported reply languages, with automatic language detection per conversation.",
+      "koreanEvidence": "https://www.intercom.com/help/en/articles/8322387-use-fin-ai-agent-in-multiple-languages",
+      "enDocs": "https://www.intercom.com/help/en",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "Self-serve trial and card checkout available on the official site.",
+      "officialUrl": "https://fin.ai",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "itemscout",
+      "name": "Itemscout (아이템스카우트)",
+      "origin": "korean",
+      "category": "data",
+      "blurb": "Keyword and product analytics tool for Korean e-commerce sellers: Naver Smart Store keyword metrics, product-name and tag analysis, and ranking tracking.",
+      "koreanNote": "Built specifically for Naver Smart Store and Korean marketplaces; UI and data coverage are Korean-native.",
+      "koreanEvidence": "https://itemscout.io/",
+      "enDocs": null,
+      "paymentAbroad": "unknown",
+      "paymentNote": "Korean-market subscription checkout; international card acceptance not verifiable without signup.",
+      "officialUrl": "https://itemscout.io/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "maum-ai",
+      "name": "maum.ai (마음에이아이)",
+      "origin": "korean",
+      "category": "chatbot-cs",
+      "blurb": "Korean AI vendor offering enterprise conversational AI: MAAL language models for RAG chatbots and SUDA speech technology used in contact-center style deployments.",
+      "koreanNote": "Korean-native vendor; official site, platform, and enterprise support operate primarily in Korean.",
+      "koreanEvidence": "https://maum.ai/",
+      "enDocs": null,
+      "paymentAbroad": "unknown",
+      "paymentNote": "Enterprise/on-premise sales-contact model; no international self-serve checkout verifiable on the official site.",
+      "officialUrl": "https://maum.ai/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "opensurvey-dataspace",
+      "name": "Opensurvey Dataspace (오픈서베이 데이터스페이스)",
+      "origin": "korean",
+      "category": "data",
+      "blurb": "Subscription B2B SaaS for consumer research and experience management: survey design, panel data collection, AI-assisted analysis, and automated report generation.",
+      "koreanNote": "Korean-native platform built around Korean consumer panels; product UI, guides, and blog are primarily in Korean.",
+      "koreanEvidence": "https://opensurvey.io/highlight/dataspace/features",
+      "enDocs": "https://support.opensurvey.io/en/articles/8508409-what-is-dataspace",
+      "paymentAbroad": "unknown",
+      "paymentNote": "Subscription plans are sold through sales/contract flows; no overseas self-serve checkout verifiable from the official site.",
+      "officialUrl": "https://opensurvey.io/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "papago-plus",
+      "name": "Papago Plus (파파고 플러스)",
+      "origin": "korean",
+      "category": "translation",
+      "blurb": "NAVER's subscription tier of the Papago translator, adding document, image, and voice translation with custom glossaries and team features.",
+      "koreanNote": "Papago is NAVER's Korean-native translator; Korean is a core language among its supported pairs and the service originates from NAVER Corp. in Korea.",
+      "koreanEvidence": "https://papago-plus.com",
+      "enDocs": "https://apps.apple.com/us/app/papago-plus/id6743303161",
+      "paymentAbroad": "unknown",
+      "paymentNote": "Official apps are listed on the US App Store and Google Play with subscription access, but web checkout region/card acceptance is not verifiable without signup.",
+      "officialUrl": "https://papago-plus.com",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "perso-ai",
+      "name": "Perso.ai (이스트소프트 퍼소)",
+      "origin": "korean",
+      "category": "video",
+      "blurb": "AI video dubbing and avatar platform by Korea's ESTsoft: translates videos into 99+ languages with voice cloning and automatic lip-sync alignment.",
+      "koreanNote": "Developed by Korean software company ESTsoft; supports Korean as a source and target dubbing language.",
+      "koreanEvidence": "https://estsoft.ai/en/ai_dubbing",
+      "enDocs": "https://perso.ai/",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "USD self-serve plans with free tier on the official pricing page (perso.ai/pricing).",
+      "officialUrl": "https://perso.ai",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "rtzr-vito",
+      "name": "Return Zero VITO/RTZR STT (리턴제로)",
+      "origin": "korean",
+      "category": "voice",
+      "blurb": "Korean speech-to-text company offering the RTZR STT OpenAPI plus consumer apps (VITO call transcription, Callabo) built on its Korean-optimized recognition models.",
+      "koreanNote": "Korean STT focused on Korean recognition accuracy; the official site and services are Korean-based and Korean benchmarks are published.",
+      "koreanEvidence": "https://www.rtzr.ai/",
+      "enDocs": "https://developers.rtzr.ai/docs/en/",
+      "paymentAbroad": "unknown",
+      "paymentNote": "API billing sits behind sign-up; no verified overseas-card self-serve checkout on the official site.",
+      "officialUrl": "https://www.rtzr.ai/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "saltlux-luxia",
+      "name": "Saltlux LUXIA (솔트룩스 루시아)",
+      "origin": "korean",
+      "category": "dev-infra",
+      "blurb": "Enterprise AI platform from listed Korean vendor Saltlux: LUXIA large language models, AI agents, search, and contact-center/talkbot products for on-premise and cloud.",
+      "koreanNote": "Korean-native vendor; LUXIA LLM and talkbot/AICC products are built for Korean and documented primarily in Korean on the official site.",
+      "koreanEvidence": "https://www.saltlux.com/",
+      "enDocs": "https://www.saltlux.com/en/product/talkbot/",
+      "paymentAbroad": "unknown",
+      "paymentNote": "Enterprise sales-contact model; no self-serve checkout found on the official site, so overseas payment is not verifiable without contact.",
+      "officialUrl": "https://www.saltlux.com/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "selectstar-datumo",
+      "name": "Selectstar / Datumo (셀렉트스타)",
+      "origin": "korean",
+      "category": "data",
+      "blurb": "AI data and evaluation company: crowdsourced training-data collection and labeling, plus the Datumo platform for LLM evaluation and automated red-teaming.",
+      "koreanNote": "Korean-native service with a Korean official site and a domestic crowdworker pool for Korean-language data collection and labeling.",
+      "koreanEvidence": "https://selectstar.ai/",
+      "enDocs": "https://datumo.com/",
+      "paymentAbroad": "unknown",
+      "paymentNote": "B2B project/contract model via sales contact; no public self-serve checkout, so overseas payment is not verifiable without signup.",
+      "officialUrl": "https://selectstar.ai/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "sendbird-ai-agent",
+      "name": "Sendbird AI Agent (센드버드)",
+      "origin": "global",
+      "category": "chatbot-cs",
+      "blurb": "Omnichannel AI agent platform for customer support built on Sendbird's communication APIs; deploys agents across in-app chat, web, email, SMS, and voice.",
+      "koreanNote": "Korean-founded, US-headquartered company with a full Korean-language official site and Korean product pages for the AI agent, plus a Seoul office.",
+      "koreanEvidence": "https://sendbird.com/ko/ai-agent/builder",
+      "enDocs": "https://sendbird.com/docs/ai-agent/guide/v1/overview",
+      "paymentAbroad": "unknown",
+      "paymentNote": "AI agent plans are described as usage-based with a sales-contact path; self-serve checkout for the AI agent product was not verifiable on the official site without signup.",
+      "officialUrl": "https://sendbird.com/ai-agent",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "storelink",
+      "name": "Storelink (스토어링크)",
+      "origin": "korean",
+      "category": "data",
+      "blurb": "Korean e-commerce marketing platform using AI and large-scale commerce data for keyword analysis, campaign operation, and seller marketing automation.",
+      "koreanNote": "Korean-native B2B service; official site, product UI, and support operate in Korean for the domestic e-commerce market.",
+      "koreanEvidence": "https://storelink.io/",
+      "enDocs": null,
+      "paymentAbroad": "unknown",
+      "paymentNote": "Korea-focused B2B service with sales-led onboarding; no international self-serve checkout verifiable from the official site.",
+      "officialUrl": "https://storelink.io/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "supertone",
+      "name": "Supertone (수퍼톤)",
+      "origin": "korean",
+      "category": "voice",
+      "blurb": "Korean voice AI company offering Supertone Play (TTS with 150+ voices), Shift (real-time voice changer), audio plugins, and a voice API.",
+      "koreanNote": "Korean-native voice AI rooted in Seoul National University research; the company itself documents Korean TTS quality as a core strength, with Korean/Japanese/English support.",
+      "koreanEvidence": "https://www.supertone.ai/en/work/the-number-one-texttospeech-ai-voice-in-korean-eng",
+      "enDocs": "https://www.supertone.ai/en",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "USD self-serve subscription page for Supertone Play (play.supertone.ai/subscription).",
+      "officialUrl": "https://www.supertone.ai/en",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "synap-ocr",
+      "name": "Synap OCR (사이냅소프트)",
+      "origin": "korean",
+      "category": "document",
+      "blurb": "Deep-learning OCR engine from Korean vendor Synapsoft that extracts text, checkboxes, and key-value pairs from document forms, with data de-identification features.",
+      "koreanNote": "OCR specialized in Korean document-form recognition, developed by Korean company Synapsoft; the official site and product docs are Korean-based.",
+      "koreanEvidence": "https://www.synapsoft.co.kr/ocr-3/",
+      "enDocs": "https://www.synapsoft.co.kr/ocr-3/?lang=en",
+      "paymentAbroad": "unknown",
+      "paymentNote": "B2B inquiry-based sales on the official site; no self-serve checkout found, not verifiable without contacting sales.",
+      "officialUrl": "https://www.synapsoft.co.kr/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "synthesia",
+      "name": "Synthesia",
+      "origin": "global",
+      "category": "video",
+      "blurb": "AI video platform with stock avatars and voices; official docs list Korean among supported languages for video creation, dubbing, and personal avatars.",
+      "koreanNote": "Official documentation lists Korean among 140+ supported languages, including dubbing and personal avatars.",
+      "koreanEvidence": "https://docs.synthesia.io/docs/supported-languages",
+      "enDocs": "https://docs.synthesia.io/",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "USD self-serve plan checkout on official site.",
+      "officialUrl": "https://www.synthesia.io/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "tidio-lyro",
+      "name": "Tidio Lyro",
+      "origin": "global",
+      "category": "chatbot-cs",
+      "blurb": "Customer service platform with Lyro, an AI agent that answers common questions from a business's support content across live chat and messaging channels.",
+      "koreanNote": "Official help center lists Korean among the languages Lyro can detect and reply in, configurable in the Lyro language settings.",
+      "koreanEvidence": "https://help.tidio.com/hc/en-us/articles/12643043611036-Lyro-Multilanguage-support",
+      "enDocs": "https://help.tidio.com/hc/en-us",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "Self-serve card checkout and free plan available on the official site.",
+      "officialUrl": "https://www.tidio.com",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "typecast",
+      "name": "Typecast (타입캐스트)",
+      "origin": "korean",
+      "category": "voice",
+      "blurb": "AI text-to-speech and voiceover tool by Neosapience with emotion-controllable virtual voice actors, voice cloning, and a developer TTS API.",
+      "koreanNote": "Product of Korean startup Neosapience; Korean is listed among its premium-quality TTS languages with a native Korean voice library.",
+      "koreanEvidence": "https://typecast.ai/",
+      "enDocs": "https://typecast.ai/docs/overview",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "USD self-serve subscription plans on the official English site.",
+      "officialUrl": "https://typecast.ai",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "upstage",
+      "name": "Upstage (업스테이지)",
+      "origin": "korean",
+      "category": "document",
+      "blurb": "Korean AI company offering Document AI (parsing/OCR/key-information extraction) APIs and the Solar LLM family via a self-serve developer console with English docs.",
+      "koreanNote": "Korean-developed: Solar LLMs and Document AI handle Korean documents and text natively, and the official site also operates in Korean.",
+      "koreanEvidence": "https://www.upstage.ai/",
+      "enDocs": "https://console.upstage.ai/docs/models",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "Self-serve console sign-up with prepaid credit billing denominated in USD (console.upstage.ai/billing).",
+      "officialUrl": "https://www.upstage.ai/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "upstage-solar-api",
+      "name": "Upstage Solar API / Console (업스테이지)",
+      "origin": "korean",
+      "category": "dev-infra",
+      "blurb": "Developer console for Upstage's Solar LLMs and Document AI: self-serve API keys, model catalog, and prepaid-credit billing, with OpenAI-compatible chat endpoints.",
+      "koreanNote": "Korean AI lab whose Solar models target strong Korean-language performance; official Korean-language guides are published alongside English docs.",
+      "koreanEvidence": "https://www.upstage.ai/blog/ko/guide-1-upstage-console-api",
+      "enDocs": "https://console.upstage.ai/docs/getting-started",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "Self-serve credit-card billing with prepaid credits and auto-recharge in the official console (console.upstage.ai/billing).",
+      "officialUrl": "https://console.upstage.ai/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "vrew",
+      "name": "Vrew (브루)",
+      "origin": "korean",
+      "category": "video",
+      "blurb": "Document-style AI video editor by VoyagerX: auto-generates subtitles via speech recognition, supports text-based cutting, AI voices, and 60+ language translation.",
+      "koreanNote": "Built by Seoul-based VoyagerX with Korean-native UI; Korean speech recognition and subtitle generation are core functions (desktop app; mobile service ended July 2026).",
+      "koreanEvidence": "https://vrew.ai/en/",
+      "enDocs": "https://vrew.ai/en/",
+      "paymentAbroad": "unknown",
+      "paymentNote": "Official English pricing page exists (vrew.ai/en/payment/pricepolicy) but overseas self-serve checkout was not verifiable without signup.",
+      "officialUrl": "https://vrew.ai/en/",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "wordvice-ai",
+      "name": "Wordvice AI (워드바이스 AI)",
+      "origin": "korean",
+      "category": "writing",
+      "blurb": "AI proofreading, paraphrasing, and translation suite from Korea-founded editing company Wordvice, aimed at academic and professional writing.",
+      "koreanNote": "Offers a dedicated Korean grammar checker and English-Korean translation tools, with the parent company operating in South Korea.",
+      "koreanEvidence": "https://wordvice.ai/tools/korean-grammar-checker",
+      "enDocs": "https://wordvice.ai",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "Self-serve registration and subscription checkout on the global English site wordvice.ai.",
+      "officialUrl": "https://wordvice.ai",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "wrtn",
+      "name": "Wrtn (뤼튼)",
+      "origin": "korean",
+      "category": "writing",
+      "blurb": "Korean consumer AI assistant and writing platform by Wrtn Technologies, offering chat, content generation, and AI search on top of multiple foundation models.",
+      "koreanNote": "Built Korea-first: the service UI, prompts, and localization target Korean users, and Wrtn reports millions of monthly active users in Korea.",
+      "koreanEvidence": "https://wrtn.ai",
+      "enDocs": null,
+      "paymentAbroad": "unknown",
+      "paymentNote": "Consumer service marketed to Korean users; no official English pricing/checkout page verifiable without signup.",
+      "officialUrl": "https://wrtn.ai",
+      "lastVerified": "2026-07-04"
+    },
+    {
+      "id": "zendesk-ai-agents",
+      "name": "Zendesk AI Agents",
+      "origin": "global",
+      "category": "chatbot-cs",
+      "blurb": "AI agents built into the Zendesk customer service suite that automate replies and workflows over messaging, email, and help-center channels.",
+      "koreanNote": "Zendesk products support a Korean UI, but official docs state generative replies in AI agents support listed languages with the exception of Japanese, Korean, and Chinese.",
+      "koreanEvidence": "https://support.zendesk.com/hc/en-us/articles/8357749663130-Languages-supported-by-AI-agents",
+      "enDocs": "https://support.zendesk.com/hc/en-us",
+      "paymentAbroad": "confirmed",
+      "paymentNote": "Online self-serve purchase and free trial available on the official site.",
+      "officialUrl": "https://www.zendesk.com",
+      "lastVerified": "2026-07-04"
+    }
+  ],
+  "profiles": {
+    "allganize-alli": {
+      "sections": [
+        {
+          "h": "What it is",
+          "body": "Allganize is a Korean-founded enterprise AI company whose main product, Alli, is a document-understanding and agentic RAG platform. Alli answers natural-language questions from an organization's internal documents rather than the open web. According to the official site (allganize.ai), it can be deployed as SaaS, in a private cloud, or fully on-premise. The company also offers Korean-specialized LLMs (such as Alpha-Instruct) that can back the RAG pipeline."
+        },
+        {
+          "h": "Who uses it in Korea",
+          "body": "Allganize positions Alli for Korean enterprises that need question-answering over internal manuals, policies, and contracts in Korean, and it runs a dedicated Korean-language site (allganize.ai/ko) for this market. Typical B2B use is internal knowledge search and document Q&A in regulated or security-sensitive settings, where the on-premise deployment option matters. We did not independently verify specific named customers, so we do not list any."
+        },
+        {
+          "h": "For businesses entering Korea",
+          "body": "For a foreign company building Korean-language document workflows, Alli's relevance is that its LLM and RAG stack is tuned for Korean, which off-the-shelf English-first platforms often handle less reliably. English product documentation exists (allganize.ai/en/alli-llm-enabler), so evaluation does not require Korean-only materials. Note that this is an enterprise sales-led product, not a self-serve API you can trial with a credit card."
+        },
+        {
+          "h": "What we verified",
+          "body": "As of 2026-07-04 we verified against the official site (allganize.ai): the Korean-language site at allganize.ai/ko, English documentation at allganize.ai/en/alli-llm-enabler, and the SaaS / private-cloud / on-premise deployment claim. Payment from abroad is unknown: the site uses an enterprise demo and sales-contact flow, and we found no public self-serve checkout. We found no independent English-language reviews, so treat vendor claims beyond these checks as unverified."
+        }
+      ]
+    },
+    "channel-talk-alf": {
+      "sections": [
+        {
+          "h": "What it is",
+          "body": "ALF is the AI customer service agent built into Channel Talk, a business messenger developed by Channel Corp. It answers customer inquiries by drawing on a company's own knowledge base and support content, and hands the conversation over to human agents when it cannot resolve an issue. Because it sits inside Channel Talk's messenger rather than operating as a standalone bot, AI responses and human chat share one inbox and one conversation history. The product originates from the Korean market, where Channel Corp is based (https://channel.io/ko)."
+        },
+        {
+          "h": "Who uses it in Korea",
+          "body": "In Korea, Channel Talk is widely deployed as the customer chat layer on B2C and B2B websites and commerce storefronts, where support teams use it to combine marketing messages, live chat, and helpdesk workflows in one tool. ALF is used by these teams to deflect repetitive inquiries — order status, policies, product questions — before a human agent is involved. Korean-language UI, help documentation, and vendor support are the product's primary language (https://channel.io/ko)."
+        },
+        {
+          "h": "For businesses entering Korea",
+          "body": "For a foreign business serving Korean customers, ALF offers a Korean-native support channel from a vendor whose documentation and support operate primarily in Korean, while an English product site (https://channel.io/en) and English help docs (https://docs.channel.io/help/en) exist for the operating team. Payment from abroad is confirmed: official billing documentation states credit-card payment with Stripe as the payment gateway for international payments. Independent English-language reviews of ALF are effectively absent, so evaluation should rely on official documentation and direct trial."
+        },
+        {
+          "h": "What we verified",
+          "body": "We verified the official English site (https://channel.io/en), the Korean site establishing its Korean-market origin (https://channel.io/ko), and English help documentation (https://docs.channel.io/help/en), as of 2026-07-04. Payment from abroad is confirmed via the vendor's billing documentation, which names Stripe as the gateway for international credit-card payments. Claims beyond these sources — such as customer counts or resolution rates — were not independently verifiable and are treated as unknown."
+        }
+      ]
+    },
+    "daglo": {
+      "sections": [
+        {
+          "h": "What it is",
+          "body": "Daglo is an AI notetaker and speech-to-text service by the Korean company ActionPower (official site: daglo.ai). It transcribes meetings, lectures, and uploaded audio files into text and generates summaries. Beyond the end-user app, it exposes a transcription API for developers, documented at developers.daglo.ai. The service is built around Korean speech recognition and also supports multilingual transcription including Korean."
+        },
+        {
+          "h": "Who uses it in Korea",
+          "body": "In Korea, Daglo is positioned for teams that need Korean-language meeting notes, lecture transcripts, and interview transcription, with a Korean UI and Korean API guides provided by default. Developers can integrate its speech-to-text API into their own products; the official developer guide covers this integration path. We found no independent English-language case studies, so specific named enterprise customers are unknown."
+        },
+        {
+          "h": "For businesses entering Korea",
+          "body": "For a foreign business that handles Korean-language audio (customer calls, meetings with Korean partners, local user research), Daglo offers a Korean-optimized transcription option with English developer documentation at developers.daglo.ai/guide/en/. Whether the official website accepts overseas cards is unknown; the paymentAbroad status is unverified, though the app is listed on the US App Store."
+        },
+        {
+          "h": "What we verified",
+          "body": "We verified the official site (https://daglo.ai/) presenting the AI notetaker and its Korean-first positioning, and the English developer documentation (https://developers.daglo.ai/guide/en/) confirming the transcription API, as of 2026-07-04. Payment from abroad is marked unknown: the official website's checkout could not be verified without signup. No English-language independent reviews were found; claims here rely solely on official sources."
+        }
+      ]
+    },
+    "flitto": {
+      "sections": [
+        {
+          "h": "What it is",
+          "body": "Flitto is a Korea-headquartered language-data and translation company. Its business line offers enterprise translation APIs and AI interpretation products, described on its official business pages (https://www.flitto.com/business/api-solution). A distinguishing element is its crowdsourced human-translation network, which the company positions as a fallback layer when machine output alone is not sufficient. The company also sells language datasets used to train and evaluate translation models."
+        },
+        {
+          "h": "Who uses it in Korea",
+          "body": "In Korea, Flitto's enterprise offering targets organizations that need translation integrated into their own products or workflows via API, per its service-API page (https://about.flitto.com/service-api). Its language-data business serves companies building or tuning models around Korean and other Asian language pairs. These are B2B, sales-contact-driven engagements rather than consumer subscriptions."
+        },
+        {
+          "h": "For businesses entering Korea",
+          "body": "For a foreign business localizing into Korean, Flitto's relevant point is the combination of machine translation with a human review layer sourced from its crowdsourced network — useful when raw machine output is not listing- or publication-quality. English-language documentation exists via its support center (https://support.flitto.com/hc/en-us), which lowers the evaluation barrier for non-Korean teams. Engagement for the API and B2B solutions goes through sales contact rather than self-serve signup, based on what is publicly verifiable."
+        },
+        {
+          "h": "What we verified",
+          "body": "We verified the official business page (https://www.flitto.com/business/api-solution), the service-API description covering Korean and other Asian language pairs (https://about.flitto.com/service-api), and the English support center (https://support.flitto.com/hc/en-us), last checked 2026-07-04. Whether payment from abroad is possible is unknown: the enterprise API and B2B solutions are sales-contact driven and we could not verify any public self-serve checkout. We found no independent English-language reviews of the enterprise product, so treat this profile as a primary-source summary only."
+        }
+      ]
+    },
+    "maum-ai": {
+      "sections": [
+        {
+          "h": "What it is",
+          "body": "maum.ai is a Korean AI vendor focused on enterprise conversational AI. Its stack includes the MAAL family of language models, used for retrieval-augmented (RAG) chatbots grounded in a company's own documents, and SUDA speech technology for voice interaction. These components are typically combined in contact-center-style deployments rather than sold as a self-serve consumer app. The company presents itself through its official site at https://maum.ai/, which operates primarily in Korean."
+        },
+        {
+          "h": "Who uses it in Korea",
+          "body": "The product is aimed at Korean enterprises that need customer-facing conversational AI, such as contact centers and internal knowledge chatbots built on company data. Sales follow an enterprise and on-premise contact model, so buyers are organizations that engage the vendor directly rather than individuals signing up online."
+        },
+        {
+          "h": "For businesses entering Korea",
+          "body": "For a foreign business, maum.ai is relevant if you need a Korean-native vendor for Korean-language customer service or voice AI, since the product, platform, and support operate primarily in Korean. Plan for a sales-led engagement: we could not verify any international self-serve checkout, and no official English documentation was found, so expect to work in Korean or through a local partner."
+        },
+        {
+          "h": "What we verified",
+          "body": "We verified the vendor's Korean-native status and product scope against the official site (https://maum.ai/) as of 2026-07-04. English documentation: none found on official channels (unknown whether any exists behind sales contact). Payment from abroad: unknown — the official site shows an enterprise/on-premise sales-contact model with no verifiable international self-serve checkout. There are no independent English-language reviews we could cite, so treat this profile as based solely on official sources."
+        }
+      ]
+    },
+    "supertone": {
+      "sections": [
+        {
+          "h": "What it is",
+          "body": "Supertone is a Korean voice AI company whose product line, as presented on its official site (supertone.ai/en), includes Supertone Play, a text-to-speech service with a library of 150+ voices; Shift, a real-time voice changer; audio plugins; and a developer voice API. The company positions Korean-language TTS quality as a core strength and documents this in its own case-study material. Supported languages listed by the company include Korean, Japanese, and English. Its technology is rooted in research originating at Seoul National University, per the company's own materials."
+        },
+        {
+          "h": "Who uses it in Korea",
+          "body": "In Korea, Supertone is used for content production workflows that need Korean-native synthetic voices: game and media dubbing, character voices, and narration for video content. Its real-time voice changer (Shift) and audio plugins target studios and creators working inside existing audio pipelines, while the API targets teams embedding Korean TTS into their own products."
+        },
+        {
+          "h": "For businesses entering Korea",
+          "body": "For a foreign business localizing products or content into Korean, Supertone offers Korean-native TTS from a vendor that treats Korean as a first-class language rather than one entry in a long multilingual list, alongside Japanese and English support for regional coverage. The official site has a full English version, and overseas self-serve subscription for Supertone Play is available, so evaluation does not require a Korean entity or Korean-language procurement."
+        },
+        {
+          "h": "What we verified",
+          "body": "We confirmed the English official site and product line at https://www.supertone.ai/en, and the company's own documentation of Korean TTS quality at https://www.supertone.ai/en/work/the-number-one-texttospeech-ai-voice-in-korean-eng (note this is a first-party claim, not an independent benchmark). Overseas payment is confirmed: a USD self-serve subscription page for Supertone Play exists at play.supertone.ai/subscription (verified 2026-07-04). We found no independent English-language reviews of the product; independent quality assessments are unknown."
+        }
+      ]
+    },
+    "upstage": {
+      "sections": [
+        {
+          "h": "What it is",
+          "body": "Upstage is a Korean AI company that builds the Solar family of large language models and a Document AI product line covering document parsing, OCR, and key-information extraction. Both are delivered as APIs through a self-serve developer console at console.upstage.ai. The console publishes English documentation, and the chat endpoints follow an OpenAI-compatible format, so existing client code can be pointed at Solar with minimal changes. The company also maintains a Korean-language official site and Korean-language guides alongside the English docs."
+        },
+        {
+          "h": "Who uses it in Korea",
+          "body": "In Korea, the typical B2B use is processing Korean-language documents — parsing, OCR, and structured field extraction — and running Korean text tasks on Solar, since the models are built by a domestic lab with Korean handled natively rather than as an afterthought. We have not independently verified named enterprise customers in English-language sources, so specific client references are unknown."
+        },
+        {
+          "h": "For businesses entering Korea",
+          "body": "For a foreign team, the practical draw is that this is Korean-native document and language AI reachable without a local intermediary: sign-up, API keys, and billing are all self-serve in the console, and payment from abroad is confirmed via prepaid credits with a standard credit card. English documentation exists for the model catalog and getting-started flow, which is not a given among Korean AI vendors."
+        },
+        {
+          "h": "What we verified",
+          "body": "We confirmed the official site (https://www.upstage.ai/), English developer docs for the model catalog (https://console.upstage.ai/docs/models) and getting started (https://console.upstage.ai/docs/getting-started), and self-serve prepaid-credit billing in the official console (console.upstage.ai/billing), all last checked 2026-07-04. Korean-language support is evidenced by the official Korean site and Korean guides (https://www.upstage.ai/blog/ko/guide-1-upstage-console-api). Independent English-language reviews of the product were not found; customer names and deployment scale are unknown."
+        }
+      ]
+    },
+    "wrtn": {
+      "sections": [
+        {
+          "h": "What it is",
+          "body": "Wrtn (뤼튼) is a consumer AI assistant and writing platform operated by Wrtn Technologies, a company headquartered in South Korea. It offers chat, content generation, and AI search, built on top of multiple third-party foundation models rather than a single in-house model. The product is built Korea-first: the service UI, prompt templates, and localization target Korean users. The official site is https://wrtn.ai; the company reports millions of monthly active users in Korea."
+        },
+        {
+          "h": "Who uses it in Korea",
+          "body": "Wrtn is primarily a consumer product, but in practice Korean marketers, solo founders, and small teams use it for first-draft Korean copy — ad text, product descriptions, and social posts — where natural Korean register matters more than API access. Because its templates and tone controls are written for Korean, it tends to require less register and tone rework than generic multilingual assistants for consumer-facing Korean text."
+        },
+        {
+          "h": "For businesses entering Korea",
+          "body": "For a foreign business, Wrtn is mainly useful as a drafting aid for Korean-language marketing content when working with Korean-speaking staff or contractors, since the interface itself is in Korean and no official English documentation was found (enDocs: unknown). Whether payment from abroad is possible is unknown: it is a consumer service marketed to Korean users, and no official English pricing or checkout page could be verified without signup."
+        },
+        {
+          "h": "What we verified",
+          "body": "We verified against the official site https://wrtn.ai (last checked 2026-07-04) that Wrtn is a Korean-origin writing and assistant platform in our writing category, with Korea-first localization as its documented strength. English documentation could not be found and is recorded as unknown, and overseas payment acceptance is likewise recorded as unknown rather than assumed. No independent English-language reviews of this tool were available at verification time, so claims here are limited to what the vendor's own official pages state."
+        }
+      ]
+    }
+  },
+  "guides": [
+    {
+      "slug": "ai-stack-korea-market-entry",
+      "title": "The AI Stack for Entering the Korean Market",
+      "desc": "A stage-by-stage map of AI tools for Korean market entry: research, Korean-language content and listings, document processing, and customer support.",
+      "intro": "Searches for \"AI for entering the Korean market\" often surface market-size reports rather than usable tooling. This guide takes the other reading: for each stage of an actual market-entry workflow, it lists the categories of AI tools teams use and which verified options exist. It pairs with our platform directory, which covers the marketplaces and fulfillment services these tools plug into.",
+      "sections": [
+        {
+          "h": "Stage 1: Market research and demand validation",
+          "body": "Before committing to Korea, teams validate demand with Korean-language data rather than translated proxies. Opensurvey Dataspace runs surveys against Korean consumer panels with AI-assisted analysis, while Selectstar (Datumo) provides Korean-language data collection, labeling, and LLM evaluation through a domestic crowdworker pool. For e-commerce specifically, Itemscout exposes Naver Smart Store keyword and ranking data, and Storelink applies AI to Korean commerce data for keyword and campaign analysis; note that both operate with Korean-language interfaces.",
+          "toolIds": [
+            "opensurvey-dataspace",
+            "selectstar-datumo",
+            "itemscout",
+            "storelink"
+          ]
+        },
+        {
+          "h": "Stage 2: Korean-language content and product listings",
+          "body": "Machine translation alone rarely produces listing-quality Korean, so most stacks combine an engine with a review layer. DeepL and NAVER's Papago Plus both support Korean as a full translation language with document and glossary features, Flitto adds human-translation fallback through its crowdsourced network, and Wordvice AI covers Korean grammar checking and English-Korean editing. For localized marketing assets, Typecast and Supertone generate Korean text-to-speech, Vrew handles Korean subtitle generation and text-based video editing, and Perso.ai and HeyGen dub existing videos into Korean with lip-sync.",
+          "toolIds": [
+            "deepl",
+            "papago-plus",
+            "flitto",
+            "wordvice-ai",
+            "typecast",
+            "supertone",
+            "vrew",
+            "perso-ai",
+            "heygen"
+          ]
+        },
+        {
+          "h": "Stage 3: Documents, forms, and contract processing",
+          "body": "Korean business documents — registration certificates, contracts, tax forms — are a distinct OCR problem, and Korea-native document AI handles them better than generic engines. Upstage offers Document AI parsing and extraction APIs through a self-serve console with English docs, CLOVA OCR (NAVER Cloud) supports Korean printed and handwritten text with template-based field extraction, and Synap OCR specializes in Korean form structures with key-value extraction. For question-answering over internal Korean document sets, Allganize Alli provides an enterprise RAG platform deployable on-premise or in the cloud.",
+          "toolIds": [
+            "upstage",
+            "clova-ocr",
+            "synap-ocr",
+            "allganize-alli"
+          ]
+        },
+        {
+          "h": "Stage 4: Korean-language customer support",
+          "body": "Korean customers expect fast, native-language support, and channel choice matters as much as the model. Channel Talk's ALF is a Korea-native AI support agent launched from the Korean market, and Sendbird's AI Agent comes from a Korean-founded company with full Korean product coverage. Among global platforms, Intercom Fin and Tidio Lyro both document Korean among their AI reply languages; Zendesk supports a Korean UI, but its own docs list Korean as an exception for generative AI-agent replies, so verify before committing.",
+          "toolIds": [
+            "channel-talk-alf",
+            "sendbird-ai-agent",
+            "intercom-fin",
+            "tidio-lyro",
+            "zendesk-ai-agents"
+          ]
+        },
+        {
+          "h": "Building deeper: Korean-first models and commerce data",
+          "body": "Teams building their own Korea-facing features can call Korean-first foundation models directly: NAVER's HyperCLOVA X is available as REST APIs through CLOVA Studio, and Upstage's Solar models ship via an OpenAI-compatible console with self-serve billing. On the commerce side, Datarize connects AI-driven CRM campaigns to Korea-specific channels such as KakaoTalk and is listed on the Shopify App Store for non-Korean stores. Once the stack is chosen, the remaining questions are distribution and logistics — our platform directory covers the Korean marketplaces and fulfillment services these tools integrate with.",
+          "toolIds": [
+            "hyperclova-x-api",
+            "clova-studio",
+            "upstage-solar-api",
+            "datarize"
+          ]
+        }
+      ],
+      "note": "Tool details were last verified against official sources on 2026-07-04; AI products change quickly, and entries marked unknown (especially around overseas payment) could not be confirmed without signup. Always re-check official documentation before purchasing."
+    },
+    {
+      "slug": "ai-tools-that-support-korean",
+      "title": "AI Tools That Actually Work in Korean — a Verified List",
+      "desc": "A verified comparison of AI tools that work in Korean for real work — writing, documents, voice, and customer chat — backed by official documentation.",
+      "intro": "Search for 'Korean AI tools' and you mostly get apps for learning the Korean language. This guide is about the opposite: tools for doing your actual work — writing, document processing, transcription, customer support — in Korean. Every entry below was checked against the vendor's official site or documentation.",
+      "sections": [
+        {
+          "h": "'Supports Korean' Is Not a Quality Claim",
+          "body": "Many products list Korean in a language dropdown, but a listing alone says nothing about output quality or documented behavior. Zendesk, for example, supports a Korean UI while its own docs state that generative replies in AI agents exclude Korean, Japanese, and Chinese. By contrast, ElevenLabs names Korean explicitly in its supported-language documentation for multilingual TTS, dubbing, and speech-to-text. The difference between a checkbox and a documented commitment is the core filter this list applies.",
+          "toolIds": [
+            "zendesk-ai-agents",
+            "elevenlabs"
+          ]
+        },
+        {
+          "h": "Writing and Translation",
+          "body": "Wrtn is a Korea-first assistant and writing platform built on multiple foundation models, while Wordvice AI — from a Korea-founded editing company — ships a dedicated Korean grammar checker alongside its proofreading suite. For translation, DeepL documents Korean as a full source and target language in its developer docs, NAVER's Papago Plus adds document, image, and voice translation on a Korean-native engine, and Flitto offers enterprise translation APIs with a crowdsourced human fallback.",
+          "toolIds": [
+            "wrtn",
+            "wordvice-ai",
+            "deepl",
+            "papago-plus",
+            "flitto"
+          ]
+        },
+        {
+          "h": "Document AI and OCR",
+          "body": "Korean-language documents — mixed Hangul, layout-heavy forms, official paperwork — are where generic OCR pipelines degrade first. Upstage provides Document AI parsing and the Solar LLM family through a self-serve console with English docs, and Allganize's Alli platform answers questions over internal documents using Korean-specialized models. For form extraction, NAVER Cloud's CLOVA OCR documents Korean printed and handwritten text recognition, and Synap OCR from Synapsoft specializes in Korean document forms with key-value extraction.",
+          "toolIds": [
+            "upstage",
+            "allganize-alli",
+            "clova-ocr",
+            "synap-ocr"
+          ]
+        },
+        {
+          "h": "Voice: Speech-to-Text and Text-to-Speech",
+          "body": "Korean speech recognition is a domain where domestic vendors publish their own benchmarks rather than burying Korean in a language list. Daglo (ActionPower) transcribes meetings and lectures with a developer API, and Return Zero's RTZR STT builds its entire product line around Korean recognition accuracy. On the synthesis side, Typecast lists Korean among its premium-quality TTS languages and Supertone documents Korean voice quality as a founding strength, while Vrew applies Korean speech recognition to subtitle generation and text-based video editing.",
+          "toolIds": [
+            "daglo",
+            "rtzr-vito",
+            "typecast",
+            "supertone",
+            "vrew"
+          ]
+        },
+        {
+          "h": "Chatbots and Customer Support",
+          "body": "For customer-facing AI, verify how the vendor documents Korean replies, not just the console language. CLOVA X runs on HyperCLOVA X, which NAVER states was trained on substantially more Korean data than comparable models, and Channel Talk's ALF agent launched from the Korean market with Korean-native docs and support. Among global platforms, Intercom Fin and Tidio Lyro both list Korean in their official supported-reply-language documentation, Sendbird (Korean-founded) maintains full Korean product pages for its AI agent, and maum.ai serves enterprise Korean conversational AI including contact-center deployments.",
+          "toolIds": [
+            "clova-x",
+            "channel-talk-alf",
+            "intercom-fin",
+            "tidio-lyro",
+            "sendbird-ai-agent",
+            "maum-ai"
+          ]
+        }
+      ],
+      "note": "All claims were checked against official vendor sites and documentation as of 2026-07-04. AI products change quickly — language support, docs, and availability may differ by the time you read this, so confirm on the linked official pages."
+    },
+    {
+      "slug": "ai-writing-tools-korean",
+      "title": "AI Writing & Copywriting Tools That Work in Korean",
+      "desc": "How to tell tools that merely list Korean from tools built for it: Korea-native assistants, verified global options, and guidance by use case.",
+      "intro": "Many AI writing tools include Korean in their supported-language list, but a checkbox is not the same as usable output quality for marketing copy or business documents. This guide separates the two: Korea-native tools whose models and UI were built around Korean, and global tools whose Korean support is confirmed in official documentation. Every claim below links back to vendor documentation verified on a stated date.",
+      "sections": [
+        {
+          "h": "'Supports Korean' vs. actually built for Korean",
+          "body": "A language appearing in a supported-languages table usually means the model can produce grammatical Korean, not that it handles honorifics, register (해요체 vs. 합쇼체), or domain vocabulary reliably. When evaluating a tool, check whether the vendor documents Korean specifically — training data, dedicated Korean features, or a Korean-market product — rather than a generic multilingual list. The tools below are grouped by which of those two claims their official documentation actually supports.",
+          "toolIds": []
+        },
+        {
+          "h": "Korea-native assistants: Wrtn and CLOVA X",
+          "body": "Wrtn is a Korean consumer AI assistant and writing platform built Korea-first, with UI, prompts, and localization targeting Korean users. CLOVA X, NAVER's chatbot, runs on the HyperCLOVA X model, which NAVER states was trained on substantially more Korean data than comparable models and covers Korean institutions and cultural context. For first-draft marketing copy in natural Korean register, these are the tools whose vendors document Korean as the primary language rather than one of many.",
+          "toolIds": [
+            "wrtn",
+            "clova-x"
+          ]
+        },
+        {
+          "h": "Global and cross-border tools with documented Korean support",
+          "body": "DeepL's official developer documentation lists Korean as a fully supported source and target language for translation, making it a documented option for moving copy between Korean and other languages; note that this verification covers translation, not every DeepL sub-product. Wordvice AI, from a Korea-founded editing company, offers a dedicated Korean grammar checker alongside English-Korean tools. Papago Plus (NAVER) and Flitto add document/image/voice translation and enterprise translation APIs with human-translation fallback respectively.",
+          "toolIds": [
+            "deepl",
+            "wordvice-ai",
+            "papago-plus",
+            "flitto"
+          ]
+        },
+        {
+          "h": "Matching tools to use cases",
+          "body": "For marketing copy and product descriptions aimed at Korean consumers, Korea-native assistants (Wrtn, CLOVA X) reduce the register and tone rework that generic multilingual models tend to require. For business documents, contracts, or reports that must exist in both Korean and English, a translate-then-proofread flow — DeepL or Papago Plus for the draft, Wordvice AI for grammar and academic/professional polish — keeps each tool inside its documented strength. If output volume is high, budget human review time regardless of tool; none of these vendors claims review-free output.",
+          "toolIds": [
+            "wrtn",
+            "clova-x",
+            "deepl",
+            "papago-plus",
+            "wordvice-ai"
+          ]
+        },
+        {
+          "h": "Generating Korean copy programmatically",
+          "body": "Teams that need Korean copy at scale (product feeds, templated descriptions) can call Korean-first LLMs directly instead of using a writing app. CLOVA Studio exposes HyperCLOVA X through REST APIs on NAVER Cloud Platform with tuning and playground features, and Upstage's console offers its Solar models — which the vendor positions for strong Korean performance — via self-serve, OpenAI-compatible endpoints with English documentation. Both publish official English developer docs, which matters for non-Korean engineering teams.",
+          "toolIds": [
+            "hyperclova-x-api",
+            "upstage-solar-api"
+          ]
+        }
+      ],
+      "note": "All claims reflect official vendor documentation verified on 2026-07-04; quality characterizations come from vendors, not independent benchmarks, and these products change quickly. Where overseas payment or a capability could not be confirmed from public pages, the tool entry marks it as unknown."
+    },
+    {
+      "slug": "korean-speaking-chatbots-for-stores",
+      "title": "Korean-Speaking AI Chatbots for Online Stores, Compared",
+      "desc": "A verified comparison of Korean-built and global AI support chatbots for online stores, based on official documentation of Korean-language support.",
+      "intro": "Korean-language customer support is a distinct requirement: honorific speech levels (jondaemal) and fast, chat-first CS norms shape what buyers expect from a store's chatbot. This guide compares Korean-built AI agents with global platforms, using only claims we could verify in official documentation. Where we could not verify something, we say unknown rather than guess.",
+      "sections": [
+        {
+          "h": "Korean-built AI agents",
+          "body": "Channel Talk ALF is an AI customer service agent inside Channel Corp's business messenger; it answers from a company's knowledge base and escalates to humans, and it launched from the Korean market with Korean-first UI, docs, and support (https://channel.io/ko). maum.ai is a Korean enterprise vendor whose MAAL language models power RAG chatbots and whose SUDA speech stack appears in contact-center style deployments (https://maum.ai/); it sells via enterprise contact rather than self-serve, and we found no official English docs. Sendbird sits between categories: a Korean-founded, US-headquartered company with a full Korean official site for its omnichannel AI agent and a Seoul office (https://sendbird.com/ko/ai-agent/builder).",
+          "toolIds": [
+            "channel-talk-alf",
+            "maum-ai",
+            "sendbird-ai-agent"
+          ]
+        },
+        {
+          "h": "Global platforms: what their docs say about Korean",
+          "body": "Intercom's official help docs list Korean among Fin AI Agent's supported reply languages, with automatic language detection per conversation (https://www.intercom.com/help/en/articles/8322387-use-fin-ai-agent-in-multiple-languages). Tidio's help center likewise lists Korean among the languages its Lyro agent can detect and reply in (https://help.tidio.com/hc/en-us/articles/12643043611036-Lyro-Multilanguage-support). Zendesk is the notable exception: its products support a Korean UI, but official docs state that generative replies in AI agents support the listed languages with the exception of Japanese, Korean, and Chinese (https://support.zendesk.com/hc/en-us/articles/8357749663130-Languages-supported-by-AI-agents) — read that page carefully before committing.",
+          "toolIds": [
+            "intercom-fin",
+            "tidio-lyro",
+            "zendesk-ai-agents"
+          ]
+        },
+        {
+          "h": "Side-by-side comparison",
+          "body": "| Tool | Origin | Korean support (official evidence) | English docs | Payment from abroad |\n|---|---|---|---|---|\n| Channel Talk ALF | Korean | Korean-native product; Korean-first UI/docs/support (https://channel.io/ko) | https://docs.channel.io/help/en | Confirmed (billing docs state card payment via Stripe internationally) |\n| Sendbird AI Agent | Global (Korean-founded) | Full Korean official site and Korean AI-agent product pages; Seoul office (https://sendbird.com/ko/ai-agent/builder) | https://sendbird.com/docs/ai-agent/guide/v1/overview | Unknown (usage-based with sales contact; self-serve checkout not verifiable) |\n| maum.ai | Korean | Korean-native vendor; site and enterprise support primarily in Korean (https://maum.ai/) | Unknown (none found) | Unknown (enterprise sales-contact model) |\n| Intercom Fin | Global | Korean listed among Fin's supported reply languages with auto-detection (https://www.intercom.com/help/en/articles/8322387-use-fin-ai-agent-in-multiple-languages) | https://www.intercom.com/help/en | Confirmed (self-serve trial and card checkout) |\n| Zendesk AI Agents | Global | Korean UI supported, but docs exclude Korean from generative AI-agent replies (https://support.zendesk.com/hc/en-us/articles/8357749663130-Languages-supported-by-AI-agents) | https://support.zendesk.com/hc/en-us | Confirmed (online self-serve purchase and free trial) |\n| Tidio Lyro | Global | Korean listed among languages Lyro can detect and reply in (https://help.tidio.com/hc/en-us/articles/12643043611036-Lyro-Multilanguage-support) | https://help.tidio.com/hc/en-us | Confirmed (self-serve card checkout and free plan) |",
+          "toolIds": [
+            "channel-talk-alf",
+            "sendbird-ai-agent",
+            "maum-ai",
+            "intercom-fin",
+            "zendesk-ai-agents",
+            "tidio-lyro"
+          ]
+        },
+        {
+          "h": "Korean-specific factors to test yourself",
+          "body": "First, honorifics: Korean CS is expected to use consistent polite speech (haeyo-che or hapsyo-che), and a bot that drifts into plain speech reads as rude; none of the official docs we reviewed specify honorific-level control, so test this with your own prompts during a trial. Second, channel norms: Korean shoppers are accustomed to fast, messenger-style support rather than email tickets, which favors chat-first products such as Channel Talk ALF or Sendbird's in-app chat deployments. Korean-built vendors also give you Korean-language support staff and docs, which matters when debugging tone or escalation behavior in Korean.",
+          "toolIds": [
+            "channel-talk-alf",
+            "sendbird-ai-agent"
+          ]
+        }
+      ],
+      "note": "All claims verified against official vendor documentation as of 2026-07-04; AI support products change quickly, so re-check language-support pages before purchasing. Items marked unknown could not be verified on official sources and are not claims either way."
+    }
+  ]
+}
