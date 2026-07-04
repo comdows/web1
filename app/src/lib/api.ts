@@ -247,6 +247,8 @@ export interface PartnerPost {
   give_text: string; get_text: string; want_categories: string[];
   size_text: string; detail: string; status: "published" | "matched"; posted: string | null;
 }
+/* 참조번호(표시용) — id에서 파생. 반익명 보드에서 신원 대신 제안을 지칭하는 수단(문의·소개 요청·검수 소통용) */
+export const partnerRefCode = (id: string) => "P-" + id.replace(/-/g, "").slice(0, 4).toUpperCase();
 export async function fetchPartnerPosts(): Promise<PartnerPost[]> {
   return rest<PartnerPost[]>("v_partner_posts_public?select=*&order=posted.desc.nullslast&limit=100");
 }
