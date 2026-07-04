@@ -111,6 +111,10 @@ export function Footer() {
           </div>
         </div>
       </div>
+      {/* 운영 주체 표기 — 사업자등록 정보 확정 시 이 블록에 추가(상호·등록번호·소재지) */}
+      <div className="foot-cap" style={{ fontSize: 11.5, opacity: 0.7 }}>
+        운영: 세모플 운영자{FLAGS.contactEmail ? ` · 문의 ${FLAGS.contactEmail}` : ""} · 개인정보 보호책임자: 운영자 겸임
+      </div>
       <div className="foot-cap mono">© 2026 SEMOPL · {total.toLocaleString()} PLATFORMS · GRID 8PX</div>
     </div></footer>
   );

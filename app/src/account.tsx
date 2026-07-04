@@ -6,14 +6,15 @@ import { Badge } from "./components";
 import { useNav } from "./nav";
 import {
   consumeHashNotice, consumeRecoveryPending, requestPasswordReset, resendConfirmation,
-  signIn, signInWithGoogle, signOut, signUp, updatePassword, useSession, refreshProfile,
+  signIn, signInWithGoogle, signOut, signUp, updateEmail, updatePassword, useSession, refreshProfile,
 } from "./lib/auth";
 import { TERMS_VERSION } from "./legal";
 import { FLAGS } from "./config";
 import {
-  briefMatchesDeal, createSubmission, fetchDeals, listMyBriefs, listMyDealInterests,
+  briefMatchesDeal, cancelDealSubmission, cancelSubmission, closeMyPost, createSubmission,
+  deactivateBrief, deleteMyAccount, fetchDeals, listMyBriefs, listMyDealInterests,
   listMyDealSubmissions, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions,
-  remoteEnabled, updateDisplayName,
+  remoteEnabled, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
 } from "./lib/api";
 import type { BuyerBriefRow, DealSubmissionRow, MyInterestRow, PartnerPostAdmin, PublicDeal, Submission } from "./lib/api";
 
@@ -44,6 +45,8 @@ export function AuthPanel({ compact = false }: { compact?: boolean }) {
   const [err, setErr] = useState("");
   const [ok, setOk] = useState("");
   const [needsConfirm, setNeedsConfirm] = useState(false); // 확인 메일 재발송 노출 여부
+  const [agreeTerms, setAgreeTerms] = useState(false);      // [필수] 만 14세 이상 + 약관
+  const [agreePrivacy, setAgreePrivacy] = useState(false);  // [필수] 개인정보 수집·이용
 
   // 확인 메일 링크로 돌아온 경우의 안내(완료/만료)를 1회 표시
   useEffect(() => { const n = consumeHashNotice(); if (n) setOk(n); }, []);
@@ -103,9 +106,21 @@ export function AuthPanel({ compact = false }: { compact?: boolean }) {
               value={pw} onChange={(e) => setPw(e.target.value)} placeholder="6자 이상" />
           </label>
         )}
+        {mode === "up" && (
+          <div style={{ display: "grid", gap: 6 }}>
+            <label className="facet-opt" style={{ fontSize: 12.5 }}>
+              <input type="checkbox" checked={agreeTerms} onChange={() => setAgreeTerms((v) => !v)} />
+              [필수] 만 14세 이상이며 <TermsLink />에 동의합니다.
+            </label>
+            <label className="facet-opt" style={{ fontSize: 12.5 }}>
+              <input type="checkbox" checked={agreePrivacy} onChange={() => setAgreePrivacy((v) => !v)} />
+              [필수] <PrivacyLink />(개인정보 수집·이용, 국외 이전 고지 포함)에 동의합니다.
+            </label>
+          </div>
+        )}
         {err && <div className="err">{err}</div>}
         {ok && <div className="ok">{ok}</div>}
-        <button className="btn primary" disabled={busy} type="submit">
+        <button className="btn primary" disabled={busy || (mode === "up" && (!agreeTerms || !agreePrivacy))} type="submit">
           {busy ? "처리 중…" : mode === "in" ? "로그인" : mode === "up" ? "가입하기" : "재설정 메일 보내기"}
         </button>
         {mode === "in" && (
@@ -120,10 +135,7 @@ export function AuthPanel({ compact = false }: { compact?: boolean }) {
           </button>
         )}
         {mode === "up" ? (
-          <div className="frm-note">
-            <b>가입하기</b>를 누르면 세모플 <ConsentLinks />에 동의하는 것으로 봅니다.
-            가입하면 즐겨찾기가 계정에 저장되고, 플랫폼 제보·제휴 제안을 남길 수 있어요.
-          </div>
+          <div className="frm-note">가입하면 즐겨찾기가 계정에 저장되고, 플랫폼 제보·제휴 제안을 남길 수 있어요.</div>
         ) : (
           <div className="frm-note">가입하면 즐겨찾기가 계정에 저장되고, 플랫폼 제보를 남길 수 있어요.</div>
         )}
@@ -132,14 +144,13 @@ export function AuthPanel({ compact = false }: { compact?: boolean }) {
   );
 }
 
-function ConsentLinks() {
+function TermsLink() {
   const go = useNav();
-  return (
-    <>
-      <button type="button" className="linklike" style={{ textDecoration: "underline" }} onClick={() => go("terms")}>이용약관</button>과{" "}
-      <button type="button" className="linklike" style={{ textDecoration: "underline" }} onClick={() => go("privacy")}>개인정보처리방침</button>
-    </>
-  );
+  return <button type="button" className="linklike" style={{ textDecoration: "underline" }} onClick={() => go("terms")}>이용약관</button>;
+}
+function PrivacyLink() {
+  const go = useNav();
+  return <button type="button" className="linklike" style={{ textDecoration: "underline" }} onClick={() => go("privacy")}>개인정보처리방침</button>;
 }
 
 /* ── 계정 화면 ────────────────────────────────────────────── */
@@ -158,6 +169,14 @@ export function Account() {
   const [pwBusy, setPwBusy] = useState(false);
   const [pwMsg, setPwMsg] = useState<{ ok?: string; err?: string }>({});
   const [recovery] = useState(() => consumeRecoveryPending()); // 재설정 링크로 복귀한 경우
+  const [newEmail, setNewEmail] = useState("");
+  const [emailBusy, setEmailBusy] = useState(false);
+  const [emailMsg, setEmailMsg] = useState<{ ok?: string; err?: string }>({});
+  const [delConfirm, setDelConfirm] = useState("");   // '탈퇴' 타이핑 확인
+  const [delBusy, setDelBusy] = useState(false);
+  const [delErr, setDelErr] = useState("");
+  const [showDel, setShowDel] = useState(false);
+  const [actBusy, setActBusy] = useState("");         // 취소·마감 진행 중인 항목 id
   const [acts, setActs] = useState<{ pp: PartnerPostAdmin[]; ds: DealSubmissionRow[]; pi: MyInterestRow[]; di: MyInterestRow[]; br: BuyerBriefRow[] } | null>(null);
   const [actsErr, setActsErr] = useState(false);
   const [briefDeals, setBriefDeals] = useState<PublicDeal[]>([]); // 브리프 조건 대조용(공개 뷰)
@@ -198,6 +217,15 @@ export function Account() {
   const roleInfo = role === "admin" ? { kind: "verify" as const, label: "관리자" }
     : role === "operator" ? { kind: "good" as const, label: "운영자" }
     : { kind: "muted" as const, label: "일반 회원" };
+
+  /* 셀프 취소·마감·철회 — 권한은 0009 RLS/RPC가 판정(pending만 삭제 가능 등) */
+  const doAct = async (id: string, fn: () => Promise<void>) => {
+    if (actBusy) return;
+    setActBusy(id);
+    try { await fn(); setReload((n) => n + 1); }
+    catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setActBusy(""); }
+  };
 
   const saveName = async (e: FormEvent) => {
     e.preventDefault();
@@ -246,6 +274,24 @@ export function Account() {
             {pwMsg.err && <span className="err" style={{ alignSelf: "center" }}>{pwMsg.err}</span>}
           </div>
         </form>
+        <form className="frm" style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line-soft)" }}
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (emailBusy) return;
+            setEmailMsg({}); setEmailBusy(true);
+            try { await updateEmail(newEmail.trim()); setEmailMsg({ ok: "변경 메일을 보냈어요 — 새 이메일의 확인 링크를 눌러야 완료됩니다." }); setNewEmail(""); }
+            catch (ex) { setEmailMsg({ err: ex instanceof Error ? ex.message : String(ex) }); }
+            finally { setEmailBusy(false); }
+          }}>
+          <label>이메일 변경 <span style={{ fontWeight: 400, color: "var(--faint)" }}>(소개·안내가 이 주소로 갑니다 — 이직·메일 폐기 전에 꼭 갱신)</span>
+            <input type="email" required value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="새 이메일 주소" />
+          </label>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button className="btn ghost sm" type="submit" disabled={emailBusy}>{emailBusy ? "발송 중…" : "변경 메일 발송"}</button>
+            {emailMsg.ok && <span className="ok" style={{ alignSelf: "center" }}>{emailMsg.ok}</span>}
+            {emailMsg.err && <span className="err" style={{ alignSelf: "center" }}>{emailMsg.err}</span>}
+          </div>
+        </form>
         <div className="frm-note" style={{ marginTop: 12 }}>★ 즐겨찾기는 로그인 중 자동으로 계정에 동기화됩니다.</div>
         <div style={{ marginTop: 16, display: "flex", gap: 8, flexWrap: "wrap" }}>
           {isAdmin && <button className="btn primary sm" onClick={() => go("admin")}>🛠 관리 콘솔</button>}
@@ -253,15 +299,36 @@ export function Account() {
           <button className="btn ghost sm" onClick={() => signOut()}>로그아웃</button>
           {checked && !isAdmin && <span className="frm-note" style={{ alignSelf: "center" }}>아직 일반 회원이에요. Supabase에서 admin 지정 후 눌러보세요.</span>}
         </div>
-        {FLAGS.contactEmail && (
-          <div className="frm-note" style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line-soft)" }}>
-            회원 탈퇴(개인정보 전체 삭제)를 원하시면{" "}
-            <a href={`mailto:${FLAGS.contactEmail}?subject=${encodeURIComponent("[세모플] 회원 탈퇴 요청")}&body=${encodeURIComponent(`가입 이메일: ${session.user.email ?? ""}\n탈퇴 및 개인정보 삭제를 요청합니다.`)}`}>
-              {FLAGS.contactEmail}
-            </a>
-            로 요청해 주세요 — 지체 없이 처리합니다.
-          </div>
-        )}
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid var(--line-soft)" }}>
+          {!showDel ? (
+            <button className="linklike" style={{ fontSize: 12.5, color: "var(--faint)" }} onClick={() => setShowDel(true)}>
+              회원 탈퇴(개인정보 전체 삭제) →
+            </button>
+          ) : (
+            <div className="frm" style={{ display: "grid", gap: 8 }}>
+              <div className="frm-note">
+                ⚠️ 탈퇴하면 계정·즐겨찾기·접수 내역이 <b>즉시 영구 삭제</b>됩니다(게시된 익명 정보는 익명 기록으로만 남음).
+                되돌릴 수 없어요. 계속하려면 아래에 <b>탈퇴</b>라고 입력하세요.
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <input style={{ width: 120 }} value={delConfirm} onChange={(e) => setDelConfirm(e.target.value)} placeholder="탈퇴" />
+                <button className="btn ghost sm" disabled={delBusy || delConfirm.trim() !== "탈퇴"}
+                  onClick={async () => {
+                    setDelErr(""); setDelBusy(true);
+                    try { await deleteMyAccount(); signOut(); alert("탈퇴가 완료됐습니다. 이용해 주셔서 감사합니다."); }
+                    catch (ex) { setDelErr(ex instanceof Error ? ex.message : String(ex)); setDelBusy(false); }
+                  }}>
+                  {delBusy ? "삭제 중…" : "영구 삭제 실행"}
+                </button>
+                <button className="linklike" onClick={() => { setShowDel(false); setDelConfirm(""); setDelErr(""); }}>취소</button>
+              </div>
+              {delErr && <div className="err">{delErr}</div>}
+              {FLAGS.contactEmail && (
+                <div className="frm-note">문제가 있으면 <a href={`mailto:${FLAGS.contactEmail}?subject=${encodeURIComponent("[세모플] 회원 탈퇴 요청")}`}>{FLAGS.contactEmail}</a>로 요청해도 됩니다 — 지체 없이 처리합니다.</div>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="sec-title" style={{ marginTop: 28 }}>내 제보</div>
@@ -280,7 +347,13 @@ export function Account() {
                     <b>{s.payload.name}</b> <span className="mono" style={{ color: "var(--faint)", fontSize: 12 }}>{s.payload.url}</span>
                     {s.status === "rejected" && s.review_reason && <div className="frm-note">반려 사유: {s.review_reason}</div>}
                   </div>
-                  <Badge kind={b.kind}>{b.label}</Badge>
+                  <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                    {s.status === "pending" && (
+                      <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === s.id}
+                        onClick={() => doAct(s.id, () => cancelSubmission(s.id))}>취소</button>
+                    )}
+                    <Badge kind={b.kind}>{b.label}</Badge>
+                  </div>
                 </div>
               );
             })}
@@ -316,7 +389,13 @@ export function Account() {
                 <div style={{ minWidth: 0 }}>🤝 <b>{p.title}</b> <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{p.created_at.slice(0, 10)}</span>
                   {p.status === "rejected" && p.review_reason && <div className="frm-note">반려 사유: {p.review_reason}</div>}
                 </div>
-                <Badge kind={b.k}>{b.l}</Badge>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                  {(p.status === "pending" || p.status === "published") && (
+                    <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === p.id}
+                      onClick={() => doAct(p.id, () => closeMyPost(p.id))}>{p.status === "pending" ? "철회" : "마감"}</button>
+                  )}
+                  <Badge kind={b.k}>{b.l}</Badge>
+                </div>
               </div>
             );
           })}
@@ -338,14 +417,26 @@ export function Account() {
                   {s.status === "approved" && <div className="frm-note">관심이 들어오면 세모플이 이메일로 소개 진행 여부를 확인드려요 — 메일함을 확인해 주세요.</div>}
                   {s.status === "rejected" && s.review_reason && <div className="frm-note">반려 사유: {s.review_reason}</div>}
                 </div>
-                <Badge kind={b.k}>{b.l}</Badge>
+                <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                  {s.status === "pending" && (
+                    <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === s.id}
+                      onClick={() => doAct(s.id, () => cancelDealSubmission(s.id))}>취소</button>
+                  )}
+                  <Badge kind={b.k}>{b.l}</Badge>
+                </div>
               </div>
             );
           })}
           {acts.pi.map((i) => (
             <div className="sub-item" key={i.id}>
               <div style={{ minWidth: 0 }}>🤝 <b>매칭 신청</b> — "{i.partner_posts?.title ?? i.post_id}"</div>
-              <Badge kind={i.status === "introduced" ? "verify" : "soon"}>{i.status === "introduced" ? "소개 완료" : "접수됨"}</Badge>
+              <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                {i.status === "pending" && (
+                  <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === i.id}
+                    onClick={() => doAct(i.id, () => withdrawPartnerInterest(i.id))}>철회</button>
+                )}
+                <Badge kind={i.status === "introduced" ? "verify" : "soon"}>{i.status === "introduced" ? "소개 완료" : "접수됨"}</Badge>
+              </div>
             </div>
           ))}
           {acts.di.map((i) => (
@@ -358,13 +449,25 @@ export function Account() {
                   </div>
                 )}
               </div>
-              <Badge kind={i.status === "introduced" ? "verify" : "soon"}>{i.status === "introduced" ? "소개 완료" : "접수됨"}</Badge>
+              <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                {i.status === "pending" && (
+                  <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === i.id}
+                    onClick={() => doAct(i.id, () => withdrawDealInterest(i.id))}>철회</button>
+                )}
+                <Badge kind={i.status === "introduced" ? "verify" : "soon"}>{i.status === "introduced" ? "소개 완료" : "접수됨"}</Badge>
+              </div>
             </div>
           ))}
           {acts.br.map((b) => (
             <div className="sub-item" key={b.id}>
               <div style={{ minWidth: 0 }}>📮 <b>인수 브리프</b> — {b.budget_band} · {b.mode}</div>
-              <Badge kind={b.active ? "soon" : "muted"}>{b.active ? "대기 중" : "안내 완료"}</Badge>
+              <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                {b.active && (
+                  <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === b.id}
+                    onClick={() => doAct(b.id, () => deactivateBrief(b.id))}>중단</button>
+                )}
+                <Badge kind={b.active ? "soon" : "muted"}>{b.active ? "대기 중" : "안내 완료"}</Badge>
+              </div>
             </div>
           ))}
         </div>

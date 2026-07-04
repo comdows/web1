@@ -118,7 +118,15 @@ export function PlatformDetail({ id }: { id?: string }) {
   });
   if (!p) {
     if (fetching || (!loaded && remoteEnabled)) return <div className="page container"><div className="empty">불러오는 중…</div></div>;
-    return <div className="page container"><div className="empty">플랫폼을 찾을 수 없습니다. <button className="linklike" onClick={() => go("home")}>← 홈으로</button></div></div>;
+    return (
+      <div className="page container">
+        <div className="empty">
+          플랫폼을 찾을 수 없습니다 — 주소가 바뀌었거나 삭제된 항목이에요.{" "}
+          <button className="linklike" onClick={() => go("search")}>🔍 검색으로 찾기</button>{" "}
+          <button className="linklike" onClick={() => go("home")}>← 홈으로</button>
+        </div>
+      </div>
+    );
   }
   const cat = categoryById(p.category);
   const on = favs.has(p.id);
