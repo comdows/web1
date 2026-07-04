@@ -7,6 +7,30 @@ import path from "node:path";
 
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, "app/src/data/platforms.json"), "utf8"));
+
+/* 라이브 데이터 우선 — 정적 시드만 돌면 콘솔에서 승인·정정된 등재분이 영구 무점검이 된다.
+ * SUPABASE env가 있으면 anon PostgREST로 전량 페이지네이션 조회(공개 read RLS).
+ * 조회 실패는 throw: Supabase 장애의 가용성 프로브를 겸한다(런 실패 → 알림 메일). */
+async function fetchLivePlatforms() {
+  const SB_URL = process.env.SUPABASE_URL, SB_KEY = process.env.SUPABASE_ANON_KEY;
+  if (!SB_URL || !SB_KEY) return null;
+  const rows = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const res = await fetch(`${SB_URL}/rest/v1/platforms?select=id,name,category_id,url&order=id.asc`, {
+      headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, Range: `${from}-${from + PAGE - 1}` },
+    });
+    if (!res.ok) throw new Error(`라이브 플랫폼 조회 실패: ${res.status} ${await res.text()}`);
+    const batch = await res.json();
+    rows.push(...batch);
+    if (batch.length < PAGE) break;
+  }
+  return rows.map((r) => ({ id: r.id, name: r.name, category: r.category_id, url: r.url }));
+}
+const live = await fetchLivePlatforms();
+if (live) { data.platforms = live; console.log(`라이브 데이터 사용 — ${live.length}건(Supabase)`); }
+else console.log("SUPABASE env 없음 — 정적 시드로 점검");
+
 const CONCURRENCY = 15;
 const TIMEOUT = 12000;
 const UA = "Mozilla/5.0 (compatible; semopl-healthcheck/1.0; +https://comdows.github.io/web1/)";

@@ -8,7 +8,7 @@ import { useSession } from "./lib/auth";
 import {
   briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
-  fetchAdminMetrics, fetchOutboundCounts, getPlatformFull, listAdminIntroQueue, listBuyerBriefs, listDealsAdmin,
+  fetchAdminMetrics, fetchOutboundCounts, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listBuyerBriefs, listDealsAdmin,
   listDealSubmissions, listOperatorClaims,
   listPartnerPosts, listSubmissions, markIntroduced, partnerRefCode, publishDeal, remoteEnabled,
   reviewDealSubmission, reviewOperatorClaim, reviewPartnerPost, reviewSubmission,
@@ -111,6 +111,9 @@ function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
         )}
         <button className="btn ghost sm" disabled={busy}
           onClick={() => act(() => reviewSubmission(s.id, { status: "rejected", review_reason: reason || "기준 미충족" }))}>반려</button>
+        <MailButton kind="submission" refId={s.id}
+          subject="[세모플] 플랫폼 제보 검수 결과 안내"
+          body={`안녕하세요, 세모플입니다.\n\n제보해 주신 "${s.payload.name ?? ""}"의 검수 결과를 안내드립니다.\n\n결과: (등재/보류/반려)\n사유: ${reason || "-"}\n\n이용해 주셔서 감사합니다.`} />
       </div>
     </div>
   );
@@ -323,10 +326,34 @@ function PartnerPostQueue() {
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             <button className="btn primary sm" disabled={busy === p.id} onClick={() => act(p.id, "published")}>✓ 게시</button>
             <button className="btn ghost sm" disabled={busy === p.id} onClick={() => act(p.id, "rejected")}>반려</button>
+            <MailButton kind="partner_post" refId={p.id}
+              subject={`[세모플] 제휴 제안(${partnerRefCode(p.id)}) 검수 결과 안내`}
+              body={`안녕하세요, 세모플입니다.\n\n등록하신 제휴 제안 "${p.title}"(${partnerRefCode(p.id)})의 검수 결과를 안내드립니다.\n\n결과: (게시/반려)\n사유: ${reasons[p.id] || "-"}\n\n감사합니다.`} />
           </div>
         </div>
       ))}
     </>
+  );
+}
+
+/* 검수 결과 메일 안내(0010 v_admin_contact) — 큐에 이메일이 없어 반려를 알릴 수 없던 공백 해소.
+ * 버튼 클릭 시 이메일 조회 → mailto 템플릿(제목·본문 프리필). 발송 여부는 운영자 판단. */
+function MailButton({ kind, refId, subject, body }: {
+  kind: "submission" | "partner_post" | "deal_submission" | "operator_claim";
+  refId: string; subject: string; body: string;
+}) {
+  const [busy, setBusy] = useState(false);
+  return (
+    <button className="btn ghost sm" disabled={busy} title="접수자에게 결과 안내 메일(mailto)"
+      onClick={async () => {
+        setBusy(true);
+        try {
+          const email = await getAdminContactEmail(kind, refId);
+          if (!email) { alert("접수자 이메일을 찾을 수 없어요(비로그인 접수 등)."); return; }
+          location.href = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        } catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+        finally { setBusy(false); }
+      }}>📧 메일 안내</button>
   );
 }
 
@@ -463,6 +490,9 @@ function DealSubQueue() {
               <button className="btn primary sm" disabled={busy === s.id || equity} title={equity ? "지분 접수 건은 게시할 수 없어요" : ""}
                 onClick={() => approve(s)}>✓ 익명화 게시</button>
               <button className="btn ghost sm" disabled={busy === s.id} onClick={() => reject(s)}>반려</button>
+              <MailButton kind="deal_submission" refId={s.id}
+                subject="[세모플] 매각 접수 검수 결과 안내"
+                body={`안녕하세요, 세모플입니다.\n\n매각 접수 건의 검수 결과를 안내드립니다.\n\n결과: (게시/보류/반려)\n사유: ${d.reason || "-"}\n\n게시된 경우 관심자가 나타나면 소개 진행 여부를 이메일로 확인드립니다.\n감사합니다.`} />
             </div>
           </div>
         );

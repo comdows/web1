@@ -51,12 +51,15 @@ backend/
 ## 설정 상태 / 대기 항목
 
 - [x] Supabase 마이그레이션 0001~0006 (신규 SQL은 `backend/migrations/`에 추가 후 SQL Editor에서 실행)
-- [ ] **마이그레이션 0007+0008 실행** — SQL Editor에서 `0007_fixes.sql`, `0008_hardening.sql` 순서대로 (0008은 검수 우회 게시·상태 위조를 막는 보안 패치라 최우선)
+- [ ] **마이그레이션 0007~0010 실행** — SQL Editor에서 `0007_fixes.sql` → `0008_hardening.sql` → `0009_account.sql` → `0010_ops.sql` 순서대로 (0008은 검수 우회 게시·상태 위조를 막는 보안 패치라 최우선. 0009는 탈퇴·취소 기능, 0010은 검수 메일 안내·events 정리의 전제)
 - [ ] 자동 수집 Secrets: `SUPABASE_URL` `SUPABASE_ANON_KEY` `BOT_EMAIL` `BOT_PASSWORD` + 봇 계정 가입 (auto-collect-plan.md §2)
 - [ ] 일일 다이제스트 Secrets: `ADMIN_BOT_EMAIL` `ADMIN_BOT_PASSWORD` — admin 롤 전용 봇 계정(가입 후 backend/README.md §4-F로 admin 지정)
 - [ ] 주간 백업 Secret: `BACKUP_PASSPHRASE`(임의 긴 문자열 — 비밀번호 관리자에 보관, 분실 시 백업 복호화 불가) — 다이제스트와 같은 ADMIN_BOT 계정 사용
 - [ ] (선택) Google 로그인: Supabase 대시보드 Authentication → Providers → Google 설정 후 `app/src/config.ts`의 `googleAuth: true`
-- [ ] Google Search Console 등록 + `sitemap.xml` 제출 (선택 — SEO 가속)
+- [ ] **검색엔진 등록**(유입의 선행 조건 — 인증 파일은 각 콘솔에서 발급):
+  ① Google Search Console → 속성 추가(URL 접두어 `https://comdows.github.io/web1/`) → HTML 파일 인증 선택 → 받은 `google*.html`을 `app/public/`에 넣고 커밋 → 배포 후 확인 → `sitemap.xml` 제출
+  ② Bing 웹마스터 도구 — GSC 가져오기 지원(가장 쉬움). Bing은 ChatGPT 검색의 소스라 중요
+  ③ 네이버 서치어드바이저 → 사이트 등록 → HTML 파일 인증(`naver*.html`을 `app/public/`에) → 사이트맵 제출
 - [ ] 특허 출원 — 발명 4건, 공지예외 12개월 시한 (patent-plan.md)
 - [ ] 유료화 게이트 도달 시: 통신판매업 신고 → PG → 세금계산서 자동발행 → 약관 개정 → 전문가 검토 (pricing-policy.md §6)
 

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { lazy, Suspense, useEffect, useMemo, useState, useCallback } from "react";
 import type { ReactNode, KeyboardEvent } from "react";
 import { groups, categories, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
@@ -7,15 +7,23 @@ import { usePlatforms, usePlatformStats, usePlatformIndex } from "./lib/platform
 import { pickRecommended, sortByRelevance } from "./lib/search";
 import { consumeLastVisit, useFavs, useCompare, useInterests, useRecent } from "./lib/store";
 import { FLAGS } from "./config";
-import { Partners, Exchange, DealGuide, ValueCheck } from "./pages";
 import { NavContext } from "./nav";
 import type { ViewName } from "./nav";
 import { PlatformDetail, SearchResults, Compare, Onboarding } from "./discovery";
-import { Account, Submit } from "./account";
-import { Admin } from "./admin";
-import { AiFinder } from "./ai";
-import { Weekly, Packs } from "./growth";
-import { Terms, Privacy } from "./legal";
+/* 코드 스플리팅 — 발견(홈·검색·상세)만 메인 청크에 두고 나머지 뷰는 지연 로드.
+ * 단일 685KB 청크가 모바일 첫 로드를 막던 문제(감사 P2): 프리렌더 /p/ 유입의 대부분은 상세 뷰만 쓴다. */
+const Partners   = lazy(() => import("./pages").then((m) => ({ default: m.Partners })));
+const Exchange   = lazy(() => import("./pages").then((m) => ({ default: m.Exchange })));
+const DealGuide  = lazy(() => import("./pages").then((m) => ({ default: m.DealGuide })));
+const ValueCheck = lazy(() => import("./pages").then((m) => ({ default: m.ValueCheck })));
+const Account    = lazy(() => import("./account").then((m) => ({ default: m.Account })));
+const Submit     = lazy(() => import("./account").then((m) => ({ default: m.Submit })));
+const Admin      = lazy(() => import("./admin").then((m) => ({ default: m.Admin })));
+const AiFinder   = lazy(() => import("./ai").then((m) => ({ default: m.AiFinder })));
+const Weekly     = lazy(() => import("./growth").then((m) => ({ default: m.Weekly })));
+const Packs      = lazy(() => import("./growth").then((m) => ({ default: m.Packs })));
+const Terms      = lazy(() => import("./legal").then((m) => ({ default: m.Terms })));
+const Privacy    = lazy(() => import("./legal").then((m) => ({ default: m.Privacy })));
 import { useSession } from "./lib/auth";
 import { fetchRecentPlatforms, remoteEnabled, trackEvent } from "./lib/api";
 
@@ -179,6 +187,7 @@ export default function App() {
         </div>
       </div></header>
 
+      <Suspense fallback={<main className="container"><div className="empty" style={{ marginTop: 40 }}>불러오는 중…</div></main>}>
       {view === "partners" ? <Partners />
         : view === "exchange" ? <Exchange />
         : view === "deal-guide" ? <DealGuide />
@@ -331,6 +340,7 @@ export default function App() {
           )}
         </main>
       )}
+      </Suspense>
 
       {showNudge && (
         <div className="container"><div className="cmp-bar">

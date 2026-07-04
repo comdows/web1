@@ -329,6 +329,12 @@ export async function registerDealInterest(dealId: string, intro: string): Promi
   }
 }
 
+/* ── 관리자: 검수 통지(0010) — 접수자 이메일 조회(v_admin_contact, is_admin만 행 반환) ── */
+export async function getAdminContactEmail(kind: "submission" | "partner_post" | "deal_submission" | "operator_claim", ref: string): Promise<string | null> {
+  const rows = await rest<{ email: string | null }[]>(`v_admin_contact?kind=eq.${kind}&ref=eq.${encodeURIComponent(ref)}&select=email`);
+  return rows[0]?.email ?? null;
+}
+
 /* ── 관리자: 제휴·거래소 검수 큐 (RLS is_admin이 강제) ── */
 export interface PartnerPostAdmin {
   id: string; title: string; category_id: string; type_id: string; give_text: string;
