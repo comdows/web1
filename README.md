@@ -51,6 +51,8 @@ backend/
 ## 설정 상태 / 대기 항목
 
 - [x] Supabase 마이그레이션 **0001~0011 전체 실행 완료(2026-07-05)** — 신규 SQL은 `backend/migrations/`에 추가 후 SQL Editor에서 실행
+- [ ] **`0012_billing_hardening.sql` 실행**(종합 QA 수정 — 구독 갱신·환불 부수효과·취소·상태 가드·탈퇴 기록 보존.
+  실행 전까지 관리 콘솔 과금 패널이 "불러오지 못했어요"로 표시되지만, 과금 스위치가 꺼져 있어 사용자 화면에는 영향 없음)
 - [x] 자동 수집 Secrets + 봇 계정 (2026-07-05 설정 완료)
 - [x] 일일 다이제스트 Secrets(ADMIN_BOT — admin 롤 지정 완료)
 - [x] 주간 백업 Secret `BACKUP_PASSPHRASE` (수동 실행 1회 성공 확인 — 패스프레이즈는 비밀번호 관리자에 보관)
@@ -60,7 +62,7 @@ backend/
   ② Bing 웹마스터 도구 — GSC 가져오기 지원(가장 쉬움). Bing은 ChatGPT 검색의 소스라 중요
   ③ 네이버 서치어드바이저 → 사이트 등록 → HTML 파일 인증(`naver*.html`을 `app/public/`에) → 사이트맵 제출
 - [ ] 특허 출원 — 발명 4건, 공지예외 12개월 시한 (patent-plan.md)
-- [ ] 유료화 게이트 도달 시(0011로 시스템은 준비 완료 — 스위치만 꺼져 있음): ① 통신판매업 신고 ② pricing-policy.md §6-2 무통장 한시 허용 단서 개정 ③ 처리방침 §1 증빙 발행 정보 추가+TERMS_VERSION 상향 ④ app_settings 'pricing_announced_at' 설정(30일 공지 — 사이트 배너 자동 노출) ⑤ 30일 후 app_settings 'billing' 상품별 true + config.ts FLAGS.billing true + 재배포(**둘 다 켜야 열림**). 운영: 입금 확인 시 현금영수증/세금계산서 홈택스 수기 발행 후 승인번호 메모
+- [ ] 유료화 게이트 도달 시(0011·0012로 시스템은 준비 완료 — 스위치만 꺼져 있음. 파운더 50%는 `profiles.founder_discount_until` 수동 부여 시 서버가 자동 적용): ① 통신판매업 신고 ② pricing-policy.md §6-2 무통장 한시 허용 단서 개정 ③ 처리방침 §1 증빙 발행 정보 추가+TERMS_VERSION 상향 ④ app_settings 'pricing_announced_at' 설정(30일 공지 — 사이트 배너 자동 노출) ⑤ 30일 후 app_settings 'billing' 상품별 true + config.ts FLAGS.billing true + 재배포(**둘 다 켜야 열림**). 운영: 입금 확인 시 현금영수증/세금계산서 홈택스 수기 발행 후 승인번호 메모
 
 ## 문서 인덱스
 

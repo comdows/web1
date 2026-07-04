@@ -25,11 +25,18 @@ export async function rest<T>(pathAndQuery: string, init?: RequestInit): Promise
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
     if (detail) console.warn(`API ${res.status} ${pathAndQuery.split("?")[0]}:`, detail); // 원문은 콘솔에만
-    const msg = res.status === 401 || res.status === 403 ? "권한이 없어요. 다시 로그인해 주세요."
+    // 서버 RPC가 raise한 한국어 사유(P0001)는 그대로 노출 — '이미 활성 구독이 있습니다' 등이
+    // 일반 문구('입력값을 확인해 주세요')로 뭉개지던 문제 수정. 내부 영어 에러는 계속 숨긴다.
+    let serverMsg = "";
+    try {
+      const j = JSON.parse(detail) as { code?: string; message?: string };
+      if (typeof j.message === "string" && (j.code === "P0001" || /[가-힣]/.test(j.message))) serverMsg = j.message;
+    } catch { /* JSON 아님 — 일반 문구 사용 */ }
+    const msg = serverMsg || (res.status === 401 || res.status === 403 ? "권한이 없어요. 다시 로그인해 주세요."
       : res.status === 400 || res.status === 409 || res.status === 422 ? "입력값을 확인해 주세요."
       : res.status === 404 ? "대상을 찾을 수 없어요."
       : res.status === 429 ? "요청이 많아요. 잠시 후 다시 시도해 주세요."
-      : "문제가 생겼어요. 잠시 후 다시 시도해 주세요.";
+      : "문제가 생겼어요. 잠시 후 다시 시도해 주세요.");
     const err = new Error(msg) as Error & { status?: number };
     err.status = res.status;
     throw err;
@@ -342,13 +349,27 @@ export async function listInterestsOnMyPosts(): Promise<MyPostInterest[]> {
 export async function respondToInterest(interestId: string, accept: boolean): Promise<void> {
   await rest("rpc/respond_to_interest", { method: "POST", body: JSON.stringify({ p_interest_id: interestId, p_accept: accept }) });
 }
-export async function placeOrder(kind: "boost" | "subscription", planId?: string, postId?: string): Promise<string> {
-  return rest<string>("rpc/place_order", { method: "POST", body: JSON.stringify({ p_kind: kind, p_plan_id: planId ?? null, p_post_id: postId ?? null }) });
+/* 주문 — 금액·할인·멱등(중복 주문 재사용)은 전부 서버가 판정. total은 안내 배너의 단일 소스 */
+export interface OrderResult { id: string; total: number; reused: boolean }
+export async function placeOrder(kind: "boost" | "subscription", planId?: string, postId?: string, depositorHint?: string): Promise<OrderResult> {
+  return rest<OrderResult>("rpc/place_order", { method: "POST", body: JSON.stringify({ p_kind: kind, p_plan_id: planId ?? null, p_post_id: postId ?? null, p_depositor_hint: depositorHint ?? null }) });
+}
+/* 내 결제·청구 내역(own charges RLS) — 입금 대기 건은 계정 화면에서 계좌·기한을 다시 확인 */
+export interface MyCharge {
+  id: string; kind: string; status: string; amount: number; vat: number; fee_tier: string | null; memo: string | null;
+  depositor_hint: string | null; deposit_deadline: string | null; discount_rate: number | null;
+  refund_amount: number | null; created_at: string; paid_at: string | null; refunded_at: string | null;
+}
+export async function listMyCharges(): Promise<MyCharge[]> {
+  const uid = getSession()?.user.id;
+  if (!uid) return [];
+  return rest<MyCharge[]>(`charges?user_id=eq.${uid}&select=id,kind,status,amount,vat,fee_tier,memo,depositor_hint,deposit_deadline,discount_rate,refund_amount,created_at,paid_at,refunded_at&order=created_at.desc&limit=20`);
 }
 export async function founderOptIn(): Promise<void> {
   const uid = getSession()?.user.id;
   if (!uid) throw new Error("로그인이 필요합니다");
-  await rest(`profiles?id=eq.${uid}`, { method: "PATCH", headers: { Prefer: "return=minimal" },
+  // 이미 신청한 경우 최초 시각을 보존(덮어쓰기 방지) — is.null 필터로 미설정 행만 갱신
+  await rest(`profiles?id=eq.${uid}&founder_optin_at=is.null`, { method: "PATCH", headers: { Prefer: "return=minimal" },
     body: JSON.stringify({ founder_optin_at: new Date().toISOString() }) });
 }
 export interface SponsorSlotPublic {
@@ -358,22 +379,25 @@ export interface SponsorSlotPublic {
 export async function fetchSponsorSlots(): Promise<SponsorSlotPublic[]> {
   return rest<SponsorSlotPublic[]>("v_sponsor_slots_public?select=*&order=slot_no.asc");
 }
-export interface BillingQueueRow {
-  id: string; kind: string; amount: number; vat: number; memo: string | null; depositor_name: string | null;
-  deposit_deadline: string | null; fee_tier: string | null; created_at: string; user_email: string | null;
+/* 관리자 청구 뷰(0012 v_admin_charges) — 입금 대기 큐·결제 완료·환불·슬롯 배정의 단일 데이터원 */
+export interface AdminChargeRow {
+  id: string; kind: string; status: string; amount: number; vat: number; fee_tier: string | null;
+  memo: string | null; depositor_name: string | null; depositor_hint: string | null;
+  deposit_deadline: string | null; discount_rate: number | null; refund_amount: number | null;
+  refund_reason: string | null; created_at: string; paid_at: string | null; refunded_at: string | null;
+  user_id: string | null; user_email: string | null; has_slot: boolean;
 }
-export async function listBillingQueue(): Promise<BillingQueueRow[]> {
-  return rest<BillingQueueRow[]>("v_admin_billing_queue?select=*&order=created_at.asc&limit=100");
+export async function listAdminCharges(): Promise<AdminChargeRow[]> {
+  return rest<AdminChargeRow[]>("v_admin_charges?select=*&order=created_at.desc&limit=200");
 }
 export async function confirmDeposit(chargeId: string, depositor: string): Promise<void> {
   await rest("rpc/admin_confirm_deposit", { method: "POST", body: JSON.stringify({ p_charge_id: chargeId, p_depositor: depositor }) });
 }
+export async function cancelCharge(chargeId: string, reason?: string): Promise<void> {
+  await rest("rpc/admin_cancel_charge", { method: "POST", body: JSON.stringify({ p_charge_id: chargeId, p_reason: reason ?? null }) });
+}
 export async function refundCharge(chargeId: string, amount: number, reason: string): Promise<void> {
   await rest("rpc/admin_refund_charge", { method: "POST", body: JSON.stringify({ p_charge_id: chargeId, p_amount: amount, p_reason: reason }) });
-}
-export interface RefundDueRow { id: string; amount: number; vat: number; interest_kind: string; interest_id: string; paid_at: string; user_email: string | null }
-export async function listRefundDue(): Promise<RefundDueRow[]> {
-  return rest<RefundDueRow[]>("v_admin_refund_due?select=*&limit=100");
 }
 export interface SponsorSlotAdmin {
   id: string; slot_no: number; partner_post_id: string; sponsor_user_id: string;
@@ -394,8 +418,15 @@ export async function listSubscriptionsAdmin(): Promise<SubscriptionAdmin[]> {
 }
 export async function markOwnerConfirmed(kind: "partner" | "deal", interestId: string): Promise<void> {
   const table = kind === "partner" ? "partner_post_interests" : "deal_interests";
-  await rest(`${table}?id=eq.${interestId}`, { method: "PATCH", headers: { Prefer: "return=minimal" },
+  // pending일 때만 — 거절·소개 완료된 건의 stale 화면 확인 방지
+  await rest(`${table}?id=eq.${interestId}&status=eq.pending`, { method: "PATCH", headers: { Prefer: "return=minimal" },
     body: JSON.stringify({ owner_confirmed_at: new Date().toISOString() }) });
+}
+/* 관리자: 진행 불가 판정(메일 회신 거절·연락 두절·구버전 동의 없음 건 정리) */
+export async function adminDeclineInterest(kind: "partner" | "deal", interestId: string): Promise<void> {
+  const table = kind === "partner" ? "partner_post_interests" : "deal_interests";
+  await rest(`${table}?id=eq.${interestId}&status=eq.pending`, { method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ status: "declined" }) });
 }
 export async function adminIntroduce(kind: "partner" | "deal", interestId: string, evidence: string): Promise<void> {
   await rest("rpc/admin_introduce", { method: "POST", body: JSON.stringify({ p_kind: kind, p_interest_id: interestId, p_evidence: evidence }) });
