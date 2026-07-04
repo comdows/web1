@@ -115,6 +115,9 @@ function normalize(items, src) {
 }
 
 /* ── 수집 ─────────────────────────────────────────────────── */
+/* 개별 소스 실패는 흡수하되(일시 장애·포맷 변경 가능성), 전 소스 동시 실패는
+ * 수집기 자체의 고장(네트워크·차단·파서 붕괴)이므로 런을 실패시켜 알림을 받는다 — 조용한 수집 정체 방지 */
+let sourceFails = 0;
 async function fetchSource(src) {
   if (FIXTURE_DIR) {
     const p = path.join(FIXTURE_DIR, src.fixture);
@@ -123,10 +126,11 @@ async function fetchSource(src) {
   }
   try {
     const res = await fetch(src.url, { headers: { "User-Agent": "semopl-collector/1.0 (+https://comdows.github.io/web1/)" } });
-    if (!res.ok) { console.warn(`[skip] ${src.id}: HTTP ${res.status}`); return []; }
+    if (!res.ok) { console.warn(`[skip] ${src.id}: HTTP ${res.status}`); sourceFails++; return []; }
     return normalize(src.parse(await res.text()), src);
   } catch (e) {
     console.warn(`[skip] ${src.id}: ${e.message}`);
+    sourceFails++;
     return [];
   }
 }
@@ -155,6 +159,7 @@ async function botLogin() {
 /* ── 메인 ─────────────────────────────────────────────────── */
 const collected = (await Promise.all(SOURCES.map(fetchSource))).flat();
 console.log(`수집 ${collected.length}건 (${SOURCES.map((s) => s.id).join(", ")})`);
+if (!FIXTURE_DIR && sourceFails >= SOURCES.length) throw new Error(`전 소스(${SOURCES.length}개) 수집 실패 — 수집기 점검 필요`);
 
 // 1차: 수집분 내부 dedup(호스트 기준)
 const seen = new Set();

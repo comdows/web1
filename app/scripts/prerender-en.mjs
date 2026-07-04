@@ -119,6 +119,7 @@ write("en", shell({
   Korean-made B2B tools and global tools with documented Korean support: English docs, evidence links, and payment-from-abroad status for each.</p>
   <h2>Browse by category</h2>
   <ul>${enCats.map((c) => `<li style="margin-bottom:8px"><a href="/web1/en/c/${c.id}/" style="color:#7C97FF;font-weight:700">${esc(catEn(c.id).name)}</a> (${byCat.get(c.id).length}) — ${esc(catEn(c.id).desc)}</li>`).join("")}</ul>
+  <p><a href="/web1/en/all/" style="color:#7C97FF;font-weight:700">All platforms A–Z →</a> — find a platform by name.</p>
   ${inquiryCta("")}
 </main>` }));
 
@@ -308,6 +309,27 @@ for (const g of AI.guides) {
 </main>` }));
 }
 
+/* ── /en/all/ — A–Z 전체 색인(이름을 아는 방문자의 직행 경로 · 순수 HTML, 방화벽 무충돌) ── */
+const azGroups = new Map();
+for (const p of [...enPlats].sort((a, b) => en(a.id).name.localeCompare(en(b.id).name, "en"))) {
+  const ch = en(p.id).name[0].toUpperCase();
+  const key = /[A-Z]/.test(ch) ? ch : "#";
+  const arr = azGroups.get(key) ?? []; arr.push(p); azGroups.set(key, arr);
+}
+write("en/all", shell({
+  title: `All ${enPlats.length} Korean Platforms, A–Z | SEMOPL`,
+  desc: `Alphabetical index of all ${enPlats.length} Korean commerce & trade platforms in this directory — find a platform by name.`,
+  canonical: `${SITE}/en/all/`,
+  body: `${MAIN}${NAV}
+  <h1>All Platforms, A–Z</h1>
+  <p>${enPlats.length} Korean commerce &amp; trade platforms. Know the name? Jump straight to it.
+  Also see <a href="/web1/en/ai/" style="color:#7C97FF">AI tools verified for Korean</a>.</p>
+  <p>${[...azGroups.keys()].map((k) => `<a href="#az-${k === "#" ? "etc" : k}" style="color:#7C97FF;margin-right:8px;font-weight:700">${k}</a>`).join("")}</p>
+  ${[...azGroups.entries()].map(([k, list]) => `
+  <h2 id="az-${k === "#" ? "etc" : k}">${esc(k)}</h2>
+  <ul>${list.map((p) => `<li><a href="/web1/en/p/${p.id}/" style="color:#7C97FF">${esc(en(p.id).name)}</a> — ${esc(catEn(p.category).name)}</li>`).join("")}</ul>`).join("")}
+</main>` }));
+
 /* ── AI 인용 레이어: llms.txt + 공개 데이터셋(JSON) — DA 0에서 가장 유리한 전장 ── */
 const today0 = new Date().toISOString().slice(0, 10);
 fs.writeFileSync(path.join(DIST, "llms.txt"), [
@@ -321,6 +343,7 @@ fs.writeFileSync(path.join(DIST, "llms.txt"), [
   `- ${SITE}/en/ : landing & category index`,
   `- ${SITE}/en/about/ : methodology & neutrality`,
   `- ${SITE}/en/partner-inquiry/ : free partner inquiry for businesses entering Korea`,
+  `- ${SITE}/en/all/ : A-Z index of all platforms`,
   `- ${SITE}/en/ai/ : AI tools verified for the Korean market (${AI.tools.length} entries)`,
   ...Object.keys(GUIDES).map((g) => `- ${SITE}/en/guide/${g}/ : guide`),
   ...AI.guides.map((g) => `- ${SITE}/en/guide/${g.slug}/ : guide (AI for Korea)`),
@@ -357,7 +380,7 @@ fs.appendFileSync(path.join(DIST, "robots.txt"), `# AI crawlers: see ${SITE}/llm
 /* ── sitemap.xml에 EN URL 삽입 ── */
 const smPath = path.join(DIST, "sitemap.xml");
 const today = new Date().toISOString().slice(0, 10);
-const enUrls = [`${SITE}/en/`, `${SITE}/en/about/`, `${SITE}/en/partner-inquiry/`, `${SITE}/en/ai/`,
+const enUrls = [`${SITE}/en/`, `${SITE}/en/about/`, `${SITE}/en/partner-inquiry/`, `${SITE}/en/ai/`, `${SITE}/en/all/`,
   ...enCats.map((c) => `${SITE}/en/c/${c.id}/`),
   ...enPlats.map((p) => `${SITE}/en/p/${p.id}/`),
   ...Object.keys(GUIDES).map((s) => `${SITE}/en/guide/${s}/`),

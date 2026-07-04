@@ -13,6 +13,7 @@ import {
 } from "./lib/api";
 import type { PartnerPost, PublicDeal } from "./lib/api";
 import { checkAnonymity, hasBlocking, hasContact } from "./lib/anonymity";
+import { Draft } from "./lib/store";
 import type { AnonFinding } from "./lib/anonymity";
 import { estimateValue, fmtRange, VAL_YEARS } from "./lib/valuation";
 import type { ValueResult } from "./lib/valuation";
@@ -112,20 +113,25 @@ function CategoryOptions() {
 
 /* ─────────────── 2단계: 제휴 매칭 ─────────────── */
 
-/* 제안 등록 폼 */
+/* 제안 등록 폼 — 초안 자동 저장(세션 만료·이탈에도 입력 보존, 제출 성공 시 삭제) */
 function PartnerPostForm({ typeId, onDone }: { typeId: string; onDone: () => void }) {
-  const [title, setTitle] = useState("");
-  const [cat, setCat] = useState("");
-  const [type, setType] = useState(typeId);
-  const [give, setGive] = useState("");
-  const [get, setGet] = useState("");
-  const [want, setWant] = useState("");
-  const [size, setSize] = useState(SIZE_BANDS[4]);
-  const [detail, setDetail] = useState("");
+  const [d0] = useState(() => Draft.load<Record<string, string>>("partner"));
+  const [title, setTitle] = useState(d0?.title ?? "");
+  const [cat, setCat] = useState(d0?.cat ?? "");
+  const [type, setType] = useState(typeId || (d0?.type ?? ""));
+  const [give, setGive] = useState(d0?.give ?? "");
+  const [get, setGet] = useState(d0?.get ?? "");
+  const [want, setWant] = useState(d0?.want ?? "");
+  const [size, setSize] = useState(d0?.size ?? SIZE_BANDS[4]);
+  const [detail, setDetail] = useState(d0?.detail ?? "");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
 
   useEffect(() => { if (typeId) setType(typeId); }, [typeId]);
+  useEffect(() => {
+    const t = setTimeout(() => Draft.save("partner", { title, cat, type, give, get, want, size, detail }), 500);
+    return () => clearTimeout(t);
+  }, [title, cat, type, give, get, want, size, detail]);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
@@ -137,6 +143,7 @@ function PartnerPostForm({ typeId, onDone }: { typeId: string; onDone: () => voi
         give_text: give.trim(), get_text: get.trim(),
         want_categories: want ? [want] : [], size_text: size, detail: detail.trim(),
       });
+      Draft.clear("partner");
       onDone();
     } catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
     finally { setBusy(false); }
@@ -486,18 +493,20 @@ export function Partners() {
  * 지분 트랙 선택 시 접수 대신 전문 자문 안내(1차 방어선 — 2차는 admin 게시 가드) */
 function SellForm({ onDone }: { onDone: () => void }) {
   const go = useNav();
+  // 초안 자동 저장 — 10여 필드 폼이 세션 만료·이탈로 유실되지 않게(제출 성공 시 삭제)
+  const [d0] = useState(() => Draft.load<Record<string, string> & { assets?: string[] }>("sell"));
   const [track, setTrack] = useState<"asset" | "equity">("asset");
-  const [cat, setCat] = useState("");
-  const [region, setRegion] = useState<"domestic" | "overseas">("domestic");
-  const [band, setBand] = useState(REVENUE_BANDS[1]);
-  const [mode, setMode] = useState(DEAL_MODES[0]);
-  const [assets, setAssets] = useState<Set<string>>(new Set());
-  const [handover, setHandover] = useState(HANDOVER_OPTS[1]);
-  const [summary, setSummary] = useState("");
-  const [highlights, setHighlights] = useState("");
-  const [reasonPreset, setReasonPreset] = useState(SALE_REASONS[0]);
-  const [reasonNote, setReasonNote] = useState("");
-  const [verify, setVerify] = useState("");
+  const [cat, setCat] = useState(d0?.cat ?? "");
+  const [region, setRegion] = useState<"domestic" | "overseas">((d0?.region as "domestic" | "overseas") ?? "domestic");
+  const [band, setBand] = useState(d0?.band ?? REVENUE_BANDS[1]);
+  const [mode, setMode] = useState(d0?.mode ?? DEAL_MODES[0]);
+  const [assets, setAssets] = useState<Set<string>>(new Set(d0?.assets ?? []));
+  const [handover, setHandover] = useState(d0?.handover ?? HANDOVER_OPTS[1]);
+  const [summary, setSummary] = useState(d0?.summary ?? "");
+  const [highlights, setHighlights] = useState(d0?.highlights ?? "");
+  const [reasonPreset, setReasonPreset] = useState(d0?.reasonPreset ?? SALE_REASONS[0]);
+  const [reasonNote, setReasonNote] = useState(d0?.reasonNote ?? "");
+  const [verify, setVerify] = useState(d0?.verify ?? "");
   const [ack, setAck] = useState(false);
   const [consent, setConsent] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -505,6 +514,12 @@ function SellForm({ onDone }: { onDone: () => void }) {
   const [findings, setFindings] = useState<AnonFinding[]>([]); // 익명성 자동 점검 결과
   const [warnAck, setWarnAck] = useState(false);               // 경고 확인 후 2단 제출
   const toggleAsset = (a: string) => setAssets((s) => { const n = new Set(s); if (n.has(a)) n.delete(a); else n.add(a); return n; });
+  useEffect(() => {
+    const t = setTimeout(() => Draft.save("sell", {
+      cat, region, band, mode, assets: [...assets], handover, summary, highlights, reasonPreset, reasonNote, verify,
+    }), 500);
+    return () => clearTimeout(t);
+  }, [cat, region, band, mode, assets, handover, summary, highlights, reasonPreset, reasonNote, verify]);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     // verify(비공개 검증 자료)는 URL·이메일 기입이 목적이라 익명성 검사에서 제외 — 게시·공유되지 않음
@@ -522,6 +537,7 @@ function SellForm({ onDone }: { onDone: () => void }) {
         assets: [...assets], handover, verify_note: verify.trim(),
         ack, contact_consent_at: new Date().toISOString(),
       });
+      Draft.clear("sell");
       onDone();
     } catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
     finally { setBusy(false); }

@@ -10,6 +10,7 @@ on:
 permissions:
   contents: read
   issues: write
+  actions: write   # keepalive(스케줄 워크플로 재활성화)에 필요
 
 jobs:
   check:
@@ -20,7 +21,21 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: Probe all listed URLs
+      - name: Probe all listed URLs (라이브 데이터 우선 — Supabase 가용성 프로브 겸용)
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: node backend/collect/healthcheck.mjs
+      # GitHub는 저장소 60일 무활동 시 스케줄 워크플로를 자동 비활성화한다 —
+      # 월간 실행되는 이 잡이 다른 스케줄 워크플로를 재활성화해 조용한 정지를 방지
+      - name: Keepalive scheduled workflows
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for wf in collect.yml digest.yml backup.yml healthcheck.yml; do
+            curl -sf -X PUT -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+              "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/$wf/enable" \
+              && echo "$wf ✓" || echo "$wf 재활성화 실패(권한·파일명 확인)"
+          done

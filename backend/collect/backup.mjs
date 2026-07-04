@@ -83,3 +83,15 @@ for (const [table, order] of TABLES) {
 const file = `backup-${new Date().toISOString().slice(0, 10)}.json`;
 fs.writeFileSync(file, JSON.stringify(out));
 console.log(`백업 완료 → ${file} (${Math.round(fs.statSync(file).size / 1024)}KB)`);
+
+/* 백업 직후 90일 초과 events 정리(0010 RPC) — 백업본이 삭제 전 상태를 보존하므로 이 순서가 안전.
+ * RPC 미배포(0010 미실행) 상태에서도 백업 자체는 성공해야 하므로 이 단계만 경고로 처리. */
+try {
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/purge_old_events`, {
+    method: "POST",
+    headers: { apikey: SB_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_days: 90 }),
+  });
+  if (res.ok) console.log(`events 정리: ${await res.text()}행 삭제(90일 초과)`);
+  else console.warn(`events 정리 생략(${res.status}) — 0010 마이그레이션 실행 여부 확인`);
+} catch (e) { console.warn(`events 정리 생략: ${e.message}`); }

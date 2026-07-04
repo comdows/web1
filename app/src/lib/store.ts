@@ -67,6 +67,16 @@ export const Interests = {
   set(s: InterestsState) { lsSet(INTERESTS_KEY, JSON.stringify(s)); emit(); },
 };
 
+/* 폼 초안 — 긴 폼(매각 접수·제휴 제안) 작성 중 세션 만료·이탈 시 입력 유실 방지.
+ * 제출 성공 시 clear. 연락처류는 애초에 입력 금지 필드라 민감 정보 저장 없음. */
+export const Draft = {
+  load<T>(key: string): T | null {
+    try { const v = lsGet(`sm.draft.${key}`); return v ? (JSON.parse(v) as T) : null; } catch { return null; }
+  },
+  save(key: string, data: unknown): void { lsSet(`sm.draft.${key}`, JSON.stringify(data)); },
+  clear(key: string): void { try { localStorage.removeItem(`sm.draft.${key}`); } catch { /* noop */ } },
+};
+
 /* 직전 방문 시각 — 세션당 1회, 직전 값을 읽은 뒤에 갱신(재방문 델타 배지용) */
 const LASTVISIT_KEY = "sm.lastvisit.v1";
 let lastVisitCache: string | null | undefined;
