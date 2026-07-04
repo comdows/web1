@@ -15,6 +15,9 @@ const data = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.json
 const EN = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.en.json"), "utf8"));
 const GUIDES = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/guides.en.json"), "utf8"));
 const AI = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/ai-stack.en.json"), "utf8"));
+const PF = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/profile-fields.en.json"), "utf8"));       // 판단 필드 3축(+공식 링크)
+const COMPARE = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/compare.en.json"), "utf8"));          // 비교 페이지
+const INTROS = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/hub-intros.en.json"), "utf8"));        // 허브 intro
 
 /* ── 검증: 미존재 id 참조·빈 필드·과장 길이는 빌드 실패(미번역은 생략일 뿐 오류 아님) ── */
 const koById = new Map(data.platforms.map((p) => [p.id, p]));
@@ -28,6 +31,13 @@ for (const c of data.categories) if (!EN.categories[c.id]?.name) errs.push(`분�
 for (const g of data.groups) if (!EN.groups[g.id]?.name) errs.push(`그룹 번역 누락: ${g.id}`);
 for (const g of Object.values(GUIDES)) for (const s of g.steps) for (const c of s.cats)
   if (!EN.categories[c]) errs.push(`가이드가 없는 분야 참조: ${c}`);
+/* 판단 필드 검증 — 미등재 id·길이 초과·비https 링크는 빌드 실패 */
+for (const [id, f] of Object.entries(PF)) {
+  if (!EN.platforms[id]) errs.push(`판단 필드의 미등재 id: ${id}`);
+  if ((f.for ?? "").length > 170 || (f.enSupport ?? "").length > 150 || (f.sellerPath ?? "").length > 190) errs.push(`판단 필드 길이 초과: ${id}`);
+  for (const u of Object.values(f.links ?? {})) if (!/^https:\/\//.test(u)) errs.push(`판단 필드 비https 링크: ${id}`);
+}
+for (const c of COMPARE) for (const r of c.rows) if (/fee|commission|수수료|legal|law/i.test(r.aspect)) errs.push(`비교 축 금지 위반: ${c.slug} → ${r.aspect}`);
 /* AI 스택 검증 — 가격 수치·Top N 프레이밍은 스키마 단계에서 금지(방화벽), 필드 실측 필수 */
 const aiIds = new Set(AI.tools.map((t) => t.id));
 for (const t of AI.tools) {
@@ -113,7 +123,9 @@ write("en", shell({
   <p>Korea is one of the world's largest e-commerce markets — but its platform landscape is documented almost entirely in Korean.
   SEMOPL catalogs 1,600+ Korean business platforms in one taxonomy; this English layer covers the <b>${enPlats.length} commerce &amp; trade platforms</b> most relevant to foreign sellers, each linked to its official site.</p>
   <h2>Guides</h2>
-  <ul>${Object.entries(GUIDES).map(([slug, g]) => `<li style="margin-bottom:10px"><a href="/web1/en/guide/${slug}/" style="color:#7C97FF;font-weight:700">${esc(g.title)}</a> — ${esc(g.desc)}</li>`).join("")}</ul>
+  <ul>${Object.entries(GUIDES).map(([slug, g]) => `<li style="margin-bottom:10px"><a href="/web1/en/guide/${slug}/" style="color:#7C97FF;font-weight:700">${esc(g.title)}</a> — ${esc(g.desc)}</li>`).join("")}
+  ${COMPARE.map((c) => `<li style="margin-bottom:10px"><a href="/web1/en/compare/${c.slug}/" style="color:#7C97FF;font-weight:700">${esc(c.title)}</a> — ${esc(c.desc)}</li>`).join("")}
+  <li style="margin-bottom:10px"><a href="/web1/en/official-links/" style="color:#7C97FF;font-weight:700">Official seller &amp; fee pages, verified</a> — direct links to the pages that are always current.</li></ul>
   <h2>AI tools for the Korean market</h2>
   <p><a href="/web1/en/ai/" style="color:#7C97FF;font-weight:700">${AI.tools.length} AI tools verified for Korean →</a> —
   Korean-made B2B tools and global tools with documented Korean support: English docs, evidence links, and payment-from-abroad status for each.</p>
@@ -136,6 +148,7 @@ for (const c of enCats) {
     body: `${MAIN}${NAV}
     <h1>${esc(ce.name)} — Korean Platforms</h1>
     <p>${esc(ce.desc)}</p>
+    ${INTROS[c.id] ? `<p>${esc(INTROS[c.id])}</p>` : ""}
     <ul>${list.map(card).join("")}</ul>
     ${inquiryCta(ce.name)}
 </main>` }));
@@ -158,6 +171,15 @@ for (const p of enPlats) {
     <h1>${esc(e.name)}</h1>
     <p>${esc(e.blurb)}</p>
     <p><a href="${esc(p.url)}" rel="noopener" style="color:#7C97FF;font-weight:700">Official site →</a></p>
+    ${PF[p.id] ? `<h2>For businesses entering Korea</h2>
+    <ul>
+      ${PF[p.id].for ? `<li style="margin-bottom:8px"><b>Who it fits:</b> ${esc(PF[p.id].for)}</li>` : ""}
+      ${PF[p.id].enSupport ? `<li style="margin-bottom:8px"><b>English support:</b> ${esc(PF[p.id].enSupport)}</li>` : ""}
+      ${PF[p.id].sellerPath ? `<li style="margin-bottom:8px"><b>Becoming a seller:</b> ${esc(PF[p.id].sellerPath)}</li>` : ""}
+      ${PF[p.id].links?.seller ? `<li><a href="${esc(PF[p.id].links.seller)}" rel="noopener" style="color:#7C97FF">Official seller page →</a></li>` : ""}
+      ${PF[p.id].links?.fees ? `<li><a href="${esc(PF[p.id].links.fees)}" rel="noopener" style="color:#7C97FF">Official fee information →</a></li>` : ""}
+    </ul>
+    <p><small style="opacity:.75">Verified against official sources on ${esc(PF[p.id].lastVerified)}. Details change — the official pages above are always current.</small></p>` : ""}
     <p><i>See the official site for fees, settlement cycles, and seller requirements — these change frequently and are not republished here.</i></p>
     <p><a href="/web1/en/partner-inquiry/" style="color:#7C97FF">Looking to partner with Korean platforms like this? Submit an inquiry (free) →</a></p>
     ${similar.length ? `<h2>Similar platforms</h2><ul>${similar.map(card).join("")}</ul>` : ""}
@@ -309,6 +331,52 @@ for (const g of AI.guides) {
 </main>` }));
 }
 
+/* ── /en/official-links/ — 공식 셀러·수수료 페이지 허브(수치는 원출처로만 안내한다는 약속의 제품화) ── */
+const linked = enPlats.filter((p) => PF[p.id]?.links && (PF[p.id].links.seller || PF[p.id].links.fees));
+const linkedByCat = new Map();
+for (const p of linked) { const a = linkedByCat.get(p.category) ?? []; a.push(p); linkedByCat.set(p.category, a); }
+write("en/official-links", shell({
+  title: `Official Seller & Fee Pages of Korean Platforms — ${linked.length} Verified Links | SEMOPL`,
+  desc: "Direct links to the official seller-registration and fee pages of Korean platforms — the pages that are always current, verified by hand.",
+  canonical: `${SITE}/en/official-links/`,
+  body: `${MAIN}${NAV}
+  <h1>Official Seller &amp; Fee Pages, Verified</h1>
+  <p>Fees and entry requirements change too often to republish — so instead we link you straight to the official pages.
+  ${linked.length} platforms below have hand-verified links to their seller registration and/or fee pages. If a link goes stale,
+  <a href="https://github.com/comdows/web1/issues/new?title=${encodeURIComponent("[EN] Stale official link")}" style="color:#7C97FF">report it</a>.</p>
+  ${[...linkedByCat.entries()].map(([cat, list]) => `
+  <h2>${esc(catEn(cat).name)}</h2>
+  <ul>${list.map((p) => {
+    const L = PF[p.id].links;
+    return `<li style="margin:0 0 10px"><a href="/web1/en/p/${p.id}/" style="color:#7C97FF;font-weight:700">${esc(en(p.id).name)}</a> —
+      ${L.seller ? `<a href="${esc(L.seller)}" rel="noopener" style="color:#7C97FF">seller page</a>` : ""}${L.seller && L.fees ? " · " : ""}${L.fees ? `<a href="${esc(L.fees)}" rel="noopener" style="color:#7C97FF">fee page</a>` : ""}
+      <small style="opacity:.7">(verified ${esc(PF[p.id].lastVerified)})</small></li>`;
+  }).join("")}</ul>`).join("")}
+</main>` }));
+
+/* ── /en/compare/<slug>/ — 비교 페이지(수수료·법률 축 금지, 구조 비교만) ── */
+for (const c of COMPARE) {
+  write(`en/compare/${c.slug}`, shell({
+    title: `${c.title} | SEMOPL`, desc: c.desc.slice(0, 155),
+    canonical: `${SITE}/en/compare/${c.slug}/`,
+    body: `${MAIN}${NAV}
+    <h1>${esc(c.title)}</h1>
+    <p>${esc(c.intro)}</p>
+    <div style="overflow-x:auto"><table style="border-collapse:collapse;width:100%">
+      <tr><th style="text-align:left;padding:8px;border-bottom:1px solid #2a3350"></th>
+          <th style="text-align:left;padding:8px;border-bottom:1px solid #2a3350">${esc(c.aName)}</th>
+          <th style="text-align:left;padding:8px;border-bottom:1px solid #2a3350">${esc(c.bName)}</th></tr>
+      ${c.rows.map((r) => `<tr>
+        <td style="padding:8px;border-bottom:1px solid #1c2440;font-weight:700">${esc(r.aspect)}</td>
+        <td style="padding:8px;border-bottom:1px solid #1c2440">${esc(r.a)}</td>
+        <td style="padding:8px;border-bottom:1px solid #1c2440">${esc(r.b)}</td></tr>`).join("")}
+    </table></div>
+    <h2>Which one, when</h2>
+    <p>${esc(c.verdict)}</p>
+    <p><b>Note:</b> ${esc(c.note)} Fees and terms are not compared here — check the <a href="/web1/en/official-links/" style="color:#7C97FF">official pages</a>.</p>
+</main>` }));
+}
+
 /* ── /en/all/ — A–Z 전체 색인(이름을 아는 방문자의 직행 경로 · 순수 HTML, 방화벽 무충돌) ── */
 const azGroups = new Map();
 for (const p of [...enPlats].sort((a, b) => en(a.id).name.localeCompare(en(b.id).name, "en"))) {
@@ -344,6 +412,8 @@ fs.writeFileSync(path.join(DIST, "llms.txt"), [
   `- ${SITE}/en/about/ : methodology & neutrality`,
   `- ${SITE}/en/partner-inquiry/ : free partner inquiry for businesses entering Korea`,
   `- ${SITE}/en/all/ : A-Z index of all platforms`,
+  `- ${SITE}/en/official-links/ : verified official seller & fee pages`,
+  ...COMPARE.map((c) => `- ${SITE}/en/compare/${c.slug}/ : comparison`),
   `- ${SITE}/en/ai/ : AI tools verified for the Korean market (${AI.tools.length} entries)`,
   ...Object.keys(GUIDES).map((g) => `- ${SITE}/en/guide/${g}/ : guide`),
   ...AI.guides.map((g) => `- ${SITE}/en/guide/${g.slug}/ : guide (AI for Korea)`),
@@ -367,7 +437,8 @@ fs.writeFileSync(path.join(DIST, "en/data/platforms.json"), JSON.stringify({
     note: "Neutral directory. Fees/requirements intentionally omitted — see each official site." },
   platforms: enPlats.map((p) => ({ id: p.id, name: en(p.id).name, category: p.category,
     categoryName: catEn(p.category).name, region: p.region === "해외" ? "global" : "korea",
-    blurb: en(p.id).blurb, officialUrl: p.url, page: `${SITE}/en/p/${p.id}/` })),
+    blurb: en(p.id).blurb, officialUrl: p.url, page: `${SITE}/en/p/${p.id}/`,
+    ...(PF[p.id] ? { profile: PF[p.id] } : {}) })),
 }, null, 1));
 fs.writeFileSync(path.join(DIST, "en/data/ai-stack.json"), JSON.stringify({
   meta: { title: "AI tools verified for the Korean market (SEMOPL)", built: today0,
@@ -381,6 +452,7 @@ fs.appendFileSync(path.join(DIST, "robots.txt"), `# AI crawlers: see ${SITE}/llm
 const smPath = path.join(DIST, "sitemap.xml");
 const today = new Date().toISOString().slice(0, 10);
 const enUrls = [`${SITE}/en/`, `${SITE}/en/about/`, `${SITE}/en/partner-inquiry/`, `${SITE}/en/ai/`, `${SITE}/en/all/`,
+  `${SITE}/en/official-links/`, ...COMPARE.map((c) => `${SITE}/en/compare/${c.slug}/`),
   ...enCats.map((c) => `${SITE}/en/c/${c.id}/`),
   ...enPlats.map((p) => `${SITE}/en/p/${p.id}/`),
   ...Object.keys(GUIDES).map((s) => `${SITE}/en/guide/${s}/`),

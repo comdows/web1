@@ -1,0 +1,1106 @@
+{
+ "coupang": {
+  "for": "Overseas brands entering Korea via cross-border Marketplace: ship direct from your home country to Coupang's active Korean customer base.",
+  "enSupport": "Global seller portal in English (globalsellers.coupang.com/en) plus Chinese; multilingual seller hotline and English Seller University.",
+  "sellerPath": "Sign up on the global seller portal with a passport and home-country business registration; no Korean entity or local bank account required for the cross-border program.",
+  "links": {
+   "seller": "https://globalsellers.coupang.com/en/",
+   "fees": "https://globalsellers.coupang.com/en/how-much-does-selling-on-coupang-cost/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "fassto": {
+  "for": "Small-to-mid online sellers outsourcing warehousing and shipping; a Naver Fulfillment Alliance partner with AutoStore-automated centers in Yongin.",
+  "enSupport": "Korean-language website and console; no official English portal found, though it integrates overseas channels like Rakuten and Shopify.",
+  "sellerPath": "Apply for fulfillment service on fassto.ai; the FMS console connects store channels for storage, order processing, packing, domestic and international shipping.",
+  "lastVerified": "2026-07-04"
+ },
+ "logispot": {
+  "for": "B2B shippers (food and beverage, electronics, healthcare) needing line-haul freight, 3PL and forwarding on one digital transport-management platform.",
+  "enSupport": "English corporate site at logi-spot.com/en; separate Korean apps for truck owners and carriers.",
+  "sellerPath": "Corporate shippers request a consultation through the site; services span integrated transport management, bonded import/export logistics and system integration with in-house ERP.",
+  "lastVerified": "2026-07-04"
+ },
+ "shopee": {
+  "for": "Korea-based businesses exporting consumer goods to Southeast Asia and Taiwan; an outbound channel, not a route into the Korean market.",
+  "enSupport": "Korea onboarding runs in Korean via shopee.kr and the Korea Seller Center; Shopee's global seller tools exist separately in English.",
+  "sellerPath": "Register a main account on shopee.kr and file the entry application; a Korean business registration certificate is the only required document, with review in a few business days.",
+  "links": {
+   "seller": "https://shopee.kr/entry_info/info.php"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "sell": {
+  "for": "Korea-based SMEs in beauty, fashion and K-pop merchandise selling outbound to overseas buyers via the reverse-direct-purchase Global Selling program.",
+  "enSupport": "Seller portal at sell.aliexpress.com offered in English and other languages; the Korea program adds free listing translation.",
+  "sellerPath": "Create a seller account on sell.aliexpress.com and pass KYC/business verification; the Korea program initially targets US, Japan, France and Spain and ships via Korea Post.",
+  "links": {
+   "seller": "https://sell.aliexpress.com/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "delivered": {
+  "for": "Overseas buyers and resellers sourcing from Korean stores without a Korean entity, via package forwarding, proxy buying and dropshipping.",
+  "enSupport": "Full English website (delivered.co.kr/en) including store directory, service guides and a pricing page.",
+  "sellerPath": "Create an account to get a free Korean forwarding address, or use the We Buy proxy-purchase service; covers stores like Naver Smart Store, Bunjang, Olive Young and Weverse Shop.",
+  "links": {
+   "fees": "https://www.delivered.co.kr/en/pricing"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "sell2": {
+  "for": "Brands targeting Gulf and Egyptian consumers on noon; requires a business registered in the UAE, Saudi Arabia or Egypt.",
+  "enSupport": "Seller portal and help center fully in English (sell.withnoon.com/en, helpcenter.noon.partners); store names set in English and Arabic.",
+  "sellerPath": "Register on the noon Seller Lab with a UAE trade license or KSA/Egypt commercial registration, VAT certificate and ID; global-store setup guides exist for overseas sellers.",
+  "links": {
+   "seller": "https://sell.withnoon.com/en/",
+   "fees": "https://support.noon.partners/portal/en/kb/articles/fulfilled-by-partner-fbp-fees-in-uae"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "sellerid": {
+  "for": "Sellers targeting Indonesian consumers through Tokopedia and the integrated TikTok Shop; accounts are verified as operated within Indonesia.",
+  "enSupport": "Seller Center education articles are readable in English (lang=en), but registration is built for Indonesian residents and entities.",
+  "sellerPath": "Register at seller-id.tokopedia.com; TikTok Shop by Tokopedia individual accounts need Indonesian government ID (18+), so foreign firms enter via a local entity or partner.",
+  "links": {
+   "seller": "https://seller-id.tokopedia.com/account/register"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "domesin": {
+  "for": "Resellers and new online-store founders sourcing shoes, apparel, bags and living goods on consignment, with product images supplied for listing.",
+  "enSupport": "Korean-only wholesale site for domestic resellers; no English interface is offered.",
+  "sellerPath": "Join as a member on domesin.com, list its consignment catalog in your own store, and Domesin drop-ships each order directly to the end customer.",
+  "lastVerified": "2026-07-04"
+ },
+ "selpi": {
+  "for": "Fashion retailers sourcing Dongdaemun new arrivals by app; run by Avid E&F, a Brandi subsidiary, with a physical showroom and content studio in Dongdaemun.",
+  "enSupport": "App and site operate only in Korean; no English seller pages found.",
+  "sellerPath": "Sign up on selpi.co.kr or the Selpi app as a retail member to buy from wholesale members; Selpi Logistics can handle fulfillment through Naver Smart Store integration.",
+  "links": {
+   "fees": "https://www.selpi.co.kr/pricing"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "hairsoo": {
+  "for": "Hair salons and beauty-supply resellers buying professional materials such as dye and perm products, carrying brands like Wella and L'Oreal.",
+  "enSupport": "Korean-only storefront aimed at domestic salon buyers; no English version exists.",
+  "sellerPath": "Create a member account on hairsoo.com and order salon materials online; the assortment is aimed at working beauty professionals rather than general consumers.",
+  "lastVerified": "2026-07-04"
+ },
+ "seapro": {
+  "for": "Restaurants, caterers and institutional food-service companies buying frozen seafood such as squid, shrimp, crab and fish sourced from importers.",
+  "enSupport": "Korean-only B2B seafood site without any English pages.",
+  "sellerPath": "Register as a business member on seapro.kr to order wholesale frozen seafood; the platform brokers directly between importers and food-service buyers.",
+  "lastVerified": "2026-07-04"
+ },
+ "sellup": {
+  "for": "Dongdaemun retail sellers, wholesale shop operators and buying agents (saip) who each use a dedicated SELL UP app for sourcing, orders and payment ledgers.",
+  "enSupport": "Korean-only apps and website (operator: Cher Ground) with no English option.",
+  "sellerPath": "Install the matching app - SELL UP Retail, Wholesale or Saip - then link a bank account to place mobile order sheets and pay wholesalers with a PIN-based checkout.",
+  "lastVerified": "2026-07-04"
+ },
+ "realflower": {
+  "for": "Online florists running consignment flower shops: fresh-cut flowers are listed from wholesale and shipped per order, so no inventory is held.",
+  "enSupport": "Korean-only flower consignment site; nothing is published in English.",
+  "sellerPath": "Sign up on realflower.co.kr and resell its fresh-flower catalog; the platform handles consignment fulfillment and delivery of each retail order.",
+  "lastVerified": "2026-07-04"
+ },
+ "smartstore": {
+  "for": "Brands targeting Korean consumers who discover products via Naver search; realistic mainly for sellers with a Korean entity or local partner.",
+  "enSupport": "Seller center is Korean-only with no official English seller portal; foreign brands operate via a Korean entity or agency.",
+  "sellerPath": "Sign up on the seller center with a Korean business registration and local bank account; non-resident sellers typically enter via a Korean entity or local partner.",
+  "links": {
+   "seller": "https://sell.smartstore.naver.com"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "dohandsome": {
+  "for": "E-commerce sellers outsourcing warehousing and shipping early; its Poomgo fulfillment service accepts small-volume startup accounts.",
+  "enSupport": "Poomgo's site, quote flow and service guide are Korean-only; no English portal found.",
+  "sellerPath": "Request a standard or custom quote on Poomgo's estimate page; custom quotes are answered within one to two business days before fulfillment onboarding.",
+  "links": {
+   "seller": "https://poomgo.com/estimate"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "logiket": {
+  "for": "Online sellers shopping for a 3PL warehouse; a reverse-auction quote platform with around 100 partner logistics firms, not a logistics operator itself.",
+  "enSupport": "Quote forms and partner dashboard are Korean-only; no English version found.",
+  "sellerPath": "Submit a short quote request describing products and volumes; partner 3PL firms respond with competing quotes, followed by meetings and e-contract signing.",
+  "lastVerified": "2026-07-04"
+ },
+ "qoo10": {
+  "for": "Korea-based cross-border sellers targeting Japan and Southeast Asia; Qoo10 Japan (eBay Japan) requires separate registration from other Qoo10 markets.",
+  "enSupport": "qoo10.com seller guide and QSM back office are in English; Qoo10 Japan (qoo10.jp) is not account-linked with other Qoo10 sites.",
+  "sellerPath": "Register via the seller guide on qoo10.com and manage listings in QSM; for Japan, register separately on eBay Japan's Qoo10.jp with its own J-QSM back office.",
+  "links": {
+   "seller": "https://www.qoo10.com/gmkt.inc/cs/guideDefault.aspx"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "rakuten": {
+  "for": "Established brands committing to a full branded storefront in Japan; screening-based store opening rather than instant marketplace sign-up.",
+  "enSupport": "RMS back office is Japanese-only; bilingual onboarding support exists and international merchants from selected countries are now admitted.",
+  "sellerPath": "Apply on the store-opening site, pass Rakuten's screening and pick one of three store plans; opening takes roughly six weeks from application.",
+  "links": {
+   "seller": "https://www.rakuten.co.jp/ec/",
+   "fees": "https://www.rakuten.co.jp/ec/plan/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "sellerhub": {
+  "for": "Korean-side sellers wanting one product feed pushed to about twenty domestic marketplaces without opening an account at each channel.",
+  "enSupport": "Solution, FAQ and support docs are Korean-only; no English interface found.",
+  "sellerPath": "Join at sellerhub.co.kr and register products once; after category matching, listings are distributed to about twenty Korean channels such as Gmarket, Auction and 11st.",
+  "lastVerified": "2026-07-04"
+ },
+ "global2": {
+  "for": "Exporters adding the Russian market via cross-border e-commerce; no Russian legal entity is required to register.",
+  "enSupport": "English seller documentation at docs.ozon.ru/global/en; registration and product listings can be handled in English.",
+  "sellerPath": "Register at seller.ozon.com with ID and taxpayer details, sign the cross-border placement contract, then ship yourself or via Ozon fulfillment schemes.",
+  "links": {
+   "seller": "https://seller.ozon.com/",
+   "fees": "https://docs.ozon.ru/global/en/commissions/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "globalsellers": {
+  "for": "Overseas brands selling into Coupang Korea (and Taiwan) cross-border; onboarding is built for foreign businesses without a Korean entity.",
+  "enSupport": "Dedicated English global-seller site; seller portal available in Korean, English and Chinese with English support email.",
+  "sellerPath": "Sign up on the global seller site with passport and business registration, complete KYC verification for payouts, then list and manage orders in the WING seller portal.",
+  "links": {
+   "seller": "https://globalsellers.coupang.com/en/",
+   "fees": "https://globalsellers.coupang.com/en/how-much-does-selling-on-coupang-cost/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "naggama": {
+  "for": "Merchants offloading or hunting surplus, clearance and overstock lots; a trader community run by G&G Commerce, operator of Domeggook.",
+  "enSupport": "Board and membership pages are Korean-only, with no English content.",
+  "sellerPath": "Register as a member on naggama.com and post or browse clearance and overstock lots; deals are struck member-to-member on the board.",
+  "lastVerified": "2026-07-04"
+ },
+ "sellernow": {
+  "for": "Newer online sellers researching sourcing and logistics; a free directory of some 800 Korean wholesale sites plus 3PL quote comparison.",
+  "enSupport": "Directory and news content are Korean-only; the companion mobile app is Korean-only as well.",
+  "sellerPath": "Browse the wholesale-site directory freely; for logistics, submit a one-minute request to compare quotes from over 150 Korean 3PL centers by region and specialty.",
+  "lastVerified": "2026-07-04"
+ },
+ "dckitchen": {
+  "for": "Restaurant founders and food-service operators outfitting commercial kitchens; wholesale equipment plus made-to-order stainless fabrication.",
+  "enSupport": "Korean-only storefront for domestic restaurant buyers; English pages are absent.",
+  "sellerPath": "Order equipment directly from the online store; custom sinks, worktables and full kitchen build-outs go through on-site measurement and a fabrication quote.",
+  "lastVerified": "2026-07-04"
+ },
+ "haemulsa": {
+  "for": "Food businesses buying frozen seafood by the case direct from suppliers; household buyers can order the same case units.",
+  "enSupport": "Product pages and ordering are in Korean with no English option found.",
+  "sellerPath": "Order case-unit frozen seafood directly on the site; goods ship from its Seongdong-gu, Seoul operation with quality handled by certified seafood quality managers.",
+  "lastVerified": "2026-07-04"
+ },
+ "ecplaza": {
+  "for": "Korean manufacturers seeking overseas B2B buyers, and foreign buyers sourcing Korean suppliers; trade leads and inquiries rather than retail orders.",
+  "enSupport": "English-first international site; a dedicated Korean-supplier directory (korean-suppliers.ecplaza.net) runs in English.",
+  "sellerPath": "Create a free account to post products and trade leads; paid membership tiers and offline trade-consulting services expand exposure to buyers.",
+  "links": {
+   "seller": "https://www.ecplaza.net/auth/register"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "matazoo": {
+  "for": "Individuals and very small sellers needing per-item offsite storage with pickup and courier return; an alternative to renting warehouse space.",
+  "enSupport": "App and website are Korean-only; no English support found.",
+  "sellerPath": "Book a pickup through the Mataju app or site; items are photographed, stored in shared warehouses and returned by courier on request.",
+  "lastVerified": "2026-07-04"
+ },
+ "11st": {
+  "for": "General consumer-goods sellers seeking broad domestic open-market reach; 11st runs separate individual, business, and global seller account tracks.",
+  "enSupport": "Seller Office and onboarding run in Korean only; a dedicated 'global seller' account type exists for overseas-brand sellers.",
+  "sellerPath": "Sign up at the 11st Seller Office choosing individual, business, or global seller type; registration documents are uploaded online and reviewed before selling opens.",
+  "links": {
+   "seller": "https://soffice.11st.co.kr/view/main"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "wekeep": {
+  "for": "Online sellers outsourcing storage, picking, and parcel dispatch inside Korea; Wekeep operates as an official Naver fulfillment (NFA) partner.",
+  "enSupport": "Service site and quoting flow are in Korean; inquiries go through its sales-consultation channel or service@wekeep.co.kr.",
+  "sellerPath": "Request a sales consultation via the website, Naver NFA, or chatbot; onboarding proceeds through an inbound consultation and quote-generation step, with API order integration.",
+  "links": {
+   "seller": "https://www.wekeep.co.kr/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "cjlogistics": {
+  "for": "E-commerce brands needing warehouse-to-door logistics at national scale; The Fulfill pools one inventory for B2C marketplace orders and B2B platform shipments.",
+  "enSupport": "Corporate site has a full English mirror, including the fulfillment service page (cjlogistics.com/en/business/fulfillment).",
+  "sellerPath": "Start with a business consultation request; order integration covers self-run stores and about 26 Korean sales platforms, with midnight order cutoff for next-day delivery.",
+  "links": {
+   "seller": "https://www.cjlogistics.com/ko/business/fulfillment"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "tradekorea": {
+  "for": "Overseas buyers sourcing Korean-made goods and Korean suppliers seeking export leads; a KITA-run matching service rather than a transactional marketplace.",
+  "enSupport": "English is the primary interface; buyer membership, inquiries, and buyer-matching services all operate in English.",
+  "sellerPath": "Join as a buyer or seller member on the membership page; seller accounts activate after administrator approval, with BIZ/PRO/VIP membership tiers by participation level.",
+  "links": {
+   "seller": "https://www.tradekorea.com/membership/join.do"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "marketplace": {
+  "for": "Established sellers targeting US retail demand; entry is application-based, and South Korea is on Walmart's approved country list for international sellers.",
+  "enSupport": "Fully English platform; onboarding guides and policy documentation live on marketplacelearn.walmart.com.",
+  "sellerPath": "Apply with a business email and verification documents; international sellers submit location-specific documentation and need US returns capability or Walmart Fulfillment Services.",
+  "links": {
+   "seller": "https://marketplace.walmart.com/seller-registration-guide/",
+   "fees": "https://marketplacelearn.walmart.com/guides/Getting%20started/Onboarding/Referral-fee-schedule-for-contract-categories"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "shopigate": {
+  "for": "Korean brands outsourcing Shopify store build-out plus cross-border logistics; an official Shopify Expert Partner pairing builds with its SHIPGATE shipping arm.",
+  "enSupport": "Agency site is Korean-language and aimed at Korean merchants; the stores it builds target overseas customers.",
+  "sellerPath": "Engage through a consultation request (shopigate@solugate.com); services span store-build consulting, theme and app customization, and pick-pack-ship fulfillment via SHIPGATE.",
+  "links": {
+   "seller": "https://shopigate.co.kr/pages/store-build"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "seller3": {
+  "for": "Sellers targeting Indian consumers; listing presumes an Indian business presence with GST registration, so Korean brands usually enter through local partners.",
+  "enSupport": "Seller Hub, help content, and onboarding are entirely in English.",
+  "sellerPath": "Register on seller.flipkart.com with GST details and an India-based pickup address; account-specific terms appear inside Seller Hub after login.",
+  "links": {
+   "seller": "https://seller.flipkart.com/",
+   "fees": "https://seller.flipkart.com/fees-and-commission"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "sell4": {
+  "for": "Korean exporters preparing an Amazon launch who need vetted help with certification, customs, or account management — a directory, not a sales channel.",
+  "enSupport": "Portal is Korean-language for Korean sellers; the underlying provider network and Seller Central also operate in English.",
+  "sellerPath": "Browse the provider directory on sell.amazon.co.kr and contact providers directly; using SPN presumes opening an Amazon seller account through Amazon Global Selling Korea.",
+  "links": {
+   "seller": "https://sell.amazon.co.kr/support/service-provider-network",
+   "fees": "https://sell.amazon.co.kr/start/pricing"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "sellpie": {
+  "for": "Resellers running no-inventory consignment stores; Sellpie concentrates on consumer electronics and small appliances with same-day and bundled shipping.",
+  "enSupport": "Korean-only B2B site; no English seller resources.",
+  "sellerPath": "Sign up on sellpie.co.kr, list its consignment products in your own channels, and Sellpie ships orders directly to end customers; detail-page templates are provided.",
+  "links": {
+   "seller": "https://sellpie.co.kr/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "domegod": {
+  "for": "Registered business operators sourcing consignment and dropship goods one unit at a time; membership is restricted to business-license holders.",
+  "enSupport": "Korean-only; membership requires business credentials, so foreign sellers need a local entity or partner.",
+  "sellerPath": "Register with business credentials on domegod.com; supplied product detail pages can be reused in sellers' own listings and orders ship per unit for dropshipping.",
+  "links": {
+   "seller": "https://domegod.com/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "jubangbank": {
+  "for": "Food-service operators outfitting commercial kitchens; an online catalog of roughly 50,000 items plus Hwanghak-dong (Seoul) operations and custom fabrication.",
+  "enSupport": "Korean-only; ordering and the customer center (1544-1336) operate in Korean.",
+  "sellerPath": "Order directly from the online catalog or through the customer center; kitchen design, custom fabrication, and institutional supply projects are quoted individually.",
+  "links": {
+   "seller": "https://www.jubangbank.co.kr"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "dsfoodmall": {
+  "for": "Restaurants and meat resellers buying Korean beef, pork, and imported cuts in wholesale or retail quantities direct from a processor-distributor.",
+  "enSupport": "Korean-only storefront; customer contact runs through a KakaoTalk channel and its own mobile app.",
+  "sellerPath": "Sign up on dsfoodmall.com and order online; both wholesale and retail quantities ship directly from its meat-processing operation.",
+  "links": {
+   "seller": "https://www.dsfoodmall.com/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "rinda": {
+  "for": "B2B exporters in manufacturing, cosmetics, and food automating overseas buyer discovery and outbound email instead of hiring dedicated trade staff.",
+  "enSupport": "English product site at rinda.ai/en; the tool writes and tracks outreach emails in 20+ languages.",
+  "sellerPath": "Create an account at app.rinda.ai and run buyer searches against its database spanning 150 countries; the service is also usable through Korea's Export Voucher program.",
+  "links": {
+   "seller": "https://app.rinda.ai/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "btorage": {
+  "for": "Overseas buyers, including small importers, who need Korean goods purchased, consolidated into one box, and forwarded when Korean stores don't ship abroad.",
+  "enSupport": "Aimed at non-Korean customers; advertises 24/7 one-on-one chat in the buyer's local language, with iOS/Android apps and a Chrome extension.",
+  "sellerPath": "Sign up on btorage.com or the app, submit purchase requests for items from any Korean online store, then compare carrier options in real time before consolidated forwarding.",
+  "links": {
+   "seller": "https://btorage.com/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "gmarket": {
+  "for": "Consumer-goods sellers targeting mainstream Korean shoppers who want combined exposure on Gmarket and Auction through one back office.",
+  "enSupport": "Buyer-facing Global Gmarket runs in English and Chinese; the ESM Plus seller back office itself operates in Korean.",
+  "sellerPath": "Register once on ESM Plus to sell on both Gmarket and Auction; Korean business registration, mail-order business report, and a settlement bank account are required.",
+  "links": {
+   "seller": "https://signup.esmplus.com/",
+   "fees": "https://www.esmplus.com/commonpopup/gmarketusecost"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "qxpress": {
+  "for": "Cross-border sellers moving parcels between Korea, Japan, Singapore and Southeast Asia who need one carrier covering fulfillment plus last-mile.",
+  "enSupport": "Site and service documentation available in English; the company is Singapore-headquartered with Korean operations.",
+  "sellerPath": "Open a shipper account via the Qxpress site and contract for cross-border delivery or QFS warehouse fulfillment (hub centers in Singapore, Korea and Japan).",
+  "links": {
+   "seller": "https://www.qxpress.net/info/content/AboutQFS"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "sellerrouteground": {
+  "for": "Small online sellers who need low-volume 3PL, including inbound consolidation for Coupang Rocket Growth, without minimum-quantity contracts.",
+  "enSupport": "Korean-only website and quoting flow; no English service pages found.",
+  "sellerPath": "Request a quote through the website; shipments can start from a single unit, and inbound supply to Coupang Rocket Growth and Naver channels is handled.",
+  "links": {
+   "seller": "https://sellerrouteground.com/indexRG.jsp"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "buykorea": {
+  "for": "Korean manufacturers and exporters seeking overseas B2B buyers via KOTRA's vetted trade channel rather than a consumer marketplace.",
+  "enSupport": "Global buyer front end in English (fo.buykorea.org) plus multi-language listings with machine translation.",
+  "sellerPath": "Korean suppliers apply through the KOTRA seller portal and list products subject to KOTRA approval; overseas companies participate as buyers, not sellers.",
+  "links": {
+   "seller": "https://www.buykorea.or.kr/bk/seller/potal/entryForm.do"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "shopify": {
+  "for": "Brands that want to run their own storefront for cross-border direct-to-consumer sales instead of joining a Korean marketplace.",
+  "enSupport": "Fully English product with a localized Korean site (shopify.com/kr); admin, documentation and support are available in English.",
+  "sellerPath": "Sign up online and launch a store on a subscription plan; themes, apps and Shopify Markets handle multi-currency, multi-language selling.",
+  "links": {
+   "seller": "https://www.shopify.com/kr",
+   "fees": "https://www.shopify.com/pricing"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "shipda": {
+  "for": "Importers and e-commerce operators that want digital freight forwarding with instant ocean and air quotes instead of a traditional forwarder relationship.",
+  "enSupport": "English site at ship-da.com/en with quoting, FAQ and trade-term guides in English.",
+  "sellerPath": "Get a real-time FCL/LCL or air freight quote on the site and book online; the AEO-certified forwarder then handles customs and door delivery.",
+  "links": {
+   "seller": "https://www.ship-da.com/en"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "group": {
+  "for": "Sellers targeting African consumer markets, Nigeria among others, through one pan-African marketplace group.",
+  "enSupport": "Seller registration, the Vendor Center back office and seller guides are provided in English.",
+  "sellerPath": "Apply per country via the Sell on Jumia page; legal business registration in that country and a bank account are required, followed by new-seller training before activation.",
+  "links": {
+   "seller": "https://group.jumia.com/business/marketplace/sell"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "sellerpick": {
+  "for": "Korean purchase-agency resellers automating sourcing, listing and forwarding-agent workflows for overseas-product resale.",
+  "enSupport": "Korean-only interface; AI image translation targets product pages, not the UI, so the tool assumes a Korean-speaking operator.",
+  "sellerPath": "Sign up on the web service and connect marketplaces; product sourcing, image translation, order collection and forwarding-agent orders run from one dashboard.",
+  "links": {
+   "seller": "https://www.sellerpick.co.kr/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "sellerocean": {
+  "for": "Resellers hunting consignment wholesale suppliers and peer know-how; it works as a community bulletin board more than a transactional platform.",
+  "enSupport": "Korean-only community site with no English boards.",
+  "sellerPath": "Join as a member and use the wholesale and consignment boards to contact suppliers directly; deals are negotiated off-platform.",
+  "lastVerified": "2026-07-04"
+ },
+ "doogo": {
+  "for": "Online resellers wanting a curated consignment wholesale catalog behind a paid membership that filters out casual sign-ups.",
+  "enSupport": "Korean-only service; supplier and seller tooling assumes a Korean business context.",
+  "sellerPath": "Subscribe to a monthly membership to buy at wholesale terms; suppliers apply separately to list, and bulk consignment orders can be uploaded via Excel on the higher plan.",
+  "lastVerified": "2026-07-04"
+ },
+ "jubangmart": {
+  "for": "Restaurant founders and closers needing used commercial kitchen equipment supplied, bought back, or rented from a single vendor.",
+  "enSupport": "Korean-only site aimed at domestic food-service operators.",
+  "sellerPath": "Not a marketplace with third-party sellers; businesses transact directly with the operator for equipment supply, buyback of used gear, or rental.",
+  "lastVerified": "2026-07-04"
+ },
+ "onnurimeat": {
+  "for": "Restaurants and meat retailers sourcing 1++-graded Hanwoo beef and Korean pork at wholesale from a HACCP-certified specialist.",
+  "enSupport": "Korean-only web store operated from Yeongcheon, Gyeongsangbuk-do.",
+  "sellerPath": "Order directly from the wholesale web store, with phone pre-orders for some cuts; it is a supplier to buy from, not a channel to sell on.",
+  "lastVerified": "2026-07-04"
+ },
+ "tradlinx": {
+  "for": "Shippers and forwarders that need freight-quote comparison plus ocean shipment visibility (B/L, vessel and container tracking) in one platform.",
+  "enSupport": "English product site with English pricing pages, blog and support contact for the Ocean Visibility product.",
+  "sellerPath": "Sign up online for Ocean Visibility on scalable or pay-as-you-go plans; freight quoting and forwarding brokerage run through the Korean-language service.",
+  "links": {
+   "fees": "https://www.tradlinx.com/products/ocean-visibility/pricing"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "wrightbrothers": {
+  "for": "Cyclists and bike shops trading certified secondhand bicycles; consignment with inspection rather than open peer-to-peer listing.",
+  "enSupport": "Korean-only app and website.",
+  "sellerPath": "Apply online to consign a bicycle; the platform X-ray inspects, refurbishes and certifies items through a 61-point check before resale.",
+  "lastVerified": "2026-07-04"
+ },
+ "auction": {
+  "for": "Consumer-goods sellers who want marketplace reach alongside Gmarket; one back office lists to both, so it suits sellers already planning a Gmarket presence.",
+  "enSupport": "Seller signup and the shared ESM Plus console operate in Korean; no separate English seller portal for Auction.",
+  "sellerPath": "One signup at signup.esmplus.com covers both Auction and Gmarket; the ESM Plus back office manages listings, orders and settlement across the two marketplaces.",
+  "links": {
+   "seller": "https://signup.esmplus.com/",
+   "fees": "https://www.esmplus.com/CommonPopup/AuctionUsecost"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "welcome": {
+  "for": "Online sellers outsourcing warehousing and dispatch; supports domestic same-day flows and a Korea-to-Japan delivery program.",
+  "enSupport": "Korean-language site and quote flow; no English service pages published.",
+  "sellerPath": "Start with the online quote form; operator Two Hands scopes volume, WMS/OMS integration and channels such as Naver N-delivery and Qoo10 Japan before onboarding.",
+  "links": {
+   "seller": "https://poomgo.com/estimate"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "returneeds": {
+  "for": "Fashion and apparel e-commerce brands that want returns pickup, inspection and restocking handled off-site instead of in-house.",
+  "enSupport": "Korean-only service site and blog.",
+  "sellerPath": "Sign up on the website; onboarding sets up automatic return collection with platforms such as Musinsa, W Concept and Naver Smart Store, plus API integration for in-house systems.",
+  "links": {
+   "seller": "https://www.returneeds.com/signup"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "ec21": {
+  "for": "Korean and overseas manufacturers seeking export leads; a B2B directory-and-leads model rather than a transactional marketplace.",
+  "enSupport": "English-first global site; each supplier gets an auto-generated English homepage at <ID>.en.ec21.com.",
+  "sellerPath": "Free membership registration lists a limited number of products and buying leads; paid tiers expand product showcases and buyer-lead access.",
+  "links": {
+   "seller": "https://www.ec21.com/html/services/basic/freeMembership.html"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "cafe24": {
+  "for": "Brands that want their own storefront for Korea plus cross-border sales instead of a marketplace listing; multi-language shops run from one admin.",
+  "enSupport": "English corporate and product pages plus an English global site; the store builder supports English-language storefronts.",
+  "sellerPath": "Open a store account; the Global Sales Assistant configures multilingual storefronts, overseas payment gateways, customs settings and international shipping options.",
+  "links": {
+   "seller": "https://www.cafe24.com/en/ecommerce/global/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "iporter": {
+  "for": "Individuals and businesses in Korea buying from overseas stores; forwarding warehouses in the US, Japan, China and Europe rather than a sales channel.",
+  "enSupport": "Guides and FAQ are published in Korean (site paths under /ko/) and address delivery into Korea.",
+  "sellerPath": "Consumers sign up and use assigned overseas warehouse addresses; companies apply separately through the IPORTER BIZ inquiry form for business forwarding.",
+  "links": {
+   "seller": "https://biz.iporter.com/ko/contact",
+   "fees": "https://m.iporter.com/ko/customer/faq-detail?notice_id=274"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "partner": {
+  "for": "Established fashion, shoe and sportswear brands aiming at European consumers; participation is approval-based rather than open registration.",
+  "enSupport": "Partner portal, help center and Zalando University training are available in English.",
+  "sellerPath": "No self-registration; brands express interest via the partner site, then need an EU legal entity or representative, an EU return address, EAN-13 codes and KYC documents.",
+  "links": {
+   "seller": "https://partner.zalando.com/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "globalselling": {
+  "for": "Brands targeting Mexico, Brazil, Chile, Argentina and Colombia from one account; onboarding is limited to businesses registered in the US, China or Hong Kong.",
+  "enSupport": "Global Selling portal and Seller Learning Center are in English; listings auto-translate into Spanish and Portuguese.",
+  "sellerPath": "Invite-based application with business details such as website URL and monthly sales; a single account lists into five Latin American markets.",
+  "links": {
+   "seller": "https://global-selling.mercadolibre.com/landing/about",
+   "fees": "https://global-selling.mercadolibre.com/landing/pricing"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "sinsangmarket": {
+  "for": "Retailers sourcing Dongdaemun-wholesale fashion; a global service launched in late 2024 ships to overseas retail buyers in 53 countries.",
+  "enSupport": "Domestic app and site are Korean; the global service offers multilingual support and a dedicated contact (contactglobal@deali.net).",
+  "sellerPath": "Buyers register with proof of a fashion business (business license plus store photo or online-store URL) and are approved in about one to two days before ordering.",
+  "lastVerified": "2026-07-04"
+ },
+ "uh2samarket": {
+  "for": "Korean fashion retailers sourcing single-piece orders from Guangzhou wholesale vendors without minimum-order-quantity constraints.",
+  "enSupport": "Service is Korean-only; usage guides are published on an official Notion workspace in Korean.",
+  "sellerPath": "Membership is limited to fashion-business operators; sign up with a business registration number or an operating online/SNS shop URL, approved in about one business day.",
+  "lastVerified": "2026-07-04"
+ },
+ "mednara": {
+  "for": "Clinics and equipment dealers buying used medical devices or selling them for buy-back; covers imaging, ultrasound and physiotherapy gear.",
+  "enSupport": "Korean-only web shop and notices.",
+  "sellerPath": "No open seller registration; equipment buy-back and sales are arranged directly with operator Wise Healthcare Korea, which holds a registered medical-device sales report.",
+  "lastVerified": "2026-07-04"
+ },
+ "meatasia": {
+  "for": "Wholesale meat buyers and importers; designated by the Korea Imported Meat Association as its online wholesale brokerage market.",
+  "enSupport": "Korean-only trading site.",
+  "sellerPath": "Selling importers pre-register products with the exchange; goods are stored in and shipped from designated frozen warehouses, with intake arranged by phone or KakaoTalk.",
+  "lastVerified": "2026-07-04"
+ },
+ "utradehub": {
+  "for": "Exporters and importers filing trade documents, customs declarations and payment paperwork through Korea's national e-trade single window.",
+  "enSupport": "English portal available at global.utradehub.or.kr; operator KTNET also publishes English materials.",
+  "sellerPath": "Businesses subscribe to KTNET's e-trade services with a single-sign-on account; one login connects document exchange with banks, customs and logistics partners.",
+  "links": {
+   "seller": "https://global.utradehub.or.kr/mainPage.do"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "market": {
+  "for": "Golf brands and equipment dealers reaching Korean golfers; sits alongside Golfzon Commerce's other channels such as the used-gear section.",
+  "enSupport": "Korean-only storefront and seller menus.",
+  "sellerPath": "Vendor entry is via the 입점신청 (store-entry application) menu on the Golping/Golfzon Market sites, reviewed by operator Golfzon Commerce.",
+  "lastVerified": "2026-07-04"
+ },
+ "ssg": {
+  "for": "Brands and grocery/lifestyle sellers targeting the Shinsegae-E-mart customer base; suits sellers wanting a department-store-adjacent online channel.",
+  "enSupport": "SSG Partners seller center is Korean-only; open-market signup uses Korean name-verified phone authentication.",
+  "sellerPath": "Two tracks: simplified open-market signup on the SSG Partners seller center, or direct-entry consultation with an SSG.com MD followed by contract registration.",
+  "links": {
+   "seller": "https://partners.ssgadm.com/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "ourbox": {
+  "for": "E-commerce brands outsourcing storage, packing, and shipping to a 3PL with automated facilities and custom OMS/WMS integration.",
+  "enSupport": "Website and its usage guide (guide.ourbox.co.kr) are published in Korean only.",
+  "sellerPath": "Request a quote by email or via the website's quote-inquiry page; Ourbox reviews its product-handling criteria before onboarding to its fulfillment centers.",
+  "links": {
+   "seller": "https://guide.ourbox.co.kr/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "enterround": {
+  "for": "Brands needing combined domestic fulfillment and outbound cross-border shipping, including temperature-controlled goods like food and cosmetics.",
+  "enSupport": "Korean-language site; guides on Amazon FBA/FBM and US TikTok Shop logistics are published in Korean rather than English.",
+  "sellerPath": "Submit a logistics quote inquiry on the site; services span domestic fulfillment centers plus shipping to 103 countries with e-commerce platform order integrations.",
+  "lastVerified": "2026-07-04"
+ },
+ "ebay": {
+  "for": "Sellers exporting worldwide from Korea; strongest for goods with proven cross-border demand such as cosmetics, car parts, and collectibles.",
+  "enSupport": "Fully English: eBay.com, Seller Center, and the export.ebay.com cross-border hub with an English CBT seller dashboard.",
+  "sellerPath": "Create a business account on eBay.com and list directly; Korean exporters can use eBay's cross-border trade (CBT) program and its export seller dashboard.",
+  "links": {
+   "seller": "https://www.ebay.com/sellercenter/",
+   "fees": "https://www.ebay.com/help/selling/fees-credits-invoices/selling-fees?id=4822"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "global": {
+  "for": "Korea-based merchants building their own multilingual storefronts (English/Japanese/Chinese) for direct overseas sales instead of marketplaces.",
+  "enSupport": "Generates storefronts in English, Japanese, and Chinese, but the service site and admin guidance are provided in Korean.",
+  "sellerPath": "Sign up for the Makeshop Global solution; the vendor sets up product syncing, translation, currency, overseas payment gateways, and shipping partners per target country.",
+  "links": {
+   "seller": "https://global.makeshop.com/introduce"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "ohmyzip": {
+  "for": "Businesses and individuals needing US purchases consolidated and forwarded to Korea from a Delaware warehouse; a separate corporate service exists.",
+  "sellerPath": "Sign up, ship purchases to the assigned Delaware (DE) center address, and file a shipping request with tracking numbers; companies can use the dedicated business service.",
+  "links": {
+   "seller": "https://www.ohmyzip.com/service/business-service/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "marketplace3": {
+  "for": "Merchants selling consumer goods into France and neighboring EU markets through Cdiscount's marketplace, which accepts non-French companies.",
+  "enSupport": "English marketplace section (marketplace.cdiscount.com/en) including a dedicated international-sales program page.",
+  "sellerPath": "Apply as a marketplace seller with business registration documents and a European VAT number; international sellers can ship into France and other EU countries.",
+  "links": {
+   "seller": "https://marketplace.cdiscount.com/en/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "domeggook": {
+  "for": "Wholesalers and manufacturers supplying Korean resellers in volume; also a sourcing pool for online sellers via its Domeme dropshipping arm.",
+  "enSupport": "Korean-only marketplace; the seller manual and fee notices exist only in Korean.",
+  "sellerPath": "Join as a general or corporate member and list wholesale offers from the seller menu; consigned-sales and supplier-recruitment tracks are also operated.",
+  "links": {
+   "seller": "https://gm.domeggook.com/main/scout/scout_SellerInquiry.php",
+   "fees": "https://domeggook.com/main/mySell/agreement/my_feeNotice.php"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "zentrade": {
+  "for": "Resellers sourcing imported stationery and daily-goods inventory wholesale from an Incheon-based importer that also runs open-market stores.",
+  "enSupport": "Korean-only B2B storefront; inquiries are handled by phone or email in Korean.",
+  "sellerPath": "A supply source rather than a marketplace: register as a member on the site and place wholesale orders; the operator imports foreign goods for resale.",
+  "lastVerified": "2026-07-04"
+ },
+ "chinabuy": {
+  "for": "Importers and resellers sourcing from Chinese platforms (1688, Taobao) without handling Chinese-language ordering and payment themselves.",
+  "enSupport": "Korean-language app and site; in-app product search accepts Korean, English, and Chinese keywords.",
+  "sellerPath": "Download the ChinaBuy app (integrated with 1688's official API), search products or paste links, and place purchase-agency orders shipped via its logistics.",
+  "lastVerified": "2026-07-04"
+ },
+ "medimarket": {
+  "for": "Clinics and equipment dealers buying or disposing of used medical devices such as therapy and patient-monitoring equipment.",
+  "enSupport": "Korean-only shop; checkout runs on Korean payment services such as Naver Pay.",
+  "sellerPath": "Contact the operator to sell used equipment for buyback; buyers purchase listed real-inventory items, shown with operation videos, directly on the shop.",
+  "lastVerified": "2026-07-04"
+ },
+ "wholesale119": {
+  "for": "Florists and event businesses ordering wholesale cut flowers from Seoul's Yangjae flower market without visiting in person.",
+  "enSupport": "Korean-only ordering site with a KakaoTalk channel for customer contact.",
+  "sellerPath": "Order Yangjae flower-market stock through the website; it operates as an online storefront for wholesale supply rather than an open seller marketplace.",
+  "lastVerified": "2026-07-04"
+ },
+ "sourcingchina": {
+  "for": "Businesses commissioning China OEM/ODM production or imports who want one agency handling sourcing, inspection, customs, and KC certification.",
+  "enSupport": "Agency site is in Korean; engagement is consultation-based rather than self-serve documentation.",
+  "sellerPath": "Start with a consultation or quote request; the agency arranges factories, packaging and logo work, import customs clearance, and KC certification end to end.",
+  "lastVerified": "2026-07-04"
+ },
+ "sepp": {
+  "for": "Buyers, including public institutions, purchasing from certified Korean social-economy enterprises; selling is restricted to those enterprises.",
+  "enSupport": "Korean-only public platform operated by the Korea Social Enterprise Promotion Agency.",
+  "sellerPath": "Entry is limited to Korean social-economy organizations (social enterprises, cooperatives, village enterprises) via document screening; only directly produced goods are allowed.",
+  "links": {
+   "seller": "https://www.socialenterprise.or.kr/social/care/growthEstore365.do?m_cd=G001"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "lotteon": {
+  "for": "Sellers who want one storefront reaching Lotte's department-store, mart and home-shopping customer base under a single retail-group account.",
+  "enSupport": "Seller center and onboarding docs are Korean-only; no dedicated English or global seller portal was found.",
+  "sellerPath": "Apply through the Lotte ON store center (store.lotteon.com); the seller education center publishes the onboarding steps, manuals and a seller FAQ.",
+  "links": {
+   "seller": "https://support.lotteon.com/joinInform/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "dealibird": {
+  "for": "Online apparel resellers sourcing from Dongdaemun wholesale market who want buying, inspection, barcoding and dispatch handled by one operator.",
+  "enSupport": "Service runs in Korean via the website, the Sinsang Market app and a KakaoTalk channel; no English portal was found.",
+  "sellerPath": "Apply via dealibird.com or the Sinsang Market app/KakaoTalk channel; purchased goods are inspected against listing images, poly-bagged, barcoded and stored for per-order shipping.",
+  "lastVerified": "2026-07-04"
+ },
+ "argoport": {
+  "for": "E-commerce brands outsourcing fulfillment who want software-driven operations with real-time inventory tracking rather than a traditional warehouse contract.",
+  "enSupport": "Website, fulfillment guide (guide.argoport.com) and blog are Korean-only; no English onboarding materials were found.",
+  "sellerPath": "Request a domestic or cross-border logistics quote through the inquiry form on argoport.com; integration and operations guides are published at guide.argoport.com.",
+  "links": {
+   "seller": "https://guide.argoport.com/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "lazada": {
+  "for": "Merchants selling from Korea into Southeast Asian markets such as Thailand, Malaysia and the Philippines through one cross-border program.",
+  "enSupport": "Seller Center and the Global Selling Portal help center (gsp.lazada.com) run in English, with Lazada University training for new sellers.",
+  "sellerPath": "Register as a LazGlobal cross-border seller with a corporate business license from an eligible country; individual accounts are not accepted for cross-border selling.",
+  "links": {
+   "seller": "https://gsp.lazada.com/gsp/helpcenter/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "kr": {
+  "for": "Korean SMEs seeking overseas B2B buyers via a government-run export channel; overseas businesses use it from the buyer side to source Korean goods.",
+  "enSupport": "A separate English site (gobizkorea.com) serves overseas buyers with product search and buyer matching; the Korean site serves exporters.",
+  "sellerPath": "Suppliers register on kr.gobizkorea.com and submit products under My Page; each listing is screened and approved by platform staff before publication.",
+  "links": {
+   "seller": "https://kr.gobizkorea.com/guide/goodsRegistInfo.do"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "tridge": {
+  "for": "Agri-food producers and exporters seeking verified international buyers, plus trade teams that also want global supplier and price intelligence.",
+  "enSupport": "Platform, help-center guides and supplier onboarding are fully in English; an English business registration certificate aids verification.",
+  "sellerPath": "Create a free account at tridge.com/register, pass company verification with business documents, and publish a supplier profile with at least one product.",
+  "links": {
+   "seller": "https://www.tridge.com/register"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "sell3": {
+  "for": "Retailers with an existing catalogue and international shipping capability who want incremental orders from localized sites in 40-plus countries.",
+  "enSupport": "Fully English: UK-based marketplace with an English seller site (sell.fruugo.com) and a retailer portal (retailer.fruugo.com).",
+  "sellerPath": "Submit the expression-of-interest form on sell.fruugo.com; the Fruugo team reviews your catalogue, shipping origin and cross-border fulfilment capability before activation.",
+  "links": {
+   "seller": "https://sell.fruugo.com/en/",
+   "fees": "https://sell.fruugo.com/en/get-started/selling-fees-commission/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "domemedae": {
+  "for": "Registered resellers listing wholesale items on Korean marketplaces without holding stock; the supplier ships each order straight to the end customer.",
+  "enSupport": "Interface is Korean-only; accounts are limited to verified business operators, unlike sister site Domeggook which also admits individuals.",
+  "sellerPath": "Join as a verified business member; resellers relist supplier products using provided images and detail pages with no minimum order quantity.",
+  "links": {
+   "seller": "https://domemedb.domeggook.com/index/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "domaechanggo": {
+  "for": "Beginner consignment (witak) sellers sourcing household and general merchandise; supply prices are visible only to approved business members.",
+  "enSupport": "Site and its video usage guides are published in Korean only.",
+  "sellerPath": "Sign up free on the site, then apply for business membership (approval takes roughly one to two days) to unlock consignment supply prices and start sourcing.",
+  "links": {
+   "seller": "https://domaechanggo.com/shopinfo/guide.html"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "algugo": {
+  "for": "Korea-based resellers sourcing from Chinese wholesale sites (1688, Taobao, VVIC) who want ordering, inspection and freight handled by one agent.",
+  "enSupport": "Korean-language service with Korean-speaking support, built for Korea-side importers rather than English-speaking users.",
+  "sellerPath": "Submit a business registration certificate, then place 1688/Taobao orders through Algugo's linked cart; minimum order values apply and support runs via KakaoTalk.",
+  "lastVerified": "2026-07-04"
+ },
+ "medisale": {
+  "for": "Clinics, hospitals and care businesses buying medical consumables such as dressings, sutures, splints and syringes from one Korean wholesale supplier.",
+  "enSupport": "Product catalogue and ordering are available in Korean only, including the mobile storefront (m.medisale.co.kr).",
+  "sellerPath": "Order directly from the web catalogue, which is organized into hospital consumables/devices, home medical devices and senior-care product categories.",
+  "lastVerified": "2026-07-04"
+ },
+ "krflower": {
+  "for": "Florists and event businesses ordering imported and domestic cut flowers online instead of visiting an early-morning wholesale flower market.",
+  "sellerPath": "Order cut-flower lots directly from the web store with nationwide wholesale delivery; stock centres on imported chrysanthemums, gerberas and roses.",
+  "lastVerified": "2026-07-04"
+ },
+ "baljuora": {
+  "for": "Wholesalers and distributors replacing phone or KakaoTalk ordering with a private B2B order portal shared with their existing trade partners.",
+  "enSupport": "Korean-only SaaS aimed at domestic distribution businesses.",
+  "sellerPath": "Start with the free trial and open a private storefront on a shop.baljuora.com subdomain; partners' orders flow into unified order, inventory and settlement screens.",
+  "lastVerified": "2026-07-04"
+ },
+ "hknuri": {
+  "for": "Certified social-economy enterprises (social enterprises, co-ops, village and self-sufficiency enterprises) selling to value-driven and public-sector buyers.",
+  "enSupport": "Korean-only; the store is operated for the Seoul Metropolitan Government by the Haengbok ICT foundation.",
+  "sellerPath": "Apply on the seller intro page with company, manager and shipping details plus supporting documents, then pass an eligibility screening limited to social-economy enterprises.",
+  "links": {
+   "seller": "https://www.hknuri.co.kr/seller/sellerIntro.do"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "interpark": {
+  "for": "Sellers wanting an extra long-tail open-market channel; note the platform rebranded from Interpark Shopping to 'Bizle' (바이즐) in April 2025.",
+  "enSupport": "Korean-only; the Bizle seller center and signup flow (seller.interpark.com) have no English version.",
+  "sellerPath": "Sign up at seller.interpark.com/join choosing a seller type; the Bizle seller center hosts onboarding manuals, API/bulk-listing guides, and a settlement FAQ.",
+  "links": {
+   "seller": "https://sellercenter.interpark.com/",
+   "fees": "https://sellercenter.interpark.com/36/?bmode=view&idx=7644691"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "mychango": {
+  "for": "Small and mid-sized D2C brands outsourcing warehousing and parcel work; runs vertical programs for cosmetics, fashion, coffee, and pet goods.",
+  "enSupport": "Korean-only website; onboarding runs through a Korean-language quote consultation rather than self-service signup.",
+  "sellerPath": "Submit a quote request on mychango.com describing your volumes and handling needs; a manager follows up to scope the MFS (Mychango Fulfillment System) service.",
+  "lastVerified": "2026-07-04"
+ },
+ "bold9": {
+  "for": "E-commerce sellers who want fulfillment plus software: its EZSTORAGE system combines OMS and WMS with real-time links to roughly 300 sales channels.",
+  "enSupport": "Service materials and partner documentation (partner.bold-9.com) are in Korean, with no English equivalents.",
+  "sellerPath": "Request a consultation at contact.bold-9.com; plans are tailored per marketplace and product type, covering storage, packing, dispatch, and inventory management.",
+  "links": {
+   "seller": "https://contact.bold-9.com/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "wish": {
+  "for": "Cross-border merchants with low-priced, mobile-discovery consumer goods aimed at North American and European buyers; now owned by Qoo10 and invite-only.",
+  "enSupport": "Fully English merchant portal (merchant.wish.com) and English help center (merchantfaq.wish.com).",
+  "sellerPath": "Complete the questionnaire at merchant.wish.com; Wish reviews it and extends signup invitations by email, requesting ID and business documentation at registration.",
+  "links": {
+   "seller": "https://merchant.wish.com/",
+   "fees": "https://merchantfaq.wish.com/hc/en-us/articles/7545536245147-Commission-structure-FAQs"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "marketplace2": {
+  "for": "Korea-based sellers using Coupang's fulfillment network to reach overseas markets, currently centered on Taiwan with rocket-delivery logistics centers there.",
+  "enSupport": "Program pages are written in Korean for Korea-registered sellers; sell.coupang.com exposes an en-us section but content is largely Korean.",
+  "sellerPath": "Apply via marketplace.coupang.com; under Rocket Growth you ship inventory to Coupang, which handles storage, customs, delivery, and customer service into Taiwan.",
+  "links": {
+   "seller": "https://marketplace.coupang.com/global",
+   "fees": "https://sell.coupang.com/en-us/fee-page"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "saruwa": {
+  "for": "Korea-based buyers and resellers sourcing items from Japanese websites through a purchasing-and-forwarding agent; a procurement channel, not a sales venue.",
+  "enSupport": "All requests and 1:1 support run in Korean (support hours roughly 10:00 to midnight); no English pages.",
+  "sellerPath": "Register on saruwa.co.kr, paste the Japanese product page details into a purchase-request form, and the agent buys, receives, and forwards the goods to Korea.",
+  "lastVerified": "2026-07-04"
+ },
+ "kogan": {
+  "for": "Sellers with consumer goods ready for the Australian and New Zealand market who can fulfill orders themselves; a supplier route exists for those who cannot.",
+  "enSupport": "English throughout: Australian platform with an English marketplace application and a dedicated seller help centre (help.kogansellers.com).",
+  "sellerPath": "Complete the Marketplace Application on kogan.com (they ask which other marketplaces you sell on and your integration method); the Kogan team then contacts you.",
+  "links": {
+   "seller": "https://www.kogan.com/au/kogan-marketplace/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "ownerclan": {
+  "for": "Consignment and dropshipping resellers needing a large ready-made catalog with supplier-handled shipping; membership is restricted to registered businesses.",
+  "enSupport": "Membership pages, the supplier (vendor) system, and support all operate in Korean only.",
+  "sellerPath": "Join as a business member with a Korean business registration certificate; resellers pull product data (API/invoice linkage available), suppliers onboard via the vendor system.",
+  "links": {
+   "seller": "https://ownerclan.com/V2/info_page/membership_description.php"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "modoosale": {
+  "for": "No-inventory consignment resellers focused on character stationery, fancy goods, toys, household and pet items sourced at business-only prices.",
+  "enSupport": "Korean-only site; the storefront is gated as a business-member (사업자 전용) service without an English path.",
+  "sellerPath": "Register as a business member on modoosale.co.kr; you list its consignment catalog on your own channels and Modoo Sale drop-ships orders to your customers.",
+  "lastVerified": "2026-07-04"
+ },
+ "foodpang": {
+  "for": "Restaurant operators in Seoul and Busan buying produce, meat, and seafood at wholesale-market prices with free early-morning delivery from markets like Garak.",
+  "enSupport": "The Foodpang app and site are Korean-only; ordering, price updates, and refund handling all run in Korean.",
+  "sellerPath": "Download the Foodpang app and register your restaurant; daily wholesale prices for around 11,000 items update in-app and orders arrive before opening hours.",
+  "lastVerified": "2026-07-04"
+ },
+ "nongdal": {
+  "for": "Farms, growers, and rural businesses buying fertilizer, seeds, pesticides, and other agricultural inputs from a specialty store rather than a marketplace.",
+  "enSupport": "Korean-only storefront at nongdal.co.kr with no English pages found.",
+  "lastVerified": "2026-07-04"
+ },
+ "dplaza": {
+  "for": "Apparel makers, crafters, and small manufacturers sourcing Dongdaemun-market fabrics, garment trims, and accessory parts online instead of visiting the market.",
+  "enSupport": "Korean-only; vendor listings and its fabric-finder manager service (via KakaoTalk) operate in Korean.",
+  "sellerPath": "Buyers order directly from individual Dongdaemun vendor pages on dplaza.kr; sellers are physical shops around Dongdaemun General Market rather than open applicants.",
+  "lastVerified": "2026-07-04"
+ },
+ "baljumoa": {
+  "for": "Online sellers and distributors juggling purchase orders across channels; it merges order sheets, auto-generates POs, and bulk-updates tracking numbers.",
+  "enSupport": "Korean-only solution (operated by Weedoft Corp.); guides, FAQ, and the partner portal are all in Korean.",
+  "sellerPath": "Sign up on baljumoa.com and connect sales channels via open-market API links; also installable as a Cafe24 store app, with a supplier-side portal at partners.baljumoa.com.",
+  "links": {
+   "seller": "https://partners.baljumoa.com/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "fairtradeshop": {
+  "for": "Buyers seeking fair-trade-certified goods from the Korea Fair Trade Foundation's own store; includes business-only product categories alongside consumer retail.",
+  "enSupport": "Korean-only store; company and product pages at fairtradeshop.co.kr have no English equivalents.",
+  "lastVerified": "2026-07-04"
+ },
+ "shoppingseller": {
+  "for": "Sellers with an existing KakaoTalk channel audience wanting commerce inside Korea's main messenger; TokDeal and live formats favor promo-driven goods.",
+  "enSupport": "Korean-only; the seller center, onboarding manuals, and entry document guides are all published in Korean.",
+  "sellerPath": "Apply on the Kakao shopping seller center (shopping-sell.kakao.com), submitting Korean business registration documents; the store is operated alongside a KakaoTalk channel.",
+  "links": {
+   "seller": "https://shopping-sell.kakao.com/hub"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "colosseum": {
+  "for": "E-commerce sellers outsourcing storage-to-returns logistics; runs a multi-warehouse network (domestic and overseas centers) managed through its COLO software.",
+  "sellerPath": "Start with an online inquiry; after consultation and a service-scope quote, a warehouse center is assigned and you register products and inbound stock via the COLO platform.",
+  "lastVerified": "2026-07-04"
+ },
+ "alibaba": {
+  "for": "Manufacturers and exporters selling wholesale to overseas B2B buyers; for Korea-based suppliers it works as an export channel rather than a domestic one.",
+  "enSupport": "English-first platform; supplier portal, pricing pages, and help center are fully available in English at seller.alibaba.com.",
+  "sellerPath": "Sign up as a supplier and take a paid Gold Supplier membership; non-China suppliers must pass an Authentication & Verification check (about 1-2 weeks) before the storefront opens.",
+  "links": {
+   "seller": "https://seller.alibaba.com/",
+   "fees": "https://seller.alibaba.com/pricing"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "seller": {
+  "for": "Merchants targeting TikTok Shop's supported markets (US, UK, SEA, EU) with short-video and livestream commerce; each market has its own entity requirements.",
+  "enSupport": "Seller Center and official cross-border partner onboarding docs are in English (seller.tiktok.com, partner.tiktokshop.com).",
+  "sellerPath": "Register per target market on the Seller Center and submit business and tax documents; e.g. the US shop requires a US entity with EIN, the UK a Companies House-registered company.",
+  "links": {
+   "seller": "https://seller.tiktok.com/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "musinsa2": {
+  "for": "K-fashion brands already selling on Musinsa domestically that want overseas consumer reach; access is via brand partnership review, not open marketplace signup.",
+  "enSupport": "Consumer storefront serves overseas shoppers in English; the partner portal and store-entry application are Korean-only.",
+  "sellerPath": "Apply for store entry through the Musinsa partner portal and pass brand review; global listings are linked from the domestic store rather than opened independently.",
+  "links": {
+   "seller": "https://partner.musinsa.com/entry/apply"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "japandelivery": {
+  "for": "Korea-based buyers and resellers sourcing from Japanese online stores, auctions, and Mercari through proxy purchase and package forwarding.",
+  "enSupport": "Korean-language service aimed at Korea-side users; usage guides and support boards are in Korean.",
+  "sellerPath": "File a proxy-purchase/auction request, or buy directly from Japanese stores using the provided Japan address; forwarding requests must be filed before parcels arrive.",
+  "links": {
+   "seller": "https://japandelivery.co.kr/guide"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "reverb": {
+  "for": "Music-gear dealers, builders, and individuals selling instruments and audio equipment to a category-specific international buyer base.",
+  "enSupport": "English-only platform; selling guides, price guide, and help center are all in English.",
+  "sellerPath": "Create a shop and list items (listing itself is free); a price guide helps set market pricing, and payouts arrive via bank transfer within days of delivery or transit.",
+  "links": {
+   "seller": "https://reverb.com/selling",
+   "fees": "https://reverb.com/selling/selling-fees"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "onchannel": {
+  "for": "Online resellers sourcing consignment and wholesale goods without holding stock, plus Korean suppliers seeking open-market and closed-channel distribution.",
+  "enSupport": "Korean-only; supplier and seller notices, education content, and boards are all in Korean.",
+  "sellerPath": "Register as a seller with a Korean business (or resident) registration number to resell listed products; suppliers apply separately, some items gated to vetted sellers.",
+  "lastVerified": "2026-07-04"
+ },
+ "asadalin": {
+  "for": "Resellers of infant and children's clothing sourcing wholesale stock, including consignment (dropship) shipping for online storefronts.",
+  "enSupport": "Korean-only; notices, ordering guides, and the wholesale-member application board are in Korean.",
+  "sellerPath": "Join as a general member first, then apply on the wholesale-member application board with business credentials to unlock wholesale ordering.",
+  "links": {
+   "seller": "https://asadalin.com/board/%EB%8F%84%EB%A7%A4%ED%9A%8C%EC%9B%90%EC%8B%A0%EC%B2%AD/5/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "beseller": {
+  "for": "Food-focused online sellers sourcing health-functional foods and agricultural, seafood, and livestock products from vetted suppliers for consignment sale.",
+  "enSupport": "Korean-only; product catalog and platform notices are published in Korean.",
+  "sellerPath": "Sign up as a business member to source food from upstream producers for consignment resale; suppliers can also apply to distribute products through the platform.",
+  "lastVerified": "2026-07-04"
+ },
+ "nongmart": {
+  "for": "Farms and agri-retailers procuring fertilizers, crop-protection products, and other inputs online; a purchasing channel rather than a place to open a store.",
+  "enSupport": "Korean-only; product pages and its KakaoTalk support channel operate in Korean.",
+  "sellerPath": "Order through the online store after membership signup; weekday orders placed by early afternoon ship same day, and it runs a lowest-price compensation program.",
+  "lastVerified": "2026-07-04"
+ },
+ "dongdaemun153": {
+  "for": "Accessory makers and craft sellers sourcing beads, findings, pendants, and sewing materials; the operator sits inside Dongdaemun Comprehensive Market in Seoul.",
+  "enSupport": "Korean-only; ordering and customer support (including its KakaoTalk channel) are in Korean.",
+  "sellerPath": "Order wholesale directly through the online store; it is a materials-sourcing channel with no third-party seller onboarding.",
+  "lastVerified": "2026-07-04"
+ },
+ "cmtstory": {
+  "for": "Online resellers sourcing K-beauty cosmetics and health-functional foods, including single-unit consignment (dropship) supply suited to small starting sellers.",
+  "enSupport": "Korean-only; the wholesale catalog and ordering flow are in Korean.",
+  "sellerPath": "Register as a business member to access wholesale and consignment supply; the operator (Geongangsan Co.) is based in Songdo, Incheon.",
+  "lastVerified": "2026-07-04"
+ },
+ "buysocial": {
+  "for": "Certified Korean social-economy enterprises (social enterprises, co-ops) seeking value-driven buyers; not an entry route for ordinary commercial sellers.",
+  "enSupport": "Korean-only; the campaign, run under Korea's social enterprise promotion framework, publishes all participation info in Korean.",
+  "sellerPath": "Register your enterprise as a 'social seller' via the Buy Social site; actual sales route through partner channels such as the e-store 36.5 procurement platform.",
+  "links": {
+   "seller": "https://www.buysocial.or.kr/FAQ"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "aboutfishing": {
+  "for": "Fishing-tackle brands and charter/guide operators reaching Korea's boat-fishing community via one vertical app spanning booking, shop, and used-gear trade.",
+  "enSupport": "Korean-only app and site; no English partner or seller pages found.",
+  "sellerPath": "Charter boats, fishing sites, and guides list via a partnership contract; tackle brands are carried through its official distribution shop — inquiries via the corporate site.",
+  "lastVerified": "2026-07-04"
+ },
+ "ezadmin": {
+  "for": "Established online retailers selling across many Korean marketplaces who need one back office for orders, invoicing, claims, and warehouse (WMS) operations.",
+  "enSupport": "Korean-only solution and help wiki (help.ezadmin.co.kr); no English version or documentation found.",
+  "sellerPath": "Rental (ASP) software rather than a marketplace: request a trial account from the customer center, then subscribe on a prepaid monthly basis after the trial period.",
+  "lastVerified": "2026-07-04"
+ },
+ "amazongs": {
+  "for": "Korea-based brands exporting to Amazon's overseas marketplaces (US, Japan, Europe) rather than selling to domestic Korean consumers.",
+  "enSupport": "Fully English seller experience (sell.amazon.com and Seller Central); a Korean-language program site runs at sell.amazon.co.kr.",
+  "sellerPath": "Create a Seller Central account with business documents and a bank account; Amazon Global Selling Korea lists vetted providers for certification, shipping, and localization.",
+  "links": {
+   "seller": "https://sell.amazon.com/",
+   "fees": "https://sell.amazon.com/pricing"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "seller2": {
+  "for": "Sellers of low-priced, high-turnover consumer goods; Temu now runs a local-to-local program in Korea alongside its consignment export model.",
+  "enSupport": "Seller Center available in English; a Korea-specific portal operates at kr.seller.temu.com.",
+  "sellerPath": "Apply on the seller center with a business registration (individual or corporate accepted); local-program sellers hold Korean inventory and handle their own fulfillment.",
+  "links": {
+   "seller": "https://kr.seller.temu.com/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "malltail": {
+  "for": "Cross-border merchants needing overseas warehousing and forwarding; operates its own logistics centers in nine countries, including four in the US.",
+  "enSupport": "English shipping guide on post.malltail.com and a dedicated US site (malltailusa.com); the B2B fulfillment pages are Korean.",
+  "sellerPath": "Not a marketplace: consumers join the forwarding service directly, while businesses apply for warehousing and fulfillment through the separate B2B channel.",
+  "links": {
+   "seller": "https://b2b.malltail.com/",
+   "fees": "https://m2.malltail.com/services/price_list"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "rakuten2": {
+  "for": "Merchants targeting Japanese consumers on Rakuten Ichiba; a cross-border program lets sellers in approved countries ship from home without a Japanese entity.",
+  "enSupport": "English cross-border seller site and FAQ (marketplace.rakuten.net); the main store-opening guide is Japanese, plus a Korean-language page.",
+  "sellerPath": "Apply through the store-opening guide or the cross-border program; applications are screened, and Japanese-language store operation (in-house or via agency) is expected.",
+  "links": {
+   "seller": "https://www.rakuten.co.jp/ec/sellinjapan/kr/",
+   "fees": "https://www.rakuten.co.jp/ec/plan/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "sellervn": {
+  "for": "Sellers targeting Vietnamese consumers through TikTok's in-app commerce; practical mainly for businesses with a Vietnamese entity or local partner.",
+  "enSupport": "Seller university documentation is viewable in English; day-to-day operations and buyer-facing content are in Vietnamese.",
+  "sellerPath": "Register on the Vietnam Seller Center with Vietnamese business registration, a local bank account, and KYC; foreign brands typically enter via a local entity or agency.",
+  "links": {
+   "seller": "https://seller-vn.tiktok.com/"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "dometopia": {
+  "for": "Online resellers wanting consignment (no-inventory) selling of Korean general merchandise; every product can be shipped through its dropship system.",
+  "enSupport": "Korean-only mall; no English interface or foreign-seller program found.",
+  "sellerPath": "Join as a selling member on the site; bulk Excel product download/upload and a seller-only admin dashboard support marketplace resellers.",
+  "links": {
+   "seller": "https://dometopia.com/member/agreement"
+  },
+  "lastVerified": "2026-07-04"
+ },
+ "saibmoa": {
+  "for": "Apparel retailers sourcing Dongdaemun wholesale stock without visiting in person; a buying-agent crew purchases and consolidates orders on their behalf.",
+  "enSupport": "Orders run through its Korean-language saib sourcing program; no English support is offered.",
+  "sellerPath": "Sign up and file sourcing requests through its saib program with real-time purchase monitoring; also arranges tax-invoice issuance from market vendors and samples.",
+  "lastVerified": "2026-07-04"
+ },
+ "hairnmi": {
+  "for": "Hair salons and beauty professionals buying professional hair products at wholesale; some products are gated behind verified beauty-professional status.",
+  "enSupport": "Store runs in Korean only; pro-restricted items require Korean beauty-professional verification to purchase.",
+  "sellerPath": "Buy-side platform: register and pass beauty-professional (salon) verification to access the members-only wholesale sections; operated by Midosi Co. in Paju.",
+  "lastVerified": "2026-07-04"
+ },
+ "vkm101": {
+  "for": "Restaurants and food businesses sourcing wholesale seafood; run by licensed middle wholesaler No. 101 of Noryangjin fish market with its own HACCP plant.",
+  "enSupport": "Korean-only B2B mall; the operator publishes nothing in English.",
+  "sellerPath": "Business-only membership: sign up with Korean business registration details to order; supplies direct imports and domestic direct-from-source seafood nationwide.",
+  "lastVerified": "2026-07-04"
+ },
+ "ndmarket": {
+  "for": "Retailers sourcing Namdaemun and Dongdaemun wholesale goods remotely, with ordering, consolidation, and inspection handled without market visits.",
+  "enSupport": "Korean-only platform and app.",
+  "sellerPath": "Sign up as a retail buyer on the site or app; its ND delivery service consolidates multi-store orders, inspects goods, and auto-issues tax invoices.",
+  "lastVerified": "2026-07-04"
+ },
+ "beautydome": {
+  "for": "Cosmetics resellers and shops sourcing general Korean cosmetics wholesale from an Icheon-based distributor.",
+  "enSupport": "Korean-only wholesale mall.",
+  "lastVerified": "2026-07-04"
+ }
+}

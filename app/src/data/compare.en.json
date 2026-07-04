@@ -1,0 +1,86 @@
+[
+ {
+  "slug": "coupang-vs-naver-smartstore",
+  "title": "Coupang vs Naver Smart Store for Foreign Brands",
+  "desc": "How Coupang Marketplace and Naver Smart Store differ for overseas brands: onboarding, audience, logistics, English support and cross-border paths.",
+  "intro": "Coupang and Naver Smart Store are the two channels foreign brands ask about first when entering Korea, but they work very differently. Coupang operates a destination app with its own delivery network and a dedicated cross-border seller program, while Smart Store is a storefront layer wired into Naver's search and shopping ecosystem. The practical differences show up in who can sign up, in what language, and how goods physically move.",
+  "rows": [
+   {
+    "aspect": "Audience and discovery",
+    "a": "Shoppers open the Coupang app as a destination and search or browse inside it, with fast-delivery expectations shaping which listings get chosen.",
+    "b": "Buyers typically arrive from Naver search and Naver Shopping results, so product exposure depends heavily on how listings rank in the portal."
+   },
+   {
+    "aspect": "Entry requirements",
+    "a": "The cross-border Marketplace program accepts a passport plus a home-country business registration; no Korean entity or local bank account is required to start.",
+    "b": "Seller center sign-up requires a Korean business registration and a local bank account, so non-resident brands usually enter through a Korean entity or local partner."
+   },
+   {
+    "aspect": "English support",
+    "a": "Runs a global seller portal in English (with Chinese as well), an English Seller University and a multilingual seller hotline.",
+    "b": "The seller center is Korean-only with no official English portal; day-to-day operations are realistic mainly with Korean-speaking staff or an agency."
+   },
+   {
+    "aspect": "Logistics",
+    "a": "Cross-border sellers can ship orders directly from their home country to Korean customers under the overseas-seller track, alongside Coupang's own fulfillment programs for domestic inventory.",
+    "b": "Sellers arrange their own domestic shipping or plug into Naver Fulfillment Alliance partners such as Fassto, whose automated Yongin centers handle storage and dispatch."
+   },
+   {
+    "aspect": "Cross-border path",
+    "a": "Offers a purpose-built route for overseas sellers, with onboarding, documentation and support designed around brands that have no Korean presence yet.",
+    "b": "Has no dedicated overseas-seller route, so the usual cross-border path is incorporating locally, appointing a distributor, or working with an operating agency."
+   },
+   {
+    "aspect": "Storefront control",
+    "a": "Listings live on Coupang's standardized catalog pages, so presentation is uniform and the product data itself does most of the selling.",
+    "b": "Each seller operates a Smart Store page with its own address and layout, giving somewhat more room to present the brand as a shop of its own."
+   }
+  ],
+  "aName": "Coupang Marketplace",
+  "bName": "Naver Smart Store",
+  "verdict": "If you have no Korean entity and want to test demand by shipping from abroad, Coupang's cross-border program is the more accessible starting point, and its English seller tooling lowers the operating burden. Smart Store makes sense once you have a Korean entity or a trusted local partner and your category depends on Naver search visibility. Many brands eventually run both, but the order of entry is usually dictated by whether a local business registration exists yet.",
+  "note": "This comparison covers onboarding and operating structure only; commission and settlement terms change over time and should be checked on each platform's official seller pages."
+ },
+ {
+  "slug": "marketplace-vs-own-store-in-korea",
+  "title": "Marketplace vs Your Own Store in Korea",
+  "desc": "Structural trade-offs between joining a Korean marketplace and running your own storefront on a builder such as Cafe24 or Shopify.",
+  "intro": "Foreign brands entering Korea usually face the same fork: list on an established marketplace, or stand up an independent storefront with a builder like Cafe24 or Shopify. The marketplace route trades control for built-in demand; the own-store route reverses that trade. Which side wins depends less on preference than on how much traffic, localization and back-office work you can realistically fund.",
+  "rows": [
+   {
+    "aspect": "Traffic acquisition",
+    "a": "You tap demand that already exists on the platform; the main job is making listings rank and convert within its search and category pages.",
+    "b": "Every visitor must be earned through your own advertising, search optimization and social channels, since a new domain starts with zero Korean footfall."
+   },
+   {
+    "aspect": "Setup path",
+    "a": "You apply through a seller center and pass its screening; requirements range from passport-based overseas sign-up on some platforms to a mandatory Korean business registration on others.",
+    "b": "You open a builder account and launch on your own schedule; Cafe24's Global Sales Assistant configures multilingual storefronts, overseas payment gateways and customs settings, while Shopify runs multi-currency selling through Markets."
+   },
+   {
+    "aspect": "Brand and customer data",
+    "a": "Product pages follow the platform's template and the customer relationship largely stays with the marketplace, which limits remarketing to your own base.",
+    "b": "You control the domain, design and checkout, and keep first-party customer data for retention marketing and repeat-purchase programs."
+   },
+   {
+    "aspect": "Logistics",
+    "a": "You can attach platform-side fulfillment where offered, or lean on alliance 3PL networks the marketplace has already vetted.",
+    "b": "Warehousing and delivery are yours to assemble, typically by contracting a Korean 3PL; some, like Fassto, integrate directly with channels such as Shopify."
+   },
+   {
+    "aspect": "English operability",
+    "a": "Varies sharply by platform: some run full English seller portals while others operate seller tools in Korean only, so channel choice determines language burden.",
+    "b": "Builders are generally friendlier to English-speaking teams: Shopify's admin and documentation are English-native, and Cafe24 publishes English product pages and supports English storefronts."
+   },
+   {
+    "aspect": "Local trust signals",
+    "a": "Marketplace membership itself supplies payment familiarity, review volume and buyer protection that Korean shoppers already recognize.",
+    "b": "An independent store must build credibility from scratch, adding the payment options, reviews and customer-service responsiveness local buyers expect before conversion improves."
+   }
+  ],
+  "aName": "Korean marketplace entry",
+  "bName": "Own storefront (Cafe24 / Shopify)",
+  "verdict": "A marketplace is usually the faster first step when the goal is validating Korean demand with limited local staff, because discovery and buyer trust come with the channel. An own store fits brands with an existing audience, strong content, or margin structures that reward owning customer data, and it becomes more attractive as repeat purchase drives the business. A common sequence is to prove the product on a marketplace and then layer an owned storefront for retention rather than choosing one permanently.",
+  "note": "Costs, plan structures and platform policies on both routes change frequently and are intentionally not covered here; verify them on each provider's official pages before committing."
+ }
+]
