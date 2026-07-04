@@ -239,6 +239,7 @@ function ApplyForm({ postId, onDone }: { postId: string; onDone: () => void }) {
       <label className="facet-opt" style={{ fontSize: 12.5 }}>
         <input type="checkbox" required />
         매칭 확인 시 상대에게 <b>내 계정 이메일이 공유</b>되는 데 동의합니다. *
+        <span className="faint"> 상대가 국외 사업자인 경우 처리방침 §3 국외 이전 고지에 따라 별도 확인 후 진행됩니다.</span>
       </label>
       {err && <div className="err">{err}</div>}
       <button className="btn primary sm" disabled={busy} type="submit">{busy ? "신청 중…" : "매칭 신청"}</button>
@@ -597,6 +598,7 @@ function SellForm({ onDone }: { onDone: () => void }) {
           <label className="facet-opt" style={{ fontSize: 13 }}>
             <input type="checkbox" required checked={consent} onChange={() => setConsent((v) => !v)} />
             인수 관심자와 쌍방 확인 시 상대에게 <b>내 계정 이메일이 공유</b>되는 데 동의합니다. *
+            <span className="faint"> 상대가 국외 사업자인 경우 처리방침 §3 국외 이전 고지에 따라 별도 확인 후 진행됩니다.</span>
           </label>
           {findings.length > 0 && !hasBlocking(findings) && warnAck && (
             <div className="banner">
@@ -696,6 +698,7 @@ function InterestForm({ dealId, onDone }: { dealId: string; onDone: () => void }
       <label className="facet-opt" style={{ fontSize: 12.5 }}>
         <input type="checkbox" required />
         매칭 확인 시 상대에게 <b>내 계정 이메일이 공유</b>되는 데 동의합니다. *
+        <span className="faint"> 상대가 국외 사업자인 경우 처리방침 §3 국외 이전 고지에 따라 별도 확인 후 진행됩니다.</span>
       </label>
       {err && <div className="err">{err}</div>}
       <button className="btn primary sm" disabled={busy} type="submit">{busy ? "등록 중…" : "관심 등록"}</button>
