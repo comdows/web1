@@ -50,11 +50,10 @@ backend/
 
 ## 설정 상태 / 대기 항목
 
-- [x] Supabase 마이그레이션 0001~0006 (신규 SQL은 `backend/migrations/`에 추가 후 SQL Editor에서 실행)
-- [ ] **마이그레이션 0007~0010 실행** — SQL Editor에서 `0007_fixes.sql` → `0008_hardening.sql` → `0009_account.sql` → `0010_ops.sql` 순서대로 (0008은 검수 우회 게시·상태 위조를 막는 보안 패치라 최우선. 0009는 탈퇴·취소 기능, 0010은 검수 메일 안내·events 정리의 전제)
-- [ ] 자동 수집 Secrets: `SUPABASE_URL` `SUPABASE_ANON_KEY` `BOT_EMAIL` `BOT_PASSWORD` + 봇 계정 가입 (auto-collect-plan.md §2)
-- [ ] 일일 다이제스트 Secrets: `ADMIN_BOT_EMAIL` `ADMIN_BOT_PASSWORD` — admin 롤 전용 봇 계정(가입 후 backend/README.md §4-F로 admin 지정)
-- [ ] 주간 백업 Secret: `BACKUP_PASSPHRASE`(임의 긴 문자열 — 비밀번호 관리자에 보관, 분실 시 백업 복호화 불가) — 다이제스트와 같은 ADMIN_BOT 계정 사용
+- [x] Supabase 마이그레이션 **0001~0011 전체 실행 완료(2026-07-05)** — 신규 SQL은 `backend/migrations/`에 추가 후 SQL Editor에서 실행
+- [x] 자동 수집 Secrets + 봇 계정 (2026-07-05 설정 완료)
+- [x] 일일 다이제스트 Secrets(ADMIN_BOT — admin 롤 지정 완료)
+- [x] 주간 백업 Secret `BACKUP_PASSPHRASE` (수동 실행 1회 성공 확인 — 패스프레이즈는 비밀번호 관리자에 보관)
 - [ ] (선택) Google 로그인: Supabase 대시보드 Authentication → Providers → Google 설정 후 `app/src/config.ts`의 `googleAuth: true`
 - [ ] **검색엔진 등록**(유입의 선행 조건 — 인증 파일은 각 콘솔에서 발급):
   ① Google Search Console → 속성 추가(URL 접두어 `https://comdows.github.io/web1/`) → HTML 파일 인증 선택 → 받은 `google*.html`을 `app/public/`에 넣고 커밋 → 배포 후 확인 → `sitemap.xml` 제출
