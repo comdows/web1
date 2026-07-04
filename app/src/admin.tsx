@@ -10,7 +10,7 @@ import {
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
   fetchAdminMetrics, fetchOutboundCounts, getPlatformFull, listAdminIntroQueue, listBuyerBriefs, listDealsAdmin,
   listDealSubmissions, listOperatorClaims,
-  listPartnerPosts, listSubmissions, markIntroduced, publishDeal, remoteEnabled,
+  listPartnerPosts, listSubmissions, markIntroduced, partnerRefCode, publishDeal, remoteEnabled,
   reviewDealSubmission, reviewOperatorClaim, reviewPartnerPost, reviewSubmission,
   transitionPlatform, updateDealStatus, updatePlatform,
 } from "./lib/api";
@@ -311,7 +311,7 @@ function PartnerPostQueue() {
           <div className="admin-card-h">
             <b>{p.title}</b>
             <Badge kind="soon">{tLabel(p.type_id)}</Badge>
-            <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: "auto" }}>{p.created_at.slice(0, 10)}</span>
+            <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: "auto" }}>{partnerRefCode(p.id)} · {p.created_at.slice(0, 10)}</span>
           </div>
           <p style={{ margin: "6px 0", fontSize: 13, color: "var(--muted)" }}>
             Give: {p.give_text} / Get: {p.get_text} / {p.size_text}{p.detail ? ` — ${p.detail}` : ""}
@@ -638,7 +638,7 @@ function LivePanel() {
       {posts.map((p) => (
         <div className="sub-item" key={p.id}>
           <div style={{ minWidth: 0 }}>
-            <b>🤝 {p.title}</b> <Badge kind={p.status === "matched" ? "good" : "soon"}>{p.status === "matched" ? "성사" : "게시 중"}</Badge>
+            <b>🤝 {p.title}</b> <span className="mono" style={{ color: "var(--faint)", fontSize: 11 }}>{partnerRefCode(p.id)}</span> <Badge kind={p.status === "matched" ? "good" : "soon"}>{p.status === "matched" ? "성사" : "게시 중"}</Badge>
             <div className="frm-note">Give {p.give_text} / Get {p.get_text}</div>
           </div>
           <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>

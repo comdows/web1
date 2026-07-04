@@ -9,7 +9,7 @@ import { useSession } from "./lib/auth";
 import {
   applyToPartnerPost, createBuyerBrief, createDealSubmission, createPartnerPost,
   fetchDeals, fetchPartnerPosts, listMyDealInterests, listMyPartnerInterests,
-  registerDealInterest, remoteEnabled,
+  partnerRefCode, registerDealInterest, remoteEnabled,
 } from "./lib/api";
 import type { PartnerPost, PublicDeal } from "./lib/api";
 import { checkAnonymity, hasBlocking, hasContact } from "./lib/anonymity";
@@ -32,6 +32,11 @@ const EFFORT: Record<PartnerType["effort"], string> = { light: "가볍게 시작
 const CONTACT_MSG = "연락처·이메일·URL·메신저 ID는 적을 수 없어요 — 소개는 세모플이 비공개로 진행합니다.";
 
 const SIZE_BANDS = ["월 방문 ~1만", "월 방문 1~5만", "월 방문 5~20만", "월 방문 20만+", "밝히지 않음"];
+/* 데모 리스팅 라벨 → 카탈로그 방식 매핑 */
+const LEGACY_TYPE: Record<string, string> = {
+  "회원 상호송출": "cross_signup", "교차 프로모션": "coupon_exchange",
+  "공동 이벤트": "joint_event", "광고 지면 교환": "banner_swap", "공동구매·번들": "bundle",
+};
 const REVENUE_BANDS = ["연매출 1억 미만", "연매출 1~5억", "연매출 5~20억", "연매출 20억+"];
 /* 거래소는 자산·사업 양수도만 게시·소개(지분·투자유치는 전문 자문 안내로 분기 — 무인가 투자중개 회피) */
 const DEAL_MODES = ["자산 전부 양수도(운영 승계 포함)", "자산 선별 양수도"];
@@ -188,26 +193,31 @@ function PartnerPostForm({ typeId, onDone }: { typeId: string; onDone: () => voi
   );
 }
 
-/* 매칭 신청 폼(포스트별 인라인) */
+/* 매칭 신청 폼(포스트별 인라인) — 표준 양식 3항목(소개·적합 이유·구체 제안)으로 구조화해 pitch로 합성.
+ * 자유서술 대비 상대방의 판단 비용을 낮추고 운영자 의사확인 메일에 그대로 인용 가능(EOI 패턴) */
 function ApplyForm({ postId, onDone }: { postId: string; onDone: () => void }) {
   const [name, setName] = useState("");
   const [cat, setCat] = useState("");
   const [size, setSize] = useState(SIZE_BANDS[4]);
-  const [pitch, setPitch] = useState("");
+  const [who, setWho] = useState("");
+  const [why, setWhy] = useState("");
+  const [offer, setOffer] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    if (hasContact(name, pitch)) { setErr(CONTACT_MSG); return; }
+    if (hasContact(name, who, why, offer)) { setErr(CONTACT_MSG); return; }
     setErr(""); setBusy(true);
+    const pitch = `[소개] ${who.trim()} [맞는 이유] ${why.trim()} [제안] ${offer.trim()}`;
     try {
-      await applyToPartnerPost(postId, { platform_name: name.trim(), category_id: cat || undefined, size_text: size, pitch: pitch.trim() });
+      await applyToPartnerPost(postId, { platform_name: name.trim(), category_id: cat || undefined, size_text: size, pitch });
       onDone();
     } catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
     finally { setBusy(false); }
   };
   return (
     <form className="frm" style={{ marginTop: 10, paddingTop: 10, borderTop: "1px solid var(--line-soft)" }} onSubmit={submit}>
+      <div className="frm-note">🔖 <b className="mono">{partnerRefCode(postId)}</b> 제안에 대한 매칭 신청 — 아래 세 항목이 상대에게 전달되는 소개문이 됩니다.</div>
       <label>우리 플랫폼 이름 * <input required value={name} onChange={(e) => setName(e.target.value)} maxLength={40} placeholder="반익명 가능" /></label>
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <label style={{ flex: 1, minWidth: 150 }}>분야
@@ -217,7 +227,15 @@ function ApplyForm({ postId, onDone }: { postId: string; onDone: () => void }) {
           <select value={size} onChange={(e) => setSize(e.target.value)}>{SIZE_BANDS.map((s) => <option key={s} value={s}>{s}</option>)}</select>
         </label>
       </div>
-      <label>제안 요지 * <textarea required rows={2} value={pitch} onChange={(e) => setPitch(e.target.value)} maxLength={200} placeholder="무엇을 주고받을지 (연락처 금지)" /></label>
+      <label>우리는 어떤 플랫폼인지 *
+        <input required value={who} onChange={(e) => setWho(e.target.value)} maxLength={80} placeholder="예: 수공예 작가 3천 명이 입점한 마켓" />
+      </label>
+      <label>왜 서로 맞는 상대인지 *
+        <input required value={why} onChange={(e) => setWhy(e.target.value)} maxLength={80} placeholder="예: 고객층이 같고 시즌 프로모션 시기가 겹침" />
+      </label>
+      <label>구체 제안 *
+        <input required value={offer} onChange={(e) => setOffer(e.target.value)} maxLength={80} placeholder="예: 10월 공동 기획전 1회 + 상호 배너 4주 (연락처 금지)" />
+      </label>
       <label className="facet-opt" style={{ fontSize: 12.5 }}>
         <input type="checkbox" required />
         매칭 확인 시 상대에게 <b>내 계정 이메일이 공유</b>되는 데 동의합니다. *
@@ -261,14 +279,17 @@ export function Partners() {
     setTimeout(() => document.getElementById("ppost-form")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
 
-  // 기존 데모 리스팅 라벨 → 카탈로그 방식 매핑
-  const legacyMap: Record<string, string> = {
-    "회원 상호송출": "cross_signup", "교차 프로모션": "coupon_exchange",
-    "공동 이벤트": "joint_event", "광고 지면 교환": "banner_swap", "공동구매·번들": "bundle",
-  };
   const realItems = (posts ?? []).filter((p) => !boardType || p.type_id === boardType);
-  const demoItems = listings.partnerships.filter((l) => !boardType || legacyMap[l.type] === boardType);
+  const demoItems = listings.partnerships.filter((l) => !boardType || LEGACY_TYPE[l.type] === boardType);
   const typeLabel = (id: string) => partnerTypes.find((t) => t.id === id)?.label ?? id;
+  // 보드 필터 칩은 실제 게시된 유형만(고정 5종 → 게시물 기반), 성사 수는 실데이터만 집계(데모 제외)
+  const boardTypes = useMemo(() => {
+    const s = new Set<string>();
+    (posts ?? []).forEach((p) => s.add(p.type_id));
+    listings.partnerships.forEach((l) => { const m = LEGACY_TYPE[l.type]; if (m) s.add(m); });
+    return [...s];
+  }, [posts]);
+  const matchedReal = (posts ?? []).filter((p) => p.status === "matched").length;
 
   return (
     <div className="page container">
@@ -284,6 +305,12 @@ export function Partners() {
         { t: "세모플이 확인·소개", d: "상대 실재 확인 후 양측 동의 시에만 소개" },
         { t: "당사자 직접 진행", d: "실행·정산·계약은 두 플랫폼이 직접" },
       ]} />
+
+      <div className="banner" style={{ marginBottom: 14 }}>
+        🧾 <b>성공보수 0원 원칙</b> — 세모플은 제휴의 성사 여부·거래액에 연동한 과금을 하지 않습니다.
+        과금은 양측 동의 후 연락처를 공유하는 순간의 <b>정액 연결료</b>(현재 무료 베타)뿐이고,
+        소개가 이행되지 않으면 전액 환불됩니다. 그래서 세모플에겐 <b>맞지 않는 상대를 억지로 성사시킬 이유가 없습니다</b>.
+      </div>
 
       {/* 섹션 목차(앵커) */}
       <div className="chips-row" style={{ marginBottom: 4 }}>
@@ -395,13 +422,14 @@ export function Partners() {
       <div className="sec-title" id="p-board">제휴 매칭 보드</div>
       <div className="chips-row">
         <button className={`fchip ${boardType === "" ? "on" : ""}`} onClick={() => setBoardType("")}>전체</button>
-        {Object.values(legacyMap).map((id) => (
+        {boardTypes.map((id) => (
           <button key={id} className={`fchip ${boardType === id ? "on" : ""}`}
             onClick={() => setBoardType(boardType === id ? "" : id)}>{typeLabel(id)}</button>
         ))}
       </div>
       <div className="result-meta">
         제휴 제안 {posts === null ? "…" : realItems.length + demoItems.length}건
+        {matchedReal > 0 && ` · 성사된 소개 ${matchedReal}건`}
         {realItems.length === 0 && demoItems.length > 0 && " (아직 데모 예시 — 첫 제안의 주인공이 되어보세요)"}
       </div>
       <div className="card-grid">
@@ -409,7 +437,7 @@ export function Partners() {
           <div className="pcard" key={p.id}>
             <div className="top"><div style={{ minWidth: 0 }}>
               <h4>{p.title} {p.status === "matched" && <Badge kind="good">성사</Badge>}</h4>
-              <div className="cat">{typeLabel(p.type_id)} · {categoryById(p.category_id)?.name ?? p.category_id}
+              <div className="cat"><span className="mono">{partnerRefCode(p.id)}</span> · {typeLabel(p.type_id)} · {categoryById(p.category_id)?.name ?? p.category_id}
                 {p.want_categories.length > 0 && ` → ${p.want_categories.map((w) => categoryById(w)?.name ?? w).join(", ")}`}</div>
             </div></div>
             {p.detail && <p>{p.detail}</p>}
@@ -445,6 +473,7 @@ export function Partners() {
       </div>
       <p className="sub faint" style={{ fontSize: 12.5, marginTop: 14 }}>
         🕶️ 보드는 반익명입니다 — 상대의 정확한 이름·연락처는 양측이 동의한 소개 단계에서만 공유됩니다.
+        문의·소개 요청 시에는 카드의 참조번호(P-XXXX)로 제안을 지칭하세요.
       </p>
     </div>
   );
