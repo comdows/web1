@@ -31,6 +31,13 @@ backend/
 | 수시 | 제휴 제안·매물 검수(익명성 점검 하이라이트 참고), 운영자 인증 승인 | 관리 콘솔 |
 | 수시 | 소개 이행 — 거래소는 ①매도자 확인 → ②소개 초안 → 소개 완료 순서 | 관리 콘솔 → 소개 대기 |
 | 월 1회 | 헬스체크 이슈 확인 — 접속 불가 링크 정정/보관 | GitHub Issues (`healthcheck` 라벨) |
+| 수시 | EN 인바운드 문의 트리아지 — 지분·펀딩은 즉시 종료, 유효 건만 소개 검토. **국외 상대 소개는 한국 측 의사확인 메일에 상대 국가를 명시하고 회신 동의를 받은 뒤에만 진행**(처리방침 §3) | GitHub Issues (`en-inbound` 라벨) |
+
+### 백업·복원 (backup.yml — 주간 자동)
+
+- 매주 월 04:00 KST, admin 봇(RLS)으로 사용자 생성 데이터 11개 테이블을 JSON 스냅샷 → gpg 암호화 → Actions 아티팩트(90일 보관). service key는 쓰지 않는다.
+- **복원**: Actions → 해당 run → `db-backup-*` 아티팩트 다운로드 → `gpg -d backup-*.json.gpg > b.json` (BACKUP_PASSPHRASE) → 테이블별로 Supabase SQL Editor/PostgREST upsert. 순서: profiles → platforms → 나머지(FK 순).
+- 백업 실패 시 GitHub 실패 메일이 온다 — **실패 메일은 반드시 확인**(부분 성공 없음, fail-loud 설계).
 
 ## 원칙 (바꾸면 안 되는 것)
 
@@ -44,8 +51,10 @@ backend/
 ## 설정 상태 / 대기 항목
 
 - [x] Supabase 마이그레이션 0001~0006 (신규 SQL은 `backend/migrations/`에 추가 후 SQL Editor에서 실행)
+- [ ] **마이그레이션 0007+0008 실행** — SQL Editor에서 `0007_fixes.sql`, `0008_hardening.sql` 순서대로 (0008은 검수 우회 게시·상태 위조를 막는 보안 패치라 최우선)
 - [ ] 자동 수집 Secrets: `SUPABASE_URL` `SUPABASE_ANON_KEY` `BOT_EMAIL` `BOT_PASSWORD` + 봇 계정 가입 (auto-collect-plan.md §2)
 - [ ] 일일 다이제스트 Secrets: `ADMIN_BOT_EMAIL` `ADMIN_BOT_PASSWORD` — admin 롤 전용 봇 계정(가입 후 backend/README.md §4-F로 admin 지정)
+- [ ] 주간 백업 Secret: `BACKUP_PASSPHRASE`(임의 긴 문자열 — 비밀번호 관리자에 보관, 분실 시 백업 복호화 불가) — 다이제스트와 같은 ADMIN_BOT 계정 사용
 - [ ] (선택) Google 로그인: Supabase 대시보드 Authentication → Providers → Google 설정 후 `app/src/config.ts`의 `googleAuth: true`
 - [ ] Google Search Console 등록 + `sitemap.xml` 제출 (선택 — SEO 가속)
 - [ ] 특허 출원 — 발명 4건, 공지예외 12개월 시한 (patent-plan.md)
