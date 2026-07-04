@@ -52,11 +52,11 @@ push((L.deals || []).map((d) =>
   `  (${q(d.id)}, ${q(d.category)}, '${region(d.region)}', ${q(d.revenue)}, ${q(d.mode)}, ${q(d.summary)}, '${dealStatus(d.status)}', ${d.demo ? "true" : "false"}, ${q(d.posted)})`
 ).join(",\n") + "\non conflict (id) do nothing;\n");
 
-// 구독 플랜(T3 — 게이트 통과 전 active=false, 가격은 기획안 가이드)
+// 구독 플랜(T3 — 게이트 통과 전 active=false) · 규약: monthly_price = VAT "포함" 표시가
 push(`insert into public.plans (id, label, monthly_price, descr, active, sort) values
   ('free',    'Free',    0,      '등재·제휴 프로필·배너교환형 무제한·월 무료 크레딧', true,  0),
-  ('pro',     'Pro',     70000,  '연결 크레딧 포함·파트너 검색 무제한·검증 배지·트래킹 대시보드', false, 1),
-  ('premium', 'Premium', 250000, '매칭 매니저 큐레이션·깊은연동 우선 소개·계약 템플릿·성과 리포트', false, 2)
+  ('pro',     'Pro',     66000,  'B형 연결 월 3건 포함·검증 배지·우선 검수·파트너 검색 무제한', false, 1),
+  ('premium', 'Premium', 220000, '매칭 매니저 큐레이션·깊은연동 우선 소개·계약 템플릿·성과 리포트', false, 2)
 on conflict (id) do nothing;\n`);
 
 // 부스트 상품(초기 3종 — 단가는 오픈 전 조정)

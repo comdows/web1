@@ -8,9 +8,12 @@ import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
 import {
   applyToPartnerPost, createBuyerBrief, createDealSubmission, createPartnerPost,
-  fetchDeals, fetchPartnerPosts, listMyDealInterests, listMyPartnerInterests,
-  partnerRefCode, registerDealInterest, remoteEnabled,
+  fetchDeals, fetchPartnerPosts, fetchSponsorSlots, founderOptIn, listMyDealInterests, listMyPartnerInterests,
+  partnerRefCode, placeOrder, registerDealInterest, remoteEnabled,
 } from "./lib/api";
+import type { SponsorSlotPublic } from "./lib/api";
+import { bankTransferProvider } from "./lib/billing";
+import type { DepositInstructions } from "./lib/billing";
 import type { PartnerPost, PublicDeal } from "./lib/api";
 import { checkAnonymity, hasBlocking, hasContact } from "./lib/anonymity";
 import { Draft } from "./lib/store";
@@ -194,6 +197,11 @@ function PartnerPostForm({ typeId, onDone }: { typeId: string; onDone: () => voi
           placeholder="어떤 플랫폼이고 왜 이 제휴가 서로에게 좋은지" />
       </label>
       <div className="frm-note">⚠️ 연락처·URL 등 식별 정보는 적지 마세요 — 검수 후 게시되며, 소개는 세모플이 비공개로 진행합니다.</div>
+      <label className="facet-opt" style={{ fontSize: 12.5 }}>
+        <input type="checkbox" required />
+        매칭 확인 시 신청자에게 <b>내 계정 이메일이 공유</b>되는 데 동의합니다. *
+        <span className="faint"> 상대가 국외 사업자인 경우 처리방침 §3 국외 이전 고지에 따라 별도 확인 후 진행됩니다.</span>
+      </label>
       {err && <div className="err">{err}</div>}
       <button className="btn primary" disabled={busy} type="submit">{busy ? "접수 중…" : "제안 등록"}</button>
     </form>
@@ -266,10 +274,14 @@ export function Partners() {
   const [boardType, setBoardType] = useState("");
   const [applyTo, setApplyTo] = useState<string | null>(null);
   const [applied, setApplied] = useState<Set<string>>(new Set());
+  const [sponsors, setSponsors] = useState<SponsorSlotPublic[]>([]);      // 보드 상단 광고 슬롯(공개 뷰)
+  const [deposit, setDeposit] = useState<DepositInstructions | null>(null); // 주문 직후 무통장 안내
+  const [founderDone, setFounderDone] = useState(false);
 
   useEffect(() => {
     if (!remoteEnabled) { setPosts([]); return; }
     fetchPartnerPosts().then(setPosts).catch(() => setPosts([]));
+    fetchSponsorSlots().then(setSponsors).catch(() => setSponsors([]));
   }, [posted]);
   // 내가 이미 신청한 제안 표시(새로고침에도 유지)
   useEffect(() => {
@@ -353,6 +365,9 @@ export function Partners() {
                     <div className="chips-row" style={{ margin: "6px 0" }}>
                       <Badge kind={SETTLE[t.settlement].kind}>{SETTLE[t.settlement].label}</Badge>
                       <Badge kind="muted">{EFFORT[t.effort]}</Badge>
+                      {t.feeTier === "A"
+                        ? <Badge kind="good">연결 무료</Badge>
+                        : <Badge kind="soon">연결료 {t.feeTier === "B" ? "22,000" : "77,000"}원 · 예정</Badge>}
                     </div>
                     <p style={{ margin: "4px 0 0" }}>{t.desc}</p>
                     {open && (
@@ -408,17 +423,45 @@ export function Partners() {
         <div className="pcard"><h4>무료 <Badge kind="good">현재</Badge></h4>
           <p>등재·제휴 프로필·매칭 신청·배너교환형 제휴 무제한. 소개까지 전 과정 무료.
             배너 교환 등 <b>무정산형(A형) 연결은 유료화 후에도 무료</b>입니다.</p></div>
-        <div className="pcard"><h4>스폰서 노출 <Badge kind="soon">예정 · 월 99,000원</Badge></h4>
-          <p>매칭 보드 상단 고정 2슬롯(<b>AD 표기</b>, VAT 포함). 디렉토리 검색·비교 결과는 어떤 경우에도 판매하지 않습니다.</p></div>
+        <div className="pcard"><h4>스폰서 노출 <Badge kind={FLAGS.billing.sponsor ? "good" : "soon"}>{FLAGS.billing.sponsor ? "신청 가능" : "예정"} · 월 99,000원</Badge></h4>
+          <p>매칭 보드 상단 고정 2슬롯(<b>AD 표기</b>, VAT 포함). 디렉토리 검색·비교 결과는 어떤 경우에도 판매하지 않습니다.</p>
+          {FLAGS.billing.sponsor && <p className="frm-note">신청: 계정 → 내 활동의 <b>게시 중인 내 제안</b>에서 "보드 상단 고정 신청"</p>}</div>
         <div className="pcard"><h4>연결료 <Badge kind="soon">예정 · 건 22,000~77,000원</Badge></h4>
           <p>양측 동의 후 <b>연락처를 상호 공유하는 순간</b>에만 정액(레퍼럴형 22,000 · 깊은 연동형 77,000, VAT 포함).
             신청·매칭 확인까지는 무료, <b>소개가 이행되지 않으면 전액 자동 환불</b>.</p></div>
-        <div className="pcard"><h4>Pro 멤버십 <Badge kind="soon">예정 · 월 66,000원</Badge></h4>
-          <p>레퍼럴형 연결 월 3건 포함 · 검증 배지 · 우선 검수 · 파트너 검색 무제한(VAT 포함).</p></div>
+        <div className="pcard"><h4>Pro 멤버십 <Badge kind={FLAGS.billing.membership ? "good" : "soon"}>{FLAGS.billing.membership ? "신청 가능" : "예정"} · 월 66,000원</Badge></h4>
+          <p>레퍼럴형 연결 월 3건 포함 · 검증 배지 · 우선 검수 · 파트너 검색 무제한(VAT 포함).</p>
+          {FLAGS.billing.membership && session && (
+            <button className="btn primary sm" onClick={async () => {
+              try {
+                const cid = await placeOrder("subscription", "pro");
+                setDeposit(await bankTransferProvider.instruct(cid, 66000, `${session.user.email?.split("@")[0] ?? ""} Pro`));
+              } catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+            }}>Pro 신청 (무통장 입금) →</button>
+          )}</div>
       </div>
+      {deposit && (
+        <div className="banner" style={{ marginBottom: 14 }}>
+          🧾 <b>주문이 접수됐어요 — 무통장 입금 안내</b>
+          <p style={{ margin: "6px 0", fontSize: 13.5 }}>
+            입금 계좌: <b>{deposit.bank}</b> · 금액: <b>{deposit.totalKrw.toLocaleString()}원</b>(VAT 포함) ·
+            입금자명: <b>{deposit.depositorRule}</b> · 기한: {deposit.deadlineDays}일 이내
+          </p>
+          <p style={{ margin: 0, fontSize: 12.5 }} className="faint">
+            입금 확인 후 활성화됩니다(영업일 1일 이내 처리). 기한 내 미입금 시 주문은 자동 취소되며,
+            서비스 미이행 시 전액 환불됩니다. 주문번호 {deposit.chargeId.slice(0, 8)}
+          </p>
+        </div>
+      )}
       <div className="banner" style={{ marginBottom: 14 }}>
         🌱 <b>파운더 할인</b> — 유료화 공지 전에 가입해 활동(제보 승인·제안 게시 등) 1건 이상 남긴 계정은
         모든 유료 상품이 <b>첫 12개월 50%</b>. 유료화는 이용량 기준(게이트) 충족 후 <b>30일 전 공지</b>로만 시작합니다.
+        {session && (founderDone
+          ? <span className="ok" style={{ marginLeft: 8 }}>알림 신청 완료 ✓</span>
+          : <button className="linklike" style={{ marginLeft: 8 }} onClick={async () => {
+              try { await founderOptIn(); setFounderDone(true); } catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+            }}>유료화 공지 알림 받기 →</button>)}
+        <span className="faint" style={{ fontSize: 12 }}> (알림 신청 여부와 무관하게 할인 자격은 활동 이력으로 판정합니다)</span>
       </div>
       <p className="sub faint" style={{ fontSize: 12.5, marginBottom: 6 }}>
         원칙 — ① 세모플은 <b>소개(연결)를 팔지, 성사를 팔지 않습니다</b>(제휴 체결·성과는 당사자 몫).
@@ -435,6 +478,21 @@ export function Partners() {
             onClick={() => setBoardType(boardType === id ? "" : id)}>{typeLabel(id)}</button>
         ))}
       </div>
+      {sponsors.length > 0 && (
+        <div className="card-grid" style={{ marginBottom: 10 }}>
+          {sponsors.map((sp) => (
+            <div className="pcard" key={`sp-${sp.slot_no}`} style={{ borderColor: "var(--warn)" }}>
+              <div className="top"><div style={{ minWidth: 0 }}>
+                <h4><Badge kind="ad">광고</Badge> {sp.title}</h4>
+                <div className="cat"><span className="mono">{partnerRefCode(sp.id)}</span> · {typeLabel(sp.type_id)} · {categoryById(sp.category_id)?.name ?? sp.category_id}</div>
+              </div></div>
+              {sp.detail && <p>{sp.detail}</p>}
+              <p style={{ fontSize: 12.5 }}><b>Give</b> {sp.give_text}<br /><b>Get</b> {sp.get_text}</p>
+              <div className="frm-note">스폰서 게재 — 노출 위치만 구매한 것이며 검수·소개 절차는 일반 제안과 동일합니다.</div>
+            </div>
+          ))}
+        </div>
+      )}
       <div className="result-meta">
         제휴 제안 {posts === null ? "…" : realItems.length + demoItems.length}건
         {matchedReal > 0 && ` · 성사된 소개 ${matchedReal}건`}
@@ -444,7 +502,7 @@ export function Partners() {
         {realItems.map((p) => (
           <div className="pcard" key={p.id}>
             <div className="top"><div style={{ minWidth: 0 }}>
-              <h4>{p.title} {p.status === "matched" && <Badge kind="good">성사</Badge>}</h4>
+              <h4>{p.title} {p.pro_verified && <Badge kind="verify">인증</Badge>} {p.status === "matched" && <Badge kind="good">성사</Badge>}</h4>
               <div className="cat"><span className="mono">{partnerRefCode(p.id)}</span> · {typeLabel(p.type_id)} · {categoryById(p.category_id)?.name ?? p.category_id}
                 {p.want_categories.length > 0 && ` → ${p.want_categories.map((w) => categoryById(w)?.name ?? w).join(", ")}`}</div>
             </div></div>

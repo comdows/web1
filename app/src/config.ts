@@ -4,6 +4,10 @@ export const FLAGS = {
   stage3: true,  // 🏦 플랫폼 거래소 — 오픈(무료 베타)
   contactEmail: "comdows@hanmail.net", // 공개 문의처(푸터·방침·접수 안내에 노출 — 바꾸려면 이 값만 수정)
   googleAuth: false, // Google 원클릭 로그인 — Supabase 대시보드에서 provider 설정 후 true로 (README 참고)
+  /* 과금 스위치(상품별) — 프론트 렌더 게이트. 서버 진실은 app_settings 'billing'(place_order가 검사)이라
+   * 둘 다 켜야 열린다. 켜기 전 필수: 통신판매업 신고 → pricing-policy §6-2 개정 → 처리방침 §1 증빙 항목 →
+   * 30일 공지(pricing_announced_at). 가격 안내·환불 원칙·파운더 예고는 항상 공개(정보 게시), 주문 CTA만 이 게이트. */
+  billing: { sponsor: false, connection: false, membership: false },
 };
 
 /* 관리자 로컬 열람: localhost에서만 오픈 전 보드가 보인다(공개 URL 우회 불가). */

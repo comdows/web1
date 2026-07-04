@@ -10,12 +10,15 @@ import {
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
   fetchAdminMetrics, fetchOutboundCounts, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listBuyerBriefs, listDealsAdmin,
   listDealSubmissions, listOperatorClaims,
-  listPartnerPosts, listSubmissions, markIntroduced, partnerRefCode, publishDeal, remoteEnabled,
+  adminIntroduce, confirmDeposit, createSponsorSlot, declinePendingInterests, listBillingQueue,
+  listPartnerPosts, listRefundDue, listSponsorSlotsAdmin, listSubmissions, listSubscriptionsAdmin,
+  markOwnerConfirmed, partnerRefCode, publishDeal, refundCharge, remoteEnabled,
   reviewDealSubmission, reviewOperatorClaim, reviewPartnerPost, reviewSubmission,
   transitionPlatform, updateDealStatus, updatePlatform,
 } from "./lib/api";
 import type {
-  BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin, Submission,
+  BillingQueueRow, BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin,
+  RefundDueRow, SponsorSlotAdmin, Submission, SubscriptionAdmin,
 } from "./lib/api";
 import { checkAnonymity } from "./lib/anonymity";
 import { partnerTypes } from "./data";
@@ -501,6 +504,148 @@ function DealSubQueue() {
   );
 }
 
+/* ── 💳 과금 운영(0011) — 무통장 입금 확인·스폰서 슬롯·구독·환불.
+ * FLAGS와 무관하게 상시 렌더(오픈 전 리허설) — 권한은 RLS is_admin이 강제. */
+function BillingQueuePanel() {
+  const [rows, setRows] = useState<BillingQueueRow[] | null>(null);
+  const [dep, setDep] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState("");
+  const reload = useCallback(() => { listBillingQueue().then(setRows).catch(() => setRows([])); }, []);
+  useEffect(reload, [reload]);
+  if (rows === null) return <div className="empty">불러오는 중…</div>;
+  if (rows.length === 0) return <div className="empty">입금 대기 건이 없습니다 ✓ (0011 마이그레이션 필요 여부 확인)</div>;
+  return (
+    <>
+      {rows.map((c) => {
+        const total = c.amount + c.vat;
+        const overdue = c.deposit_deadline && c.deposit_deadline < new Date().toISOString().slice(0, 10);
+        return (
+          <div className="sub-item" key={c.id}>
+            <div style={{ minWidth: 0 }}>
+              💳 <b>{c.kind === "boost" ? "스폰서" : c.kind === "subscription" ? "Pro 구독" : `연결료 ${c.fee_tier ?? ""}형`}</b>
+              {" — "}{total.toLocaleString()}원(VAT포함) · {c.user_email ?? "이메일 없음"}
+              <div className="frm-note">
+                {c.memo ?? ""} · 기한 <span style={overdue ? { color: "var(--danger)" } : undefined}>{c.deposit_deadline ?? "-"}</span>
+                {overdue && " ⚠ 기한 초과 — 미입금 취소 검토"}
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 6, flexShrink: 0, alignItems: "center", flexWrap: "wrap" }}>
+              <input style={{ width: 110 }} placeholder="입금자명" value={dep[c.id] ?? ""}
+                onChange={(e) => setDep((d) => ({ ...d, [c.id]: e.target.value }))} />
+              <button className="btn primary sm" disabled={busy === c.id || !(dep[c.id] ?? "").trim()}
+                title="입금자명 대조 후 확인 — 현금영수증·세금계산서는 홈택스 수기 발행 후 메모"
+                onClick={async () => {
+                  setBusy(c.id);
+                  try { await confirmDeposit(c.id, dep[c.id].trim()); reload(); }
+                  catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+                  finally { setBusy(""); }
+                }}>✓ 입금 확인</button>
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+function SponsorSlotsPanel() {
+  const [slots, setSlots] = useState<SponsorSlotAdmin[]>([]);
+  const [posts, setPosts] = useState<PartnerPostAdmin[]>([]);
+  const [form, setForm] = useState({ slot_no: "1", post: "", user: "", starts: "", ends: "" });
+  const [msg, setMsg] = useState("");
+  const reload = useCallback(() => {
+    listSponsorSlotsAdmin().then(setSlots).catch(() => setSlots([]));
+    listPartnerPosts(["published", "matched"]).then(setPosts).catch(() => setPosts([]));
+  }, []);
+  useEffect(reload, [reload]);
+  const today = new Date().toISOString().slice(0, 10);
+  const active = slots.filter((sl) => sl.starts_on <= today && sl.ends_on >= today);
+  return (
+    <div className="admin-card">
+      <div className="frm-note">활성 슬롯 {active.length}/2 — 기간 충돌·3번째 슬롯은 DB 제약이 거부합니다. paid 상태의 스폰서 청구 확인 후 배정하세요.</div>
+      {slots.slice(0, 6).map((sl) => (
+        <div className="sub-item" key={sl.id}>
+          <div>🪧 슬롯 {sl.slot_no} — {partnerRefCode(sl.partner_post_id)} · {sl.starts_on} ~ {sl.ends_on}</div>
+          <Badge kind={sl.starts_on <= today && sl.ends_on >= today ? "good" : "muted"}>
+            {sl.starts_on <= today && sl.ends_on >= today ? "게재 중" : sl.starts_on > today ? "예약" : "만료"}</Badge>
+        </div>
+      ))}
+      <div className="admin-form">
+        <label>슬롯
+          <select value={form.slot_no} onChange={(e) => setForm({ ...form, slot_no: e.target.value })}>
+            <option value="1">1</option><option value="2">2</option>
+          </select>
+        </label>
+        <label style={{ flex: 1, minWidth: 160 }}>게시 제안
+          <select value={form.post} onChange={(e) => { const p = posts.find((x) => x.id === e.target.value); setForm({ ...form, post: e.target.value }); if (p) setMsg(""); }}>
+            <option value="">선택</option>
+            {posts.map((p) => <option key={p.id} value={p.id}>{p.title} ({partnerRefCode(p.id)})</option>)}
+          </select>
+        </label>
+        <label>스폰서 user_id <input value={form.user} onChange={(e) => setForm({ ...form, user: e.target.value })} placeholder="입금 확인한 청구의 사용자" /></label>
+        <label>시작 <input type="date" value={form.starts} onChange={(e) => setForm({ ...form, starts: e.target.value })} /></label>
+        <label>종료 <input type="date" value={form.ends} onChange={(e) => setForm({ ...form, ends: e.target.value })} /></label>
+      </div>
+      {msg && <div className="err">{msg}</div>}
+      <div style={{ marginTop: 8 }}>
+        <button className="btn primary sm" disabled={!form.post || !form.user || !form.starts || !form.ends}
+          onClick={async () => {
+            setMsg("");
+            try {
+              await createSponsorSlot({ slot_no: Number(form.slot_no), partner_post_id: form.post, sponsor_user_id: form.user.trim(), starts_on: form.starts, ends_on: form.ends });
+              reload();
+            } catch (ex) { setMsg(ex instanceof Error ? ex.message : String(ex)); }
+          }}>슬롯 배정</button>
+      </div>
+    </div>
+  );
+}
+
+function SubsPanel() {
+  const [rows, setRows] = useState<SubscriptionAdmin[]>([]);
+  useEffect(() => { listSubscriptionsAdmin().then(setRows).catch(() => setRows([])); }, []);
+  if (rows.length === 0) return <div className="empty">구독이 없습니다.</div>;
+  const soon = (d: string | null) => d && new Date(d).getTime() - Date.now() < 7 * 86400000;
+  return (
+    <>
+      {rows.map((r) => (
+        <div className="sub-item" key={r.id}>
+          <div>👑 {r.plan_id} · <span className="mono" style={{ fontSize: 11 }}>{r.user_id.slice(0, 8)}</span>
+            {" · "}주기말 <span style={soon(r.current_period_end) ? { color: "var(--warn)" } : undefined}>{r.current_period_end?.slice(0, 10) ?? "-"}</span>
+            {" · "}{(r.price_snapshot ?? 0).toLocaleString()}원</div>
+          <Badge kind={r.status === "active" ? "good" : r.status === "past_due" ? "soon" : "muted"}>{r.status}</Badge>
+        </div>
+      ))}
+      <div className="frm-note">갱신은 수동: 주기말 도래 시 재청구를 안내하고 미입금이면 past_due 처리(SQL/차기 버튼).</div>
+    </>
+  );
+}
+
+function RefundPanel() {
+  const [due, setDue] = useState<RefundDueRow[]>([]);
+  const [busy, setBusy] = useState("");
+  const reload = useCallback(() => { listRefundDue().then(setDue).catch(() => setDue([])); }, []);
+  useEffect(reload, [reload]);
+  if (due.length === 0) return <div className="empty">미이행 환불 대상이 없습니다 ✓</div>;
+  return (
+    <>
+      <div className="frm-note">⚠ 결제됐으나 소개 미이행 건 — 약관 §5에 따라 <b>전액 자동 환불</b> 대상입니다.</div>
+      {due.map((r) => (
+        <div className="sub-item" key={r.id}>
+          <div>↩️ 연결료 {(r.amount + r.vat).toLocaleString()}원 · {r.user_email ?? ""} · 결제 {r.paid_at?.slice(0, 10)}</div>
+          <button className="btn primary sm" disabled={busy === r.id}
+            onClick={async () => {
+              setBusy(r.id);
+              try { await refundCharge(r.id, r.amount + r.vat, "소개 미이행 — 전액 환불(약관 §5)"); reload(); }
+              catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+              finally { setBusy(""); }
+            }}>전액 환불 처리</button>
+        </div>
+      ))}
+    </>
+  );
+}
+
 /* ── 소개 대기(매칭 신청·인수 관심·브리프) — 양측 이메일로 실제 소개 이행 ──
  * 거래소 건은 2단 SOP: ① 매도자 의사 확인(단독 수신) → 회신 후 ② 소개 초안(양측 수신, NDA·§27 안내 포함) */
 function IntroQueue() {
@@ -516,15 +661,25 @@ function IntroQueue() {
     listDealsAdmin().then(setDeals).catch(() => setDeals([]));
   }, []);
   useEffect(reload, [reload]);
+  /* 소개 완료 = admin_introduce RPC 단일 지점(0011) — 상태·양측 동의 검증 + 이중 실행 방지 + 증빙 필수.
+   * connection 스위치가 켜진 경우에만 B/C형 청구가 함께 생성된다(꺼진 지금은 기록만). */
   const done = async (kind: "partner" | "deal", id: string) => {
-    await markIntroduced(kind === "partner" ? "partner_post_interests" : "deal_interests", id).catch(() => { /* noop */ });
+    const evidence = window.prompt("발송 증빙 메모(필수) — 예: 2026-07-05 mailto 발송, 참조 P-XXXX");
+    if (!evidence?.trim()) return;
+    try { await adminIntroduce(kind, id, evidence.trim()); }
+    catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+    reload();
+  };
+  const confirmOwner = async (kind: "partner" | "deal", id: string) => {
+    try { await markOwnerConfirmed(kind, id); } catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
     reload();
   };
   const guideUrl = `${location.origin}${import.meta.env.BASE_URL}?view=deal-guide`;
   /* ① 매도자 의사 확인 — 관심자 정보는 익명 요지만, 소개 여부 회신 요청(현황 알림 겸용) */
   const sellerConfirmDraft = (r: IntroQueueRow) => {
-    const subject = `[세모플] ${r.target_title} 인수 관심 접수 — 소개 진행 여부 회신 요청`;
-    const body = `안녕하세요, 세모플입니다.\n\n회원님이 게시하신 매물 ${r.target_title}에 인수 관심 1건이 접수됐습니다.\n- 관심자 소개(익명 요지): ${r.message}\n\n소개(상호 이메일 공유)를 진행해도 될지 이 메일에 회신으로 알려주세요.\n진행을 원치 않으시면 사유 없이 "진행하지 않겠습니다"라고만 회신하셔도 됩니다.\n\n세모플 드림`;
+    const what = r.kind === "deal" ? `매물 ${r.target_title}에 인수 관심` : `제안 "${r.target_title}"에 매칭 신청`;
+    const subject = `[세모플] ${r.target_title} — 소개 진행 여부 회신 요청`;
+    const body = `안녕하세요, 세모플입니다.\n\n회원님이 게시하신 ${what} 1건이 접수됐습니다.\n- 신청자 소개(익명 요지): ${r.message}\n\n소개(상호 이메일 공유)를 진행해도 될지 이 메일에 회신으로 알려주세요.\n상대방이 국외 사업자인 경우 별도로 안내드립니다(처리방침 §3).\n진행을 원치 않으시면 사유 없이 "진행하지 않겠습니다"라고만 회신하셔도 됩니다.\n\n세모플 드림`;
     return `mailto:${r.counterpart_email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   };
   /* ② 소개 초안 — 거래소 건은 NDA·§27·다음 단계 안내 포함(소개 후 막다른 길 방지) */
@@ -545,7 +700,7 @@ function IntroQueue() {
     <>
       {rows.map((r) => {
         const key = `${r.kind}-${r.id}`;
-        const ready = Boolean(r.applicant_email && r.counterpart_email && r.contact_consent_at);
+        const ready = Boolean(r.applicant_email && r.counterpart_email && r.contact_consent_at && r.owner_confirmed_at);
         return (
           <div className="sub-item" key={key}>
             <div style={{ minWidth: 0 }}>
@@ -554,12 +709,20 @@ function IntroQueue() {
               <div className="frm-note">{r.message}</div>
               <div className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>
                 {r.applicant_email ?? "이메일 없음"} ↔ {r.counterpart_email ?? "이메일 없음"}
-                {r.contact_consent_at ? " · 동의 ✓" : " · ⚠ 이메일 공유 동의 없음(구버전 신청)"}
+                {r.contact_consent_at ? " · 신청자 동의 ✓" : " · ⚠ 신청자 동의 없음(구버전)"}
+                {r.owner_confirmed_at ? " · 제안자 확인 ✓" : " · 제안자 확인 대기"}
               </div>
             </div>
             <div style={{ display: "flex", gap: 6, flexShrink: 0, flexWrap: "wrap" }}>
-              {r.kind === "deal" && r.counterpart_email && (
-                <a className="btn ghost sm" href={sellerConfirmDraft(r)} title="매도자에게 관심 접수 현황을 알리고 소개 진행 여부를 확인">① 매도자 확인</a>
+              {r.counterpart_email && !r.owner_confirmed_at && (
+                <a className="btn ghost sm" href={sellerConfirmDraft(r)}
+                  title={r.kind === "deal" ? "매도자에게 소개 진행 여부를 확인" : "제안자에게 신청 접수를 알리고 소개 진행 여부를 확인"}>
+                  ① {r.kind === "deal" ? "매도자" : "제안자"} 확인
+                </a>
+              )}
+              {!r.owner_confirmed_at && (
+                <button className="btn ghost sm" onClick={() => confirmOwner(r.kind, r.id)}
+                  title="확인 메일에 '진행' 회신을 받았으면 기록">회신 확인 ✓</button>
               )}
               {ready && (
                 <a className="btn primary sm" href={mailDraft(r)} onClick={() => setMailed((s) => new Set(s).add(key))}>
@@ -656,7 +819,12 @@ function LivePanel() {
   useEffect(reload, [reload]);
   const movePost = async (id: string, status: string) => {
     setBusy(id);
-    try { await reviewPartnerPost(id, { status }); reload(); } finally { setBusy(""); }
+    try {
+      await reviewPartnerPost(id, { status });
+      // 성사·마감 시 남은 pending 신청을 함께 정리(영구 '접수됨' 방치 방지)
+      if (status === "matched" || status === "closed") await declinePendingInterests(id).catch(() => { /* noop */ });
+      reload();
+    } finally { setBusy(""); }
   };
   const moveDeal = async (id: string, status: "open" | "in_progress" | "closed") => {
     setBusy(id);
@@ -758,6 +926,18 @@ export function Admin() {
 
       <div className="sec-title">🏷 운영자 인증 신청</div>
       <OperatorClaimQueue />
+
+      <div className="sec-title">💳 입금 확인 큐 (무통장 — 입금자명 대조 후 확인)</div>
+      <BillingQueuePanel />
+
+      <div className="sec-title">🪧 스폰서 슬롯 (보드 상단 2슬롯 · AD 표기)</div>
+      <SponsorSlotsPanel />
+
+      <div className="sec-title">👑 구독 현황 (Pro)</div>
+      <SubsPanel />
+
+      <div className="sec-title">↩️ 환불 큐 (소개 미이행 = 전액 환불)</div>
+      <RefundPanel />
 
       <div className="sec-title">📮 소개 대기 (매칭 신청 · 인수 관심 · 브리프)</div>
       <IntroQueue />

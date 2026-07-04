@@ -61,7 +61,7 @@ backend/
   ② Bing 웹마스터 도구 — GSC 가져오기 지원(가장 쉬움). Bing은 ChatGPT 검색의 소스라 중요
   ③ 네이버 서치어드바이저 → 사이트 등록 → HTML 파일 인증(`naver*.html`을 `app/public/`에) → 사이트맵 제출
 - [ ] 특허 출원 — 발명 4건, 공지예외 12개월 시한 (patent-plan.md)
-- [ ] 유료화 게이트 도달 시: 통신판매업 신고 → PG → 세금계산서 자동발행 → 약관 개정 → 전문가 검토 (pricing-policy.md §6)
+- [ ] 유료화 게이트 도달 시(0011로 시스템은 준비 완료 — 스위치만 꺼져 있음): ① 통신판매업 신고 ② pricing-policy.md §6-2 무통장 한시 허용 단서 개정 ③ 처리방침 §1 증빙 발행 정보 추가+TERMS_VERSION 상향 ④ app_settings 'pricing_announced_at' 설정(30일 공지 — 사이트 배너 자동 노출) ⑤ 30일 후 app_settings 'billing' 상품별 true + config.ts FLAGS.billing true + 재배포(**둘 다 켜야 열림**). 운영: 입금 확인 시 현금영수증/세금계산서 홈택스 수기 발행 후 승인번호 메모
 
 ## 문서 인덱스
 

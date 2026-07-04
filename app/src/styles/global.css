@@ -126,6 +126,7 @@ button{font-family:inherit}
 .badge.soon{background:var(--warn-tint);color:var(--warn)}
 .badge.muted{background:var(--surface-3);color:var(--muted)}
 .badge.verify{background:var(--cyan-tint);color:var(--cyan)}
+.badge.ad{background:var(--warn);color:#111;font-weight:800;letter-spacing:.04em} /* 표시광고법 — 고대비 고정 표기 */
 
 /* Banner */
 .banner{border:1px solid var(--line);border-left:3px solid var(--brand);background:var(--brand-tint);border-radius:var(--r-sm);

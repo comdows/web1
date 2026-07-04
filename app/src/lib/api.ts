@@ -11,7 +11,7 @@ const SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 export const remoteEnabled = Boolean(SB_URL && SB_KEY);
 
 /* 로그인 상태면 사용자 JWT, 아니면 anon 키로 호출(권한은 전적으로 RLS가 판정) */
-async function rest<T>(pathAndQuery: string, init?: RequestInit): Promise<T> {
+export async function rest<T>(pathAndQuery: string, init?: RequestInit): Promise<T> {
   const token = (await getAccessToken()) ?? SB_KEY;
   const res = await fetch(`${SB_URL}/rest/v1/${pathAndQuery}`, {
     ...init,
@@ -246,6 +246,7 @@ export interface PartnerPost {
   id: string; title: string; category_id: string; type_id: string;
   give_text: string; get_text: string; want_categories: string[];
   size_text: string; detail: string; status: "published" | "matched"; posted: string | null;
+  pro_verified?: boolean; // 작성자가 활성 Pro 구독자(0011 뷰 — boolean만, 익명성 유지)
 }
 /* 참조번호(표시용) — id에서 파생. 반익명 보드에서 신원 대신 제안을 지칭하는 수단(문의·소개 요청·검수 소통용) */
 export const partnerRefCode = (id: string) => "P-" + id.replace(/-/g, "").slice(0, 4).toUpperCase();
@@ -260,7 +261,8 @@ export async function createPartnerPost(input: {
   if (!uid) throw new Error("로그인이 필요합니다");
   await rest("partner_posts", {
     method: "POST", headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({ ...input, created_by: uid }),
+    // contact_consent_at: 폼 필수 체크박스(매칭 확인 시 이메일 공유 동의) 시각 — B/C형 과금·소개의 전제
+    body: JSON.stringify({ ...input, created_by: uid, contact_consent_at: new Date().toISOString() }),
   });
 }
 export async function applyToPartnerPost(postId: string, input: {
@@ -327,6 +329,80 @@ export async function registerDealInterest(dealId: string, intro: string): Promi
     if ((e as { status?: number }).status === 409) throw new Error("이미 이 매물에 관심 등록했어요. 접수 후 세모플이 안내드립니다.");
     throw e;
   }
+}
+
+/* ── 제휴 수익화(0011) — 주문·수신함·스폰서·구독 (금액·상태 전이는 전부 서버 RPC) ── */
+export interface MyPostInterest {
+  id: string; post_id: string; post_title: string; platform_name: string;
+  size_text: string; pitch: string; status: string; owner_confirmed_at: string | null; created_at: string;
+}
+export async function listInterestsOnMyPosts(): Promise<MyPostInterest[]> {
+  return rest<MyPostInterest[]>("v_my_post_interests?select=*&order=created_at.desc&limit=100");
+}
+export async function respondToInterest(interestId: string, accept: boolean): Promise<void> {
+  await rest("rpc/respond_to_interest", { method: "POST", body: JSON.stringify({ p_interest_id: interestId, p_accept: accept }) });
+}
+export async function placeOrder(kind: "boost" | "subscription", planId?: string, postId?: string): Promise<string> {
+  return rest<string>("rpc/place_order", { method: "POST", body: JSON.stringify({ p_kind: kind, p_plan_id: planId ?? null, p_post_id: postId ?? null }) });
+}
+export async function founderOptIn(): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  await rest(`profiles?id=eq.${uid}`, { method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ founder_optin_at: new Date().toISOString() }) });
+}
+export interface SponsorSlotPublic {
+  slot_no: number; id: string; title: string; category_id: string; type_id: string;
+  give_text: string; get_text: string; want_categories: string[]; size_text: string; detail: string;
+}
+export async function fetchSponsorSlots(): Promise<SponsorSlotPublic[]> {
+  return rest<SponsorSlotPublic[]>("v_sponsor_slots_public?select=*&order=slot_no.asc");
+}
+export interface BillingQueueRow {
+  id: string; kind: string; amount: number; vat: number; memo: string | null; depositor_name: string | null;
+  deposit_deadline: string | null; fee_tier: string | null; created_at: string; user_email: string | null;
+}
+export async function listBillingQueue(): Promise<BillingQueueRow[]> {
+  return rest<BillingQueueRow[]>("v_admin_billing_queue?select=*&order=created_at.asc&limit=100");
+}
+export async function confirmDeposit(chargeId: string, depositor: string): Promise<void> {
+  await rest("rpc/admin_confirm_deposit", { method: "POST", body: JSON.stringify({ p_charge_id: chargeId, p_depositor: depositor }) });
+}
+export async function refundCharge(chargeId: string, amount: number, reason: string): Promise<void> {
+  await rest("rpc/admin_refund_charge", { method: "POST", body: JSON.stringify({ p_charge_id: chargeId, p_amount: amount, p_reason: reason }) });
+}
+export interface RefundDueRow { id: string; amount: number; vat: number; interest_kind: string; interest_id: string; paid_at: string; user_email: string | null }
+export async function listRefundDue(): Promise<RefundDueRow[]> {
+  return rest<RefundDueRow[]>("v_admin_refund_due?select=*&limit=100");
+}
+export interface SponsorSlotAdmin {
+  id: string; slot_no: number; partner_post_id: string; sponsor_user_id: string;
+  starts_on: string; ends_on: string; charge_id: string | null;
+}
+export async function listSponsorSlotsAdmin(): Promise<SponsorSlotAdmin[]> {
+  return rest<SponsorSlotAdmin[]>("sponsor_slots?select=*&order=starts_on.desc&limit=50");
+}
+export async function createSponsorSlot(input: { slot_no: number; partner_post_id: string; sponsor_user_id: string; starts_on: string; ends_on: string; charge_id?: string }): Promise<void> {
+  await rest("sponsor_slots", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(input) });
+}
+export interface SubscriptionAdmin {
+  id: string; user_id: string; plan_id: string; status: string;
+  current_period_end: string | null; price_snapshot: number | null; activated_at: string | null;
+}
+export async function listSubscriptionsAdmin(): Promise<SubscriptionAdmin[]> {
+  return rest<SubscriptionAdmin[]>("subscriptions?select=*&order=current_period_end.asc.nullslast&limit=100");
+}
+export async function markOwnerConfirmed(kind: "partner" | "deal", interestId: string): Promise<void> {
+  const table = kind === "partner" ? "partner_post_interests" : "deal_interests";
+  await rest(`${table}?id=eq.${interestId}`, { method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ owner_confirmed_at: new Date().toISOString() }) });
+}
+export async function adminIntroduce(kind: "partner" | "deal", interestId: string, evidence: string): Promise<void> {
+  await rest("rpc/admin_introduce", { method: "POST", body: JSON.stringify({ p_kind: kind, p_interest_id: interestId, p_evidence: evidence }) });
+}
+export async function declinePendingInterests(postId: string): Promise<void> {
+  await rest(`partner_post_interests?post_id=eq.${postId}&status=eq.pending`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "declined" }) });
 }
 
 /* ── 관리자: 검수 통지(0010) — 접수자 이메일 조회(v_admin_contact, is_admin만 행 반환) ── */
@@ -399,7 +475,7 @@ export interface IntroQueueRow {
   kind: "partner" | "deal"; id: string; created_at: string; status: string;
   message: string; platform_name: string; target_title: string;
   applicant_email: string | null; counterpart_email: string | null;
-  contact_consent_at: string | null;
+  contact_consent_at: string | null; owner_confirmed_at: string | null;
 }
 export async function listAdminIntroQueue(): Promise<IntroQueueRow[]> {
   return rest<IntroQueueRow[]>("v_admin_intro_queue?status=eq.pending&select=*&order=created_at.asc&limit=100");

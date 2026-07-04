@@ -25,7 +25,7 @@ const Packs      = lazy(() => import("./growth").then((m) => ({ default: m.Packs
 const Terms      = lazy(() => import("./legal").then((m) => ({ default: m.Terms })));
 const Privacy    = lazy(() => import("./legal").then((m) => ({ default: m.Privacy })));
 import { useSession } from "./lib/auth";
-import { fetchRecentPlatforms, remoteEnabled, trackEvent } from "./lib/api";
+import { fetchRecentPlatforms, remoteEnabled, rest, trackEvent } from "./lib/api";
 
 type Sort = "default" | "new" | "name";
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
@@ -71,6 +71,13 @@ export default function App() {
   const init = readParams();
   const [view, setView] = useState<ViewName>(init.view);
   const [detailId, setDetailId] = useState(init.id);
+  const [pricingNotice, setPricingNotice] = useState<string | null>(null); // 유료화 30일 공지(0011 app_settings)
+  useEffect(() => {
+    if (!remoteEnabled) return;
+    rest<{ value: string | null }[]>("app_settings?key=eq.pricing_announced_at&select=value")
+      .then((rows) => { const v = rows[0]?.value; if (typeof v === "string" && v) setPricingNotice(v); })
+      .catch(() => { /* 공지 없음 */ });
+  }, []);
   const [searchQ, setSearchQ] = useState(init.q);
   // home-only state
   const [q, setQ] = useState(init.view === "home" ? init.q : "");
@@ -187,6 +194,12 @@ export default function App() {
         </div>
       </div></header>
 
+      {pricingNotice && (
+        <div className="container"><div className="banner" style={{ marginTop: 10 }}>
+          📢 <b>유료화 사전 공지</b> — {pricingNotice.slice(0, 10)}부터 일부 제휴 서비스(스폰서·연결료·Pro)가 유료로 전환됩니다.
+          진행 중인 제휴·소개는 무료로 마무리되며, 자세한 내용은 제휴 페이지 요금 안내를 확인하세요.
+        </div></div>
+      )}
       <Suspense fallback={<main className="container"><div className="empty" style={{ marginTop: 40 }}>불러오는 중…</div></main>}>
       {view === "partners" ? <Partners />
         : view === "exchange" ? <Exchange />
