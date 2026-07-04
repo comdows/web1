@@ -12,13 +12,13 @@ import { TERMS_VERSION } from "./legal";
 import { FLAGS } from "./config";
 import {
   briefMatchesDeal, cancelDealSubmission, cancelSubmission, closeMyPost, createSubmission,
-  deactivateBrief, deleteMyAccount, fetchDeals, listInterestsOnMyPosts, listMyBriefs, listMyDealInterests,
+  deactivateBrief, deleteMyAccount, fetchDeals, listInterestsOnMyPosts, listMyBriefs, listMyCharges, listMyDealInterests,
   listMyDealSubmissions, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions,
   placeOrder, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
 } from "./lib/api";
-import { bankTransferProvider } from "./lib/billing";
+import { bankTransferProvider, fetchBillingSettings } from "./lib/billing";
 import type { DepositInstructions } from "./lib/billing";
-import type { BuyerBriefRow, DealSubmissionRow, MyInterestRow, MyPostInterest, PartnerPostAdmin, PublicDeal, Submission } from "./lib/api";
+import type { BuyerBriefRow, DealSubmissionRow, MyCharge, MyInterestRow, MyPostInterest, PartnerPostAdmin, PublicDeal, Submission } from "./lib/api";
 
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
 
@@ -181,6 +181,8 @@ export function Account() {
   const [actBusy, setActBusy] = useState("");         // 취소·마감 진행 중인 항목 id
   const [inbox, setInbox] = useState<MyPostInterest[]>([]);              // 내 제안에 달린 신청(익명)
   const [deposit, setDeposit] = useState<DepositInstructions | null>(null); // 스폰서 주문 무통장 안내
+  const [charges, setCharges] = useState<MyCharge[]>([]);                // 내 결제·청구 내역(입금 안내 재확인)
+  const [bank, setBank] = useState("");                                  // 입금 계좌(app_settings)
   const [acts, setActs] = useState<{ pp: PartnerPostAdmin[]; ds: DealSubmissionRow[]; pi: MyInterestRow[]; di: MyInterestRow[]; br: BuyerBriefRow[] } | null>(null);
   const [actsErr, setActsErr] = useState(false);
   const [briefDeals, setBriefDeals] = useState<PublicDeal[]>([]); // 브리프 조건 대조용(공개 뷰)
@@ -195,6 +197,8 @@ export function Account() {
       .catch(() => { if (alive) { setSubsError(true); setSubs(null); } });
     setActsErr(false);
     listInterestsOnMyPosts().then((r) => { if (alive) setInbox(r); }).catch(() => { /* noop */ });
+    listMyCharges().then((r) => { if (alive) setCharges(r); }).catch(() => { /* noop */ });
+    fetchBillingSettings().then((s) => { if (alive) setBank(s?.bank ?? ""); });
     Promise.all([listMyPartnerPosts(), listMyDealSubmissions(), listMyPartnerInterests(), listMyDealInterests(), listMyBriefs()])
       .then(([pp, ds, pi, di, br]) => {
         if (!alive) return;
@@ -402,6 +406,42 @@ export function Account() {
         </>
       )}
 
+      {charges.length > 0 && (
+        <>
+          <div className="sec-title" style={{ marginTop: 28 }}>결제 내역</div>
+          <div className="sub-list">
+            {charges.map((c) => {
+              const total = c.amount + c.vat;
+              const kindLabel = c.kind === "boost" ? "스폰서 노출" : c.kind === "subscription" ? "Pro 멤버십"
+                : c.kind === "connection_fee" ? `연결료${c.fee_tier ? ` ${c.fee_tier}형` : ""}` : c.kind;
+              const overdue = c.status === "awaiting_deposit" && c.deposit_deadline && c.deposit_deadline < new Date().toISOString().slice(0, 10);
+              const badge = c.status === "awaiting_deposit" ? { k: "soon" as const, l: overdue ? "기한 경과" : "입금 대기" }
+                : c.status === "paid" ? { k: "good" as const, l: "결제 완료" }
+                : c.status === "refunded" ? { k: "muted" as const, l: `환불됨${c.refund_amount != null ? ` · ${c.refund_amount.toLocaleString()}원` : ""}` }
+                : c.status === "canceled" ? { k: "muted" as const, l: "취소됨" } : { k: "muted" as const, l: c.status };
+              return (
+                <div className="sub-item" key={c.id}>
+                  <div style={{ minWidth: 0 }}>
+                    🧾 <b>{kindLabel}</b> — {total.toLocaleString()}원(VAT 포함)
+                    {c.discount_rate != null && <span className="faint"> · 파운더 할인 적용</span>}
+                    <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}> · {c.created_at.slice(0, 10)} · {c.id.slice(0, 8)}</span>
+                    {c.status === "awaiting_deposit" && (
+                      <div className="frm-note">
+                        입금 계좌 <b>{bank || "(계좌 안내 준비 중 — 운영자에게 문의)"}</b>
+                        {c.depositor_hint && <> · 입금자명 <b>{c.depositor_hint}</b></>}
+                        {c.deposit_deadline && <> · 기한 <span style={overdue ? { color: "var(--danger)" } : undefined}>{c.deposit_deadline}</span></>}
+                        {overdue && " — 기한이 지나 취소 처리돼요. 계속 원하시면 다시 주문해 주세요."}
+                      </div>
+                    )}
+                  </div>
+                  <Badge kind={badge.k}>{badge.l}</Badge>
+                </div>
+              );
+            })}
+          </div>
+        </>
+      )}
+
       <div className="sec-title" style={{ marginTop: 28 }}>내 활동 (제휴·거래소)</div>
       {actsErr ? (
         <div className="empty">활동 내역을 불러오지 못했어요. <button className="linklike" onClick={() => setReload((n) => n + 1)}>다시 시도</button></div>
@@ -436,8 +476,10 @@ export function Account() {
                     <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === p.id}
                       title="보드 상단 고정(월 99,000원 · AD 표기) — 무통장 입금 후 게재"
                       onClick={() => doAct(p.id, async () => {
-                        const cid = await placeOrder("boost", undefined, p.id);
-                        setDeposit(await bankTransferProvider.instruct(cid, 99000, `스폰서 ${p.title.slice(0, 8)}`));
+                        const rule = `스폰서 ${p.title.slice(0, 8)}`;
+                        const o = await placeOrder("boost", undefined, p.id, rule);
+                        // 금액은 서버 산정액(할인 반영) — 클라이언트 상수와의 불일치 방지
+                        setDeposit(await bankTransferProvider.instruct(o.id, o.total, rule));
                       })}>🪧 상단 고정 신청</button>
                   )}
                   {(p.status === "pending" || p.status === "published") && (
@@ -479,13 +521,16 @@ export function Account() {
           })}
           {acts.pi.map((i) => (
             <div className="sub-item" key={i.id}>
-              <div style={{ minWidth: 0 }}>🤝 <b>매칭 신청</b> — "{i.partner_posts?.title ?? i.post_id}"</div>
+              <div style={{ minWidth: 0 }}>🤝 <b>매칭 신청</b> — "{i.partner_posts?.title ?? i.post_id}"
+                {i.status === "declined" && <div className="frm-note">제안자가 다른 상대와 진행했거나 모집을 마감했어요 — 보드의 다른 제안도 살펴보세요.</div>}
+              </div>
               <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
                 {i.status === "pending" && (
                   <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === i.id}
                     onClick={() => doAct(i.id, () => withdrawPartnerInterest(i.id))}>철회</button>
                 )}
-                <Badge kind={i.status === "introduced" ? "verify" : "soon"}>{i.status === "introduced" ? "소개 완료" : "접수됨"}</Badge>
+                <Badge kind={i.status === "introduced" ? "verify" : i.status === "declined" ? "muted" : "soon"}>
+                  {i.status === "introduced" ? "소개 완료" : i.status === "declined" ? "진행되지 않음" : "접수됨"}</Badge>
               </div>
             </div>
           ))}
@@ -504,7 +549,8 @@ export function Account() {
                   <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === i.id}
                     onClick={() => doAct(i.id, () => withdrawDealInterest(i.id))}>철회</button>
                 )}
-                <Badge kind={i.status === "introduced" ? "verify" : "soon"}>{i.status === "introduced" ? "소개 완료" : "접수됨"}</Badge>
+                <Badge kind={i.status === "introduced" ? "verify" : i.status === "declined" ? "muted" : "soon"}>
+                  {i.status === "introduced" ? "소개 완료" : i.status === "declined" ? "진행되지 않음" : "접수됨"}</Badge>
               </div>
             </div>
           ))}

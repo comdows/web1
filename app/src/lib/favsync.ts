@@ -1,6 +1,6 @@
 /* 즐겨찾기 서버 동기화 — 로그인하면 서버·로컬을 합집합으로 병합하고,
  * 이후 토글은 서버에도 반영(fire-and-forget). 비로그인·오프라인이면 로컬만 사용. */
-import { Favs, setFavSync } from "./store";
+import { Draft, Favs, setFavSync } from "./store";
 import { getSession, onAuth } from "./auth";
 import { fetchServerFavs, removeFavorite, remoteEnabled, upsertFavorite } from "./api";
 
@@ -30,9 +30,9 @@ export function startFavSync(): void {
     if (uid === lastUid) return; // 프로필 로드 등 무관한 emit 무시
     const prev = lastUid;
     lastUid = uid;
-    // 로그아웃·계정 전환 시 이전 사용자의 로컬 즐겨찾기 제거(공용 PC 오염 방지).
+    // 로그아웃·계정 전환 시 이전 사용자의 로컬 즐겨찾기·폼 초안 제거(공용 PC 오염 방지).
     // 최초 로그인(prev=null)은 비우지 않는다 — 비로그인 때 담은 즐겨찾기를 계정에 병합.
-    if (prev && prev !== uid) Favs.clear();
+    if (prev && prev !== uid) { Favs.clear(); Draft.clear("partner"); Draft.clear("sell"); }
     if (uid) void pullAndPush();
   };
   onAuth(onChange);

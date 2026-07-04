@@ -21,6 +21,7 @@ export interface Profile {
   id: string;
   role: "user" | "operator" | "admin";
   display_name: string | null;
+  founder_optin_at?: string | null; // 유료화 공지 알림 신청 시각(0011) — 버튼 상태 복원용
 }
 
 const KEY = "sm.session.v1";
@@ -147,7 +148,7 @@ async function loadProfile(): Promise<void> {
   const token = await getAccessToken();
   if (!token || !session) return;
   try {
-    const res = await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${session.user.id}&select=id,role,display_name`, {
+    const res = await fetch(`${SB_URL}/rest/v1/profiles?id=eq.${session.user.id}&select=id,role,display_name,founder_optin_at`, {
       headers: { apikey: SB_KEY!, Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return;

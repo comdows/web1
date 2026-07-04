@@ -263,7 +263,7 @@ function ApplyForm({ postId, onDone }: { postId: string; onDone: () => void }) {
 }
 
 export function Partners() {
-  const { session } = useSession();
+  const { session, profile } = useSession();
   const go = useNav();
   const [goal, setGoal] = useState("");
   const [openType, setOpenType] = useState<string | null>(null);
@@ -276,7 +276,8 @@ export function Partners() {
   const [applied, setApplied] = useState<Set<string>>(new Set());
   const [sponsors, setSponsors] = useState<SponsorSlotPublic[]>([]);      // 보드 상단 광고 슬롯(공개 뷰)
   const [deposit, setDeposit] = useState<DepositInstructions | null>(null); // 주문 직후 무통장 안내
-  const [founderDone, setFounderDone] = useState(false);
+  const [orderBusy, setOrderBusy] = useState(false);   // 더블클릭 중복 주문 방지
+  const [founderDone, setFounderDone] = useState(false); // 프로필의 신청 시각과 합산해 버튼 상태 복원
 
   useEffect(() => {
     if (!remoteEnabled) { setPosts([]); return; }
@@ -432,12 +433,17 @@ export function Partners() {
         <div className="pcard"><h4>Pro 멤버십 <Badge kind={FLAGS.billing.membership ? "good" : "soon"}>{FLAGS.billing.membership ? "신청 가능" : "예정"} · 월 66,000원</Badge></h4>
           <p>레퍼럴형 연결 월 3건 포함 · 검증 배지 · 우선 검수 · 파트너 검색 무제한(VAT 포함).</p>
           {FLAGS.billing.membership && session && (
-            <button className="btn primary sm" onClick={async () => {
+            <button className="btn primary sm" disabled={orderBusy} onClick={async () => {
+              if (orderBusy) return;
+              setOrderBusy(true);
               try {
-                const cid = await placeOrder("subscription", "pro");
-                setDeposit(await bankTransferProvider.instruct(cid, 66000, `${session.user.email?.split("@")[0] ?? ""} Pro`));
+                const rule = `${session.user.email?.split("@")[0] ?? ""} Pro`;
+                const o = await placeOrder("subscription", "pro", undefined, rule);
+                // 금액은 서버 산정액(할인 반영)을 표시 — 클라이언트 상수와의 불일치 방지
+                setDeposit(await bankTransferProvider.instruct(o.id, o.total, rule));
               } catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
-            }}>Pro 신청 (무통장 입금) →</button>
+              finally { setOrderBusy(false); }
+            }}>{orderBusy ? "주문 접수 중…" : "Pro 신청 (무통장 입금) →"}</button>
           )}</div>
       </div>
       {deposit && (
@@ -448,15 +454,16 @@ export function Partners() {
             입금자명: <b>{deposit.depositorRule}</b> · 기한: {deposit.deadlineDays}일 이내
           </p>
           <p style={{ margin: 0, fontSize: 12.5 }} className="faint">
-            입금 확인 후 활성화됩니다(영업일 1일 이내 처리). 기한 내 미입금 시 주문은 자동 취소되며,
-            서비스 미이행 시 전액 환불됩니다. 주문번호 {deposit.chargeId.slice(0, 8)}
+            입금 확인 후 활성화됩니다(영업일 1일 이내 처리). 입금 기한이 지나면 주문은 취소 처리되고(재주문 가능),
+            서비스 미이행 시 전액 환불됩니다. 주문번호 {deposit.chargeId.slice(0, 8)} —
+            이 안내는 <b>계정 → 결제 내역</b>에서 언제든 다시 볼 수 있어요.
           </p>
         </div>
       )}
       <div className="banner" style={{ marginBottom: 14 }}>
         🌱 <b>파운더 할인</b> — 유료화 공지 전에 가입해 활동(제보 승인·제안 게시 등) 1건 이상 남긴 계정은
         모든 유료 상품이 <b>첫 12개월 50%</b>. 유료화는 이용량 기준(게이트) 충족 후 <b>30일 전 공지</b>로만 시작합니다.
-        {session && (founderDone
+        {session && (founderDone || profile?.founder_optin_at
           ? <span className="ok" style={{ marginLeft: 8 }}>알림 신청 완료 ✓</span>
           : <button className="linklike" style={{ marginLeft: 8 }} onClick={async () => {
               try { await founderOptIn(); setFounderDone(true); } catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }

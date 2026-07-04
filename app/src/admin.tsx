@@ -10,15 +10,15 @@ import {
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
   fetchAdminMetrics, fetchOutboundCounts, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listBuyerBriefs, listDealsAdmin,
   listDealSubmissions, listOperatorClaims,
-  adminIntroduce, confirmDeposit, createSponsorSlot, declinePendingInterests, listBillingQueue,
-  listPartnerPosts, listRefundDue, listSponsorSlotsAdmin, listSubmissions, listSubscriptionsAdmin,
+  adminDeclineInterest, adminIntroduce, cancelCharge, confirmDeposit, createSponsorSlot, declinePendingInterests,
+  listAdminCharges, listPartnerPosts, listSponsorSlotsAdmin, listSubmissions, listSubscriptionsAdmin,
   markOwnerConfirmed, partnerRefCode, publishDeal, refundCharge, remoteEnabled,
   reviewDealSubmission, reviewOperatorClaim, reviewPartnerPost, reviewSubmission,
   transitionPlatform, updateDealStatus, updatePlatform,
 } from "./lib/api";
 import type {
-  BillingQueueRow, BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin,
-  RefundDueRow, SponsorSlotAdmin, Submission, SubscriptionAdmin,
+  AdminChargeRow, BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin,
+  SponsorSlotAdmin, Submission, SubscriptionAdmin,
 } from "./lib/api";
 import { checkAnonymity } from "./lib/anonymity";
 import { partnerTypes } from "./data";
@@ -504,28 +504,39 @@ function DealSubQueue() {
   );
 }
 
-/* ── 💳 과금 운영(0011) — 무통장 입금 확인·스폰서 슬롯·구독·환불.
+/* ── 💳 과금 운영(0011·0012) — 전 청구 뷰(v_admin_charges) 기반: 입금 대기·취소·결제 완료·환불.
  * FLAGS와 무관하게 상시 렌더(오픈 전 리허설) — 권한은 RLS is_admin이 강제. */
+const chargeKindLabel = (c: { kind: string; fee_tier: string | null }) =>
+  c.kind === "boost" ? "스폰서" : c.kind === "subscription" ? "Pro 구독" : `연결료 ${c.fee_tier ?? ""}형`;
+
 function BillingQueuePanel() {
-  const [rows, setRows] = useState<BillingQueueRow[] | null>(null);
+  const [rows, setRows] = useState<AdminChargeRow[] | null>(null);
+  const [loadErr, setLoadErr] = useState(false);
   const [dep, setDep] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState("");
-  const reload = useCallback(() => { listBillingQueue().then(setRows).catch(() => setRows([])); }, []);
+  const reload = useCallback(() => {
+    setLoadErr(false);
+    listAdminCharges().then(setRows).catch(() => { setRows(null); setLoadErr(true); });
+  }, []);
   useEffect(reload, [reload]);
+  if (loadErr) return <div className="empty">청구 목록을 불러오지 못했어요(0012 마이그레이션 필요 여부 확인). <button className="linklike" onClick={reload}>다시 시도</button></div>;
   if (rows === null) return <div className="empty">불러오는 중…</div>;
-  if (rows.length === 0) return <div className="empty">입금 대기 건이 없습니다 ✓ (0011 마이그레이션 필요 여부 확인)</div>;
+  const waiting = rows.filter((c) => c.status === "awaiting_deposit");
+  if (waiting.length === 0) return <div className="empty">입금 대기 건이 없습니다 ✓</div>;
   return (
     <>
-      {rows.map((c) => {
+      {waiting.map((c) => {
         const total = c.amount + c.vat;
         const overdue = c.deposit_deadline && c.deposit_deadline < new Date().toISOString().slice(0, 10);
         return (
           <div className="sub-item" key={c.id}>
             <div style={{ minWidth: 0 }}>
-              💳 <b>{c.kind === "boost" ? "스폰서" : c.kind === "subscription" ? "Pro 구독" : `연결료 ${c.fee_tier ?? ""}형`}</b>
+              💳 <b>{chargeKindLabel(c)}</b>
               {" — "}{total.toLocaleString()}원(VAT포함) · {c.user_email ?? "이메일 없음"}
+              {c.discount_rate != null && <Badge kind="soon">파운더 50%</Badge>}
               <div className="frm-note">
-                {c.memo ?? ""} · 기한 <span style={overdue ? { color: "var(--danger)" } : undefined}>{c.deposit_deadline ?? "-"}</span>
+                {c.memo ?? ""}{c.depositor_hint && <> · 안내한 입금자명 <b>{c.depositor_hint}</b></>}
+                {" · 기한 "}<span style={overdue ? { color: "var(--danger)" } : undefined}>{c.deposit_deadline ?? "-"}</span>
                 {overdue && " ⚠ 기한 초과 — 미입금 취소 검토"}
               </div>
             </div>
@@ -540,6 +551,15 @@ function BillingQueuePanel() {
                   catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
                   finally { setBusy(""); }
                 }}>✓ 입금 확인</button>
+              <button className="btn ghost sm" disabled={busy === c.id}
+                title="미입금·착오 주문 취소 — 사용자 화면에는 '취소됨'으로 표시"
+                onClick={async () => {
+                  if (!window.confirm(`${chargeKindLabel(c)} ${total.toLocaleString()}원 주문을 취소할까요?`)) return;
+                  setBusy(c.id);
+                  try { await cancelCharge(c.id, overdue ? "기한 내 미입금 — 취소" : "운영자 취소"); reload(); }
+                  catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+                  finally { setBusy(""); }
+                }}>취소</button>
             </div>
           </div>
         );
@@ -551,18 +571,36 @@ function BillingQueuePanel() {
 function SponsorSlotsPanel() {
   const [slots, setSlots] = useState<SponsorSlotAdmin[]>([]);
   const [posts, setPosts] = useState<PartnerPostAdmin[]>([]);
-  const [form, setForm] = useState({ slot_no: "1", post: "", user: "", starts: "", ends: "" });
+  const [paidBoosts, setPaidBoosts] = useState<AdminChargeRow[]>([]);
+  const [form, setForm] = useState({ slot_no: "1", post: "", user: "", charge: "", starts: "", ends: "" });
   const [msg, setMsg] = useState("");
   const reload = useCallback(() => {
     listSponsorSlotsAdmin().then(setSlots).catch(() => setSlots([]));
     listPartnerPosts(["published", "matched"]).then(setPosts).catch(() => setPosts([]));
+    // 입금 확인됐지만 아직 슬롯이 없는 스폰서 청구 — 여기서 선택하면 폼이 자동으로 채워진다
+    listAdminCharges().then((cs) => setPaidBoosts(cs.filter((c) => c.kind === "boost" && c.status === "paid" && !c.has_slot))).catch(() => setPaidBoosts([]));
   }, []);
   useEffect(reload, [reload]);
   const today = new Date().toISOString().slice(0, 10);
   const active = slots.filter((sl) => sl.starts_on <= today && sl.ends_on >= today);
+  const fillFromCharge = (c: AdminChargeRow) => {
+    const postId = c.memo?.startsWith("post:") ? c.memo.slice(5) : "";
+    const starts = today;
+    const ends = new Date(Date.now() + 29 * 86400000).toISOString().slice(0, 10); // 기본 30일 게재
+    setForm({ slot_no: form.slot_no, post: postId, user: c.user_id ?? "", charge: c.id, starts, ends });
+    setMsg("");
+  };
   return (
     <div className="admin-card">
-      <div className="frm-note">활성 슬롯 {active.length}/2 — 기간 충돌·3번째 슬롯은 DB 제약이 거부합니다. paid 상태의 스폰서 청구 확인 후 배정하세요.</div>
+      <div className="frm-note">활성 슬롯 {active.length}/2 — 기간 충돌·3번째 슬롯은 DB 제약이 거부합니다.</div>
+      {paidBoosts.map((c) => (
+        <div className="sub-item" key={c.id}>
+          <div style={{ minWidth: 0 }}>💰 <b>배정 대기</b> — {(c.amount + c.vat).toLocaleString()}원 · {c.user_email ?? "이메일 없음"} · 결제 {c.paid_at?.slice(0, 10)}
+            <div className="frm-note">⚠ 결제됐지만 슬롯 미배정 — 게재하거나, 게재 불가 시 아래 환불 패널에서 처리</div>
+          </div>
+          <button className="btn ghost sm" onClick={() => fillFromCharge(c)}>폼에 채우기 ↓</button>
+        </div>
+      ))}
       {slots.slice(0, 6).map((sl) => (
         <div className="sub-item" key={sl.id}>
           <div>🪧 슬롯 {sl.slot_no} — {partnerRefCode(sl.partner_post_id)} · {sl.starts_on} ~ {sl.ends_on}</div>
@@ -582,17 +620,20 @@ function SponsorSlotsPanel() {
             {posts.map((p) => <option key={p.id} value={p.id}>{p.title} ({partnerRefCode(p.id)})</option>)}
           </select>
         </label>
-        <label>스폰서 user_id <input value={form.user} onChange={(e) => setForm({ ...form, user: e.target.value })} placeholder="입금 확인한 청구의 사용자" /></label>
+        <label>스폰서 user_id <input value={form.user} onChange={(e) => setForm({ ...form, user: e.target.value })} placeholder="위 '폼에 채우기'로 자동 입력" /></label>
         <label>시작 <input type="date" value={form.starts} onChange={(e) => setForm({ ...form, starts: e.target.value })} /></label>
         <label>종료 <input type="date" value={form.ends} onChange={(e) => setForm({ ...form, ends: e.target.value })} /></label>
       </div>
       {msg && <div className="err">{msg}</div>}
       <div style={{ marginTop: 8 }}>
         <button className="btn primary sm" disabled={!form.post || !form.user || !form.starts || !form.ends}
+          title={form.charge ? `청구 ${form.charge.slice(0, 8)}와 연결됨` : "청구 미연결 배정(수동)"}
           onClick={async () => {
             setMsg("");
             try {
-              await createSponsorSlot({ slot_no: Number(form.slot_no), partner_post_id: form.post, sponsor_user_id: form.user.trim(), starts_on: form.starts, ends_on: form.ends });
+              await createSponsorSlot({ slot_no: Number(form.slot_no), partner_post_id: form.post, sponsor_user_id: form.user.trim(),
+                starts_on: form.starts, ends_on: form.ends, ...(form.charge ? { charge_id: form.charge } : {}) });
+              setForm({ slot_no: "1", post: "", user: "", charge: "", starts: "", ends: "" });
               reload();
             } catch (ex) { setMsg(ex instanceof Error ? ex.message : String(ex)); }
           }}>슬롯 배정</button>
@@ -602,46 +643,71 @@ function SponsorSlotsPanel() {
 }
 
 function SubsPanel() {
-  const [rows, setRows] = useState<SubscriptionAdmin[]>([]);
-  useEffect(() => { listSubscriptionsAdmin().then(setRows).catch(() => setRows([])); }, []);
+  const [rows, setRows] = useState<SubscriptionAdmin[] | null>(null);
+  const [loadErr, setLoadErr] = useState(false);
+  const reload = useCallback(() => {
+    setLoadErr(false);
+    listSubscriptionsAdmin().then(setRows).catch(() => { setRows(null); setLoadErr(true); });
+  }, []);
+  useEffect(reload, [reload]);
+  if (loadErr) return <div className="empty">구독 목록을 불러오지 못했어요. <button className="linklike" onClick={reload}>다시 시도</button></div>;
+  if (rows === null) return <div className="empty">불러오는 중…</div>;
   if (rows.length === 0) return <div className="empty">구독이 없습니다.</div>;
-  const soon = (d: string | null) => d && new Date(d).getTime() - Date.now() < 7 * 86400000;
+  const now = Date.now();
+  const soon = (d: string | null) => d && new Date(d).getTime() - now < 7 * 86400000;
+  const expired = (r: SubscriptionAdmin) => r.status === "active" && r.current_period_end && new Date(r.current_period_end).getTime() < now;
   return (
     <>
       {rows.map((r) => (
         <div className="sub-item" key={r.id}>
-          <div>👑 {r.plan_id} · <span className="mono" style={{ fontSize: 11 }}>{r.user_id.slice(0, 8)}</span>
+          <div>👑 {r.plan_id} · <span className="mono" style={{ fontSize: 11 }}>{(r.user_id ?? "").slice(0, 8)}</span>
             {" · "}주기말 <span style={soon(r.current_period_end) ? { color: "var(--warn)" } : undefined}>{r.current_period_end?.slice(0, 10) ?? "-"}</span>
             {" · "}{(r.price_snapshot ?? 0).toLocaleString()}원</div>
-          <Badge kind={r.status === "active" ? "good" : r.status === "past_due" ? "soon" : "muted"}>{r.status}</Badge>
+          <Badge kind={expired(r) ? "muted" : r.status === "active" ? "good" : r.status === "past_due" ? "soon" : "muted"}>
+            {expired(r) ? "기간 만료(갱신 대기)" : r.status}</Badge>
         </div>
       ))}
-      <div className="frm-note">갱신은 수동: 주기말 도래 시 재청구를 안내하고 미입금이면 past_due 처리(SQL/차기 버튼).</div>
+      <div className="frm-note">만료된 구독은 배지·혜택이 자동 중지됩니다(0012 — pro_verified가 주기말을 검사). 갱신 주문이 들어오면 입금 확인 시 기간이 이어집니다.</div>
     </>
   );
 }
 
 function RefundPanel() {
-  const [due, setDue] = useState<RefundDueRow[]>([]);
+  const [rows, setRows] = useState<AdminChargeRow[] | null>(null);
+  const [loadErr, setLoadErr] = useState(false);
   const [busy, setBusy] = useState("");
-  const reload = useCallback(() => { listRefundDue().then(setDue).catch(() => setDue([])); }, []);
+  const reload = useCallback(() => {
+    setLoadErr(false);
+    listAdminCharges().then(setRows).catch(() => { setRows(null); setLoadErr(true); });
+  }, []);
   useEffect(reload, [reload]);
-  if (due.length === 0) return <div className="empty">미이행 환불 대상이 없습니다 ✓</div>;
+  if (loadErr) return <div className="empty">청구 목록을 불러오지 못했어요. <button className="linklike" onClick={reload}>다시 시도</button></div>;
+  if (rows === null) return <div className="empty">불러오는 중…</div>;
+  const paid = rows.filter((c) => c.status === "paid");
+  if (paid.length === 0) return <div className="empty">결제 완료(환불 가능) 청구가 없습니다 ✓</div>;
   return (
     <>
-      <div className="frm-note">⚠ 결제됐으나 소개 미이행 건 — 약관 §5에 따라 <b>전액 자동 환불</b> 대상입니다.</div>
-      {due.map((r) => (
-        <div className="sub-item" key={r.id}>
-          <div>↩️ 연결료 {(r.amount + r.vat).toLocaleString()}원 · {r.user_email ?? ""} · 결제 {r.paid_at?.slice(0, 10)}</div>
-          <button className="btn primary sm" disabled={busy === r.id}
-            onClick={async () => {
-              setBusy(r.id);
-              try { await refundCharge(r.id, r.amount + r.vat, "소개 미이행 — 전액 환불(약관 §5)"); reload(); }
-              catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
-              finally { setBusy(""); }
-            }}>전액 환불 처리</button>
-        </div>
-      ))}
+      <div className="frm-note">결제 완료 청구 — 미이행·청약철회 시 여기서 환불합니다. 구독 환불은 구독 취소+크레딧 회수, 스폰서 환불은 슬롯 회수가 자동 동반됩니다(0012).</div>
+      {paid.map((r) => {
+        const total = r.amount + r.vat;
+        const unfulfilled = r.kind === "boost" && !r.has_slot;
+        return (
+          <div className="sub-item" key={r.id}>
+            <div style={{ minWidth: 0 }}>↩️ <b>{chargeKindLabel(r)}</b> {total.toLocaleString()}원 · {r.user_email ?? ""} · 결제 {r.paid_at?.slice(0, 10)}
+              {unfulfilled && <div className="frm-note" style={{ color: "var(--warn)" }}>⚠ 슬롯 미배정 — 게재 미이행이면 전액 환불 대상(약관 §5)</div>}
+            </div>
+            <button className="btn ghost sm" disabled={busy === r.id}
+              onClick={async () => {
+                const reason = window.prompt("환불 사유", unfulfilled ? "게재 미이행 — 전액 환불(약관 §5)" : "서비스 미이행/청약철회 — 전액 환불");
+                if (!reason?.trim()) return;
+                setBusy(r.id);
+                try { await refundCharge(r.id, total, reason.trim()); reload(); }
+                catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+                finally { setBusy(""); }
+              }}>전액 환불 처리</button>
+          </div>
+        );
+      })}
     </>
   );
 }
@@ -652,7 +718,8 @@ function IntroQueue() {
   const [rows, setRows] = useState<IntroQueueRow[] | null>(null);
   const [briefs, setBriefs] = useState<BuyerBriefRow[]>([]);
   const [deals, setDeals] = useState<{ id: string; status: string; is_demo: boolean; category_id: string; mode: string }[]>([]);
-  const [mailed, setMailed] = useState<Set<string>>(new Set()); // 소개 초안을 연 건만 '소개 완료' 활성화
+  const [mailed, setMailed] = useState<Set<string>>(new Set()); // 소개 초안을 연 건 표시(참고용)
+  const [evid, setEvid] = useState<Record<string, string>>({}); // 발송 증빙 인라인 입력(실패해도 값 유지)
   const [loadErr, setLoadErr] = useState(false);
   const reload = useCallback(() => {
     setLoadErr(false);
@@ -661,17 +728,20 @@ function IntroQueue() {
     listDealsAdmin().then(setDeals).catch(() => setDeals([]));
   }, []);
   useEffect(reload, [reload]);
-  /* 소개 완료 = admin_introduce RPC 단일 지점(0011) — 상태·양측 동의 검증 + 이중 실행 방지 + 증빙 필수.
+  /* 소개 완료 = admin_introduce RPC 단일 지점(0011·0012) — 상태·양측 동의 검증 + 이중 실행 방지 + 증빙 필수.
    * connection 스위치가 켜진 경우에만 B/C형 청구가 함께 생성된다(꺼진 지금은 기록만). */
-  const done = async (kind: "partner" | "deal", id: string) => {
-    const evidence = window.prompt("발송 증빙 메모(필수) — 예: 2026-07-05 mailto 발송, 참조 P-XXXX");
-    if (!evidence?.trim()) return;
-    try { await adminIntroduce(kind, id, evidence.trim()); }
+  const done = async (kind: "partner" | "deal", id: string, evidence: string) => {
+    try { await adminIntroduce(kind, id, evidence.trim()); reload(); } // 성공 시에만 reload — 실패하면 입력 유지 후 재시도
     catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
-    reload();
   };
   const confirmOwner = async (kind: "partner" | "deal", id: string) => {
     try { await markOwnerConfirmed(kind, id); } catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+    reload();
+  };
+  /* 진행 불가 정리 — 메일 회신 거절·연락 두절·구버전(동의 없음) 건이 큐에 영구 잔류하지 않게 */
+  const declineRow = async (kind: "partner" | "deal", id: string) => {
+    if (!window.confirm("이 신청을 '진행 안 함'으로 정리할까요? 신청자에게는 '진행되지 않음'으로 표시됩니다.")) return;
+    try { await adminDeclineInterest(kind, id); } catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
     reload();
   };
   const guideUrl = `${location.origin}${import.meta.env.BASE_URL}?view=deal-guide`;
@@ -726,12 +796,18 @@ function IntroQueue() {
               )}
               {ready && (
                 <a className="btn primary sm" href={mailDraft(r)} onClick={() => setMailed((s) => new Set(s).add(key))}>
-                  {r.kind === "deal" ? "② 소개 초안" : "메일 초안"}
+                  {r.kind === "deal" ? "② 소개 초안" : "메일 초안"}{mailed.has(key) ? " ✓" : ""}
                 </a>
               )}
-              <button className="btn ghost sm" disabled={!ready || !mailed.has(key)}
-                title={!ready ? "양측 이메일·동의가 있어야 소개할 수 있어요" : !mailed.has(key) ? "소개 초안을 먼저 발송하세요" : ""}
-                onClick={() => done(r.kind, r.id)}>소개 완료</button>
+              {ready && (
+                <input style={{ width: 170 }} placeholder="발송 증빙 — 예: 07-05 발송 P-XXXX"
+                  value={evid[key] ?? ""} onChange={(e) => setEvid((s) => ({ ...s, [key]: e.target.value }))} />
+              )}
+              <button className="btn ghost sm" disabled={!ready || !(evid[key] ?? "").trim()}
+                title={!ready ? "양측 이메일·동의가 있어야 소개할 수 있어요" : !(evid[key] ?? "").trim() ? "초안 발송 후 증빙 메모를 입력하세요" : ""}
+                onClick={() => done(r.kind, r.id, evid[key])}>소개 완료</button>
+              <button className="btn ghost sm" title="회신 거절·연락 두절·구버전(동의 없음) 건 정리 — 신청자에게 '진행되지 않음' 표시"
+                onClick={() => declineRow(r.kind, r.id)}>진행 안 함</button>
             </div>
           </div>
         );
@@ -936,7 +1012,7 @@ export function Admin() {
       <div className="sec-title">👑 구독 현황 (Pro)</div>
       <SubsPanel />
 
-      <div className="sec-title">↩️ 환불 큐 (소개 미이행 = 전액 환불)</div>
+      <div className="sec-title">↩️ 환불 (결제 완료 청구 — 미이행·청약철회)</div>
       <RefundPanel />
 
       <div className="sec-title">📮 소개 대기 (매칭 신청 · 인수 관심 · 브리프)</div>
