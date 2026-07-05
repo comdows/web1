@@ -67,6 +67,13 @@ function useTheme() {
   return { toggle: () => setTheme((t) => (t === "dark" ? "light" : "dark")) };
 }
 
+const VIEW_TITLES: Partial<Record<ViewName, string>> = {
+  search: "검색", partners: "제휴 매칭", exchange: "플랫폼 거래소", compare: "비교",
+  onboarding: "맞춤 추천", account: "계정", submit: "플랫폼 제보", admin: "관리 콘솔",
+  terms: "이용약관", privacy: "개인정보처리방침", "deal-guide": "양수도 가이드", "value-check": "가치 자가 진단",
+  "ai-finder": "AI 도구 찾기", weekly: "새로 나온 플랫폼·AI", packs: "업종별 시작 조합",
+};
+
 export default function App() {
   const init = readParams();
   const [view, setView] = useState<ViewName>(init.view);
@@ -100,13 +107,6 @@ export default function App() {
 
   const go = useCallback<(v: ViewName, params?: { id?: string; q?: string }) => void>((v, params) => {
     setView(v);
-    const titles: Partial<Record<ViewName, string>> = {
-      search: "검색", partners: "제휴 매칭", exchange: "플랫폼 거래소", compare: "비교",
-      onboarding: "맞춤 추천", account: "계정", submit: "플랫폼 제보", admin: "관리 콘솔",
-      terms: "이용약관", privacy: "개인정보처리방침", "deal-guide": "양수도 가이드", "value-check": "가치 자가 진단",
-      "ai-finder": "AI 도구 찾기", weekly: "새로 나온 플랫폼·AI", packs: "업종별 시작 조합",
-    };
-    document.title = titles[v] ? `${titles[v]} — 세모플` : "세모플 — 세상의 모든 플랫폼";
     if (params?.id !== undefined) setDetailId(params.id);
     if (params?.q !== undefined) setSearchQ(params.q);
     const sp = new URLSearchParams();
@@ -123,6 +123,12 @@ export default function App() {
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
+
+  // 탭 타이틀 — 클릭 이동뿐 아니라 뒤로가기(popstate)·URL 직접 진입에서도 현재 화면과 일치
+  useEffect(() => {
+    if (view === "detail") return; // 상세는 PlatformDetail이 플랫폼명으로 직접 설정
+    document.title = VIEW_TITLES[view] ? `${VIEW_TITLES[view]} — 세모플` : "세모플 — 세상의 모든 플랫폼";
+  }, [view]);
 
   // sync home filter state to URL only while on home
   useEffect(() => {
@@ -181,7 +187,8 @@ export default function App() {
           <NavItem active={view === "onboarding"} onClick={() => go("onboarding")} label="추천">✨ <span className="navlbl">추천</span></NavItem>
           <NavItem active={view === "partners"} onClick={() => go("partners")} label="제휴">🤝 <span className="navlbl">제휴</span>{!FLAGS.stage2 && <span className="soon">준비중</span>}</NavItem>
           <NavItem active={view === "exchange"} onClick={() => go("exchange")} label="거래소">🏦 <span className="navlbl">거래소</span>{!FLAGS.stage3 && <span className="soon">준비중</span>}</NavItem>
-          <NavItem onClick={() => { setFav(true); go("home"); }} label={`즐겨찾기 ${favs.count}개`}>★ {favs.count}</NavItem>
+          {/* 검색어를 함께 지워야 '즐겨찾기 N개'인데 교집합 0건이 뜨는 혼란이 없다 */}
+          <NavItem onClick={() => { setQ(""); setFav(true); go("home"); }} label={`즐겨찾기 ${favs.count}개`}>★ {favs.count}</NavItem>
         </nav>
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
           {remoteEnabled && (

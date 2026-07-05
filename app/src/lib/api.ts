@@ -559,10 +559,16 @@ export async function listMyBriefs(): Promise<BuyerBriefRow[]> {
   return rest<BuyerBriefRow[]>(`buyer_briefs?user_id=eq.${uid}&select=id,categories,budget_band,mode,entity,note,active,created_at&order=created_at.desc&limit=50`);
 }
 
-/* 최신 코드명(D-###) — 매물 게시 기본값 제안용(세션 인덱스 대신 DB 기준) */
+/* 최신 코드명(D-###) — 매물 게시 기본값 제안용(세션 인덱스 대신 DB 기준).
+ * id는 text PK라 사전순 정렬은 D-999 > D-1000 — 숫자 기준 최댓값을 클라이언트에서 계산 */
 export async function fetchLatestDealCode(): Promise<string | null> {
-  const rows = await rest<{ id: string }[]>("deals?select=id&order=id.desc&limit=1");
-  return rows[0]?.id ?? null;
+  const rows = await rest<{ id: string }[]>("deals?select=id&limit=1000");
+  let best: string | null = null; let bestN = -1;
+  for (const r of rows) {
+    const m = /^D-(\d+)$/.exec(r.id);
+    if (m && Number(m[1]) > bestN) { bestN = Number(m[1]); best = r.id; }
+  }
+  return best;
 }
 /* 이미 게시된 매물의 소유자 확인(승인 재진입 판정용 — admin RLS) */
 export async function getDealOwner(id: string): Promise<string | null> {

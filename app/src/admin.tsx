@@ -509,7 +509,9 @@ function DealSubQueue() {
 const chargeKindLabel = (c: { kind: string; fee_tier: string | null }) =>
   c.kind === "boost" ? "스폰서" : c.kind === "subscription" ? "Pro 구독" : `연결료 ${c.fee_tier ?? ""}형`;
 
-function BillingQueuePanel() {
+/* tick/bump — 입금 확인·슬롯 배정·환불이 서로의 목록(배정 대기·환불 대상)에 즉시 반영되게
+ * 하는 형제 패널 간 갱신 신호(새로고침 없이 다음 행동으로 이어지도록). */
+function BillingQueuePanel({ tick, bump }: { tick: number; bump: () => void }) {
   const [rows, setRows] = useState<AdminChargeRow[] | null>(null);
   const [loadErr, setLoadErr] = useState(false);
   const [dep, setDep] = useState<Record<string, string>>({});
@@ -518,7 +520,7 @@ function BillingQueuePanel() {
     setLoadErr(false);
     listAdminCharges().then(setRows).catch(() => { setRows(null); setLoadErr(true); });
   }, []);
-  useEffect(reload, [reload]);
+  useEffect(reload, [reload, tick]);
   if (loadErr) return <div className="empty">청구 목록을 불러오지 못했어요(0012 마이그레이션 필요 여부 확인). <button className="linklike" onClick={reload}>다시 시도</button></div>;
   if (rows === null) return <div className="empty">불러오는 중…</div>;
   const waiting = rows.filter((c) => c.status === "awaiting_deposit");
@@ -547,7 +549,7 @@ function BillingQueuePanel() {
                 title="입금자명 대조 후 확인 — 현금영수증·세금계산서는 홈택스 수기 발행 후 메모"
                 onClick={async () => {
                   setBusy(c.id);
-                  try { await confirmDeposit(c.id, dep[c.id].trim()); reload(); }
+                  try { await confirmDeposit(c.id, dep[c.id].trim()); bump(); }
                   catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
                   finally { setBusy(""); }
                 }}>✓ 입금 확인</button>
@@ -556,7 +558,7 @@ function BillingQueuePanel() {
                 onClick={async () => {
                   if (!window.confirm(`${chargeKindLabel(c)} ${total.toLocaleString()}원 주문을 취소할까요?`)) return;
                   setBusy(c.id);
-                  try { await cancelCharge(c.id, overdue ? "기한 내 미입금 — 취소" : "운영자 취소"); reload(); }
+                  try { await cancelCharge(c.id, overdue ? "기한 내 미입금 — 취소" : "운영자 취소"); bump(); }
                   catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
                   finally { setBusy(""); }
                 }}>취소</button>
@@ -568,19 +570,21 @@ function BillingQueuePanel() {
   );
 }
 
-function SponsorSlotsPanel() {
+function SponsorSlotsPanel({ tick, bump }: { tick: number; bump: () => void }) {
   const [slots, setSlots] = useState<SponsorSlotAdmin[]>([]);
+  const [loadErr, setLoadErr] = useState(false);
   const [posts, setPosts] = useState<PartnerPostAdmin[]>([]);
   const [paidBoosts, setPaidBoosts] = useState<AdminChargeRow[]>([]);
   const [form, setForm] = useState({ slot_no: "1", post: "", user: "", charge: "", starts: "", ends: "" });
   const [msg, setMsg] = useState("");
   const reload = useCallback(() => {
-    listSponsorSlotsAdmin().then(setSlots).catch(() => setSlots([]));
+    setLoadErr(false);
+    listSponsorSlotsAdmin().then(setSlots).catch(() => { setSlots([]); setLoadErr(true); });
     listPartnerPosts(["published", "matched"]).then(setPosts).catch(() => setPosts([]));
     // 입금 확인됐지만 아직 슬롯이 없는 스폰서 청구 — 여기서 선택하면 폼이 자동으로 채워진다
     listAdminCharges().then((cs) => setPaidBoosts(cs.filter((c) => c.kind === "boost" && c.status === "paid" && !c.has_slot))).catch(() => setPaidBoosts([]));
   }, []);
-  useEffect(reload, [reload]);
+  useEffect(reload, [reload, tick]);
   const today = new Date().toISOString().slice(0, 10);
   const active = slots.filter((sl) => sl.starts_on <= today && sl.ends_on >= today);
   const fillFromCharge = (c: AdminChargeRow) => {
@@ -592,6 +596,7 @@ function SponsorSlotsPanel() {
   };
   return (
     <div className="admin-card">
+      {loadErr && <div className="err">슬롯 목록을 불러오지 못했어요 — 아래 현황이 실제와 다를 수 있습니다. <button className="linklike" onClick={reload}>다시 시도</button></div>}
       <div className="frm-note">활성 슬롯 {active.length}/2 — 기간 충돌·3번째 슬롯은 DB 제약이 거부합니다.</div>
       {paidBoosts.map((c) => (
         <div className="sub-item" key={c.id}>
@@ -634,7 +639,7 @@ function SponsorSlotsPanel() {
               await createSponsorSlot({ slot_no: Number(form.slot_no), partner_post_id: form.post, sponsor_user_id: form.user.trim(),
                 starts_on: form.starts, ends_on: form.ends, ...(form.charge ? { charge_id: form.charge } : {}) });
               setForm({ slot_no: "1", post: "", user: "", charge: "", starts: "", ends: "" });
-              reload();
+              bump();
             } catch (ex) { setMsg(ex instanceof Error ? ex.message : String(ex)); }
           }}>슬롯 배정</button>
       </div>
@@ -672,7 +677,7 @@ function SubsPanel() {
   );
 }
 
-function RefundPanel() {
+function RefundPanel({ tick, bump }: { tick: number; bump: () => void }) {
   const [rows, setRows] = useState<AdminChargeRow[] | null>(null);
   const [loadErr, setLoadErr] = useState(false);
   const [busy, setBusy] = useState("");
@@ -680,7 +685,7 @@ function RefundPanel() {
     setLoadErr(false);
     listAdminCharges().then(setRows).catch(() => { setRows(null); setLoadErr(true); });
   }, []);
-  useEffect(reload, [reload]);
+  useEffect(reload, [reload, tick]);
   if (loadErr) return <div className="empty">청구 목록을 불러오지 못했어요. <button className="linklike" onClick={reload}>다시 시도</button></div>;
   if (rows === null) return <div className="empty">불러오는 중…</div>;
   const paid = rows.filter((c) => c.status === "paid");
@@ -701,7 +706,7 @@ function RefundPanel() {
                 const reason = window.prompt("환불 사유", unfulfilled ? "게재 미이행 — 전액 환불(약관 §5)" : "서비스 미이행/청약철회 — 전액 환불");
                 if (!reason?.trim()) return;
                 setBusy(r.id);
-                try { await refundCharge(r.id, total, reason.trim()); reload(); }
+                try { await refundCharge(r.id, total, reason.trim()); bump(); }
                 catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
                 finally { setBusy(""); }
               }}>전액 환불 처리</button>
@@ -825,7 +830,10 @@ function IntroQueue() {
             </div>
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
               <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{b.created_at.slice(0, 10)}</span>
-              <button className="btn ghost sm" onClick={async () => { await deactivateBrief(b.id).catch(() => { /* 0005 필요 */ }); reload(); }}>안내 완료</button>
+              <button className="btn ghost sm" onClick={async () => {
+                try { await deactivateBrief(b.id); reload(); }
+                catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+              }}>안내 완료</button>
             </div>
           </div>
         );
@@ -837,10 +845,12 @@ function IntroQueue() {
 /* ── 운영자 클레임 검수 — 승인 시 운영자 지정 + 검증 배지(platforms.verified) ── */
 function OperatorClaimQueue() {
   const [items, setItems] = useState<Awaited<ReturnType<typeof listOperatorClaims>> | null>(null);
+  const [loadErr, setLoadErr] = useState(false);
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState("");
   const reload = useCallback(() => {
-    listOperatorClaims().then(setItems).catch(() => setItems([]));
+    setLoadErr(false);
+    listOperatorClaims().then(setItems).catch(() => { setItems(null); setLoadErr(true); });
   }, []);
   useEffect(reload, [reload]);
   const act = async (c: (typeof items extends (infer T)[] | null ? T : never), approve: boolean) => {
@@ -856,6 +866,7 @@ function OperatorClaimQueue() {
       return dom && (dom === host || host.endsWith("." + dom) || dom.endsWith("." + host) || host.includes(dom.split(".")[0]));
     } catch { return false; }
   };
+  if (loadErr) return <div className="empty">인증 신청 목록을 불러오지 못했어요. <button className="linklike" onClick={reload}>다시 시도</button></div>;
   if (items === null) return <div className="empty">불러오는 중…</div>;
   if (items.length === 0) return <div className="empty">대기 중인 운영자 인증 신청이 없습니다 ✓</div>;
   return (
@@ -900,11 +911,14 @@ function LivePanel() {
       // 성사·마감 시 남은 pending 신청을 함께 정리(영구 '접수됨' 방치 방지)
       if (status === "matched" || status === "closed") await declinePendingInterests(id).catch(() => { /* noop */ });
       reload();
-    } finally { setBusy(""); }
+    } catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(""); }
   };
   const moveDeal = async (id: string, status: "open" | "in_progress" | "closed") => {
     setBusy(id);
-    try { await updateDealStatus(id, status); reload(); } finally { setBusy(""); }
+    try { await updateDealStatus(id, status); reload(); }
+    catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(""); }
   };
   if (posts.length === 0 && deals.length === 0) return <div className="empty">게시 중인 제안·매물이 없습니다.</div>;
   return (
@@ -947,6 +961,8 @@ export function Admin() {
   const [pending, setPending] = useState(0);
   const [popular, setPopular] = useState<{ query: string; cnt: number }[]>([]);
   const [metrics, setMetrics] = useState<Awaited<ReturnType<typeof fetchAdminMetrics>> | null>(null);
+  const [billingTick, setBillingTick] = useState(0); // 과금 3패널(입금·슬롯·환불) 간 갱신 신호
+  const bumpBilling = useCallback(() => setBillingTick((t) => t + 1), []);
 
   const reload = useCallback(() => {
     listSubmissions(["pending", "hold"]).then(setQueue).catch(() => setQueue([]));
@@ -1004,16 +1020,16 @@ export function Admin() {
       <OperatorClaimQueue />
 
       <div className="sec-title">💳 입금 확인 큐 (무통장 — 입금자명 대조 후 확인)</div>
-      <BillingQueuePanel />
+      <BillingQueuePanel tick={billingTick} bump={bumpBilling} />
 
       <div className="sec-title">🪧 스폰서 슬롯 (보드 상단 2슬롯 · AD 표기)</div>
-      <SponsorSlotsPanel />
+      <SponsorSlotsPanel tick={billingTick} bump={bumpBilling} />
 
       <div className="sec-title">👑 구독 현황 (Pro)</div>
       <SubsPanel />
 
       <div className="sec-title">↩️ 환불 (결제 완료 청구 — 미이행·청약철회)</div>
-      <RefundPanel />
+      <RefundPanel tick={billingTick} bump={bumpBilling} />
 
       <div className="sec-title">📮 소개 대기 (매칭 신청 · 인수 관심 · 브리프)</div>
       <IntroQueue />
