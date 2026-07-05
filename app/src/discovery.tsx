@@ -331,7 +331,9 @@ export function Compare() {
   const index = usePlatformIndex();
   // 공유 링크(?ids=a,b,c)로 진입하면 비교함을 채운다 — 비교표가 "보낼 수 있는 산출물"이 됨
   useEffect(() => {
-    const ids = (new URLSearchParams(location.search).get("ids") ?? "").split(",").filter(Boolean).slice(0, 4);
+    // 삭제·개명된 id는 담지 않는다 — 유령 항목이 4개 상한 슬롯을 소모하고 개별 제거도 불가했음
+    const ids = (new URLSearchParams(location.search).get("ids") ?? "").split(",").filter(Boolean)
+      .filter((id) => index.get(id)).slice(0, 4);
     for (const id of ids) if (!Compare_hasSafe(id)) cmp.toggle(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

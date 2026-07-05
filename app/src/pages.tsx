@@ -8,7 +8,7 @@ import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
 import {
   applyToPartnerPost, createBuyerBrief, createDealSubmission, createPartnerPost,
-  fetchDeals, fetchPartnerPosts, fetchSponsorSlots, founderOptIn, listMyDealInterests, listMyPartnerInterests,
+  fetchDeals, fetchPartnerPosts, fetchSponsorSlots, founderOptIn, listMyDealInterests, listMyPartnerInterests, listMyPartnerPosts,
   partnerRefCode, placeOrder, registerDealInterest, remoteEnabled,
 } from "./lib/api";
 import type { SponsorSlotPublic } from "./lib/api";
@@ -274,6 +274,7 @@ export function Partners() {
   const [boardType, setBoardType] = useState("");
   const [applyTo, setApplyTo] = useState<string | null>(null);
   const [applied, setApplied] = useState<Set<string>>(new Set());
+  const [myPostIds, setMyPostIds] = useState<Set<string>>(new Set());     // 내가 올린 제안(자기 신청 CTA 숨김)
   const [sponsors, setSponsors] = useState<SponsorSlotPublic[]>([]);      // 보드 상단 광고 슬롯(공개 뷰)
   const [deposit, setDeposit] = useState<DepositInstructions | null>(null); // 주문 직후 무통장 안내
   const [orderBusy, setOrderBusy] = useState(false);   // 더블클릭 중복 주문 방지
@@ -284,10 +285,11 @@ export function Partners() {
     fetchPartnerPosts().then(setPosts).catch(() => setPosts([]));
     fetchSponsorSlots().then(setSponsors).catch(() => setSponsors([]));
   }, [posted]);
-  // 내가 이미 신청한 제안 표시(새로고침에도 유지)
+  // 내가 이미 신청한 제안 + 내가 올린 제안(자기 신청 방지) 표시(새로고침에도 유지)
   useEffect(() => {
     if (!remoteEnabled || !session) return;
     listMyPartnerInterests().then((rows) => setApplied(new Set(rows.map((r) => r.post_id ?? "").filter(Boolean)))).catch(() => { /* noop */ });
+    listMyPartnerPosts().then((rows) => setMyPostIds(new Set(rows.map((r) => r.id)))).catch(() => { /* noop */ });
   }, [session]);
 
   const visibleTypes = useMemo(
@@ -437,7 +439,8 @@ export function Partners() {
               if (orderBusy) return;
               setOrderBusy(true);
               try {
-                const rule = `${session.user.email?.split("@")[0] ?? ""} Pro`;
+                // 입금자명은 은행 표기 한도 안의 대조 코드(공백 없는 짧은 문자열)
+                const rule = `PRO${session.user.id.slice(0, 4).toUpperCase()}`;
                 const o = await placeOrder("subscription", "pro", undefined, rule);
                 // 금액은 서버 산정액(할인 반영)을 표시 — 클라이언트 상수와의 불일치 방지
                 setDeposit(await bankTransferProvider.instruct(o.id, o.total, rule));
@@ -451,7 +454,7 @@ export function Partners() {
           🧾 <b>주문이 접수됐어요 — 무통장 입금 안내</b>
           <p style={{ margin: "6px 0", fontSize: 13.5 }}>
             입금 계좌: <b>{deposit.bank}</b> · 금액: <b>{deposit.totalKrw.toLocaleString()}원</b>(VAT 포함) ·
-            입금자명: <b>{deposit.depositorRule}</b> · 기한: {deposit.deadlineDays}일 이내
+            입금자명(보내는 분): <b>{deposit.depositorRule}</b> · 기한: {deposit.deadlineDays}일 이내
           </p>
           <p style={{ margin: 0, fontSize: 12.5 }} className="faint">
             입금 확인 후 활성화됩니다(영업일 1일 이내 처리). 입금 기한이 지나면 주문은 취소 처리되고(재주문 가능),
@@ -517,7 +520,8 @@ export function Partners() {
             <p style={{ fontSize: 12.5 }}><b>Give</b> {p.give_text}<br /><b>Get</b> {p.get_text}<br />
               <span className="faint">{p.size_text}{p.posted ? ` · ${p.posted}` : ""}</span></p>
             {p.status === "published" && (
-              applied.has(p.id) ? <div className="ok" style={{ fontSize: 13 }}>신청 완료 ✓ 진행 상태는 계정 → 내 활동에서 확인하세요</div>
+              myPostIds.has(p.id) ? <div className="frm-note">내가 올린 제안 — 신청 현황은 계정 → <b>받은 매칭 신청</b>에서 확인하세요.</div>
+              : applied.has(p.id) ? <div className="ok" style={{ fontSize: 13 }}>신청 완료 ✓ 진행 상태는 계정 → 내 활동에서 확인하세요</div>
               : applyTo === p.id ? (
                 !session
                   ? <div className="frm-note">매칭 신청에는 로그인이 필요해요. <button className="linklike" onClick={() => go("account")}>로그인 →</button></div>
@@ -921,7 +925,7 @@ export function Exchange() {
 
       {/* ── 매물 보드 ── */}
       <div className="sec-title" id="x-board">매물 보드</div>
-      <div className="result-meta">매물 {shown.length}건 (익명 리스팅{shown.every((d) => d.demo) ? " — 아직 데모 예시" : ""})</div>
+      <div className="result-meta">매물 {shown.length}건 (익명 리스팅{shown.length > 0 && shown.every((d) => d.demo) ? " — 아직 데모 예시" : ""})</div>
       <div className="card-grid">
         {shown.map((d) => (
           <div className="pcard" key={d.id}>

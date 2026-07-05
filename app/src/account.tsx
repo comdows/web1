@@ -14,7 +14,7 @@ import {
   briefMatchesDeal, cancelDealSubmission, cancelSubmission, closeMyPost, createSubmission,
   deactivateBrief, deleteMyAccount, fetchDeals, listInterestsOnMyPosts, listMyBriefs, listMyCharges, listMyDealInterests,
   listMyDealSubmissions, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions,
-  placeOrder, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
+  partnerRefCode, placeOrder, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
 } from "./lib/api";
 import { bankTransferProvider, fetchBillingSettings } from "./lib/billing";
 import type { DepositInstructions } from "./lib/billing";
@@ -37,6 +37,13 @@ function RemoteOffNotice() {
     </div>
   );
 }
+
+/* 미매핑 인증 오류의 한국어 폴백 — 영문/기술 문자열("Failed to fetch", "AUTH 500")이 그대로 노출되지 않게 */
+const authErrKo = (m: string) =>
+  /failed to fetch|network|load failed/i.test(m) ? "연결에 실패했어요. 네트워크 상태를 확인해 주세요."
+  : /rate limit|too many/i.test(m) ? "요청이 많아요. 잠시 후 다시 시도해 주세요."
+  : /[가-힣]/.test(m) ? m
+  : "요청을 처리하지 못했어요. 잠시 후 다시 시도해 주세요.";
 
 /* ── 로그인 / 회원가입 ─────────────────────────────────────── */
 export function AuthPanel({ compact = false }: { compact?: boolean }) {
@@ -71,14 +78,14 @@ export function AuthPanel({ compact = false }: { compact?: boolean }) {
       if (/email not confirmed/i.test(m)) { setErr("이메일 확인이 필요해요. 받은 메일의 링크를 먼저 눌러주세요."); setNeedsConfirm(true); }
       else setErr(/invalid login credentials/i.test(m) ? "이메일 또는 비밀번호가 맞지 않습니다."
         : /already registered/i.test(m) ? "이미 가입된 이메일입니다. 로그인해 주세요."
-        : /at least 6/i.test(m) ? "비밀번호는 6자 이상이어야 합니다." : m);
+        : /at least 6/i.test(m) ? "비밀번호는 6자 이상이어야 합니다." : authErrKo(m));
     } finally { setBusy(false); }
   };
 
   const resend = async () => {
     setErr(""); setBusy(true);
     try { await resendConfirmation(email.trim()); setOk("확인 메일을 다시 보냈어요. 메일함(스팸함 포함)을 확인해 주세요."); }
-    catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+    catch (ex) { setErr(authErrKo(ex instanceof Error ? ex.message : String(ex))); }
     finally { setBusy(false); }
   };
 
@@ -370,9 +377,10 @@ export function Account() {
         )}
 
       {deposit && (
-        <div className="banner" style={{ marginTop: 20 }}>
+        <div className="banner" id="deposit-banner" style={{ marginTop: 20 }}>
           🧾 <b>스폰서 주문 접수 — 무통장 입금 안내</b>: {deposit.bank} · <b>{deposit.totalKrw.toLocaleString()}원</b>(VAT 포함) ·
-          입금자명 <b>{deposit.depositorRule}</b> · 기한 {deposit.deadlineDays}일. 입금 확인 후 게재가 시작되며 미이행 시 전액 환불됩니다.
+          입금자명(보내는 분) <b>{deposit.depositorRule}</b> · 기한 {deposit.deadlineDays}일.
+          입금 확인 후 게재가 시작되며 미이행 시 전액 환불됩니다. 이 안내는 아래 <b>결제 내역</b>에서 언제든 다시 볼 수 있어요.
         </div>
       )}
 
@@ -396,8 +404,9 @@ export function Account() {
                         onClick={() => doAct(i.id, () => respondToInterest(i.id, false))}>거절</button>
                     </>
                   )}
+                  {/* declined는 본인 거절 외에 운영자 정리·마감으로도 기록됨 — 주체를 단정하지 않는 중립 문구 */}
                   <Badge kind={i.status === "introduced" ? "verify" : i.status === "declined" ? "muted" : i.owner_confirmed_at ? "good" : "soon"}>
-                    {i.status === "introduced" ? "소개 완료" : i.status === "declined" ? "거절함" : i.owner_confirmed_at ? "동의함 — 소개 대기" : "응답 대기"}
+                    {i.status === "introduced" ? "소개 완료" : i.status === "declined" ? "진행되지 않음" : i.owner_confirmed_at ? "동의함 — 소개 대기" : "응답 대기"}
                   </Badge>
                 </div>
               </div>
@@ -476,10 +485,13 @@ export function Account() {
                     <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === p.id}
                       title="보드 상단 고정(월 99,000원 · AD 표기) — 무통장 입금 후 게재"
                       onClick={() => doAct(p.id, async () => {
-                        const rule = `스폰서 ${p.title.slice(0, 8)}`;
+                        // 입금자명은 은행 표기 한도(6~12자) 안의 대조 코드로 — 제목 조각은 잘리거나 변형돼 대조가 어긋남
+                        const rule = `SP${partnerRefCode(p.id).slice(2)}`;
                         const o = await placeOrder("boost", undefined, p.id, rule);
                         // 금액은 서버 산정액(할인 반영) — 클라이언트 상수와의 불일치 방지
                         setDeposit(await bankTransferProvider.instruct(o.id, o.total, rule));
+                        // 안내 배너는 화면 위쪽에 렌더됨 — 클릭 지점에서 안 보이면 주문이 안 된 걸로 오인
+                        setTimeout(() => document.getElementById("deposit-banner")?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
                       })}>🪧 상단 고정 신청</button>
                   )}
                   {(p.status === "pending" || p.status === "published") && (
@@ -523,6 +535,12 @@ export function Account() {
             <div className="sub-item" key={i.id}>
               <div style={{ minWidth: 0 }}>🤝 <b>매칭 신청</b> — "{i.partner_posts?.title ?? i.post_id}"
                 {i.status === "declined" && <div className="frm-note">제안자가 다른 상대와 진행했거나 모집을 마감했어요 — 보드의 다른 제안도 살펴보세요.</div>}
+                {i.status === "introduced" && (
+                  <div className="frm-note">
+                    소개 메일이 발송됐어요 — 메일함(스팸함 포함)을 확인하세요.
+                    {FLAGS.contactEmail && <> 24시간 내 미도착 시 <a href={`mailto:${FLAGS.contactEmail}?subject=${encodeURIComponent(`[세모플] 소개 메일 미도착 — ${i.partner_posts?.title ?? ""}`)}`}>문의</a>.</>}
+                  </div>
+                )}
               </div>
               <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
                 {i.status === "pending" && (
