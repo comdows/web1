@@ -33,9 +33,10 @@ function pageFor(p) {
   <p>${esc(cat?.icon ?? "")} ${esc(cat?.name ?? "")} · ${esc(p.region)}${p.new ? " · 🆕 최근 등록" : ""}</p>
   <p>${esc(p.blurb)}</p>
   <ul>
+    ${p.strength ? `<li>강점: ${esc(p.strength)}</li>` : ""}
     ${p.fee_text ? `<li>수수료: ${esc(p.fee_text)}</li>` : ""}
     ${p.settle_text ? `<li>정산: ${esc(p.settle_text)}</li>` : ""}
-    ${p.enter_text ? `<li>입점: ${esc(p.enter_text)}</li>` : ""}
+    ${p.enter_text ? `<li>입점 조건: ${esc(p.enter_text)}</li>` : ""}
     <li>공식 사이트: <a href="${esc(p.url)}" rel="noopener">${esc(p.url.replace(/^https?:\/\//, ""))}</a></li>
   </ul>
   ${similar.length ? `<h2>같은 분야의 다른 플랫폼</h2><ul>${similar.map((s) => `<li><a href="/web1/p/${s.id}/">${esc(s.name)}</a> — ${esc(s.blurb)}</li>`).join("")}</ul>` : ""}

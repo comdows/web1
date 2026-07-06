@@ -28,10 +28,12 @@ push(P.categories.map((c, i) => `  (${q(c.id)}, ${q(c.group)}, ${q(c.name)}, ${q
 // 플랫폼: 1,559건 — 500건 단위 배치
 const chunks = [];
 for (let i = 0; i < P.platforms.length; i += 500) chunks.push(P.platforms.slice(i, i + 500));
+const feeBand = (v) => (v === "low" || v === "mid" || v === "high" ? `'${v}'` : "null");
 for (const chunk of chunks) {
-  push(`insert into public.platforms (id, name, category_id, region, url, blurb, is_new) values`);
+  push(`insert into public.platforms (id, name, category_id, region, url, blurb, is_new, fee_band, fee_text, settle_text, enter_text, strength) values`);
   push(chunk.map((p) =>
-    `  (${q(p.id)}, ${q(p.name)}, ${q(p.category)}, '${region(p.region)}', ${q(p.url)}, ${q(p.blurb)}, ${p.new ? "true" : "false"})`
+    `  (${q(p.id)}, ${q(p.name)}, ${q(p.category)}, '${region(p.region)}', ${q(p.url)}, ${q(p.blurb)}, ${p.new ? "true" : "false"}, ` +
+    `${feeBand(p.fee_band)}, ${q(p.fee_text)}, ${q(p.settle_text)}, ${q(p.enter_text)}, ${q(p.strength)})`
   ).join(",\n") + "\non conflict (id) do nothing;\n");
 }
 

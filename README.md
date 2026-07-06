@@ -53,6 +53,7 @@ backend/
 - [x] Supabase 마이그레이션 **0001~0011 전체 실행 완료(2026-07-05)** — 신규 SQL은 `backend/migrations/`에 추가 후 SQL Editor에서 실행
 - [x] `0012_billing_hardening.sql` 실행 완료(2026-07-05 — 종합 QA 수정)
 - [ ] **`0013_qa3.sql` 실행**(3차 QA — 본인 게시물 자기 신청 RLS 차단. 실행 전에도 클라이언트 가드로 버튼은 숨겨짐)
+- [ ] **`0014_judgment_seed.sql` 실행**(판단 필드 시드 — 수수료대·정산·입점조건·강점 1,637행 UPDATE. 정적 빌드엔 이미 반영, 원격 DB 반영용)
 - [x] 자동 수집 Secrets + 봇 계정 (2026-07-05 설정 완료)
 - [x] 일일 다이제스트 Secrets(ADMIN_BOT — admin 롤 지정 완료)
 - [x] 주간 백업 Secret `BACKUP_PASSPHRASE` (수동 실행 1회 성공 확인 — 패스프레이즈는 비밀번호 관리자에 보관)
