@@ -38,6 +38,27 @@ const SITUATIONS = [
   { id: "biz", label: "쇼핑몰·판매 중" },
 ] as const;
 
+// blurb만으로는 못 거르는 실무 구분을 큐레이션 — 상황 선택 시 맞는 도구를 앞으로 + 배지 표시.
+// (id 기준이라 정적/원격 데이터 모두에서 동작. 새 도구는 아래 집합에 추가.)
+const NOCODE = new Set([  // 코딩 없이 쓰는 앱 빌더·자동화(개발자용 에디터·자체호스팅 제외)
+  "lovable", "bolt-new", "replit", "v0",            // ai_code: 대화형 앱 빌더
+  "zapier", "make-com", "lindy", "manus", "relevance-ai", // ai_auto: 노코드 자동화(n8n·dify 제외)
+]);
+const COMMERCE = new Set([  // 쇼핑몰·판매에 바로 쓰는 도구(상품사진·상세페이지·고객응대·광고)
+  "remove-bg", "photoroom", "canva",                // 상품 사진·상세페이지
+  "channeltalk", "tidio", "intercom", "zendesk-ai", // 고객 응대
+  "adcreative", "predis", "surfer", "wrtn",         // 광고·마케팅 문구
+]);
+
+/* 도구가 현재 선택된 상황에 특히 맞으면 배지 라벨을 돌려준다(없으면 null).
+ * 여러 상황이 켜지면 먼저 맞는 것 하나를 표시(노코드 > 판매 > 한국어 우선순위). */
+function fitLabel(p: Platform, sits: Set<string>): string | null {
+  if (sits.has("noob") && (p.category === "ai_code" || p.category === "ai_auto") && NOCODE.has(p.id)) return "노코드";
+  if (sits.has("biz") && COMMERCE.has(p.id)) return "판매 활용";
+  if (sits.has("korean") && p.region === "국내") return "한국어";
+  return null;
+}
+
 export function AiFinder() {
   const go = useNav();
   const remote = usePlatforms();
@@ -63,10 +84,12 @@ export function AiFinder() {
 
   const byCat = (cat: string): Platform[] => {
     const list = source.filter((p) => p.category === cat);
-    if (!sits.has("korean")) return list;
-    // 한국어 우선 — 국내 도구를 앞으로
-    return [...list].sort((a, b) => (a.region === "국내" ? 0 : 1) - (b.region === "국내" ? 0 : 1));
+    if (sits.size === 0) return list;
+    // 선택한 상황에 맞는 도구를 앞으로(안정 정렬 — 나머지 순서는 유지)
+    return [...list].sort((a, b) => (fitLabel(b, sits) ? 1 : 0) - (fitLabel(a, sits) ? 1 : 0));
   };
+  // 혼자 운영하면 조합을 넓히기보다 핵심만 — 분야당 표시 개수를 줄여 "시작 조합"에 집중
+  const cap = sits.has("solo") ? 4 : 8;
 
   const extraTips: string[] = [];
   if (goal) {
@@ -115,11 +138,18 @@ export function AiFinder() {
             const c = categoryById(cat);
             const list = byCat(cat);
             if (list.length === 0) return null;
+            const shown = list.slice(0, cap);
+            const fitCount = shown.filter((p) => fitLabel(p, sits)).length;
             return (
               <div key={cat} style={{ marginBottom: 20 }}>
-                <div className="sec-title">{c?.icon} {c?.name} <span style={{ textTransform: "none", letterSpacing: 0 }}>· {list.length}개</span></div>
+                <div className="sec-title">{c?.icon} {c?.name}{" "}
+                  <span style={{ textTransform: "none", letterSpacing: 0 }}>
+                    · {list.length}개{sits.has("solo") && list.length > cap ? ` 중 핵심 ${cap}개` : ""}
+                    {fitCount > 0 ? ` · 내 상황에 맞는 ${fitCount}개 먼저` : ""}
+                  </span>
+                </div>
                 <div className="card-grid">
-                  {list.slice(0, 8).map((p) => <PlatformCard key={p.id} p={p} showCat={false} />)}
+                  {shown.map((p) => <PlatformCard key={p.id} p={p} showCat={false} fit={fitLabel(p, sits)} />)}
                 </div>
               </div>
             );

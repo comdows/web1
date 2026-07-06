@@ -45,7 +45,7 @@ export function StatTile({ n, l, tone }: { n: string; l: string; tone?: "b" | "t
   );
 }
 
-export function PlatformCard({ p, showCat = true }: { p: Platform; showCat?: boolean }) {
+export function PlatformCard({ p, showCat = true, fit }: { p: Platform; showCat?: boolean; fit?: string | null }) {
   const favs = useFavs();
   const cmp = useCompare();
   const go = useNav();
@@ -53,11 +53,12 @@ export function PlatformCard({ p, showCat = true }: { p: Platform; showCat?: boo
   const inCmp = cmp.has(p.id);
   const cat = categoryById(p.category);
   return (
-    <div className="pcard">
+    <div className={`pcard${fit ? " fit" : ""}`}>
       <div className="top">
         <Avatar name={p.name} url={p.url} />
         <div style={{ minWidth: 0 }}>
-          <h4><button className="pname" onClick={() => go("detail", { id: p.id })}>{p.name}</button>{p.new && <Badge kind="new">NEW</Badge>}</h4>
+          <h4><button className="pname" onClick={() => go("detail", { id: p.id })}>{p.name}</button>
+            {p.new && <Badge kind="new">NEW</Badge>}{fit && <Badge kind="good">{fit}</Badge>}</h4>
           {showCat && cat && <div className="cat">{cat.icon} {cat.name}</div>}
         </div>
         <button className={`star ${on ? "on" : ""}`} aria-label="즐겨찾기"
