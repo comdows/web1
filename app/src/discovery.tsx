@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import { categories, groups, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
+import hubIntros from "./data/hub-intros.ko.json"; // 분야 허브 편집 인트로(검색 랜딩 안내)
+const HUB: Record<string, { intro: string; pickBy: string[] }> = hubIntros as never;
 import { Avatar, Badge, PlatformCard, ShareButton } from "./components";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
 import { amOperatorOf, createOperatorClaim, getMyClaim, getPlatform, remoteEnabled, trackEvent } from "./lib/api";
@@ -300,6 +302,25 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
           </div>
         </aside>
         <div className="search-main">
+          {(() => {
+            // 분야 허브(/c/) 진입 = 한 분야만 필터·검색어 없음 → 편집 인트로로 안내(검색 유입 이탈 감소)
+            const only = cats.size === 1 && !q.trim() ? [...cats][0] : "";
+            const hub = only ? HUB[only] : null;
+            if (!only || !hub) return null;
+            const c = categoryById(only);
+            return (
+              <section className="hub-intro">
+                <h1 style={{ fontSize: 20, margin: "0 0 8px" }}>{c?.icon} {c?.name} 플랫폼</h1>
+                {hub.intro.split(/\n\n+/).map((para, i) => <p key={i}>{para}</p>)}
+                {hub.pickBy?.length > 0 && (
+                  <div className="pickby">
+                    <b>고를 때 따져볼 기준</b>
+                    <ul>{hub.pickBy.map((b) => <li key={b}>{b}</li>)}</ul>
+                  </div>
+                )}
+              </section>
+            );
+          })()}
           <div className="search-toolbar">
             <div className="result-meta" style={{ margin: 0 }}>{results.length.toLocaleString()}개 결과</div>
             <select className="select" value={sort} onChange={(e) => setSort(e.target.value as Sort)} style={{ marginLeft: "auto" }}>
