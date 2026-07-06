@@ -17,7 +17,7 @@
   /* ── Text ───────────────────────────────────────────────── */
   --text:   #E8EEFC;   /* primary (contrast ~15:1 on --bg) */
   --muted:  #97A6C8;   /* secondary */
-  --faint:  #5E6C8C;   /* tertiary / captions */
+  --faint:  #7A88A8;   /* tertiary / captions — AA(≥4.5:1) 확보(중장년 가독성) */
   --on-brand: #FFFFFF; /* text on brand fills */
 
   /* ── Brand (신뢰 블루) ──────────────────────────────────── */
@@ -86,15 +86,15 @@
 
   --text:   #141C2E;   /* contrast ~13:1 on --bg */
   --muted:  #4E5B79;
-  --faint:  #8A96B2;
+  --faint:  #606B85;   /* AA(≥4.5:1) 확보 — 결과 수·라벨·안내가 중장년에게도 읽히게 */
   --on-brand: #FFFFFF;
 
   --brand-soft: #2445D4;             /* links read darker on light */
-  /* 시맨틱·액센트: 라이트 배경 대비 확보(작은 텍스트 AA 근접) */
-  --teal:    #0E8A76;
-  --cyan:    #0876AC;
-  --success: #1B7F5C;
-  --warn:    #A3690A;
+  /* 시맨틱·액센트: 라이트 배경 대비 확보(작은 배지 텍스트 AA ≥4.5:1) */
+  --teal:    #0C6E5F;
+  --cyan:    #086A9A;
+  --success: #15694C;
+  --warn:    #8A5808;
   --danger:  #C2372E;
   --brand-tint: rgba(61, 99, 255, .10);
   --grid-line: rgba(36, 69, 212, .05);

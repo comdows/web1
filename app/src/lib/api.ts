@@ -508,6 +508,22 @@ export interface IntroQueueRow {
   applicant_email: string | null; counterpart_email: string | null;
   contact_consent_at: string | null; owner_confirmed_at: string | null;
 }
+/* 관리 콘솔 상단 요약 — 작업 큐별 대기 건수(한눈에 '뭐가 밀렸나'). 각 큐와 동일 필터. */
+export interface QueueCounts { submission: number; partner: number; deal: number; operator: number; deposit: number; intro: number }
+export async function fetchQueueCounts(): Promise<QueueCounts> {
+  const n = async (pathQ: string) => {
+    try { return (await rest<{ id?: string }[]>(pathQ)).length; } catch { return 0; }
+  };
+  const [submission, partner, deal, operator, deposit, intro] = await Promise.all([
+    n("submissions?status=in.(pending,hold)&select=id&limit=200"),
+    n("partner_posts?status=eq.pending&select=id&limit=200"),
+    n("deal_submissions?status=in.(pending,hold)&select=id&limit=200"),
+    n("operator_claims?status=in.(pending,code_sent)&select=id&limit=200"),
+    n("v_admin_charges?status=eq.awaiting_deposit&select=id&limit=200"),
+    n("v_admin_intro_queue?status=eq.pending&select=id&limit=200"),
+  ]);
+  return { submission, partner, deal, operator, deposit, intro };
+}
 export async function listAdminIntroQueue(): Promise<IntroQueueRow[]> {
   return rest<IntroQueueRow[]>("v_admin_intro_queue?status=eq.pending&select=*&order=created_at.asc&limit=100");
 }

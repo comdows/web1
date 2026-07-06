@@ -127,7 +127,11 @@ export default function App() {
   // 탭 타이틀 — 클릭 이동뿐 아니라 뒤로가기(popstate)·URL 직접 진입에서도 현재 화면과 일치
   useEffect(() => {
     if (view === "detail") return; // 상세는 PlatformDetail이 플랫폼명으로 직접 설정
-    document.title = VIEW_TITLES[view] ? `${VIEW_TITLES[view]} — 세모플` : "세모플 — 세상의 모든 플랫폼";
+    // 분야 허브(/c/<분야>) 진입은 분야명으로 — 여러 분야 탭 비교 시 구분(프리렌더 타이틀 유지)
+    const pathCat = location.pathname.match(/\/c\/([a-z0-9_-]+)\/?$/)?.[1];
+    const catName = pathCat ? categoryById(pathCat)?.name : undefined;
+    document.title = catName ? `${catName} 플랫폼 — 세모플`
+      : VIEW_TITLES[view] ? `${VIEW_TITLES[view]} — 세모플` : "세모플 — 세상의 모든 플랫폼";
   }, [view]);
 
   // sync home filter state to URL only while on home
@@ -238,11 +242,11 @@ export default function App() {
             )}
             <div className="search">
               <button type="button" className="ico" aria-label="검색" onClick={() => { if (q.trim()) { trackEvent("search", undefined, q.trim()); go("search", { q }); } }}>⌕</button>
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="플랫폼·분야 검색 (예: 쿠팡, 크라우드펀딩, 수출)"
+              <input value={q} onChange={(e) => setQ(e.target.value)} aria-label="플랫폼·분야 검색" placeholder="플랫폼·분야 검색 (예: 쿠팡, 크라우드펀딩, 수출)"
                 onKeyDown={(e) => { if (e.key === "Enter" && q.trim()) { trackEvent("search", undefined, q.trim()); go("search", { q }); } }} />
             </div>
             <div className="toolbar">
-              <select className="select" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
+              <select className="select" aria-label="정렬" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
                 <option value="default">기본 정렬</option><option value="new">신규 우선</option><option value="name">가나다</option>
               </select>
               <button className={`btn ghost ${onlyNew ? "on" : ""}`} onClick={() => setOnlyNew((v) => !v)}>🆕 신규만</button>

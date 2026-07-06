@@ -264,11 +264,19 @@ button{font-family:inherit}
   .frm input,.frm textarea,.frm select,
   .admin-form input,.admin-form select,
   .select{font-size:16px}
-  /* 터치 타깃 최소 44px 확보 */
+  /* 터치 타깃 최소 44px 확보 — 버튼·칩·셀렉트 + 인라인 링크 히트영역 확대(중장년 오탭 방지) */
   .theme-btn{min-width:44px;min-height:44px}
   .pcard .star{min-width:44px;min-height:44px}
   .site-header nav a,.site-header nav button{min-height:44px}
+  .btn,.btn.sm,.fchip,.select,.cmp-btn{min-height:44px}
+  .btn,.btn.sm{display:inline-flex;align-items:center}
+  .linklike,.pname,.ext{padding-block:8px;display:inline-block}
   .cmp-bar{flex-wrap:wrap}
+}
+
+/* 모션 최소화 선호 존중 — 전환·애니메이션 제거 */
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{transition:none!important;animation:none!important;scroll-behavior:auto!important}
 }
 
 /* 키보드 포커스 링 통일(감사 P3) — 마우스 클릭엔 안 뜨고 Tab 이동 때만 */
