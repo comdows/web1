@@ -8,7 +8,7 @@ import { useSession } from "./lib/auth";
 import {
   briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
-  fetchAdminMetrics, fetchOutboundCounts, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listBuyerBriefs, listDealsAdmin,
+  fetchAdminMetrics, fetchOutboundCounts, fetchQueueCounts, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listBuyerBriefs, listDealsAdmin,
   listDealSubmissions, listOperatorClaims,
   adminDeclineInterest, adminIntroduce, cancelCharge, confirmDeposit, createSponsorSlot, declinePendingInterests,
   listAdminCharges, listPartnerPosts, listSponsorSlotsAdmin, listSubmissions, listSubscriptionsAdmin,
@@ -63,11 +63,22 @@ function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
   };
   const approve = () => act(async () => {
     if (!id.trim() || !cat) throw new Error("id와 분야를 확인하세요");
-    await createPlatform({
-      id: id.trim(), name: s.payload.name, category_id: cat,
-      region: s.payload.region, url: s.payload.url, blurb: s.payload.desc || "",
-      fee_band: (feeBand || null) as "low" | "mid" | "high" | null, fee_text: feeText.trim() || null,
-    });
+    try {
+      await createPlatform({
+        id: id.trim(), name: s.payload.name, category_id: cat,
+        region: s.payload.region, url: s.payload.url, blurb: s.payload.desc || "",
+        fee_band: (feeBand || null) as "low" | "mid" | "high" | null, fee_text: feeText.trim() || null,
+      });
+    } catch (pubEx) {
+      // 등재는 됐는데 접수 상태 갱신 전 순단 → 재승인 시 PK 409. 같은 접수의 재승인이면(URL 호스트 일치)
+      // 생성을 건너뛰고 접수 상태만 갱신(큐 유령 잔류 방지 — DealSubQueue와 동일한 멱등 복구).
+      if ((pubEx as { status?: number }).status !== 409) throw pubEx;
+      const existing = await getPlatformFull(id.trim()).catch(() => null);
+      const sameHost = (a: string, b: string) => { try { return new URL(a).hostname.replace(/^www\./, "") === new URL(b).hostname.replace(/^www\./, ""); } catch { return false; } };
+      if (!existing || !sameHost(existing.url, s.payload.url)) {
+        throw new Error(`id ${id.trim()}는 이미 다른 플랫폼이 쓰고 있어요 — 다른 id를 입력하세요.`);
+      }
+    }
     await reviewSubmission(s.id, { status: "approved", approved_platform_id: id.trim() });
   });
 
@@ -963,6 +974,7 @@ export function Admin() {
   const [metrics, setMetrics] = useState<Awaited<ReturnType<typeof fetchAdminMetrics>> | null>(null);
   const [billingTick, setBillingTick] = useState(0); // 과금 3패널(입금·슬롯·환불) 간 갱신 신호
   const bumpBilling = useCallback(() => setBillingTick((t) => t + 1), []);
+  const [counts, setCounts] = useState<Awaited<ReturnType<typeof fetchQueueCounts>> | null>(null);
 
   const reload = useCallback(() => {
     listSubmissions(["pending", "hold"]).then(setQueue).catch(() => setQueue([]));
@@ -970,6 +982,7 @@ export function Admin() {
     getPendingCount().then(setPending).catch(() => { /* noop */ });
     getPopularSearches().then(setPopular).catch(() => { /* noop */ });
     fetchAdminMetrics().then(setMetrics).catch(() => { /* noop */ });
+    fetchQueueCounts().then(setCounts).catch(() => { /* noop */ });
   }, []);
   useEffect(() => { if (isAdmin) reload(); }, [isAdmin, reload]);
 
@@ -1005,21 +1018,40 @@ export function Admin() {
         <StatTile n={metrics ? String(metrics.introduced) : "—"} l="누적 소개" tone="t" />
       </div>
 
-      <div className="sec-title">제보 검수 큐 {queue ? `· ${queue.length}건` : ""}</div>
+      {/* 오늘 처리 대기 — 큐별 건수 요약(제보만 보이던 문제 해소) + 클릭 시 해당 섹션으로 점프 */}
+      {counts && (() => {
+        const total = counts.submission + counts.partner + counts.deal + counts.operator + counts.deposit + counts.intro;
+        const jump = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+        const items: [string, number, string][] = [
+          ["제보", counts.submission, "q-submission"], ["제휴 제안", counts.partner, "q-partner"],
+          ["매물", counts.deal, "q-deal"], ["운영자 인증", counts.operator, "q-operator"],
+          ["입금 확인", counts.deposit, "q-billing"], ["소개 대기", counts.intro, "q-intro"],
+        ];
+        return (
+          <div className="banner" style={{ marginBottom: 18, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            <b>오늘 처리 대기 {total}건</b>
+            {total === 0 ? <span className="ok">모두 처리됨 ✓</span> : items.filter(([, n]) => n > 0).map(([l, n, id]) => (
+              <button key={id} className="fchip on" onClick={() => jump(id)}>{l} {n}</button>
+            ))}
+          </div>
+        );
+      })()}
+
+      <div className="sec-title" id="q-submission">제보 검수 큐 {queue ? `· ${queue.length}건` : ""}</div>
       {queue === null ? <div className="empty">불러오는 중…</div>
         : queue.length === 0 ? <div className="empty">대기 중인 제보가 없습니다 ✓</div>
         : queue.map((s) => <ReviewCard key={s.id} s={s} onDone={reload} />)}
 
-      <div className="sec-title">🤝 제휴 제안 검수</div>
+      <div className="sec-title" id="q-partner">🤝 제휴 제안 검수{counts?.partner ? ` · ${counts.partner}건` : ""}</div>
       <PartnerPostQueue />
 
-      <div className="sec-title">🏦 매물 검수 (익명화 → 코드명 게시)</div>
+      <div className="sec-title" id="q-deal">🏦 매물 검수 (익명화 → 코드명 게시){counts?.deal ? ` · ${counts.deal}건` : ""}</div>
       <DealSubQueue />
 
-      <div className="sec-title">🏷 운영자 인증 신청</div>
+      <div className="sec-title" id="q-operator">🏷 운영자 인증 신청{counts?.operator ? ` · ${counts.operator}건` : ""}</div>
       <OperatorClaimQueue />
 
-      <div className="sec-title">💳 입금 확인 큐 (무통장 — 입금자명 대조 후 확인)</div>
+      <div className="sec-title" id="q-billing">💳 입금 확인 큐 (무통장 — 입금자명 대조 후 확인){counts?.deposit ? ` · ${counts.deposit}건` : ""}</div>
       <BillingQueuePanel tick={billingTick} bump={bumpBilling} />
 
       <div className="sec-title">🪧 스폰서 슬롯 (보드 상단 2슬롯 · AD 표기)</div>
@@ -1031,7 +1063,7 @@ export function Admin() {
       <div className="sec-title">↩️ 환불 (결제 완료 청구 — 미이행·청약철회)</div>
       <RefundPanel tick={billingTick} bump={bumpBilling} />
 
-      <div className="sec-title">📮 소개 대기 (매칭 신청 · 인수 관심 · 브리프)</div>
+      <div className="sec-title" id="q-intro">📮 소개 대기 (매칭 신청 · 인수 관심 · 브리프){counts?.intro ? ` · ${counts.intro}건` : ""}</div>
       <IntroQueue />
 
       <div className="sec-title">📡 게시 중 (상태 전이 — 성사·진행·마감)</div>

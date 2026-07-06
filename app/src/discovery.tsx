@@ -268,7 +268,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
     <div className="page container search-page">
       <div className="search" style={{ maxWidth: "none", marginBottom: 18 }}>
         <span className="ico">⌕</span>
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="플랫폼·분야 검색" autoFocus />
+        <input value={q} onChange={(e) => setQ(e.target.value)} aria-label="플랫폼·분야 검색" placeholder="플랫폼·분야 검색" autoFocus />
       </div>
       <button className="btn ghost sm filters-toggle" onClick={() => setShowFilters((v) => !v)}>
         {showFilters ? "필터 접기 ▴" : `필터 열기${activeChips.length ? ` (${activeChips.length}개 적용 중)` : ""} ▾`}
@@ -323,7 +323,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
           })()}
           <div className="search-toolbar">
             <div className="result-meta" style={{ margin: 0 }}>{results.length.toLocaleString()}개 결과</div>
-            <select className="select" value={sort} onChange={(e) => setSort(e.target.value as Sort)} style={{ marginLeft: "auto" }}>
+            <select className="select" aria-label="정렬" value={sort} onChange={(e) => setSort(e.target.value as Sort)} style={{ marginLeft: "auto" }}>
               <option value="relevance">관련도</option>
               <option value="new">신규 우선</option>
               <option value="name">가나다</option>

@@ -428,12 +428,17 @@ export function Partners() {
             배너 교환 등 <b>무정산형(A형) 연결은 유료화 후에도 무료</b>입니다.</p></div>
         <div className="pcard"><h4>스폰서 노출 <Badge kind={FLAGS.billing.sponsor ? "good" : "soon"}>{FLAGS.billing.sponsor ? "신청 가능" : "예정"} · 월 99,000원</Badge></h4>
           <p>매칭 보드 상단 고정 2슬롯(<b>AD 표기</b>, VAT 포함). 디렉토리 검색·비교 결과는 어떤 경우에도 판매하지 않습니다.</p>
-          {FLAGS.billing.sponsor && <p className="frm-note">신청: 계정 → 내 활동의 <b>게시 중인 내 제안</b>에서 "보드 상단 고정 신청"</p>}</div>
+          {FLAGS.billing.sponsor && (session
+            ? <p className="frm-note">신청: 계정 → 내 활동의 <b>게시 중인 내 제안</b>에서 "보드 상단 고정 신청"</p>
+            : <p className="frm-note"><button className="linklike" onClick={() => go("account")}>로그인 후 신청 →</button> (게시 중인 제안이 있어야 신청할 수 있어요)</p>)}</div>
         <div className="pcard"><h4>연결료 <Badge kind="soon">예정 · 건 22,000~77,000원</Badge></h4>
           <p>양측 동의 후 <b>연락처를 상호 공유하는 순간</b>에만 정액(레퍼럴형 22,000 · 깊은 연동형 77,000, VAT 포함).
             신청·매칭 확인까지는 무료, <b>소개가 이행되지 않으면 전액 자동 환불</b>.</p></div>
         <div className="pcard"><h4>Pro 멤버십 <Badge kind={FLAGS.billing.membership ? "good" : "soon"}>{FLAGS.billing.membership ? "신청 가능" : "예정"} · 월 66,000원</Badge></h4>
           <p>레퍼럴형 연결 월 3건 포함 · 검증 배지 · 우선 검수 · 파트너 검색 무제한(VAT 포함).</p>
+          {FLAGS.billing.membership && !session && (
+            <p className="frm-note"><button className="linklike" onClick={() => go("account")}>로그인 후 Pro 신청 →</button></p>
+          )}
           {FLAGS.billing.membership && session && (
             <button className="btn primary sm" disabled={orderBusy} onClick={async () => {
               if (orderBusy) return;
