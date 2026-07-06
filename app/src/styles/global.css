@@ -321,3 +321,10 @@ a.foot-link{display:inline-block}
 @media (max-width: 640px){
   .site-header nav{mask-image:linear-gradient(90deg,#000 85%,transparent)}
 }
+/* 분야 허브 편집 인트로(검색 랜딩) */
+.hub-intro{border:1px solid var(--line);border-radius:var(--r-md);background:var(--surface);padding:16px 18px;margin-bottom:16px}
+.hub-intro p{margin:0 0 8px;font-size:13.5px;line-height:1.65;color:var(--muted)}
+.hub-intro .pickby{margin-top:10px;padding-top:10px;border-top:1px solid var(--line-soft)}
+.hub-intro .pickby b{font-size:12.5px;color:var(--faint)}
+.hub-intro .pickby ul{margin:6px 0 0;padding-left:18px;display:flex;flex-wrap:wrap;gap:2px 20px}
+.hub-intro .pickby li{font-size:12.5px;color:var(--muted);min-width:200px}

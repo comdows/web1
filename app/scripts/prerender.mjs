@@ -12,6 +12,8 @@ const SITE = "https://comdows.github.io/web1";
 
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.json"), "utf8"));
 const EN = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.en.json"), "utf8")); // 영어 쌍둥이 존재 판정(hreflang)
+// 분야 허브 편집 인트로(한국어) — 검색 랜딩 본문. 없으면 목록만.
+const HUB = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/hub-intros.ko.json"), "utf8")); } catch { return {}; } })();
 const template = fs.readFileSync(path.join(DIST, "index.html"), "utf8");
 const catById = new Map(data.categories.map((c) => [c.id, c]));
 
@@ -54,18 +56,28 @@ function pageFor(p) {
 function catPage(c) {
   const list = data.platforms.filter((p) => p.category === c.id);
   const title = `${c.name} 플랫폼 ${list.length}곳 — 목록·비교 | 세모플`;
-  const desc = `${c.desc}. ${c.name} 분야 플랫폼 ${list.length}곳을 같은 기준으로 정리 — ${list.slice(0, 5).map((p) => p.name).join(", ")} 등.`.slice(0, 155);
+  // 인트로 첫 문장을 검색 스니펫으로(있으면) — 목록 나열보다 클릭 유도가 큼
+  const introLede = HUB[c.id]?.intro?.split(/\n\n+/)[0]?.replace(/\s+/g, " ").trim();
+  const desc = (introLede
+    ? `${introLede}`
+    : `${c.desc}. ${c.name} 분야 플랫폼 ${list.length}곳을 같은 기준으로 정리 — ${list.slice(0, 5).map((p) => p.name).join(", ")} 등.`).slice(0, 155);
   const canonical = `${SITE}/c/${c.id}/`;
   const ld = JSON.stringify({
     "@context": "https://schema.org", "@type": "ItemList", name: title,
     numberOfItems: list.length,
     itemListElement: list.slice(0, 30).map((p, i) => ({ "@type": "ListItem", position: i + 1, name: p.name, url: `${SITE}/p/${p.id}/` })),
   });
+  const hub = HUB[c.id];
+  const introHtml = hub
+    ? hub.intro.split(/\n\n+/).map((para) => `<p>${esc(para)}</p>`).join("") +
+      (hub.pickBy?.length ? `<h2>고를 때 따져볼 기준</h2><ul>${hub.pickBy.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>` : "")
+    : `<p>${esc(c.desc)} — 같은 기준으로 정리했습니다.</p>`;
   const body = `
 <main style="max-width:720px;margin:32px auto;padding:0 20px">
   <p><a href="/web1/">세모플 — 세상의 모든 플랫폼</a></p>
   <h1>${esc(c.icon)} ${esc(c.name)} 플랫폼 ${list.length}곳</h1>
-  <p>${esc(c.desc)} — 같은 기준으로 정리했습니다.</p>
+  ${introHtml}
+  <h2>${esc(c.name)} 플랫폼 목록</h2>
   <ul>${list.map((p) => `<li><a href="/web1/p/${p.id}/">${esc(p.name)}</a>${p.region === "해외" ? " (해외)" : ""} — ${esc(p.blurb)}</li>`).join("")}</ul>
 </main>`;
   return template
@@ -109,8 +121,15 @@ const homeBody = `
   <ul>${data.categories.map((c) => `<li><a href="/web1/c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a> — ${esc(c.desc)}</li>`).join("")}</ul>
   <p><a href="/web1/?view=partners">제휴 매칭</a> · <a href="/web1/?view=exchange">플랫폼 거래소</a> · <a href="/web1/?view=ai-finder">AI 도구 찾기</a> · <a href="/web1/en/">English directory</a></p>
 </main>`;
+// 홈 구조화 데이터 — 브랜드 지식패널·사이트링크 검색창 후보(Organization + WebSite)
+const homeLd = JSON.stringify([
+  { "@context": "https://schema.org", "@type": "Organization", name: "세모플", alternateName: "SEMOPL",
+    url: `${SITE}/`, description: "한국 비즈니스 플랫폼·AI 도구를 같은 기준으로 정리한 B2B 디렉토리" },
+  { "@context": "https://schema.org", "@type": "WebSite", name: "세모플 — 세상의 모든 플랫폼", url: `${SITE}/`,
+    potentialAction: { "@type": "SearchAction", target: { "@type": "EntryPoint", urlTemplate: `${SITE}/?view=search&q={query}` }, "query-input": "required name=query" } },
+]);
 fs.writeFileSync(path.join(DIST, "index.html"), template
-  .replace("</head>", `  <link rel="canonical" href="${SITE}/">\n  </head>`)
+  .replace("</head>", `  <link rel="canonical" href="${SITE}/">\n  <script type="application/ld+json">${homeLd}</script>\n  </head>`)
   .replace(/(<div id="root">)(<\/div>)/, `$1${homeBody}$2`));
 
 /* 404.html — GitHub Pages가 미존재 경로에 서빙(삭제된 /p/ 등). 브랜드 안내 + 복귀 경로 + SPA 부팅 유지 */
