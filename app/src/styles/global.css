@@ -97,6 +97,7 @@ button{font-family:inherit}
 /* Platform card */
 .pcard{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:15px;position:relative;transition:border-color var(--dur)}
 .pcard:hover{border-color:var(--brand)}
+.pcard.fit{border-color:var(--success);box-shadow:inset 3px 0 0 var(--success)}
 .pcard .top{display:flex;align-items:flex-start;gap:11px}
 .avatar{width:38px;height:38px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;color:#fff;
   font-weight:var(--w-black);font-size:16px;flex:0 0 auto;overflow:hidden}
