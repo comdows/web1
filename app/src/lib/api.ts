@@ -166,6 +166,7 @@ export async function removeFavorite(platformId: string): Promise<void> {
 
 export interface SubmissionPayload {
   name: string; url: string; category_id: string; region: "domestic" | "overseas"; desc: string; note?: string;
+  confidence?: number; // 자동 수집기가 매긴 신뢰도(0~100) — 일괄 승인 우선순위 참고
 }
 export interface Submission {
   id: string; payload: SubmissionPayload; status: "pending" | "hold" | "approved" | "rejected";
@@ -697,6 +698,22 @@ export async function updatePlatform(id: string, patch: {
     method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify(patch),
   });
 }
+/* ── 자동 등재(D) 사후 검수 — auto_listed 플랫폼 목록 + 확정/내리기 ── */
+export interface AutoListedRow {
+  id: string; name: string; category_id: string; region: "domestic" | "overseas";
+  url: string; blurb: string; auto_listed_at: string;
+}
+export async function listAutoListed(): Promise<AutoListedRow[]> {
+  return rest<AutoListedRow[]>(
+    "platforms?auto_listed=is.true&lifecycle=eq.review&archived_at=is.null" +
+    "&select=id,name,category_id,region,url,blurb,auto_listed_at&order=auto_listed_at.desc&limit=100");
+}
+export async function reviewAutoListed(id: string, keep: boolean, reason?: string): Promise<void> {
+  await rest("rpc/review_auto_listed", {
+    method: "POST", body: JSON.stringify({ p_id: id, p_keep: keep, p_reason: reason ?? null }),
+  });
+}
+
 /* 최근 30일 외부클릭 상위 — 수수료 미기재와 교차해 "보강 우선순위" 산출(admin read events RLS) */
 export async function fetchOutboundCounts(days = 30): Promise<Map<string, number>> {
   const since = new Date(Date.now() - days * 86400000).toISOString();
