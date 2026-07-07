@@ -8,7 +8,8 @@ import { useSession } from "./lib/auth";
 import {
   briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
-  fetchAdminMetrics, fetchOutboundCounts, fetchQueueCounts, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listBuyerBriefs, listDealsAdmin,
+  fetchAdminMetrics, fetchOutboundCounts, fetchQueueCounts, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin,
+  reviewAutoListed,
   listDealSubmissions, listOperatorClaims,
   adminDeclineInterest, adminIntroduce, cancelCharge, confirmDeposit, createSponsorSlot, declinePendingInterests,
   listAdminCharges, listPartnerPosts, listSponsorSlotsAdmin, listSubmissions, listSubscriptionsAdmin,
@@ -44,6 +45,36 @@ function dupCandidates(name: string, url: string): string[] {
     .map((p) => `${p.name} (${p.id})`).slice(0, 3);
 }
 
+/* 제보 1건 승인·등재 — 개별 카드와 일괄 승인이 공유(등재 순단 시 409 멱등 복구 포함). */
+async function approveSubmission(s: Submission, opts: {
+  id: string; cat: string; feeBand?: string; feeText?: string;
+}): Promise<void> {
+  const id = opts.id.trim();
+  if (!id || !opts.cat) throw new Error(`${s.payload.name}: id와 분야를 확인하세요`);
+  try {
+    await createPlatform({
+      id, name: s.payload.name, category_id: opts.cat,
+      region: s.payload.region, url: s.payload.url, blurb: s.payload.desc || "",
+      fee_band: (opts.feeBand || null) as "low" | "mid" | "high" | null, fee_text: opts.feeText?.trim() || null,
+    });
+  } catch (pubEx) {
+    // 등재 후 접수 갱신 전 순단 → 재승인 시 PK 409. 같은 접수(URL 호스트 일치)면 생성 건너뛰고 상태만 갱신.
+    if ((pubEx as { status?: number }).status !== 409) throw pubEx;
+    const existing = await getPlatformFull(id).catch(() => null);
+    const sameHost = (a: string, b: string) => { try { return new URL(a).hostname.replace(/^www\./, "") === new URL(b).hostname.replace(/^www\./, ""); } catch { return false; } };
+    if (!existing || !sameHost(existing.url, s.payload.url)) {
+      throw new Error(`id ${id}는 이미 다른 플랫폼이 쓰고 있어요 — 다른 id를 입력하세요.`);
+    }
+  }
+  await reviewSubmission(s.id, { status: "approved", approved_platform_id: id });
+}
+
+/* 카테고리 id → 이름(일괄 승인·사후 검수 표시용) */
+function catName(id: string): string {
+  for (const g of groups) { const c = categoriesByGroup(g.id).find((x) => x.id === id); if (c) return c.name; }
+  return id;
+}
+
 /* ── 제보 검수 카드 ───────────────────────────────────────── */
 function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
   const [id, setId] = useState(() => suggestId(s.payload.url));
@@ -61,26 +92,7 @@ function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
     catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
     finally { setBusy(false); }
   };
-  const approve = () => act(async () => {
-    if (!id.trim() || !cat) throw new Error("id와 분야를 확인하세요");
-    try {
-      await createPlatform({
-        id: id.trim(), name: s.payload.name, category_id: cat,
-        region: s.payload.region, url: s.payload.url, blurb: s.payload.desc || "",
-        fee_band: (feeBand || null) as "low" | "mid" | "high" | null, fee_text: feeText.trim() || null,
-      });
-    } catch (pubEx) {
-      // 등재는 됐는데 접수 상태 갱신 전 순단 → 재승인 시 PK 409. 같은 접수의 재승인이면(URL 호스트 일치)
-      // 생성을 건너뛰고 접수 상태만 갱신(큐 유령 잔류 방지 — DealSubQueue와 동일한 멱등 복구).
-      if ((pubEx as { status?: number }).status !== 409) throw pubEx;
-      const existing = await getPlatformFull(id.trim()).catch(() => null);
-      const sameHost = (a: string, b: string) => { try { return new URL(a).hostname.replace(/^www\./, "") === new URL(b).hostname.replace(/^www\./, ""); } catch { return false; } };
-      if (!existing || !sameHost(existing.url, s.payload.url)) {
-        throw new Error(`id ${id.trim()}는 이미 다른 플랫폼이 쓰고 있어요 — 다른 id를 입력하세요.`);
-      }
-    }
-    await reviewSubmission(s.id, { status: "approved", approved_platform_id: id.trim() });
-  });
+  const approve = () => act(() => approveSubmission(s, { id, cat, feeBand, feeText }));
 
   return (
     <div className="admin-card">
@@ -89,6 +101,7 @@ function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
         <a href={s.payload.url} target="_blank" rel="noopener noreferrer" className="mono" style={{ fontSize: 12 }}>{s.payload.url} ↗</a>
         <Badge kind={s.status === "hold" ? "muted" : "soon"}>{s.status === "hold" ? "보류" : "대기"}</Badge>
         {s.payload.note?.startsWith("auto:") && <Badge kind="verify">🤖 자동 수집</Badge>}
+        {typeof s.payload.confidence === "number" && <Badge kind={s.payload.confidence >= 80 ? "soon" : "muted"}>신뢰도 {s.payload.confidence}</Badge>}
         <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: "auto" }}>{s.created_at.slice(0, 10)}</span>
       </div>
       {s.payload.note?.startsWith("auto:") && (
@@ -129,6 +142,93 @@ function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
           subject="[세모플] 플랫폼 제보 검수 결과 안내"
           body={`안녕하세요, 세모플입니다.\n\n제보해 주신 "${s.payload.name ?? ""}"의 검수 결과를 안내드립니다.\n\n결과: (등재/보류/반려)\n사유: ${reason || "-"}\n\n이용해 주셔서 감사합니다.`} />
       </div>
+    </div>
+  );
+}
+
+/* ── (C) 1클릭 일괄 승인 — 사람을 없애지 말고 확장한다. ────────────────
+ * 자동 수집(auto:) + 분야 추정 있음 + 중복 의심 없음 + id 슬러그 유효한 "고신뢰" 후보만
+ * 기본 체크 → 관리자가 한 번 훑고 "선택 N건 승인·등재". id/분야는 자동 추정값을 그대로 쓴다. */
+function BatchApprovePanel({ queue, onDone }: { queue: Submission[]; onDone: () => void }) {
+  const eligible = useMemo(() => queue
+    .filter((s) => s.payload.note?.startsWith("auto:") && s.payload.category_id
+      && suggestId(s.payload.url) && dupCandidates(s.payload.name, s.payload.url).length === 0)
+    .map((s) => ({ s, id: suggestId(s.payload.url), cat: s.payload.category_id })), [queue]);
+  const [sel, setSel] = useState<Set<string>>(new Set());
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  // 목록이 바뀌면 고신뢰(≥80)만 기본 선택(신뢰도 없으면 분야 추정만으로 선택)
+  useEffect(() => {
+    setSel(new Set(eligible.filter((e) => (e.s.payload.confidence ?? 60) >= 60).map((e) => e.s.id)));
+  }, [eligible]);
+
+  if (eligible.length === 0) return null;
+  const toggle = (id: string) => setSel((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const run = async () => {
+    setBusy(true); setMsg("");
+    let ok = 0; const fails: string[] = [];
+    for (const e of eligible) {
+      if (!sel.has(e.s.id)) continue;
+      try { await approveSubmission(e.s, { id: e.id, cat: e.cat }); ok++; }
+      catch (ex) { fails.push(`${e.s.payload.name}: ${ex instanceof Error ? ex.message : String(ex)}`); }
+    }
+    setBusy(false);
+    setMsg(`${ok}건 승인·등재 완료${fails.length ? ` · 실패 ${fails.length}건 (${fails[0]}${fails.length > 1 ? " 외" : ""})` : ""}`);
+    onDone();
+  };
+
+  return (
+    <div className="banner" style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", marginBottom: 8 }}>
+        <b>⚡ 일괄 승인 후보 {eligible.length}건</b>
+        <span className="faint" style={{ fontSize: 12 }}>분야 추정 있음 · 중복 없음 — id·분야는 추정값으로 등재됩니다(등재 후 편집기에서 보강).</span>
+        <button className="btn primary sm" disabled={busy || sel.size === 0} style={{ marginLeft: "auto" }} onClick={run}>
+          {busy ? "승인 중…" : `선택 ${sel.size}건 승인·등재 →`}
+        </button>
+      </div>
+      <div style={{ display: "grid", gap: 4 }}>
+        {eligible.map((e) => (
+          <label key={e.s.id} className="facet-opt" style={{ display: "flex", gap: 8, alignItems: "center", fontSize: 13 }}>
+            <input type="checkbox" checked={sel.has(e.s.id)} onChange={() => toggle(e.s.id)} />
+            <b style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{e.s.payload.name}</b>
+            <Badge kind="muted">{catName(e.cat)}</Badge>
+            {typeof e.s.payload.confidence === "number" && <span className="mono faint" style={{ fontSize: 11 }}>{e.s.payload.confidence}</span>}
+            <span className="mono faint" style={{ fontSize: 11 }}>→ {e.id}</span>
+          </label>
+        ))}
+      </div>
+      {msg && <div className="ok" style={{ marginTop: 8, fontSize: 13 }}>{msg}</div>}
+    </div>
+  );
+}
+
+/* ── (D) 자동 등재 사후 검수 — auto_listed(lifecycle=review) 플랫폼 스팟체크 ────
+ * 스위치(app_settings 'autolist')가 켜진 경우에만 채워진다. 기본 off면 항상 비어 있음. */
+function AutoListedQueue() {
+  const [rows, setRows] = useState<Awaited<ReturnType<typeof listAutoListed>> | null>(null);
+  const [busy, setBusy] = useState("");
+  const load = useCallback(() => { listAutoListed().then(setRows).catch(() => setRows([])); }, []);
+  useEffect(() => { load(); }, [load]);
+  const act = async (id: string, keep: boolean) => {
+    setBusy(id);
+    try { await reviewAutoListed(id, keep); load(); } catch { /* noop */ } finally { setBusy(""); }
+  };
+  if (rows === null) return <div className="empty">불러오는 중…</div>;
+  if (rows.length === 0) return <div className="empty">자동 등재 대기 건이 없습니다 ✓ <span className="faint" style={{ fontSize: 12 }}>(자동 등재 스위치가 꺼져 있으면 항상 비어 있습니다.)</span></div>;
+  return (
+    <div style={{ display: "grid", gap: 6 }}>
+      {rows.map((r) => (
+        <div key={r.id} className="admin-card" style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <b>{r.name}</b>
+          <Badge kind="muted">{catName(r.category_id)}</Badge>
+          <a href={r.url} target="_blank" rel="noopener noreferrer" className="mono" style={{ fontSize: 12 }}>{r.url} ↗</a>
+          <span className="mono faint" style={{ fontSize: 11 }}>{r.auto_listed_at.slice(0, 10)}</span>
+          <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+            <button className="btn primary sm" disabled={!!busy} onClick={() => act(r.id, true)}>확정(검증)</button>
+            <button className="btn ghost sm" disabled={!!busy} onClick={() => act(r.id, false)}>내리기</button>
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -1040,7 +1140,14 @@ export function Admin() {
       <div className="sec-title" id="q-submission">제보 검수 큐 {queue ? `· ${queue.length}건` : ""}</div>
       {queue === null ? <div className="empty">불러오는 중…</div>
         : queue.length === 0 ? <div className="empty">대기 중인 제보가 없습니다 ✓</div>
-        : queue.map((s) => <ReviewCard key={s.id} s={s} onDone={reload} />)}
+        : <>
+            <BatchApprovePanel queue={queue} onDone={reload} />
+            {queue.map((s) => <ReviewCard key={s.id} s={s} onDone={reload} />)}
+          </>}
+
+      <div className="sec-title" id="q-autolist">🤖 자동 등재 사후 검수</div>
+      <AutoListedQueue />
+
 
       <div className="sec-title" id="q-partner">🤝 제휴 제안 검수{counts?.partner ? ` · ${counts.partner}건` : ""}</div>
       <PartnerPostQueue />

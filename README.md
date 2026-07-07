@@ -12,7 +12,7 @@ app/                 프론트엔드 (Vite + React + TS)
 backend/
   migrations/        0001 스키마 → 0002 RLS → 0003 시드 → 0004 오픈 → 0005 소개·동의 → 0006 AI (ALL.sql = 전체)
   seed/build-seed.mjs     platforms.json → 0003 재생성 (데이터 변경 시 실행)
-  collect/collect.mjs     주간 신규 수집기 → 제보 검수 큐 (자동 등재 없음)
+  collect/collect.mjs     주간 신규 수집기(5소스·스마트 중복제거) → 제보 검수 큐(기본) / 고신뢰 자동 등재(스위치 on 시)
   collect/healthcheck.mjs 월간 URL 생존 점검 → GitHub 이슈 리포트
 .github/workflows/   pages(배포) · collect-candidates(주간) · healthcheck(월간)
 ```
@@ -55,6 +55,11 @@ backend/
 - [ ] **`0013_qa3.sql` 실행**(3차 QA — 본인 게시물 자기 신청 RLS 차단. 실행 전에도 클라이언트 가드로 버튼은 숨겨짐)
 - [ ] **`0014_judgment_seed.sql` 실행**(판단 필드 시드 — 수수료대·정산·입점조건·강점 1,637행 UPDATE. 정적 빌드엔 이미 반영, 원격 DB 반영용)
 - [ ] **`0015_outreach.sql` 실행**(제휴 제안 아웃리치 — 발송 기록·수신거부·게이트. 실행 후에도 서버 발송은 off, 회원 본인 메일로 발송)
+- [ ] **`0016_autolist.sql` 실행**(자동 수집 고신뢰 자동 등재 + 사후 검수 — `auto_listed` 컬럼·`auto_list_candidate`/`review_auto_listed` RPC·`app_settings 'autolist'`. **스위치 기본 off** → 실행해도 수집기는 전부 검수 큐로. 자동 수집 소스 확장(벤처스퀘어·스타트업레시피)과 스마트 중복제거(호스트 정규화·이름 퍼지)는 이 마이그레이션 없이도 동작)
+- [ ] (선택) **자동 등재 켜기**(수집 신뢰도를 몇 주 지켜본 뒤에만 — "자동 등재 없음" 원칙을 부분 개방):
+  ① 검수 큐의 🤖 자동 수집 카드 신뢰도 배지를 관찰(고신뢰=80↑가 실제로 정확한지 확인)
+  ② `app_settings 'autolist'` → `{"enabled": true, "min_confidence": 80, "collector_id": "<봇 계정 uid>"}` (uid는 `select id from profiles where display_name...` 또는 auth.users에서 확인)
+  ③ 이후 수집기는 directUrl 소스(HN 등) + 분야추정 + 신뢰도≥80만 lifecycle=review로 자동 등재 → 관리 콘솔 "🤖 자동 등재 사후 검수"에서 확정/내리기 스팟체크(국내 뉴스는 기사 URL이라 자동 등재 대상 아님 → 일괄 승인으로)
 - [ ] (선택) **제휴 제안 서버 발송 켜기**(세모플이 대표 이메일로 직접 발송 — 법적·인프라 준비 후에만):
   ① 이메일 발송 서비스 계정(Resend 등) + 발신 도메인 SPF/DKIM/DMARC 인증
   ② `supabase functions deploy send-proposal` + `supabase secrets set RESEND_API_KEY=... EMAIL_FROM="세모플 제휴 <partner@도메인>"`
