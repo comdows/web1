@@ -160,7 +160,9 @@ button{font-family:inherit}
 .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
 .fact{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:13px 15px}
 .fact .k{font-family:var(--font-mono);font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
+.fact .k .est{font-family:var(--font-sans);font-size:9.5px;color:var(--warn);border:1px solid var(--warn);border-radius:4px;padding:0 4px;margin-left:4px;letter-spacing:0;text-transform:none;vertical-align:middle}
 .fact .v{margin-top:4px;font-size:14px}
+.fact .v .src{font-size:11px;color:var(--brand-soft);white-space:nowrap}
 .panel-note{margin-bottom:8px}
 .panel-note a{color:var(--brand-soft)}
 
