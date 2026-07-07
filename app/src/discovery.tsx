@@ -166,11 +166,12 @@ export function PlatformDetail({ id }: { id?: string }) {
         <div className="fact"><div className="k">신규 여부</div><div className="v">{p.new ? "🆕 최근 등록" : "기존 등록"}</div></div>
         <div className="fact"><div className="k">공식 주소</div><div className="v mono" style={{ fontSize: 12, wordBreak: "break-all" }}>{p.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</div></div>
         {p.fee_band && (
-          <div className="fact"><div className="k">수수료대</div><div className="v">
+          <div className="fact"><div className="k">수수료대 <span className="est">추정</span></div><div className="v">
             <Badge kind={FEE_LABEL[p.fee_band].k}>{FEE_LABEL[p.fee_band].l}</Badge>{p.fee_text ? ` ${p.fee_text}` : ""}
+            {" "}<a className="src" href={p.url} target="_blank" rel="noopener noreferrer">공식 확인 ↗</a>
           </div></div>
         )}
-        {p.settle_text && <div className="fact"><div className="k">정산 주기</div><div className="v">{p.settle_text}</div></div>}
+        {p.settle_text && <div className="fact"><div className="k">정산 주기 <span className="est">추정</span></div><div className="v">{p.settle_text} <a className="src" href={p.url} target="_blank" rel="noopener noreferrer">공식 확인 ↗</a></div></div>}
         {p.enter_text && <div className="fact"><div className="k">입점 조건</div><div className="v">{p.enter_text}</div></div>}
         {p.strength && <div className="fact"><div className="k">강점</div><div className="v">{p.strength}</div></div>}
       </div>
@@ -178,7 +179,8 @@ export function PlatformDetail({ id }: { id?: string }) {
       <OperatorClaimBox platformId={p.id} platformUrl={p.url} />
 
       <div className="panel-note banner">
-        ⓘ 세모플의 설명은 <b>개략 소개</b>입니다. 수수료·정산·입점 조건 등 상세는 <b>공식 사이트</b>에서 확인하세요.
+        ⓘ <b>수수료대·정산 주기·입점 조건은 공개 정보를 바탕으로 한 세모플의 개략 추정치</b>이며 해당 플랫폼의 공식 수치가 아닙니다.
+        요율·조건은 카테고리·시기·계약에 따라 다르고 수시로 바뀌므로, 실제 값은 반드시 <b>공식 사이트</b>에서 확인하세요.
         정보가 다르면 <a href={`https://github.com/comdows/web1/issues/new?title=${encodeURIComponent("[정보 정정] " + p.name)}`} target="_blank" rel="noopener noreferrer">정정 제보</a> 부탁드립니다.
       </div>
 
@@ -215,6 +217,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
   const [showFilters, setShowFilters] = useState(false); // 모바일: 필터 접이식(결과 먼저)
   const [region, setRegion] = useState<string>(sp0.get("region") ?? "all");
   const [onlyNew, setOnlyNew] = useState(sp0.get("new") === "1");
+  const [fees, setFees] = useState<Set<string>>(() => new Set((sp0.get("fee") ?? "").split(",").filter(Boolean))); // 수수료대 필터
   const [sort, setSort] = useState<Sort>((sp0.get("sort") as Sort) || "relevance");
 
   // 필터 상태 → URL(replaceState — 홈과 동일 패턴)
@@ -225,13 +228,15 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
     if (cats.size) p.set("cats", [...cats].join(","));
     if (region !== "all") p.set("region", region);
     if (onlyNew) p.set("new", "1");
+    if (fees.size) p.set("fee", [...fees].join(","));
     if (sort !== "relevance") p.set("sort", sort);
     history.replaceState(null, "", `?${p}`);
-  }, [q, cats, region, onlyNew, sort]);
+  }, [q, cats, region, onlyNew, fees, sort]);
   const platforms = usePlatforms();
   const stats = usePlatformStats();
 
   const toggleCat = (id: string) => setCats((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggleFee = (id: string) => setFees((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   // 검색어가 멈추면 이벤트 기록(관리자 '인기 검색어' 근거) — 원격 모드에서만, 실패 무시
   useEffect(() => {
@@ -247,6 +252,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
       if (cats.size && !cats.has(p.category)) return false;
       if (region !== "all" && p.region !== region) return false;
       if (onlyNew && !p.new) return false;
+      if (fees.size && (!p.fee_band || !fees.has(p.fee_band))) return false;
       if (query) {
         const hay = (p.name + " " + p.blurb + " " + (categoryById(p.category)?.name ?? "")).toLowerCase();
         if (!query.split(/\s+/).every((t) => hay.includes(t))) return false;
@@ -257,12 +263,13 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
     else if (sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name, "ko"));
     else if (query) list = sortByRelevance(list, query); // 관련도: 이름 정확 > 시작 > 포함 > 분야 > 소개
     return list;
-  }, [q, cats, region, onlyNew, sort, platforms]);
+  }, [q, cats, region, onlyNew, fees, sort, platforms]);
 
   const activeChips: { label: string; clear: () => void }[] = [];
   cats.forEach((c) => activeChips.push({ label: categoryById(c)?.name ?? c, clear: () => toggleCat(c) }));
   if (region !== "all") activeChips.push({ label: region, clear: () => setRegion("all") });
   if (onlyNew) activeChips.push({ label: "신규만", clear: () => setOnlyNew(false) });
+  fees.forEach((f) => activeChips.push({ label: `수수료 ${FEE_LABEL[f]?.l ?? f}`, clear: () => toggleFee(f) }));
 
   return (
     <div className="page container search-page">
@@ -284,6 +291,13 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
           <div className="facet-group">
             <div className="facet-title">신규</div>
             <label className="facet-opt"><input type="checkbox" checked={onlyNew} onChange={() => setOnlyNew((v) => !v)} /> 🆕 최근 등록만</label>
+          </div>
+          <div className="facet-group">
+            <div className="facet-title">수수료대 <span className="faint" style={{ fontWeight: 400 }}>(추정)</span></div>
+            {["low", "mid", "high"].map((f) => (
+              <label key={f} className="facet-opt"><input type="checkbox" checked={fees.has(f)} onChange={() => toggleFee(f)} /> {FEE_LABEL[f].l}</label>
+            ))}
+            <div className="facet-ct" style={{ fontSize: 11, marginTop: 2 }}>수수료대가 표기된 플랫폼만 대상</div>
           </div>
           <div className="facet-group">
             <div className="facet-title">분야</div>
@@ -332,7 +346,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
           {activeChips.length > 0 && (
             <div className="chips-row">
               {activeChips.map((c, i) => <button key={i} className="fchip on" onClick={c.clear}>{c.label} ✕</button>)}
-              <button className="linklike" onClick={() => { setCats(new Set()); setRegion("all"); setOnlyNew(false); }}>전체 해제</button>
+              <button className="linklike" onClick={() => { setCats(new Set()); setRegion("all"); setOnlyNew(false); setFees(new Set()); }}>전체 해제</button>
             </div>
           )}
           {results.length === 0
@@ -377,8 +391,8 @@ export function Compare() {
     { k: "설명", render: (p) => <span style={{ fontSize: 13 }}>{p.blurb}</span> },
   ];
   // 리치 필드: 비교 대상 중 하나라도 값이 있으면 행 생성(전원 null 행은 숨김)
-  if (items.some((p) => p.fee_band)) rows.push({ k: "수수료대", render: (p) => p.fee_band ? `${FEE_LABEL[p.fee_band].l}${p.fee_text ? ` (${p.fee_text})` : ""}` : "—" });
-  if (items.some((p) => p.settle_text)) rows.push({ k: "정산 주기", render: (p) => p.settle_text ?? "—" });
+  if (items.some((p) => p.fee_band)) rows.push({ k: "수수료대 (추정)", render: (p) => p.fee_band ? `${FEE_LABEL[p.fee_band].l}${p.fee_text ? ` (${p.fee_text})` : ""}` : "—" });
+  if (items.some((p) => p.settle_text)) rows.push({ k: "정산 주기 (추정)", render: (p) => p.settle_text ?? "—" });
   if (items.some((p) => p.enter_text)) rows.push({ k: "입점 조건", render: (p) => p.enter_text ?? "—" });
   if (items.some((p) => p.strength)) rows.push({ k: "강점", render: (p) => p.strength ?? "—" });
   rows.push({ k: "공식", render: (p) => <a className="ext" href={p.url} target="_blank" rel="noopener noreferrer">방문 ↗</a> });
@@ -402,6 +416,11 @@ export function Compare() {
           ))}</tbody>
         </table>
       </div>
+      {items.some((p) => p.fee_band || p.settle_text) && (
+        <p className="sub faint" style={{ fontSize: 12.5, marginTop: 10 }}>
+          ⓘ 수수료대·정산은 공개 정보 기반 세모플 추정치이며 공식 수치가 아닙니다 — 실제 조건은 각 <b>공식 사이트</b>에서 확인하세요.
+        </p>
+      )}
     </div>
   );
 }

@@ -34,13 +34,13 @@ function pageFor(p) {
   <p>${esc(p.blurb)}</p>
   <ul>
     ${p.strength ? `<li>강점: ${esc(p.strength)}</li>` : ""}
-    ${p.fee_text ? `<li>수수료: ${esc(p.fee_text)}</li>` : ""}
-    ${p.settle_text ? `<li>정산: ${esc(p.settle_text)}</li>` : ""}
+    ${p.fee_text ? `<li>수수료(추정): ${esc(p.fee_text)}</li>` : ""}
+    ${p.settle_text ? `<li>정산(추정): ${esc(p.settle_text)}</li>` : ""}
     ${p.enter_text ? `<li>입점 조건: ${esc(p.enter_text)}</li>` : ""}
     <li>공식 사이트: <a href="${esc(p.url)}" rel="noopener">${esc(p.url.replace(/^https?:\/\//, ""))}</a></li>
   </ul>
   ${similar.length ? `<h2>같은 분야의 다른 플랫폼</h2><ul>${similar.map((s) => `<li><a href="/web1/p/${s.id}/">${esc(s.name)}</a> — ${esc(s.blurb)}</li>`).join("")}</ul>` : ""}
-  <p>세모플은 ${data.platforms.length.toLocaleString()}개 플랫폼·AI 도구를 같은 기준으로 정리한 B2B 디렉토리입니다. 설명은 개략 소개이며 상세 조건은 공식 사이트에서 확인하세요.</p>
+  <p>세모플은 ${data.platforms.length.toLocaleString()}개 플랫폼·AI 도구를 같은 기준으로 정리한 B2B 디렉토리입니다. 수수료·정산 등은 공개 정보 기반 개략 추정치이며 공식 수치가 아닙니다 — 실제 조건은 공식 사이트에서 확인하세요.</p>
 </main>`;
 
   return template
