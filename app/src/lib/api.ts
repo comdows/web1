@@ -436,6 +436,38 @@ export async function declinePendingInterests(postId: string): Promise<void> {
     method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status: "declined" }) });
 }
 
+/* ── 제휴 제안 아웃리치(0015) — 회원이 특정 플랫폼에 직접 제안 ── */
+export interface OutreachConfig { server_send: boolean; from_name: string; daily_cap: number }
+export async function fetchOutreachConfig(): Promise<OutreachConfig | null> {
+  try {
+    const rows = await rest<{ value: OutreachConfig }[]>("app_settings?key=eq.outreach&select=value");
+    return rows[0]?.value ?? null;
+  } catch { return null; }
+}
+export interface OutreachInput {
+  target_platform_id: string; target_name: string; target_email: string;
+  type_id: string; subject: string; body: string; sender_name: string;
+}
+/* 회원 본인 메일(mailto)로 보낸 제안을 기록(감사·현황). 서버 발송 off일 때의 경로. */
+export async function recordOutreach(input: OutreachInput): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  await rest("outreach_proposals", { method: "POST", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ ...input, sender_id: uid, channel: "self", status: "composed" }) });
+}
+/* 서버 발송(Edge Function) — 스위치 on일 때만. 발송 성공/실패를 서버가 판정. */
+export async function sendProposalServer(input: OutreachInput): Promise<{ ok?: boolean; id?: string; error?: string }> {
+  const token = (await getAccessToken()) ?? SB_KEY;
+  const res = await fetch(`${SB_URL}/functions/v1/send-proposal`, {
+    method: "POST",
+    headers: { apikey: SB_KEY!, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || "발송에 실패했어요");
+  return data;
+}
+
 /* ── 관리자: 검수 통지(0010) — 접수자 이메일 조회(v_admin_contact, is_admin만 행 반환) ── */
 export async function getAdminContactEmail(kind: "submission" | "partner_post" | "deal_submission" | "operator_claim", ref: string): Promise<string | null> {
   const rows = await rest<{ email: string | null }[]>(`v_admin_contact?kind=eq.${kind}&ref=eq.${encodeURIComponent(ref)}&select=email`);

@@ -54,6 +54,12 @@ backend/
 - [x] `0012_billing_hardening.sql` 실행 완료(2026-07-05 — 종합 QA 수정)
 - [ ] **`0013_qa3.sql` 실행**(3차 QA — 본인 게시물 자기 신청 RLS 차단. 실행 전에도 클라이언트 가드로 버튼은 숨겨짐)
 - [ ] **`0014_judgment_seed.sql` 실행**(판단 필드 시드 — 수수료대·정산·입점조건·강점 1,637행 UPDATE. 정적 빌드엔 이미 반영, 원격 DB 반영용)
+- [ ] **`0015_outreach.sql` 실행**(제휴 제안 아웃리치 — 발송 기록·수신거부·게이트. 실행 후에도 서버 발송은 off, 회원 본인 메일로 발송)
+- [ ] (선택) **제휴 제안 서버 발송 켜기**(세모플이 대표 이메일로 직접 발송 — 법적·인프라 준비 후에만):
+  ① 이메일 발송 서비스 계정(Resend 등) + 발신 도메인 SPF/DKIM/DMARC 인증
+  ② `supabase functions deploy send-proposal` + `supabase secrets set RESEND_API_KEY=... EMAIL_FROM="세모플 제휴 <partner@도메인>"`
+  ③ 정보통신망법 §50 대응: 수신거부 링크 실동작·광고성 정보 표기·대표 이메일 수집 근거, 처리방침 반영 + TERMS_VERSION 상향
+  ④ `app_settings 'outreach'` → `server_send: true` + `config.ts FLAGS.outreach = true` + 재배포(**둘 다 켜야 열림**)
 - [x] 자동 수집 Secrets + 봇 계정 (2026-07-05 설정 완료)
 - [x] 일일 다이제스트 Secrets(ADMIN_BOT — admin 롤 지정 완료)
 - [x] 주간 백업 Secret `BACKUP_PASSPHRASE` (수동 실행 1회 성공 확인 — 패스프레이즈는 비밀번호 관리자에 보관)

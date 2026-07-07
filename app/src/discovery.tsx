@@ -12,6 +12,8 @@ import { pickRecommended, sortByRelevance } from "./lib/search";
 import { Compare as CompareStore, Favs, Interests, Recent, useCompare, useFavs } from "./lib/store";
 import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
+import { FLAGS } from "./config";
+import { ProposalComposer } from "./proposal";
 
 const Compare_hasSafe = (id: string) => CompareStore.has(id);
 
@@ -98,6 +100,7 @@ export function PlatformDetail({ id }: { id?: string }) {
   // 목록에 없으면(원격 전용 신규 등) 개별 원격 조회 폴백
   const [remote, setRemote] = useState<(Platform & { similar?: Platform[] }) | null>(null);
   const [fetching, setFetching] = useState(false);
+  const [proposing, setProposing] = useState(false); // 제휴 제안 작성기 열림
   useEffect(() => {
     setRemote(null);
     if (!id || local || !remoteEnabled) return;
@@ -153,10 +156,15 @@ export function PlatformDetail({ id }: { id?: string }) {
             <a className="btn primary" href={p.url} target="_blank" rel="noopener noreferrer" onClick={() => { Recent.push(p.id); trackEvent("outbound", p.id); }}>공식 사이트 방문 ↗</a>
             <button className={`btn ghost ${on ? "on" : ""}`} onClick={() => favs.toggle(p.id)}>{on ? "★ 저장됨" : "☆ 즐겨찾기"}</button>
             <button className={`btn ghost ${inCmp ? "on" : ""}`} disabled={!inCmp && cmp.full} onClick={() => cmp.toggle(p.id)}>{inCmp ? "✓ 비교 담김" : "+ 비교 담기"}</button>
+            {FLAGS.stage2 && p.category.startsWith("ai_") === false && (
+              <button className={`btn ghost ${proposing ? "on" : ""}`} onClick={() => setProposing((v) => !v)}>🤝 제휴 제안</button>
+            )}
             <ShareButton small={false} title={`${p.name} — 세모플`} url={`${location.origin}${import.meta.env.BASE_URL}p/${p.id}/`} />
           </div>
         </div>
       </div>
+
+      {proposing && <ProposalComposer target={p} onClose={() => setProposing(false)} />}
 
       {p.blurb && <p className="lead" style={{ maxWidth: 640, marginTop: 4 }}>{p.blurb}</p>}
 
