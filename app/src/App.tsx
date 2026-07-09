@@ -24,8 +24,9 @@ const Weekly     = lazy(() => import("./growth").then((m) => ({ default: m.Weekl
 const Packs      = lazy(() => import("./growth").then((m) => ({ default: m.Packs })));
 const Terms      = lazy(() => import("./legal").then((m) => ({ default: m.Terms })));
 const Privacy    = lazy(() => import("./legal").then((m) => ({ default: m.Privacy })));
+const Notifications = lazy(() => import("./notifications").then((m) => ({ default: m.Notifications })));
 import { useSession } from "./lib/auth";
-import { fetchRecentPlatforms, remoteEnabled, rest, trackEvent } from "./lib/api";
+import { fetchRecentPlatforms, remoteEnabled, rest, trackEvent, unreadNotifCount } from "./lib/api";
 
 type Sort = "default" | "new" | "name";
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
@@ -97,6 +98,11 @@ export default function App() {
   const cmp = useCompare();
   const theme = useTheme();
   const { session, profile, isAdmin } = useSession();
+  const [unreadNotif, setUnreadNotif] = useState(0);
+  useEffect(() => {
+    if (!session) { setUnreadNotif(0); return; }
+    unreadNotifCount().then(setUnreadNotif).catch(() => setUnreadNotif(0));
+  }, [session, view]); // view 변화 시 재조회 → 알림 읽고 나오면 배지 갱신
   const platforms = usePlatforms();
   const stats = usePlatformStats();
   const index = usePlatformIndex();
@@ -195,6 +201,13 @@ export default function App() {
           <NavItem onClick={() => { setQ(""); setFav(true); go("home"); }} label={`즐겨찾기 ${favs.count}개`}>★ {favs.count}</NavItem>
         </nav>
         <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+          {remoteEnabled && session && (
+            <NavItem active={view === "notifications"} onClick={() => go("notifications")} label="알림">
+              <span style={{ position: "relative" }}>🔔
+                {unreadNotif > 0 && <span className="notif-badge" style={{ position: "absolute", top: -6, right: -8, background: "var(--danger)", color: "#fff", fontSize: 10, lineHeight: "15px", minWidth: 15, height: 15, borderRadius: 8, padding: "0 4px", textAlign: "center", fontWeight: 700 }}>{unreadNotif > 9 ? "9+" : unreadNotif}</span>}
+              </span>
+            </NavItem>
+          )}
           {remoteEnabled && (
             <NavItem active={view === "account" || view === "admin"} onClick={() => go("account")} label={session ? "내 계정" : "로그인"}>
               👤 <span className="navlbl">{session ? (profile?.display_name || "내 계정") : "로그인"}</span>
@@ -228,6 +241,7 @@ export default function App() {
         : view === "admin" ? <Admin />
         : view === "terms" ? <Terms />
         : view === "privacy" ? <Privacy />
+        : view === "notifications" ? <Notifications />
         : (
         <main className="container">
           <section className="hero">
