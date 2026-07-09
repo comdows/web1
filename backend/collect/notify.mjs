@@ -1,6 +1,7 @@
-/* 매칭 알림 생성 — GitHub Actions(notify.yml)가 주기 실행.
- * 활성 인수 브리프(buyer_briefs.active) × 공개 매물(deals.open)을 대조해, 조건에 맞는 새 매물이 있으면
- * 브리프 소유자에게 인앱 알림(notifications)을 넣는다. "접속해야만 확인" 문제를 오프사이트 인프라 없이 해소.
+/* 매칭·관심 알림 생성 — GitHub Actions(notify.yml)가 주기 실행. 두 종류의 인앱 알림(notifications, 0018)을 만든다:
+ *   1) deal_match: 활성 인수 브리프(buyer_briefs.active) × 공개 매물(deals.open) 조건 매칭 → 브리프 소유자.
+ *   2) cat_new:    즐겨찾기에서 유도한 "관심 분야"에 신규(is_new) 플랫폼 등재 → 즐겨찾기 소유자(사용자당 상한).
+ * "접속해야만 확인" 문제를 오프사이트 인프라 없이 해소. (이메일 발송은 게이트 뒤 별도 — README 참고)
  *
  * 멱등: notifications.unique(user_id, kind, ref_id) + PostgREST on_conflict ignore-duplicates →
  *   이미 알린 (브리프소유자, 매물) 조합은 재실행해도 다시 만들지 않는다(= 사실상 "신규 매물만" 알림).
@@ -54,22 +55,28 @@ async function rest(token, pathQ, init = {}) {
   return t ? JSON.parse(t) : undefined;
 }
 
+const CAT_NEW_CAP = 5; // 사용자당 1회 실행에서 "관심 분야 신규" 알림 상한(플러딩 방지 — 나머지는 다음 실행에 dedup으로 이어짐)
+
 /* ── 데이터 로드 ── */
-let briefs, deals, token;
+let briefs, deals, favorites, platforms, token;
 if (FIXTURE) {
   const fs = await import("node:fs");
   const fx = JSON.parse(fs.readFileSync(FIXTURE, "utf8"));
   briefs = fx.briefs || []; deals = fx.deals || [];
+  favorites = fx.favorites || []; platforms = fx.platforms || [];
 } else {
   token = await login();
   await assertAdmin(token);
   briefs = await rest(token, "buyer_briefs?active=is.true&select=id,user_id,categories,budget_band,mode");
   deals = await rest(token, "deals?status=eq.open&is_demo=is.false&select=id,category_id,mode,revenue_band,region,summary");
+  favorites = await rest(token, "favorites?select=user_id,platform_id&limit=10000");
+  platforms = await rest(token, "platforms?select=id,name,category_id,is_new&limit=5000");
 }
-console.log(`활성 브리프 ${briefs.length} · 공개 매물 ${deals.length}`);
+console.log(`활성 브리프 ${briefs.length} · 공개 매물 ${deals.length} · 즐겨찾기 ${favorites.length} · 플랫폼 ${platforms.length}`);
 
-/* ── 매칭 → 알림 payload ── */
 const notifs = [];
+
+/* 1) 인수 브리프 ↔ 신규 매물 매칭 알림 */
 for (const b of briefs) {
   for (const d of deals) {
     if (!matches(b, d)) continue;
@@ -81,7 +88,33 @@ for (const b of briefs) {
     });
   }
 }
-console.log(`매칭 알림 후보 ${notifs.length}건`);
+
+/* 2) 관심 분야(즐겨찾기에서 유도) 신규 플랫폼 다이제스트 — 인앱.
+ *    서버엔 온보딩 관심사가 없어(localStorage) 즐겨찾기한 플랫폼들의 분야를 "관심 분야"로 본다.
+ *    이미 즐겨찾기한 플랫폼은 제외, 사용자당 CAP개까지(나머지는 dedup으로 다음 실행에). */
+const catById = new Map(platforms.map((p) => [p.id, p]));
+const newByCat = new Map(); // category_id → [신규 플랫폼]
+for (const p of platforms) if (p.is_new) { const a = newByCat.get(p.category_id) || []; a.push(p); newByCat.set(p.category_id, a); }
+const favByUser = new Map(); // user_id → Set(platform_id)
+for (const f of favorites) { const s = favByUser.get(f.user_id) || new Set(); s.add(f.platform_id); favByUser.set(f.user_id, s); }
+for (const [uid, favSet] of favByUser) {
+  const followedCats = new Set([...favSet].map((pid) => catById.get(pid)?.category_id).filter(Boolean));
+  let added = 0;
+  for (const cat of followedCats) {
+    for (const np of newByCat.get(cat) || []) {
+      if (favSet.has(np.id) || added >= CAT_NEW_CAP) continue;
+      notifs.push({
+        user_id: uid, kind: "cat_new", ref_type: "platform", ref_id: np.id,
+        title: "관심 분야에 새 플랫폼이 등록됐어요",
+        body: `${np.name} — 즐겨찾기한 분야의 신규 등재입니다. 검색에서 확인해보세요.`,
+        url: "?view=weekly",
+      });
+      added++;
+    }
+    if (added >= CAT_NEW_CAP) break;
+  }
+}
+console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new)`);
 
 if (DRY) {
   for (const n of notifs.slice(0, 30)) console.log(`  + ${n.user_id.slice(0, 8)}… ← ${n.ref_id}: ${n.title}`);

@@ -152,10 +152,11 @@ export async function fetchServerFavs(): Promise<string[]> {
 export async function upsertFavorite(platformId: string): Promise<void> {
   const uid = getSession()?.user.id;
   if (!uid) return;
+  // alert=true: 즐겨찾기 = "이 플랫폼 링크가 죽으면 알려줘" 옵트인(헬스체크가 관심 등록자에게 알림).
   await rest("favorites?on_conflict=user_id,platform_id", {
     method: "POST",
     headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
-    body: JSON.stringify({ user_id: uid, platform_id: platformId }),
+    body: JSON.stringify({ user_id: uid, platform_id: platformId, alert: true }),
   });
 }
 export async function removeFavorite(platformId: string): Promise<void> {
