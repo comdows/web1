@@ -17,6 +17,7 @@ import {
   partnerRefCode, placeOrder, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
 } from "./lib/api";
 import { bankTransferProvider, fetchBillingSettings } from "./lib/billing";
+import { scoreBriefDeal } from "./lib/match";
 import type { DepositInstructions } from "./lib/billing";
 import type { BuyerBriefRow, DealSubmissionRow, MyCharge, MyInterestRow, MyPostInterest, PartnerPostAdmin, PublicDeal, Submission } from "./lib/api";
 
@@ -458,9 +459,16 @@ export function Account() {
       : (acts.pp.length + acts.ds.length + acts.pi.length + acts.di.length + acts.br.length) === 0 ? (
         <div className="empty">제휴 제안·매각 접수·매칭 신청·관심 등록이 여기에 표시됩니다.</div>
       ) : (() => {
-        const matchedIds = [...new Set(
-          acts.br.filter((b) => b.active).flatMap((b) => briefDeals.filter((d) => briefMatchesDeal(b, d)).map((d) => d.id))
-        )];
+        // 매칭된 매물을 적합도(scoreBriefDeal) 순으로 — 여러 브리프에 걸리면 최고 점수 채택
+        const matchScore = new Map<string, number>();
+        for (const b of acts.br.filter((x) => x.active)) {
+          for (const d of briefDeals) {
+            if (!briefMatchesDeal(b, d)) continue;
+            const s = scoreBriefDeal(b, d);
+            if (s > (matchScore.get(d.id) ?? -1)) matchScore.set(d.id, s);
+          }
+        }
+        const matchedIds = [...matchScore.entries()].sort((a, b) => b[1] - a[1]).map(([id]) => id);
         return (
         <>
         {matchedIds.length > 0 && (
