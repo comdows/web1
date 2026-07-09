@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import type { Platform } from "./data";
 import { categoryById } from "./data";
 import { useFavs, useCompare, Recent } from "./lib/store";
 import { usePlatformStats } from "./lib/platforms";
 import { avatarHue, faviconUrl } from "./lib/util";
-import { trackEvent } from "./lib/api";
+import { trackEvent, trackImpression } from "./lib/api";
 import { FLAGS } from "./config";
 import { useNav } from "./nav";
 
@@ -52,23 +52,26 @@ export function PlatformCard({ p, showCat = true, fit }: { p: Platform; showCat?
   const on = favs.has(p.id);
   const inCmp = cmp.has(p.id);
   const cat = categoryById(p.category);
+  useEffect(() => { trackImpression(p.id); }, [p.id]); // 노출 계측(세션당 1회 dedup·벌크)
+  const openDetail = () => { trackEvent("click", p.id); go("detail", { id: p.id }); };
+  const toggleFav = () => { if (!on) trackEvent("favorite", p.id); favs.toggle(p.id); };
   return (
     <div className={`pcard${fit ? " fit" : ""}`}>
       <div className="top">
         <Avatar name={p.name} url={p.url} />
         <div style={{ minWidth: 0 }}>
-          <h4><button className="pname" onClick={() => go("detail", { id: p.id })}>{p.name}</button>
+          <h4><button className="pname" onClick={openDetail}>{p.name}</button>
             {p.new && <Badge kind="new">NEW</Badge>}{fit && <Badge kind="good">{fit}</Badge>}</h4>
           {showCat && cat && <div className="cat">{cat.icon} {cat.name}</div>}
         </div>
         <button className={`star ${on ? "on" : ""}`} aria-label="즐겨찾기"
-          onClick={() => favs.toggle(p.id)}>{on ? "★" : "☆"}</button>
+          onClick={toggleFav}>{on ? "★" : "☆"}</button>
       </div>
       <p>{p.blurb}</p>
       <div className="pcard-actions">
         <a className="ext" href={p.url} target="_blank" rel="noopener noreferrer"
           onClick={() => { Recent.push(p.id); trackEvent("outbound", p.id); }}>공식 사이트 ↗</a>
-        <button className="linklike" onClick={() => go("detail", { id: p.id })}>상세</button>
+        <button className="linklike" onClick={openDetail}>상세</button>
         <button className={`cmp-btn ${inCmp ? "on" : ""}`} disabled={!inCmp && cmp.full}
           onClick={() => cmp.toggle(p.id)} title={cmp.full && !inCmp ? "최대 4개" : "비교 담기"}>
           {inCmp ? "✓ 비교" : "+ 비교"}
