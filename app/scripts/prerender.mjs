@@ -63,12 +63,25 @@ function catPage(c) {
     ? `${introLede}`
     : `${c.desc}. ${c.name} 분야 플랫폼 ${list.length}곳을 같은 기준으로 정리 — ${list.slice(0, 5).map((p) => p.name).join(", ")} 등.`).slice(0, 155);
   const canonical = `${SITE}/c/${c.id}/`;
-  const ld = JSON.stringify({
+  const hub = HUB[c.id];
+  const lds = [{
     "@context": "https://schema.org", "@type": "ItemList", name: title,
     numberOfItems: list.length,
     itemListElement: list.slice(0, 30).map((p, i) => ({ "@type": "ListItem", position: i + 1, name: p.name, url: `${SITE}/p/${p.id}/` })),
-  });
-  const hub = HUB[c.id];
+  }];
+  // FAQPage — 인트로에 선택 기준(pickBy)이 있을 때만(사실 기반 Q&A, 날조 금지). 리치 결과 후보.
+  if (hub?.pickBy?.length) {
+    lds.push({
+      "@context": "https://schema.org", "@type": "FAQPage",
+      mainEntity: [
+        { "@type": "Question", name: `${c.name} 플랫폼을 고를 때 무엇을 봐야 하나요?`,
+          acceptedAnswer: { "@type": "Answer", text: hub.pickBy.join(" · ") } },
+        { "@type": "Question", name: `${c.name} 분야에는 어떤 플랫폼이 있나요?`,
+          acceptedAnswer: { "@type": "Answer", text: `${list.slice(0, 8).map((p) => p.name).join(", ")} 등 ${list.length}곳을 세모플에서 같은 기준으로 비교할 수 있습니다.` } },
+      ],
+    });
+  }
+  const ld = JSON.stringify(lds.length === 1 ? lds[0] : lds);
   const introHtml = hub
     ? hub.intro.split(/\n\n+/).map((para) => `<p>${esc(para)}</p>`).join("") +
       (hub.pickBy?.length ? `<h2>고를 때 따져볼 기준</h2><ul>${hub.pickBy.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>` : "")
@@ -122,15 +135,22 @@ const homeBody = `
   <ul>${data.categories.map((c) => `<li><a href="/web1/c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a> — ${esc(c.desc)}</li>`).join("")}</ul>
   <p><a href="/web1/?view=partners">제휴 매칭</a> · <a href="/web1/?view=exchange">플랫폼 거래소</a> · <a href="/web1/?view=ai-finder">AI 도구 찾기</a> · <a href="/web1/en/">English directory</a></p>
 </main>`;
-// 홈 구조화 데이터 — 브랜드 지식패널·사이트링크 검색창 후보(Organization + WebSite)
+// 홈 구조화 데이터 — 브랜드 지식패널·사이트링크 검색창 후보(Organization + WebSite) + Dataset(공개 데이터셋)
 const homeLd = JSON.stringify([
   { "@context": "https://schema.org", "@type": "Organization", name: "세모플", alternateName: "SEMOPL",
     url: `${SITE}/`, description: "한국 비즈니스 플랫폼·AI 도구를 같은 기준으로 정리한 B2B 디렉토리" },
   { "@context": "https://schema.org", "@type": "WebSite", name: "세모플 — 세상의 모든 플랫폼", url: `${SITE}/`,
     potentialAction: { "@type": "SearchAction", target: { "@type": "EntryPoint", urlTemplate: `${SITE}/?view=search&q={query}` }, "query-input": "required name=query" } },
+  { "@context": "https://schema.org", "@type": "Dataset", name: "세모플 플랫폼·AI 도구 디렉토리 데이터셋",
+    description: "한국 비즈니스 플랫폼·AI 도구 목록(분야·지역·개략 정보). 기계 판독용 공개 데이터.",
+    license: "https://creativecommons.org/licenses/by/4.0/", creator: { "@type": "Organization", name: "세모플" },
+    distribution: [
+      { "@type": "DataDownload", encodingFormat: "application/json", contentUrl: `${SITE}/en/data/platforms.json` },
+      { "@type": "DataDownload", encodingFormat: "application/json", contentUrl: `${SITE}/en/data/ai-stack.json` },
+    ] },
 ]);
 fs.writeFileSync(path.join(DIST, "index.html"), template
-  .replace("</head>", `  <link rel="canonical" href="${SITE}/">\n  <script type="application/ld+json">${homeLd}</script>\n  </head>`)
+  .replace("</head>", `  <link rel="canonical" href="${SITE}/">\n  <link rel="alternate" type="application/rss+xml" title="세모플 새 플랫폼" href="${SITE}/feed.xml">\n  <script type="application/ld+json">${homeLd}</script>\n  </head>`)
   .replace(/(<div id="root">)(<\/div>)/, `$1${homeBody}$2`));
 
 /* 404.html — GitHub Pages가 미존재 경로에 서빙(삭제된 /p/ 등). 브랜드 안내 + 복귀 경로 + SPA 부팅 유지 */
@@ -148,18 +168,41 @@ fs.writeFileSync(path.join(DIST, "404.html"), template
   .replace("</head>", `  <meta name="robots" content="noindex">\n  </head>`)
   .replace(/(<div id="root">)(<\/div>)/, `$1${nfBody}$2`));
 
-/* 사이트맵 + robots */
+/* 사이트맵 + robots.
+ * lastmod: 정적 데이터엔 플랫폼별 갱신시각이 없다 → 매 빌드 전 URL을 today로 찍으면 "전체가 바뀐 것"처럼
+ * 보여 크롤 신뢰도가 떨어진다. 목록이 실제로 커지는 홈·허브·동적 뷰와 신규(new) 상세만 today, 안정 상세는 lastmod 생략. */
 const today = new Date().toISOString().slice(0, 10);
 const staticUrls = ["", "?view=partners", "?view=exchange", "?view=ai-finder", "?view=packs", "?view=weekly", "?view=onboarding", "?view=deal-guide", "?view=value-check"];
 const urls = [
-  ...staticUrls.map((u) => `${SITE}/${u}`),
-  ...data.categories.map((c) => `${SITE}/c/${c.id}/`),
-  ...data.platforms.map((p) => `${SITE}/p/${p.id}/`),
+  ...staticUrls.map((u) => ({ loc: `${SITE}/${u}`, lastmod: today })),
+  ...data.categories.map((c) => ({ loc: `${SITE}/c/${c.id}/`, lastmod: today })),
+  ...data.platforms.map((p) => ({ loc: `${SITE}/p/${p.id}/`, lastmod: p.new ? today : null })),
 ];
 fs.writeFileSync(path.join(DIST, "sitemap.xml"),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
-  urls.map((u) => `  <url><loc>${u.replace(/&/g, "&amp;")}</loc><lastmod>${today}</lastmod></url>`).join("\n") +
+  urls.map((u) => `  <url><loc>${u.loc.replace(/&/g, "&amp;")}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`).join("\n") +
   `\n</urlset>\n`);
 fs.writeFileSync(path.join(DIST, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml\n`);
 
-console.log(`프리렌더 상세 ${count}p + 분야 허브 ${catCount}p + sitemap(${urls.length} URL) + robots.txt 생성`);
+/* 신규 등재 RSS 2.0 피드 — 재크롤 신호 + 구독 유입. 정적 데이터엔 등재일이 없어 new 표식을 최신 프록시로. */
+const feedItems = data.platforms.filter((p) => p.new).slice(0, 50);
+const feedList = feedItems.length ? feedItems : data.platforms.slice(0, 50);
+const nowUtc = new Date().toUTCString();
+const feedXml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
+  `<rss version="2.0"><channel>\n` +
+  `<title>세모플 — 새로 등재된 플랫폼·AI 도구</title>\n` +
+  `<link>${SITE}/?view=weekly</link>\n` +
+  `<description>세모플에 새로 추가된 한국 비즈니스 플랫폼·AI 도구</description>\n` +
+  `<language>ko</language>\n<lastBuildDate>${nowUtc}</lastBuildDate>\n` +
+  `<atom:link xmlns:atom="http://www.w3.org/2005/Atom" href="${SITE}/feed.xml" rel="self" type="application/rss+xml"/>\n` +
+  feedList.map((p) => {
+    const cat = catById.get(p.category);
+    return `<item><title>${esc(p.name)}</title><link>${SITE}/p/${p.id}/</link>` +
+      `<guid isPermaLink="true">${SITE}/p/${p.id}/</guid>` +
+      `<description>${esc(`${p.blurb} (${cat?.name ?? ""} · ${p.region})`)}</description>` +
+      `${cat ? `<category>${esc(cat.name)}</category>` : ""}<pubDate>${nowUtc}</pubDate></item>`;
+  }).join("\n") +
+  `\n</channel></rss>\n`;
+fs.writeFileSync(path.join(DIST, "feed.xml"), feedXml);
+
+console.log(`프리렌더 상세 ${count}p + 분야 허브 ${catCount}p + sitemap(${urls.length} URL) + feed.xml(${feedList.length}) + robots.txt 생성`);
