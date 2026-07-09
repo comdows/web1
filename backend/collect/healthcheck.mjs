@@ -31,6 +31,47 @@ const live = await fetchLivePlatforms();
 if (live) { data.platforms = live; console.log(`라이브 데이터 사용 — ${live.length}건(Supabase)`); }
 else console.log("SUPABASE env 없음 — 정적 시드로 점검");
 
+/* 죽은 링크가 있으면 그 플랫폼을 즐겨찾기(alert=true)한 회원에게 인앱 알림(notifications, 0018)을 넣는다.
+ * admin 봇 필요(favorites admin read + notifications admin insert). 봇 Secrets 없으면 조용히 건너뜀(하위호환).
+ * 멱등: unique(user_id, kind, ref_id) + ignore-duplicates → 같은 플랫폼 재점검해도 재알림 안 함. */
+async function notifyFavoritersOfDead(deadResults) {
+  const email = process.env.ADMIN_BOT_EMAIL, pw = process.env.ADMIN_BOT_PASSWORD;
+  const SB_URL = process.env.SUPABASE_URL, SB_KEY = process.env.SUPABASE_ANON_KEY;
+  if (!email || !pw || !SB_URL || !SB_KEY || deadResults.length === 0) return;
+  const rest = async (token, pathQ, init = {}) => {
+    const res = await fetch(`${SB_URL}/rest/v1/${pathQ}`, {
+      ...init, headers: { apikey: SB_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init.headers || {}) },
+    });
+    if (!res.ok) throw new Error(`${res.status} ${pathQ.split("?")[0]}: ${await res.text()}`);
+    const t = await res.text(); return t ? JSON.parse(t) : undefined;
+  };
+  const lr = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST", headers: { apikey: SB_KEY, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password: pw }),
+  });
+  if (!lr.ok) throw new Error(`봇 로그인 실패: ${lr.status}`);
+  const token = (await lr.json()).access_token;
+  // 센티널: 봇이 admin 롤이 아니면 favorites admin-read가 0행이 돼 조용히 아무도 안 알림 → 런 실패시킴
+  const sub = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString()).sub;
+  const me = await rest(token, `profiles?id=eq.${sub}&select=role`);
+  if (me[0]?.role !== "admin") throw new Error(`봇 계정이 admin 롤이 아님(role=${me[0]?.role ?? "없음"}) — 알림 신뢰 불가`);
+
+  const byId = new Map(deadResults.map((r) => [r.p.id, r.p]));
+  const ids = [...byId.keys()];
+  const favs = await rest(token, `favorites?alert=is.true&platform_id=in.(${ids.join(",")})&select=user_id,platform_id`);
+  if (!favs.length) { console.log("죽은 링크 관심 등록자 없음 — 알림 생략"); return; }
+  const notifs = favs.map((f) => ({
+    user_id: f.user_id, kind: "fav_change", ref_type: "platform", ref_id: f.platform_id,
+    title: "관심 플랫폼 링크 확인 필요",
+    body: `${byId.get(f.platform_id)?.name ?? f.platform_id}의 링크가 접속되지 않아요 — 대체 플랫폼을 찾아보세요.`,
+  }));
+  await rest(token, "notifications?on_conflict=user_id,kind,ref_id", {
+    method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
+    body: JSON.stringify(notifs),
+  });
+  console.log(`✓ 관심 등록자 알림 ${notifs.length}건(중복 무시)`);
+}
+
 const CONCURRENCY = 15;
 const TIMEOUT = 12000;
 const UA = "Mozilla/5.0 (compatible; semopl-healthcheck/1.0; +https://comdows.github.io/web1/)";
@@ -87,3 +128,6 @@ if (dead.length > 0 && process.env.GITHUB_TOKEN && process.env.GITHUB_REPOSITORY
   });
   console.log(res.ok ? "✓ 이슈 생성" : `이슈 생성 실패: ${res.status}`);
 }
+
+// 죽은 링크의 관심 등록자에게 인앱 알림(봇 Secrets 있을 때만)
+await notifyFavoritersOfDead(dead);

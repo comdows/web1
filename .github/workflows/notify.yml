@@ -1,5 +1,5 @@
-# 매칭 알림 생성 — 매일 07:00 KST(전일 22:00 UTC) + 수동 실행
-# 활성 인수 브리프 × 공개 매물을 대조해 조건에 맞는 새 매물이 있으면 인앱 알림(notifications)을 넣는다.
+# 매칭·관심 알림 생성 — 매일 07:00 KST(전일 22:00 UTC) + 수동 실행
+# ① 인수 브리프 × 공개 매물 조건 매칭 ② 즐겨찾기 유도 관심분야 신규 플랫폼 → 인앱 알림(notifications)
 # 멱등(unique + on_conflict) — 이미 알린 조합은 재실행해도 다시 만들지 않음.
 # 필요 Secrets: SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_BOT_EMAIL, ADMIN_BOT_PASSWORD (digest와 동일 봇)
 name: match-notify

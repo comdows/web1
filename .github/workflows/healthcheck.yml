@@ -26,6 +26,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          # 죽은 링크 관심 등록자 알림용(없으면 알림만 생략, 헬스체크 자체는 정상)
+          ADMIN_BOT_EMAIL: ${{ secrets.ADMIN_BOT_EMAIL }}
+          ADMIN_BOT_PASSWORD: ${{ secrets.ADMIN_BOT_PASSWORD }}
         run: node backend/collect/healthcheck.mjs
       # GitHub는 저장소 60일 무활동 시 스케줄 워크플로를 자동 비활성화한다 —
       # 월간 실행되는 이 잡이 다른 스케줄 워크플로를 재활성화해 조용한 정지를 방지
