@@ -685,6 +685,28 @@ export async function fetchAdminMetrics(): Promise<AdminMetrics> {
   return { members, favs, searches7d, outbound7d, livePosts, liveDeals, introduced: introP + introD };
 }
 
+/* ── 인앱 알림(0018) — 본인 알림 열람·읽음 처리(생성은 봇 잡이 admin으로) ── */
+export interface Notification {
+  id: string; kind: string; ref_type: string | null; ref_id: string | null;
+  title: string; body: string; url: string | null; read_at: string | null; created_at: string;
+}
+export async function listNotifications(): Promise<Notification[]> {
+  if (!remoteEnabled || !getSession()) return [];
+  return rest<Notification[]>("notifications?select=*&order=created_at.desc&limit=50").catch(() => []);
+}
+export async function unreadNotifCount(): Promise<number> {
+  if (!remoteEnabled || !getSession()) return 0;
+  return restCount("notifications?read_at=is.null&select=id").catch(() => 0);
+}
+export async function markNotifRead(id: string): Promise<void> {
+  await rest(`notifications?id=eq.${id}`, { method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ read_at: new Date().toISOString() }) });
+}
+export async function markAllNotifsRead(): Promise<void> {
+  await rest("notifications?read_at=is.null", { method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ read_at: new Date().toISOString() }) });
+}
+
 /* ── 관리자: 7일 퍼널·유입경로(0017 뷰 — is_admin 가드는 뷰 내부) ── */
 export interface Funnel7d {
   impressions: number; clicks: number; outbounds: number; searches: number;

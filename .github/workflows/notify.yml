@@ -1,0 +1,30 @@
+# 매칭 알림 생성 — 매일 07:00 KST(전일 22:00 UTC) + 수동 실행
+# 활성 인수 브리프 × 공개 매물을 대조해 조건에 맞는 새 매물이 있으면 인앱 알림(notifications)을 넣는다.
+# 멱등(unique + on_conflict) — 이미 알린 조합은 재실행해도 다시 만들지 않음.
+# 필요 Secrets: SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_BOT_EMAIL, ADMIN_BOT_PASSWORD (digest와 동일 봇)
+name: match-notify
+
+on:
+  schedule:
+    - cron: "0 22 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Generate match notifications
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          ADMIN_BOT_EMAIL: ${{ secrets.ADMIN_BOT_EMAIL }}
+          ADMIN_BOT_PASSWORD: ${{ secrets.ADMIN_BOT_PASSWORD }}
+        run: node backend/collect/notify.mjs
