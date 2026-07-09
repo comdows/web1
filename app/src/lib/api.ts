@@ -685,6 +685,19 @@ export async function fetchAdminMetrics(): Promise<AdminMetrics> {
   return { members, favs, searches7d, outbound7d, livePosts, liveDeals, introduced: introP + introD };
 }
 
+/* ── 관리자: 7일 퍼널·유입경로(0017 뷰 — is_admin 가드는 뷰 내부) ── */
+export interface Funnel7d {
+  impressions: number; clicks: number; outbounds: number; searches: number;
+  favorites: number; sessions: number; logged_in: number;
+}
+export async function fetchFunnel(): Promise<Funnel7d | null> {
+  const rows = await rest<Funnel7d[]>("v_funnel_7d?select=*").catch(() => []);
+  return rows[0] ?? null;
+}
+export async function fetchReferrers(): Promise<{ ref: string; sessions: number; events: number }[]> {
+  return rest<{ ref: string; sessions: number; events: number }[]>("v_referrers_7d?select=*").catch(() => []);
+}
+
 /* ── 관리자: 플랫폼 인라인 편집 + 정보 보강 큐 (admin write platforms RLS) ── */
 export async function getPlatformFull(id: string): Promise<Platform | null> {
   const rows = await rest<DbPlatform[]>(`platforms?id=eq.${encodeURIComponent(id)}&select=${PLATFORM_COLS}`);
@@ -784,14 +797,53 @@ export async function reviewOperatorClaim(c: { id: string; platform_id: string; 
   }
 }
 
-/* 분석 이벤트(fire-and-forget) — 원격 모드에서만 기록. 실패 무시. */
+/* 분석 이벤트(fire-and-forget) — 원격 모드에서만 기록. 실패 무시.
+ * 세션 지속(localStorage)·로그인 사용자·유입경로(ref)를 함께 남겨 퍼널·귀속·리텐션 분석을 가능하게 한다. */
 let sessionId = "";
+function sid(): string {
+  if (sessionId) return sessionId;
+  const gen = () => Math.random().toString(36).slice(2) + Date.now().toString(36);
+  try {
+    sessionId = localStorage.getItem("sm.sid") || "";
+    if (!sessionId) { sessionId = gen(); localStorage.setItem("sm.sid", sessionId); }
+  } catch { sessionId = sessionId || gen(); }
+  return sessionId;
+}
+/* 유입경로: utm_* 우선, 없으면 referrer 호스트명(전체 경로·개인정보 배제). 세션당 1회 계산·캐시. */
+let refCache: string | null | undefined;
+function currentRef(): string | null {
+  if (refCache !== undefined) return refCache;
+  try {
+    const u = new URL(location.href);
+    const utm = ["utm_source", "utm_medium", "utm_campaign"].map((k) => u.searchParams.get(k)).filter(Boolean).join("|");
+    const r = utm || (document.referrer ? new URL(document.referrer).hostname : "");
+    refCache = (r || "").slice(0, 120) || null;
+  } catch { refCache = null; }
+  return refCache;
+}
+function eventRow(type: string, platformId?: string, query?: string) {
+  return { type, platform_id: platformId ?? null, query: query ?? null,
+    session_id: sid(), user_id: getSession()?.user.id ?? null, ref: currentRef() };
+}
 export function trackEvent(type: "impression" | "click" | "outbound" | "favorite" | "search", platformId?: string, query?: string): void {
   if (!remoteEnabled) return;
-  if (!sessionId) sessionId = Math.random().toString(36).slice(2) + Date.now().toString(36);
   rest("events", {
-    method: "POST",
-    headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({ type, platform_id: platformId ?? null, query: query ?? null, session_id: sessionId }),
+    method: "POST", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify(eventRow(type, platformId, query)),
   }).catch(() => { /* 분석은 UX를 막지 않는다 */ });
+}
+/* 노출(impression)은 결과당 수십~수백 건 → 세션당 플랫폼 1회 dedup + 디바운스 벌크 insert(단일 요청). */
+const impSeen = new Set<string>();
+let impBuf: string[] = [];
+let impTimer: ReturnType<typeof setTimeout> | undefined;
+function flushImpressions(): void {
+  if (!impBuf.length) return;
+  const rows = impBuf.map((pid) => eventRow("impression", pid));
+  impBuf = [];
+  rest("events", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(rows) }).catch(() => { /* noop */ });
+}
+export function trackImpression(platformId: string): void {
+  if (!remoteEnabled || !platformId || impSeen.has(platformId)) return;
+  impSeen.add(platformId); impBuf.push(platformId);
+  clearTimeout(impTimer); impTimer = setTimeout(flushImpressions, 1500);
 }

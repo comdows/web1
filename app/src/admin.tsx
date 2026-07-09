@@ -8,7 +8,7 @@ import { useSession } from "./lib/auth";
 import {
   briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
-  fetchAdminMetrics, fetchOutboundCounts, fetchQueueCounts, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin,
+  fetchAdminMetrics, fetchFunnel, fetchOutboundCounts, fetchQueueCounts, fetchReferrers, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin,
   reviewAutoListed,
   listDealSubmissions, listOperatorClaims,
   adminDeclineInterest, adminIntroduce, cancelCharge, confirmDeposit, createSponsorSlot, declinePendingInterests,
@@ -229,6 +229,42 @@ function AutoListedQueue() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ── 퍼널·유입 패널(7일) — 노출→클릭→아웃바운드 전환 + 유입경로 상위 ── */
+function FunnelPanel() {
+  const [f, setF] = useState<Awaited<ReturnType<typeof fetchFunnel>>>(null);
+  const [refs, setRefs] = useState<Awaited<ReturnType<typeof fetchReferrers>>>([]);
+  useEffect(() => {
+    fetchFunnel().then(setF).catch(() => { /* noop */ });
+    fetchReferrers().then(setRefs).catch(() => { /* noop */ });
+  }, []);
+  if (!f) return null;
+  const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 1000) / 10 : 0);
+  return (
+    <div className="banner" style={{ marginBottom: 20 }}>
+      <b>퍼널·유입 (최근 7일)</b>
+      <div className="stats" style={{ marginTop: 8 }}>
+        <StatTile n={f.impressions.toLocaleString()} l="노출" />
+        <StatTile n={`${f.clicks.toLocaleString()} · ${pct(f.clicks, f.impressions)}%`} l="클릭(노출대비)" />
+        <StatTile n={`${f.outbounds.toLocaleString()} · ${pct(f.outbounds, f.clicks)}%`} l="외부방문(클릭대비)" tone="t" />
+        <StatTile n={f.searches.toLocaleString()} l="검색" />
+        <StatTile n={f.sessions.toLocaleString()} l="세션" tone="b" />
+        <StatTile n={`${f.logged_in.toLocaleString()}`} l="로그인 사용자" />
+      </div>
+      {refs.length > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <div className="frm-note" style={{ marginBottom: 4 }}>유입경로 상위(세션 기준)</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            {refs.slice(0, 12).map((r) => (
+              <Badge key={r.ref} kind="muted">{r.ref} · {r.sessions}</Badge>
+            ))}
+          </div>
+        </div>
+      )}
+      {f.impressions === 0 && <div className="frm-note" style={{ marginTop: 6 }}>아직 노출 데이터가 없어요 — 계측 배포 후 방문이 쌓이면 채워집니다.</div>}
     </div>
   );
 }
@@ -1117,6 +1153,8 @@ export function Admin() {
         <StatTile n={metrics ? String(metrics.livePosts + metrics.liveDeals) : "—"} l="게시 중(제안+매물)" />
         <StatTile n={metrics ? String(metrics.introduced) : "—"} l="누적 소개" tone="t" />
       </div>
+
+      <FunnelPanel />
 
       {/* 오늘 처리 대기 — 큐별 건수 요약(제보만 보이던 문제 해소) + 클릭 시 해당 섹션으로 점프 */}
       {counts && (() => {
