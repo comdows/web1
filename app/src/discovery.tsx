@@ -9,6 +9,7 @@ import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } 
 import { amOperatorOf, createOperatorClaim, getMyClaim, getPlatform, remoteEnabled, trackEvent } from "./lib/api";
 import type { OperatorClaim } from "./lib/api";
 import { pickRecommended, sortByRelevance } from "./lib/search";
+import { rankSimilar } from "./lib/match";
 import { Compare as CompareStore, Favs, Interests, Recent, useCompare, useFavs } from "./lib/store";
 import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
@@ -136,7 +137,8 @@ export function PlatformDetail({ id }: { id?: string }) {
   const cat = categoryById(p.category);
   const on = favs.has(p.id);
   const inCmp = cmp.has(p.id);
-  const related = (local ? list : (remote?.similar ?? [])).filter((x) => x.category === p.category && x.id !== p.id).slice(0, 6);
+  // 같은 분야 후보를 설명 토큰 유사도로 재정렬(임의 6개 → 실제로 비슷한 6개)
+  const related = rankSimilar(p, (local ? list : (remote?.similar ?? [])).filter((x) => x.category === p.category), 6);
   return (
     <div className="page container">
       {seoCtx && (

@@ -22,6 +22,7 @@ import type {
   SponsorSlotAdmin, Submission, SubscriptionAdmin,
 } from "./lib/api";
 import { checkAnonymity } from "./lib/anonymity";
+import { scoreBriefDeal } from "./lib/match";
 import { partnerTypes } from "./data";
 
 const LC_LABEL: Record<Lifecycle, string> = {
@@ -965,14 +966,16 @@ function IntroQueue() {
         );
       })}
       {briefs.map((b) => {
-        const matches = activeDeals.filter((d) => briefMatchesDeal(b, d));
+        // 적합도(scoreBriefDeal) 높은 순 — 소개 우선순위 판단 보조
+        const matches = activeDeals.filter((d) => briefMatchesDeal(b, d))
+          .map((d) => ({ d, s: scoreBriefDeal(b, d) })).sort((x, y) => y.s - x.s);
         return (
           <div className="sub-item" key={b.id}>
             <div style={{ minWidth: 0 }}>
               <b>📮 인수 브리프</b> — {b.entity} · {b.budget_band} · {b.mode}
               <div className="frm-note">{b.categories.length ? b.categories.join(", ") : "분야 무관"}{b.note ? ` — ${b.note}` : ""}</div>
               <div className="mono" style={{ fontSize: 11, color: matches.length ? "var(--teal)" : "var(--faint)" }}>
-                {matches.length ? `맞는 매물: ${matches.map((m) => m.id).join(", ")}` : "맞는 매물 없음(게시 중 기준)"}
+                {matches.length ? `맞는 매물(적합도순): ${matches.map((m) => `${m.d.id}(${m.s})`).join(", ")}` : "맞는 매물 없음(게시 중 기준)"}
               </div>
             </div>
             <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
