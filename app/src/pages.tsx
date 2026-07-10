@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { listings, categoryById, groups, categoriesByGroup, partnerGoals, partnerGroups, partnerTypes } from "./data";
 import type { PartnerType } from "./data";
-import { Badge, ShareButton } from "./components";
+import { Badge, ReportButton, ShareButton } from "./components";
 import { FLAGS } from "./config";
 import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
@@ -543,7 +543,8 @@ export function Partners() {
             </div></div>
             {p.detail && <p>{p.detail}</p>}
             <p style={{ fontSize: 12.5 }}><b>Give</b> {p.give_text}<br /><b>Get</b> {p.get_text}<br />
-              <span className="faint">{p.size_text}{p.posted ? ` · ${p.posted}` : ""}</span></p>
+              <span className="faint">{p.size_text}{p.posted ? ` · ${p.posted}` : ""}</span>
+              {!myPostIds.has(p.id) && <span style={{ marginLeft: 10 }}><ReportButton targetType="partner_post" targetId={p.id} /></span>}</p>
             {p.status === "published" && (
               myPostIds.has(p.id) ? <div className="frm-note">내가 올린 제안 — 신청 현황은 계정 → <b>받은 매칭 신청</b>에서 확인하세요.</div>
               : applied.has(p.id) ? <div className="ok" style={{ fontSize: 13 }}>신청 완료 ✓ 진행 상태는 계정 → 내 활동에서 확인하세요</div>
@@ -937,9 +938,10 @@ export function DealDetailPage({ id }: { id?: string }) {
         <div className="fact"><div className="k">게시일</div><div className="v">{deal.posted}</div></div>
         {deal.sale_reason && <div className="fact"><div className="k">매각 사유</div><div className="v">{deal.sale_reason}</div></div>}
       </div>
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "12px 0" }}>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "12px 0", alignItems: "center" }}>
         <ShareButton small={false} title={`매물 ${deal.id} — 세모플 거래소`} url={`${location.origin}${import.meta.env.BASE_URL}?view=deal&id=${encodeURIComponent(deal.id)}`} />
         <button className="fchip" onClick={() => go("deal-guide")}>양수도 가이드 →</button>
+        {!deal.is_demo && <ReportButton targetType="deal" targetId={deal.id} />}
       </div>
       {equity ? (
         <div className="frm-note">지분 거래 형태 매물은 게시·소개하지 않습니다 — <button className="linklike" onClick={() => go("exchange")}>보드로 돌아가기</button></div>

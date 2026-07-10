@@ -11,6 +11,7 @@ on:
 
 permissions:
   contents: read
+  issues: write   # 실패 알림(ops-alert 이슈)
 
 jobs:
   notify:
@@ -28,3 +29,11 @@ jobs:
           ADMIN_BOT_EMAIL: ${{ secrets.ADMIN_BOT_EMAIL }}
           ADMIN_BOT_PASSWORD: ${{ secrets.ADMIN_BOT_PASSWORD }}
         run: node backend/collect/notify.mjs
+      - name: 실패 알림(ops-alert 이슈)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sf -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues" \
+            -d "{\"title\":\"[운영] ${{ github.workflow }} 실패 — 확인 필요\",\"body\":\"실행 로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"labels\":[\"ops-alert\"]}"

@@ -29,6 +29,7 @@ const Privacy    = lazy(() => import("./legal").then((m) => ({ default: m.Privac
 const Notifications = lazy(() => import("./notifications").then((m) => ({ default: m.Notifications })));
 const Optout     = lazy(() => import("./account").then((m) => ({ default: m.Optout })));
 const DealView   = lazy(() => import("./pages").then((m) => ({ default: m.DealDetailPage })));
+const Support    = lazy(() => import("./support").then((m) => ({ default: m.Support })));
 import { useSession } from "./lib/auth";
 import { fetchRecentPlatforms, remoteEnabled, rest, trackEvent, unreadNotifCount } from "./lib/api";
 
@@ -70,7 +71,7 @@ const VIEW_TITLES: Partial<Record<ViewName, string>> = {
   onboarding: "맞춤 추천", account: "계정", submit: "플랫폼 제보", admin: "관리 콘솔",
   terms: "이용약관", privacy: "개인정보처리방침", "deal-guide": "양수도 가이드", "value-check": "가치 자가 진단",
   "ai-finder": "AI 도구 찾기", weekly: "새로 나온 플랫폼·AI", packs: "업종별 시작 조합",
-  optout: "이메일 수신거부", deal: "매물 상세",
+  optout: "이메일 수신거부", deal: "매물 상세", support: "문의·도움말",
 };
 
 export default function App() {
@@ -85,6 +86,13 @@ export default function App() {
       .catch(() => { /* 공지 없음 */ });
   }, []);
   const [searchQ, setSearchQ] = useState(init.q);
+  // 세션 만료(api.ts rest()가 401+세션에서 발행) — stale 세션에 갇히지 않게 재로그인 유도
+  const [sessionExpired, setSessionExpired] = useState(false);
+  useEffect(() => {
+    const on = () => setSessionExpired(true);
+    window.addEventListener("sm:session-expired", on);
+    return () => window.removeEventListener("sm:session-expired", on);
+  }, []);
   // home-only state (1a: 히어로 검색은 검색 페이지로 보냄, fav는 ★ 보기)
   const [q, setQ] = useState(init.view === "home" ? init.q : "");
   const [fav, setFav] = useState(init.fav);
@@ -239,6 +247,13 @@ export default function App() {
         </div>
       </div></header>
 
+      {sessionExpired && (
+        <div className="container"><div className="banner" style={{ marginTop: 10 }}>
+          ⏰ <b>세션이 만료됐어요</b> — 안전을 위해 로그아웃되었습니다. 다시 로그인해 주세요.{" "}
+          <button className="btn sm" onClick={() => { setSessionExpired(false); go("account"); }}>로그인</button>{" "}
+          <button className="linklike" onClick={() => setSessionExpired(false)}>닫기</button>
+        </div></div>
+      )}
       {pricingNotice && (
         <div className="container"><div className="banner" style={{ marginTop: 10 }}>
           📢 <b>유료화 사전 공지</b> — {pricingNotice.slice(0, 10)}부터 일부 제휴 서비스(스폰서·연결료·Pro)가 유료로 전환됩니다.
@@ -265,6 +280,7 @@ export default function App() {
         : view === "notifications" ? <Notifications />
         : view === "optout" ? <Optout />
         : view === "deal" ? <DealView id={detailId} />
+        : view === "support" ? <Support />
         : (
         <main>
           {/* ── 1a 히어로: 검색 + 의도 칩 + 지표 스트립을 한 시각 단위로 ── */}

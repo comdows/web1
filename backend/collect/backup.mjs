@@ -54,7 +54,8 @@ async function fetchAll(token, table, orderCol) {
 }
 
 /* 백업 대상 — 사용자 생성·운영 데이터 전부(분석 events는 제외: 대용량·비핵심).
- * favorites의 admin 읽기는 0008 정책 전제. */
+ * favorites의 admin 읽기는 0008 정책 전제.
+ * optional: 최근 마이그레이션 신설 테이블 — 미실행 DB에서 백업 전체가 죽지 않게 경고만(실행 후엔 자동 포함). */
 const TABLES = [
   ["profiles", "created_at"],
   ["submissions", "created_at"],
@@ -67,14 +68,30 @@ const TABLES = [
   ["operator_claims", "created_at"],
   ["favorites", "created_at"],
   ["platforms", "id"],
+  // 결제·구독·크레딧(0011·0026) — 환불 판정·잔액의 근거
+  ["charges", "created_at"],
+  ["subscriptions", "started_at"],
+  ["credit_ledger", "created_at"],
+  // 콘텐츠·알림(0018·0022·0025·0027·0028)
+  ["reviews", "created_at"],
+  ["deal_questions", "created_at"],
+  ["notifications", "created_at"],
+  ["platform_news", "created_at"],
+  ["reports", "created_at", true],
+  ["inquiries", "created_at", true],
 ];
 
 const token = await login();
 await assertAdmin(token);
 
 const out = { meta: { taken_at: new Date().toISOString(), source: SB_URL.replace(/^https?:\/\//, ""), tables: {} }, data: {} };
-for (const [table, order] of TABLES) {
-  const rows = await fetchAll(token, table, order);
+for (const [table, order, optional] of TABLES) {
+  let rows;
+  try { rows = await fetchAll(token, table, order); }
+  catch (e) {
+    if (optional) { console.warn(`  ${table}: 생략(${e.message}) — 0028 마이그레이션 실행 여부 확인`); continue; }
+    throw e;
+  }
   out.data[table] = rows;
   out.meta.tables[table] = rows.length;
   console.log(`  ${table}: ${rows.length}행`);
@@ -95,3 +112,14 @@ try {
   if (res.ok) console.log(`events 정리: ${await res.text()}행 삭제(90일 초과)`);
   else console.warn(`events 정리 생략(${res.status}) — 0010 마이그레이션 실행 여부 확인`);
 } catch (e) { console.warn(`events 정리 생략: ${e.message}`); }
+
+/* 알림 보존 정리(0028 RPC — 읽음 90일·미읽음 180일 초과 삭제). 같은 이유로 경고만. */
+try {
+  const res = await fetch(`${SB_URL}/rest/v1/rpc/purge_old_notifications`, {
+    method: "POST",
+    headers: { apikey: SB_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ p_read_days: 90, p_unread_days: 180 }),
+  });
+  if (res.ok) console.log(`notifications 정리: ${await res.text()}행 삭제`);
+  else console.warn(`notifications 정리 생략(${res.status}) — 0028 마이그레이션 실행 여부 확인`);
+} catch (e) { console.warn(`notifications 정리 생략: ${e.message}`); }

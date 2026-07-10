@@ -61,10 +61,18 @@ const QUEUES = [
   { label: "매물 검수", table: "deal_submissions", filter: "status=in.(pending,hold)" },
   { label: "운영자 인증", table: "operator_claims", filter: "status=in.(pending,code_sent)" },
   { label: "소개 대기", table: "v_admin_intro_queue", filter: "status=eq.pending" },
+  // 0028 신설 — 미실행 DB에서 다이제스트 전체가 죽지 않게 optional(실행 후 자동 편입)
+  { label: "신고 처리", table: "reports", filter: "status=eq.pending", optional: true },
+  { label: "1:1 문의", table: "inquiries", filter: "status=eq.open", optional: true },
 ];
 const rows = [];
 for (const q of QUEUES) {
-  const n = await count(token, `${q.table}?${q.filter}`);
+  let n;
+  try { n = await count(token, `${q.table}?${q.filter}`); }
+  catch (e) {
+    if (q.optional) { console.warn(`${q.label} 생략(${e.message}) — 0028 실행 여부 확인`); continue; }
+    throw e;
+  }
   const old = n > 0 ? await oldest(token, q.table, q.filter) : null;
   rows.push({ ...q, n, wait: waitDays(old) });
 }
