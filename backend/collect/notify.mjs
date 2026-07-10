@@ -58,12 +58,12 @@ async function rest(token, pathQ, init = {}) {
 const CAT_NEW_CAP = 5; // 사용자당 1회 실행에서 "관심 분야 신규" 알림 상한(플러딩 방지 — 나머지는 다음 실행에 dedup으로 이어짐)
 
 /* ── 데이터 로드 ── */
-let briefs, deals, favorites, platforms, token;
+let briefs, deals, favorites, platforms, expiring, token;
 if (FIXTURE) {
   const fs = await import("node:fs");
   const fx = JSON.parse(fs.readFileSync(FIXTURE, "utf8"));
   briefs = fx.briefs || []; deals = fx.deals || [];
-  favorites = fx.favorites || []; platforms = fx.platforms || [];
+  favorites = fx.favorites || []; platforms = fx.platforms || []; expiring = fx.expiring || [];
 } else {
   token = await login();
   await assertAdmin(token);
@@ -71,8 +71,10 @@ if (FIXTURE) {
   deals = await rest(token, "deals?status=eq.open&is_demo=is.false&select=id,category_id,mode,revenue_band,region,summary");
   favorites = await rest(token, "favorites?select=user_id,platform_id&limit=10000");
   platforms = await rest(token, "platforms?select=id,name,category_id,is_new&limit=5000");
+  // 만료 임박 구독(0026 v_expiring_subs — admin 뷰). 뷰 미적용(마이그레이션 전) DB에서도 잡이 죽지 않게 폴백.
+  expiring = await rest(token, "v_expiring_subs?select=user_id,plan_id,current_period_end").catch(() => []);
 }
-console.log(`활성 브리프 ${briefs.length} · 공개 매물 ${deals.length} · 즐겨찾기 ${favorites.length} · 플랫폼 ${platforms.length}`);
+console.log(`활성 브리프 ${briefs.length} · 공개 매물 ${deals.length} · 즐겨찾기 ${favorites.length} · 플랫폼 ${platforms.length} · 만료 임박 구독 ${(expiring || []).length}`);
 
 const notifs = [];
 
@@ -114,7 +116,20 @@ for (const [uid, favSet] of favByUser) {
     if (added >= CAT_NEW_CAP) break;
   }
 }
-console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new)`);
+/* 3) 구독 만료 임박(D-7) — 자동결제가 없는 구조라 갱신 주문을 인앱으로 안내(수익화 v2).
+ *    ref_id에 만료일을 넣어 "같은 주기엔 1회만" 알림(주기 갱신되면 만료일이 바뀌어 새 알림). */
+const PLAN_KO = { pro: "Pro 멤버십", buyer: "인수자 멤버십" };
+for (const e of expiring || []) {
+  const endDay = (e.current_period_end || "").slice(0, 10);
+  if (!endDay) continue;
+  notifs.push({
+    user_id: e.user_id, kind: "sub_expiry", ref_type: "subscription", ref_id: `${e.plan_id}:${endDay}`,
+    title: `${PLAN_KO[e.plan_id] || e.plan_id} 만료 예정 (${endDay})`,
+    body: "자동결제가 없어요 — 계정 → 내 구독에서 갱신 주문하면 잔여 기간 끝에 이어서 연장됩니다.",
+    url: "?view=account",
+  });
+}
+console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new + sub_expiry)`);
 
 if (DRY) {
   for (const n of notifs.slice(0, 30)) console.log(`  + ${n.user_id.slice(0, 8)}… ← ${n.ref_id}: ${n.title}`);

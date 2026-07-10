@@ -13,14 +13,15 @@ import { FLAGS } from "./config";
 import {
   briefMatchesDeal, cancelDealSubmission, cancelSubmission, closeMyPost, createSubmission,
   deactivateBrief, deleteMyAccount, fetchDeals, fetchOperatorStats, listInterestsOnMyPosts, listMyBriefs, listMyCharges, listMyDealInterests,
-  listMyDealSubmissions, listMyIntroOutcomes, listMyOperatedPlatforms, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions, listReceivedProposals,
+  listMyDealSubmissions, listMyIntroOutcomes, listMyOperatedPlatforms, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions, listMySubscriptions, fetchMyCreditBalance, listReceivedProposals,
   partnerRefCode, placeOrder, recordIntroOutcome, registerOptout, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
 } from "./lib/api";
 import { bankTransferProvider, fetchBillingSettings } from "./lib/billing";
 import { scoreBriefDeal } from "./lib/match";
 import { usePlatformIndex } from "./lib/platforms";
+import { PRICES, won } from "./lib/pricing";
 import type { DepositInstructions } from "./lib/billing";
-import type { BuyerBriefRow, DealSubmissionRow, IntroOutcomeKind, MyCharge, MyInterestRow, MyPostInterest, OperatorStats, PartnerPostAdmin, PublicDeal, ReceivedProposal, Submission } from "./lib/api";
+import type { BuyerBriefRow, DealSubmissionRow, IntroOutcomeKind, MyCharge, MyInterestRow, MyPostInterest, MySubscription, OperatorStats, PartnerPostAdmin, PublicDeal, ReceivedProposal, Submission } from "./lib/api";
 
 const OUTCOME_LABEL: Record<IntroOutcomeKind, string> = { progressing: "진행 중", success: "성사됨 🎉", no: "성사 안 됨" };
 /* 소개 후 성사·후기 회수(0021) — 성공보수 아닌 품질 신호. 응답하면 갱신 가능. */
@@ -184,6 +185,73 @@ function PrivacyLink() {
 }
 
 /* ── 계정 화면 ────────────────────────────────────────────── */
+/* ── 내 구독·크레딧(수익화 v2 셀프서브) — 만료 D-7부터 갱신 주문, 크레딧 잔액·충전.
+ * 스위치 off(FLAGS.billing) 동안엔 안내만 — 주문 자격·가격 판정은 전부 서버(place_order). */
+const PLAN_LABEL: Record<string, string> = { pro: "Pro 멤버십", buyer: "인수자 멤버십" };
+function BillingSelfServe() {
+  const { session } = useSession();
+  const [subs, setSubs] = useState<MySubscription[]>([]);
+  const [credit, setCredit] = useState(0);
+  const [busy, setBusy] = useState("");
+  const [note, setNote] = useState("");
+  useEffect(() => {
+    if (!session) return;
+    let alive = true;
+    listMySubscriptions().then((r) => { if (alive) setSubs(r); }).catch(() => { /* noop */ });
+    fetchMyCreditBalance().then((n) => { if (alive) setCredit(n); }).catch(() => { /* noop */ });
+    return () => { alive = false; };
+  }, [session]);
+  if (subs.length === 0 && credit === 0 && !FLAGS.billing.membership && !FLAGS.billing.connection) return null;
+  const order = async (key: string, fn: () => ReturnType<typeof placeOrder>) => {
+    if (busy) return;
+    setBusy(key); setNote("");
+    try {
+      const o = await fn();
+      const d = await bankTransferProvider.instruct(o.id, o.total, "");
+      setNote(`주문 접수 ✓ ${d.bank} · ${won(o.total)} · 기한 ${d.deadlineDays}일 — 상세는 아래 결제 내역에서 확인하세요.`);
+    } catch (ex) { setNote(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(""); }
+  };
+  const d7 = (end: string | null) => end !== null && new Date(end).getTime() - Date.now() < 7 * 24 * 3600 * 1000;
+  return (
+    <>
+      <div className="sec-title" style={{ marginTop: 28 }}>내 구독 · 크레딧</div>
+      <div className="sub-list">
+        {subs.map((sb) => (
+          <div className="sub-item" key={sb.plan_id}>
+            <div style={{ minWidth: 0 }}>
+              <b>{PLAN_LABEL[sb.plan_id] ?? sb.plan_id}</b> <Badge kind="good">이용 중</Badge>
+              <div className="frm-note">만료 {sb.current_period_end?.slice(0, 10) ?? "—"} · 자동결제 없음 — 만료 7일 전부터 갱신 주문할 수 있어요.</div>
+            </div>
+            {d7(sb.current_period_end) && (
+              <button className="btn primary sm" style={{ flexShrink: 0 }} disabled={busy !== ""}
+                onClick={() => order(sb.plan_id, () => placeOrder("subscription", sb.plan_id))}>갱신 주문 →</button>
+            )}
+          </div>
+        ))}
+        <div className="sub-item">
+          <div style={{ minWidth: 0 }}>
+            <b>연결료 크레딧</b> <span className="mono" style={{ fontSize: 13 }}>{won(credit)}</span>
+            <div className="frm-note">소개(연락처 공유) 실행 시 연결료가 잔액에서 먼저 차감돼요.
+              {!FLAGS.billing.connection && " 충전은 유료화 오픈 시 제공됩니다."}</div>
+          </div>
+          {FLAGS.billing.connection && (
+            <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+              <button className="btn ghost sm" disabled={busy !== ""}
+                onClick={() => order("c50", () => placeOrder("credit", undefined, undefined, undefined, "50"))}>
+                {won(PRICES.credit50.pay)} 충전(+{won(PRICES.credit50.get - PRICES.credit50.pay)})</button>
+              <button className="btn ghost sm" disabled={busy !== ""}
+                onClick={() => order("c100", () => placeOrder("credit", undefined, undefined, undefined, "100"))}>
+                {won(PRICES.credit100.pay)} 충전(+{won(PRICES.credit100.get - PRICES.credit100.pay)})</button>
+            </div>
+          )}
+        </div>
+      </div>
+      {note && <div className="frm-note">{note}</div>}
+    </>
+  );
+}
+
 /* ── 이메일 수신거부(정보통신망법 §50 — 0015 outreach_optout 공개 등록) ──
  * 제휴 제안 메일·알림 요약 메일의 수신거부 링크가 도착하는 공개 페이지(로그인 불요).
  * 등록만 가능하고 목록 조회는 관리자·서버 전용 — 주소 존재 여부가 새어나가지 않는다. */
@@ -273,6 +341,7 @@ function OperatorDash() {
                         🤝 {typeName(r.type_id)} · {r.sender_name} · {r.created_at.slice(0, 10)} — {r.subject}
                       </div>
                     ))}
+                    <div className="frm-note">💡 Pro 멤버십({won(PRICES.pro)}/월 예정)에는 레퍼럴형 소개 월 3건이 포함돼요. <button className="linklike" onClick={() => go("partners")}>요금 안내 →</button></div>
                   </div>
                 )}
               </div>
@@ -546,6 +615,8 @@ export function Account() {
         </>
       )}
 
+      <BillingSelfServe />
+
       {charges.length > 0 && (
         <>
           <div className="sec-title" style={{ marginTop: 28 }}>결제 내역</div>
@@ -553,7 +624,8 @@ export function Account() {
             {charges.map((c) => {
               const total = c.amount + c.vat;
               const kindLabel = c.kind === "boost" ? "스폰서 노출" : c.kind === "subscription" ? "Pro 멤버십"
-                : c.kind === "connection_fee" ? `연결료${c.fee_tier ? ` ${c.fee_tier}형` : ""}` : c.kind;
+                : c.kind === "connection_fee" ? `연결료${c.fee_tier ? ` ${c.fee_tier}형` : ""}`
+                : c.kind === "listing_fee" ? "매물 리스팅" : c.kind === "credit_topup" ? "크레딧 충전" : c.kind;
               const overdue = c.status === "awaiting_deposit" && c.deposit_deadline && c.deposit_deadline < new Date().toISOString().slice(0, 10);
               const badge = c.status === "awaiting_deposit" ? { k: "soon" as const, l: overdue ? "기한 경과" : "입금 대기" }
                 : c.status === "paid" ? { k: "good" as const, l: "결제 완료" }

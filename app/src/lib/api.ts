@@ -378,8 +378,33 @@ export async function respondToInterest(interestId: string, accept: boolean): Pr
 }
 /* 주문 — 금액·할인·멱등(중복 주문 재사용)은 전부 서버가 판정. total은 안내 배너의 단일 소스 */
 export interface OrderResult { id: string; total: number; reused: boolean }
-export async function placeOrder(kind: "boost" | "subscription", planId?: string, postId?: string, depositorHint?: string): Promise<OrderResult> {
-  return rest<OrderResult>("rpc/place_order", { method: "POST", body: JSON.stringify({ p_kind: kind, p_plan_id: planId ?? null, p_post_id: postId ?? null, p_depositor_hint: depositorHint ?? null }) });
+/* 주문(무통장) — kind별 스위치·자격·가격 판정은 전부 서버(place_order RPC).
+ * ref: listing_extend=매물 id(text), credit=패키지('50'|'100') — 0026 */
+export async function placeOrder(
+  kind: "boost" | "subscription" | "listing" | "listing_extend" | "credit",
+  planId?: string, postId?: string, depositorHint?: string, ref?: string,
+): Promise<OrderResult> {
+  return rest<OrderResult>("rpc/place_order", {
+    method: "POST",
+    body: JSON.stringify({ p_kind: kind, p_plan_id: planId ?? null, p_post_id: postId ?? null, p_depositor_hint: depositorHint ?? null, p_ref: ref ?? null }),
+  });
+}
+/* 내 구독(own RLS) — 만료일 표시·D-7 갱신 버튼용 */
+export interface MySubscription { plan_id: string; status: string; current_period_end: string | null }
+export async function listMySubscriptions(): Promise<MySubscription[]> {
+  const uid = getSession()?.user.id;
+  if (!uid) return [];
+  return rest<MySubscription[]>(`subscriptions?user_id=eq.${uid}&status=in.(active,past_due)&select=plan_id,status,current_period_end`);
+}
+/* 내 크레딧 잔액(own credit ledger RLS) — 유효분(미만료)만 합산 */
+export async function fetchMyCreditBalance(): Promise<number> {
+  const uid = getSession()?.user.id;
+  if (!uid) return 0;
+  const rows = await rest<{ delta: number; expires_at: string | null }[]>(
+    `credit_ledger?user_id=eq.${uid}&select=delta,expires_at`,
+  ).catch(() => [] as { delta: number; expires_at: string | null }[]);
+  const now = Date.now();
+  return rows.filter((r) => !r.expires_at || new Date(r.expires_at).getTime() > now).reduce((s, r) => s + r.delta, 0);
 }
 /* 내 결제·청구 내역(own charges RLS) — 입금 대기 건은 계정 화면에서 계좌·기한을 다시 확인 */
 export interface MyCharge {
