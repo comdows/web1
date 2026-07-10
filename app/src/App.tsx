@@ -39,7 +39,7 @@ function readParams() {
   const p = new URLSearchParams(location.search);
   // SEO 프리렌더 경로 진입: /p/<id> → 상세, /c/<분야> → 검색(분야 필터)
   const pre = location.pathname.match(/\/p\/([a-z0-9-]+)\/?$/);
-  const cpre = location.pathname.match(/\/c\/([a-z0-9_-]+)\/?$/);
+  const cpre = location.pathname.match(/\/c\/([a-z0-9_-]+)(?:\/compare)?\/?$/); // /compare 프리렌더 랜딩도 분야 검색으로
   return {
     view: pre ? ("detail" as ViewName) : cpre ? ("search" as ViewName) : (p.get("view") as ViewName) || "home",
     id: pre ? pre[1] : p.get("id") || "",

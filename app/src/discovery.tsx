@@ -514,6 +514,11 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
           </div>
           <div className="facet-group">
             <div className="facet-title">분야</div>
+            {cats.size === 1 && (
+              <a className="linklike" style={{ fontSize: 12.5 }} href={`${import.meta.env.BASE_URL}c/${[...cats][0]}/compare/`}>
+                📊 이 분야 비교표(수수료·정산·입점) →
+              </a>
+            )}
             {groups.map((g) => (
               <div key={g.id} className="facet-sub">
                 <div className="facet-sub-title">{g.icon} {g.name}</div>
