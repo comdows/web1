@@ -120,7 +120,7 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    const onPop = () => { const p = readParams(); setView(p.view); setDetailId(p.id); setSearchQ(p.q); };
+    const onPop = () => { const p = readParams(); setView(p.view); setDetailId(p.id); setSearchQ(p.q); setFav(p.fav); };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
