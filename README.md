@@ -67,6 +67,7 @@ backend/
 - [ ] **`0020_freshness.sql` 실행**(링크 신선도 — `platforms.link_status`/`link_checked_at`. 멱등. 실행 후 월간 헬스체크가 링크 생존을 기록 → 카드/상세에 "⚠ 링크 확인"·"검증" 배지 노출. 죽은 링크 관심 등록자 알림은 기존 대로)
 - [ ] **`0021_intro_outcomes.sql` 실행**(소개 후 성사·후기 — `intro_outcomes` 테이블 + RLS(본인만) + `v_intro_success` 관리 요약. 멱등. 실행 후 소개 완료된 매칭에 계정 "내 활동"에서 성사 응답을 받고 관리 콘솔에 성사율 표시)
 - [ ] **`0022_deal_trust.sql` 실행**(거래소 신뢰 — `deals.owner_verified`(운영자 확인 ✓ 배지, 검증 자료 확인 후 관리 콘솔에서 토글)·`proofs`(준비 증빙 유무 태그 — 수치·가격 아님) + 매물 익명 Q&A `deal_questions`+공개 뷰(answered만·질문자 신원 컬럼 없음). 멱등. 실행 후 매각폼 증빙 체크·매물 카드 배지/Q&A·관리 콘솔 "💬 매물 질문 답변 큐"가 동작)
+- [ ] **`0023_operator_dash.sql` 실행**(운영자 대시보드 — `operator_platform_stats` definer RPC(운영자 본인 플랫폼만·30일 노출/클릭/외부방문/즐겨찾기 집계값만, 개별 행동로그 비노출) + `outreach_proposals` 운영자 read 정책(내 플랫폼이 받은 제휴 제안 열람). 멱등. 실행 후 계정 페이지에 "내 플랫폼 (운영자)" 섹션이 동작 — 인증 운영자에게만 표시)
 - [ ] (선택) **제휴 제안 서버 발송 켜기**(세모플이 대표 이메일로 직접 발송 — 법적·인프라 준비 후에만):
   ① 이메일 발송 서비스 계정(Resend 등) + 발신 도메인 SPF/DKIM/DMARC 인증
   ② `supabase functions deploy send-proposal` + `supabase secrets set RESEND_API_KEY=... EMAIL_FROM="세모플 제휴 <partner@도메인>"`

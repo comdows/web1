@@ -1,7 +1,7 @@
 /* P2 참여 화면 — 계정(로그인·회원가입·프로필·내 제보) + 플랫폼 제보 폼 */
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
-import { groups, categoriesByGroup } from "./data";
+import { groups, categoriesByGroup, partnerTypes } from "./data";
 import { Badge } from "./components";
 import { useNav } from "./nav";
 import {
@@ -12,14 +12,15 @@ import { TERMS_VERSION } from "./legal";
 import { FLAGS } from "./config";
 import {
   briefMatchesDeal, cancelDealSubmission, cancelSubmission, closeMyPost, createSubmission,
-  deactivateBrief, deleteMyAccount, fetchDeals, listInterestsOnMyPosts, listMyBriefs, listMyCharges, listMyDealInterests,
-  listMyDealSubmissions, listMyIntroOutcomes, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions,
+  deactivateBrief, deleteMyAccount, fetchDeals, fetchOperatorStats, listInterestsOnMyPosts, listMyBriefs, listMyCharges, listMyDealInterests,
+  listMyDealSubmissions, listMyIntroOutcomes, listMyOperatedPlatforms, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions, listReceivedProposals,
   partnerRefCode, placeOrder, recordIntroOutcome, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
 } from "./lib/api";
 import { bankTransferProvider, fetchBillingSettings } from "./lib/billing";
 import { scoreBriefDeal } from "./lib/match";
+import { usePlatformIndex } from "./lib/platforms";
 import type { DepositInstructions } from "./lib/billing";
-import type { BuyerBriefRow, DealSubmissionRow, IntroOutcomeKind, MyCharge, MyInterestRow, MyPostInterest, PartnerPostAdmin, PublicDeal, Submission } from "./lib/api";
+import type { BuyerBriefRow, DealSubmissionRow, IntroOutcomeKind, MyCharge, MyInterestRow, MyPostInterest, OperatorStats, PartnerPostAdmin, PublicDeal, ReceivedProposal, Submission } from "./lib/api";
 
 const OUTCOME_LABEL: Record<IntroOutcomeKind, string> = { progressing: "진행 중", success: "성사됨 🎉", no: "성사 안 됨" };
 /* 소개 후 성사·후기 회수(0021) — 성공보수 아닌 품질 신호. 응답하면 갱신 가능. */
@@ -183,6 +184,75 @@ function PrivacyLink() {
 }
 
 /* ── 계정 화면 ────────────────────────────────────────────── */
+/* ── 내 플랫폼(운영자) 대시보드(0023) — 인증 운영자에게만 렌더(목록 비면 숨김).
+ * 스탯은 definer RPC(운영자 본인 플랫폼만·30일 집계값만), 받은 제안은 0023 운영자 read 정책. */
+function OperatorDash() {
+  const go = useNav();
+  const idx = usePlatformIndex();
+  const [ops, setOps] = useState<{ platform_id: string; granted_at: string }[]>([]);
+  const [stats, setStats] = useState<Record<string, OperatorStats | null>>({});
+  const [received, setReceived] = useState<ReceivedProposal[]>([]);
+  useEffect(() => {
+    let alive = true;
+    listMyOperatedPlatforms().then((rows) => {
+      if (!alive) return;
+      setOps(rows);
+      rows.forEach((r) => {
+        fetchOperatorStats(r.platform_id)
+          .then((s) => { if (alive) setStats((m) => ({ ...m, [r.platform_id]: s })); })
+          .catch(() => { if (alive) setStats((m) => ({ ...m, [r.platform_id]: null })); });
+      });
+      if (rows.length > 0) {
+        listReceivedProposals(rows.map((r) => r.platform_id))
+          .then((p) => { if (alive) setReceived(p); }).catch(() => { /* noop — 0023 미실행 시 */ });
+      }
+    }).catch(() => { /* noop */ });
+    return () => { alive = false; };
+  }, []);
+  if (ops.length === 0) return null;
+  const typeName = (id: string) => partnerTypes.find((t) => t.id === id)?.label ?? id;
+  return (
+    <>
+      <div className="sec-title" style={{ marginTop: 28 }}>내 플랫폼 (운영자)</div>
+      <div className="sub-list">
+        {ops.map((o) => {
+          const p = idx.get(o.platform_id);
+          const s = stats[o.platform_id];
+          const recv = received.filter((r) => r.target_platform_id === o.platform_id);
+          return (
+            <div className="sub-item" key={o.platform_id} style={{ alignItems: "flex-start" }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <b>{p?.name ?? o.platform_id}</b> <Badge kind="verify">운영자 ✓</Badge>
+                <div className="frm-note" style={{ marginTop: 4 }}>
+                  최근 30일 — {s === undefined ? "집계 불러오는 중…"
+                    : s === null ? "집계를 불러오지 못했어요 (0023 마이그레이션 필요 여부 확인)"
+                    : <>노출 <b>{s.impressions}</b> · 클릭 <b>{s.clicks}</b> · 공식 사이트 방문 <b>{s.outbounds}</b> · 즐겨찾기 <b>{s.favorites}</b> <span className="faint">(세션 기준 — 개인 식별 없음)</span></>}
+                </div>
+                {recv.length > 0 && (
+                  <div style={{ marginTop: 6 }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 600 }}>받은 제휴 제안 {recv.length}건</div>
+                    {recv.slice(0, 5).map((r) => (
+                      <div key={r.id} className="frm-note">
+                        🤝 {typeName(r.type_id)} · {r.sender_name} · {r.created_at.slice(0, 10)} — {r.subject}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <button className="btn ghost sm" style={{ flexShrink: 0 }} onClick={() => go("detail", { id: o.platform_id })}>
+                정보 채우기·정정 →
+              </button>
+            </div>
+          );
+        })}
+      </div>
+      <p className="sub faint" style={{ fontSize: 12.5 }}>
+        수치가 궁금한 만큼, 상세 정보가 채워진 플랫폼일수록 클릭·제휴 제안이 늘어요 — 상세 페이지의 "정정·보강 제안"으로 직접 채울 수 있습니다.
+      </p>
+    </>
+  );
+}
+
 export function Account() {
   const go = useNav();
   const { session, profile, isAdmin } = useSession();
@@ -368,6 +438,8 @@ export function Account() {
           )}
         </div>
       </div>
+
+      <OperatorDash />
 
       <div className="sec-title" style={{ marginTop: 28 }}>내 제보</div>
       {subsError ? (
