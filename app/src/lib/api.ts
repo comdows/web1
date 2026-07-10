@@ -908,6 +908,34 @@ export async function reviewOperatorClaim(c: { id: string; platform_id: string; 
   }
 }
 
+/* ── 운영자 대시보드(0023) — 인증된 운영자에게 내 플랫폼 데이터 개방 ── */
+export interface OperatedPlatform { platform_id: string; granted_at: string }
+export async function listMyOperatedPlatforms(): Promise<OperatedPlatform[]> {
+  const uid = getSession()?.user.id;
+  if (!uid) return [];
+  return rest<OperatedPlatform[]>(`platform_operators?user_id=eq.${uid}&select=platform_id,granted_at&order=granted_at.desc`);
+}
+export interface OperatorStats { impressions: number; clicks: number; outbounds: number; favorites: number }
+/* definer RPC — 운영자 본인 플랫폼만(아니면 FORBIDDEN), 30일 집계값만 반환 */
+export async function fetchOperatorStats(platformId: string): Promise<OperatorStats | null> {
+  const rows = await rest<OperatorStats[]>("rpc/operator_platform_stats", {
+    method: "POST", body: JSON.stringify({ p_platform: platformId }),
+  });
+  return rows[0] ?? null;
+}
+export interface ReceivedProposal {
+  id: string; sender_name: string; target_platform_id: string | null;
+  type_id: string; subject: string; status: string; created_at: string;
+}
+/* 내 플랫폼이 받은 제휴 제안(0023 운영자 read 정책) — 내가 보낸 제안과 구분하려 대상 플랫폼으로 한정 */
+export async function listReceivedProposals(platformIds: string[]): Promise<ReceivedProposal[]> {
+  if (platformIds.length === 0) return [];
+  const list = platformIds.map((p) => `"${p}"`).join(",");
+  return rest<ReceivedProposal[]>(
+    `outreach_proposals?target_platform_id=in.(${encodeURIComponent(list)})&select=id,sender_name,target_platform_id,type_id,subject,status,created_at&order=created_at.desc&limit=50`,
+  );
+}
+
 /* 분석 이벤트(fire-and-forget) — 원격 모드에서만 기록. 실패 무시.
  * 세션 지속(localStorage)·로그인 사용자·유입경로(ref)를 함께 남겨 퍼널·귀속·리텐션 분석을 가능하게 한다. */
 let sessionId = "";
