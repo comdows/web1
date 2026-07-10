@@ -19,7 +19,13 @@ const listeners = new Set<() => void>();
 function emit() { listeners.forEach((l) => l()); }
 
 function readSet(key: string): string[] {
-  try { const v = lsGet(key); return v ? JSON.parse(v) : []; } catch { return []; }
+  // JSON.parse가 성공해도 배열이 아닐 수 있다(손상·수동 편집) — 형태까지 검증하지 않으면
+  // 매 부팅마다 오류 화면이 반복된다(localStorage라 새로고침으로 안 풀리는 유형).
+  try {
+    const v = lsGet(key);
+    const p: unknown = v ? JSON.parse(v) : [];
+    return Array.isArray(p) ? p.filter((x): x is string => typeof x === "string") : [];
+  } catch { return []; }
 }
 
 /* 로그인 시 서버 동기화 콜백(lib/favsync.ts가 주입 — store는 백엔드를 모른다) */
@@ -62,7 +68,13 @@ const INTERESTS_KEY = "sm.interests.v1";
 export interface InterestsState { groups: string[]; cats: string[]; newPref: boolean }
 export const Interests = {
   get(): InterestsState | null {
-    try { const v = lsGet(INTERESTS_KEY); return v ? JSON.parse(v) : null; } catch { return null; }
+    try {
+      const v = lsGet(INTERESTS_KEY);
+      const p: unknown = v ? JSON.parse(v) : null;
+      if (!p || typeof p !== "object" || Array.isArray(p)) return null; // readSet과 같은 이유 — 형태 검증
+      const o = p as Partial<InterestsState>;
+      return { groups: Array.isArray(o.groups) ? o.groups : [], cats: Array.isArray(o.cats) ? o.cats : [], newPref: Boolean(o.newPref) };
+    } catch { return null; }
   },
   set(s: InterestsState) { lsSet(INTERESTS_KEY, JSON.stringify(s)); emit(); },
 };

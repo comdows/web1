@@ -14,7 +14,10 @@ export interface Suggestion {
 const RECENTQ_KEY = "sm.recentq.v1";
 export const RecentQ = {
   list(): string[] {
-    try { return JSON.parse(localStorage.getItem(RECENTQ_KEY) || "[]") as string[]; } catch { return []; }
+    try {
+      const p: unknown = JSON.parse(localStorage.getItem(RECENTQ_KEY) || "[]");
+      return Array.isArray(p) ? p.filter((x): x is string => typeof x === "string") : [];
+    } catch { return []; }
   },
   push(q: string) {
     const v = q.trim(); if (!v) return;
