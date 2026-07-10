@@ -38,6 +38,18 @@ export function scoreBriefDeal(b: BriefLike, d: DealLike): number {
   return Math.min(100, s);
 }
 
+/* 제휴 제안 ↔ 뷰어 관심분야 적합도(0~100). 게시물이 "내 분야"에 있거나, 게시자가 "내 분야" 파트너를
+ * 원할 때 높음. 가격·거래액과 무관(원칙 안전) — 보드 "내게 맞는 제안" 정렬·배지용. */
+export function scorePartnerFit(viewerCats: string[], post: { category_id: string; want_categories: string[] }): number {
+  if (!viewerCats.length) return 0;
+  const set = new Set(viewerCats);
+  let s = 0;
+  if (set.has(post.category_id)) s += 50;              // 내 관심 분야의 제안
+  const wantHit = (post.want_categories || []).filter((w) => set.has(w)).length;
+  if (wantHit) s += Math.min(50, 30 + wantHit * 10);   // 그들이 내 분야 파트너를 원함
+  return Math.min(100, s);
+}
+
 /* ── 유사 플랫폼(같은 분야 내 랭킹) ── */
 const STOP = new Set(["및", "등", "the", "a", "an", "for", "and", "to", "of", "with", "서비스", "플랫폼", "기반", "제공", "다양한", "위한", "있는"]);
 function tokens(s: string): string[] {

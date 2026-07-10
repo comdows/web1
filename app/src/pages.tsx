@@ -16,7 +16,8 @@ import { bankTransferProvider } from "./lib/billing";
 import type { DepositInstructions } from "./lib/billing";
 import type { PartnerPost, PublicDeal } from "./lib/api";
 import { checkAnonymity, hasBlocking, hasContact } from "./lib/anonymity";
-import { Draft } from "./lib/store";
+import { Draft, useInterests } from "./lib/store";
+import { scorePartnerFit } from "./lib/match";
 import type { AnonFinding } from "./lib/anonymity";
 import { estimateValue, fmtRange, VAL_YEARS } from "./lib/valuation";
 import type { ValueResult } from "./lib/valuation";
@@ -302,7 +303,14 @@ export function Partners() {
     setTimeout(() => document.getElementById("ppost-form")?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
   };
 
-  const realItems = (posts ?? []).filter((p) => !boardType || p.type_id === boardType);
+  const interests = useInterests();
+  const viewerCats = useMemo(() => interests?.cats ?? [], [interests]);
+  const realItems = useMemo(() => {
+    const items = (posts ?? []).filter((p) => !boardType || p.type_id === boardType);
+    // 관심 분야가 있으면 "내게 맞는 제안"을 앞으로(안정 정렬 — 없으면 기존 게시일순 유지)
+    if (viewerCats.length) return [...items].sort((a, b) => scorePartnerFit(viewerCats, b) - scorePartnerFit(viewerCats, a));
+    return items;
+  }, [posts, boardType, viewerCats]);
   const demoItems = listings.partnerships.filter((l) => !boardType || LEGACY_TYPE[l.type] === boardType);
   const typeLabel = (id: string) => partnerTypes.find((t) => t.id === id)?.label ?? id;
   // 보드 필터 칩은 실제 게시된 유형만(고정 5종 → 게시물 기반), 성사 수는 실데이터만 집계(데모 제외)
@@ -511,13 +519,14 @@ export function Partners() {
       <div className="result-meta">
         제휴 제안 {posts === null ? "…" : realItems.length + demoItems.length}건
         {matchedReal > 0 && ` · 성사된 소개 ${matchedReal}건`}
+        {viewerCats.length > 0 && realItems.length > 0 && <span className="faint"> · 내 관심 분야 기준으로 정렬됨</span>}
         {realItems.length === 0 && demoItems.length > 0 && " (아직 데모 예시 — 첫 제안의 주인공이 되어보세요)"}
       </div>
       <div className="card-grid">
         {realItems.map((p) => (
           <div className="pcard" key={p.id}>
             <div className="top"><div style={{ minWidth: 0 }}>
-              <h4>{p.title} {p.pro_verified && <Badge kind="verify">인증</Badge>} {p.status === "matched" && <Badge kind="good">성사</Badge>}</h4>
+              <h4>{p.title} {p.pro_verified && <Badge kind="verify">인증</Badge>} {p.status === "matched" && <Badge kind="good">성사</Badge>} {viewerCats.length > 0 && scorePartnerFit(viewerCats, p) >= 50 && <Badge kind="good">내게 맞음</Badge>}</h4>
               <div className="cat"><span className="mono">{partnerRefCode(p.id)}</span> · {typeLabel(p.type_id)} · {categoryById(p.category_id)?.name ?? p.category_id}
                 {p.want_categories.length > 0 && ` → ${p.want_categories.map((w) => categoryById(w)?.name ?? w).join(", ")}`}</div>
             </div></div>
