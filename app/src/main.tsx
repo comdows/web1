@@ -6,10 +6,12 @@ import './styles/global.css'
 import App from './App.tsx'
 import { startFavSync } from './lib/favsync'
 import { initPlatforms } from './lib/platforms'
+import { initPopularity } from './lib/popularity'
 import { FLAGS } from './config'
 
 startFavSync()     // 로그인 시 즐겨찾기 서버 동기화(원격 모드에서만 동작)
 initPlatforms()    // 원격에서 전체 플랫폼 로드(정적 시드 위에 교체 — 승인된 새 플랫폼 반영)
+initPopularity()   // 공개 인기 집계 1회 로드(검색·추천 2차 신호 — 실패 시 빈 맵)
 
 /* 최상위 오류 방어벽 — 렌더 중 예외가 나도 백지 대신 복구 안내를 보여준다 */
 class ErrorBoundary extends Component<{ children: ReactNode }, { err: Error | null }> {

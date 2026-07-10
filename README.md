@@ -63,6 +63,7 @@ backend/
 - [ ] **`0017_measurement.sql` 실행**(계측 보강 — `events.ref`(유입경로) 컬럼 + 퍼널·유입 admin 뷰 `v_funnel_7d`/`v_referrers_7d`. 멱등. 실행 후 방문이 쌓이면 관리 콘솔 "퍼널·유입" 패널에 노출→클릭→외부방문 전환율·유입경로가 채워짐)
 - [ ] **`0018_notifications.sql` 실행**(인앱 알림 — `notifications` 테이블 + RLS(본인만 열람·읽음, 생성은 admin 봇). 멱등. 실행 후 `match-notify` 워크플로가 ①인수 브리프↔신규 매물 ②관심 분야(즐겨찾기 유도) 신규 플랫폼 알림을 넣고, 헬스체크는 관심 플랫폼 죽은 링크를 알림 → 회원 헤더 🔔에 표시. 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요)
 - [ ] (선택) **알림 이메일 발송**(인앱 알림을 이메일로도 — 인프라·법적 준비 후에만): 아웃리치 발송(위)과 동일 스택(Resend + 발신 도메인 인증 + 정보통신망법 §50 수신거부·광고 표기). 현재는 인앱 알림만(발송 인프라 불요). 서버 발송은 별도 Edge Function + 게이트로 추가 예정.
+- [ ] **`0019_popularity.sql` 실행**(검색·추천 행동신호 — 공개 인기 집계 뷰 `v_platform_popularity`. 멱등. platform_id·score만 노출(개인 행동로그 비노출)·세션 distinct 집계. 실행 후 방문이 쌓이면 검색 "인기순" 정렬·관련도 2차 보정·추천이 자동 반영. 데이터 적을 땐 효과 미미)
 - [ ] (선택) **제휴 제안 서버 발송 켜기**(세모플이 대표 이메일로 직접 발송 — 법적·인프라 준비 후에만):
   ① 이메일 발송 서비스 계정(Resend 등) + 발신 도메인 SPF/DKIM/DMARC 인증
   ② `supabase functions deploy send-proposal` + `supabase secrets set RESEND_API_KEY=... EMAIL_FROM="세모플 제휴 <partner@도메인>"`

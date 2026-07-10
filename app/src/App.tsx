@@ -4,6 +4,7 @@ import { groups, categories, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import { Logo, LogoMark, StatTile, PlatformCard, Footer } from "./components";
 import { usePlatforms, usePlatformStats, usePlatformIndex } from "./lib/platforms";
+import { usePopularity } from "./lib/popularity";
 import { pickRecommended, sortByRelevance } from "./lib/search";
 import { consumeLastVisit, useFavs, useCompare, useInterests, useRecent } from "./lib/store";
 import { FLAGS } from "./config";
@@ -104,6 +105,7 @@ export default function App() {
     unreadNotifCount().then(setUnreadNotif).catch(() => setUnreadNotif(0));
   }, [session, view]); // view 변화 시 재조회 → 알림 읽고 나오면 배지 갱신
   const platforms = usePlatforms();
+  const pop = usePopularity();
   const stats = usePlatformStats();
   const index = usePlatformIndex();
   const searchIndex = useMemo(
@@ -158,10 +160,10 @@ export default function App() {
     let list = query ? searchIndex.filter((x) => query.split(/\s+/).every((t) => x.hay.includes(t))).map((x) => x.p) : platforms.slice();
     if (fav) { const set = new Set(favs.all()); list = list.filter((p) => set.has(p.id)); }
     if (onlyNew) list = list.filter((p) => p.new);
-    if (sort === "default" && query) list = sortByRelevance(list, query);
+    if (sort === "default" && query) list = sortByRelevance(list, query, pop); // 관련도(1차)+인기(2차)
     else list = sortPlatforms(list, sort);
     return list.slice(0, 200);
-  }, [flatMode, query, fav, onlyNew, sort, favs, platforms, searchIndex]);
+  }, [flatMode, query, fav, onlyNew, sort, favs, platforms, searchIndex, pop]);
   const newPlatforms = useMemo(() => platforms.filter((p) => p.new).slice(0, 24), [platforms]);
   const shownGroups = group ? groups.filter((g) => g.id === group) : groups;
 
@@ -177,8 +179,8 @@ export default function App() {
   const recentPlatforms = useMemo(() => recentIds.map((x) => index.get(x)).filter(Boolean).slice(0, 12) as Platform[], [recentIds, index]);
   const interests = useInterests();
   const interestRecs = useMemo(
-    () => interests ? pickRecommended(platforms, interests.groups, interests.cats, interests.newPref, 12) : [],
-    [interests, platforms]
+    () => interests ? pickRecommended(platforms, interests.groups, interests.cats, interests.newPref, 12, pop) : [],
+    [interests, platforms, pop]
   );
   const [sinceCount, setSinceCount] = useState(0);
   useEffect(() => {
