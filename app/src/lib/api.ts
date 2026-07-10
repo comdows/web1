@@ -760,6 +760,16 @@ export async function fetchOutboundCounts(days = 30): Promise<Map<string, number
   return m;
 }
 
+/* 공개 인기 집계(0019 v_platform_popularity) — 검색·추천의 2차 신호. platform_id→score.
+ * 원격 아니거나 실패 시 빈 Map(랭킹은 관련도만으로 degrade). */
+export async function fetchPopularity(): Promise<Map<string, number>> {
+  if (!remoteEnabled) return new Map();
+  try {
+    const rows = await rest<{ platform_id: string; score: number }[]>("v_platform_popularity?select=platform_id,score&limit=5000");
+    return new Map(rows.map((r) => [r.platform_id, Number(r.score) || 0]));
+  } catch { return new Map(); }
+}
+
 /* 최근 등재(주간 다이제스트) — created_at 포함, 실패 시 정적 신규 폴백 */
 export async function fetchRecentPlatforms(limit = 60): Promise<{ p: Platform; created: string }[]> {
   const local = () => platforms.filter((x) => x.new).slice(0, limit).map((p) => ({ p, created: "" }));

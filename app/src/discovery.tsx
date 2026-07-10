@@ -8,7 +8,8 @@ import { Avatar, Badge, PlatformCard, ShareButton } from "./components";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
 import { amOperatorOf, createOperatorClaim, getMyClaim, getPlatform, remoteEnabled, trackEvent } from "./lib/api";
 import type { OperatorClaim } from "./lib/api";
-import { pickRecommended, sortByRelevance } from "./lib/search";
+import { pickRecommended, sortByRelevance, sortByPopularity } from "./lib/search";
+import { usePopularity } from "./lib/popularity";
 import { rankSimilar } from "./lib/match";
 import { Compare as CompareStore, Favs, Interests, Recent, useCompare, useFavs } from "./lib/store";
 import { useNav } from "./nav";
@@ -216,7 +217,7 @@ export function PlatformDetail({ id }: { id?: string }) {
 }
 
 /* ─────────────── Search Results ─────────────── */
-type Sort = "relevance" | "new" | "name";
+type Sort = "relevance" | "popular" | "new" | "name";
 export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
   const go = useNav();
   // URL에서 필터 복원(새로고침·공유·뒤로가기에 필터 유지)
@@ -243,6 +244,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
     history.replaceState(null, "", `?${p}`);
   }, [q, cats, region, onlyNew, fees, sort]);
   const platforms = usePlatforms();
+  const pop = usePopularity();
   const stats = usePlatformStats();
 
   const toggleCat = (id: string) => setCats((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; });
@@ -271,9 +273,10 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
     });
     if (sort === "new") list = [...list].sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0));
     else if (sort === "name") list = [...list].sort((a, b) => a.name.localeCompare(b.name, "ko"));
-    else if (query) list = sortByRelevance(list, query); // 관련도: 이름 정확 > 시작 > 포함 > 분야 > 소개
+    else if (sort === "popular") list = sortByPopularity(list, pop); // 인기순(외부방문·클릭·노출 집계)
+    else if (query) list = sortByRelevance(list, query, pop); // 관련도(1차) + 인기(2차 보정)
     return list;
-  }, [q, cats, region, onlyNew, fees, sort, platforms]);
+  }, [q, cats, region, onlyNew, fees, sort, platforms, pop]);
 
   const activeChips: { label: string; clear: () => void }[] = [];
   cats.forEach((c) => activeChips.push({ label: categoryById(c)?.name ?? c, clear: () => toggleCat(c) }));
@@ -349,6 +352,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
             <div className="result-meta" style={{ margin: 0 }}>{results.length.toLocaleString()}개 결과</div>
             <select className="select" aria-label="정렬" value={sort} onChange={(e) => setSort(e.target.value as Sort)} style={{ marginLeft: "auto" }}>
               <option value="relevance">관련도</option>
+              <option value="popular">인기순</option>
               <option value="new">신규 우선</option>
               <option value="name">가나다</option>
             </select>
@@ -449,7 +453,8 @@ export function Onboarding() {
   const availCats = useMemo(() => categories.filter((c) => gsel.size === 0 || gsel.has(c.group)), [gsel]);
   const toggle = (set: Set<string>, id: string, fn: (s: Set<string>) => void) => { const n = new Set(set); if (n.has(id)) n.delete(id); else n.add(id); fn(n); };
 
-  const recs = useMemo(() => pickRecommended(platforms, [...gsel], [...csel], newPref, 12), [gsel, csel, newPref, platforms]);
+  const pop = usePopularity();
+  const recs = useMemo(() => pickRecommended(platforms, [...gsel], [...csel], newPref, 12, pop), [gsel, csel, newPref, platforms, pop]);
 
   const steps = ["관심 영역", "세부 분야", "선호", "추천"];
   return (
