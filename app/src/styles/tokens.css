@@ -1,104 +1,123 @@
 /* ============================================================
- * 세모플 (SEMOPL) — Design Tokens
- * Brand: 🅐 블루프린트 인프라 (Blueprint Infra)
- * 단일 진실 공급원(single source of truth). React/CSS 모두 이 변수를 참조.
- * 기본 = 다크. [data-theme="light"] 로 라이트 대응.
+ * 세모플 (SEMOPL) — Design Tokens v2 "1a 리파인"
+ * 채택안: 홈 개선안 1a (라이트 기본 · Primary #2563eb · Pretendard)
+ * 단일 진실 공급원. 기존 토큰 이름을 유지해 전 화면이 함께 전환된다.
+ * 기본 = 라이트(1a). [data-theme="dark"] 로 다크 대응(1b 다크 팔레트 매핑).
  * ============================================================ */
 
 :root {
-  /* ── Surfaces (Dark, default) ───────────────────────────── */
-  --bg:        #0A0E1A;   /* app background */
-  --surface:   #111725;   /* cards, panels */
-  --surface-2: #161E30;   /* raised / hover */
-  --surface-3: #1B2540;   /* active / selected */
-  --line:      #25314C;   /* borders */
-  --line-soft: #1B2334;   /* subtle dividers */
+  /* ── Surfaces (Light, default — 1a) ─────────────────────── */
+  --bg:        #FFFFFF;   /* app background */
+  --surface:   #FFFFFF;   /* cards, panels */
+  --surface-2: #F7F8FB;   /* alt section / raised */
+  --surface-3: #EEF4FF;   /* active / selected (primary 연한 배경) */
+  --line:      #E8EAF0;   /* card borders */
+  --line-soft: #EEF1F6;   /* subtle dividers */
 
-  /* ── Text ───────────────────────────────────────────────── */
-  --text:   #E8EEFC;   /* primary (contrast ~15:1 on --bg) */
-  --muted:  #97A6C8;   /* secondary */
-  --faint:  #7A88A8;   /* tertiary / captions — AA(≥4.5:1) 확보(중장년 가독성) */
-  --on-brand: #FFFFFF; /* text on brand fills */
+  /* ── Text (1a) ──────────────────────────────────────────── */
+  --text:   #111827;   /* primary */
+  --heading:#0F172A;   /* H1/H2 */
+  --muted:  #5B6472;   /* body secondary */
+  --faint:  #6B7280;   /* captions — AA(≥4.5:1) 유지(중장년 가독성 원칙) */
+  --hint:   #94A3B8;   /* decorative counts / placeholder급 */
+  --on-brand: #FFFFFF;
 
-  /* ── Brand (신뢰 블루) ──────────────────────────────────── */
-  --brand:      #3D63FF;  /* core brand */
-  --brand-strong:#2445D4; /* pressed / light-mode text */
-  --brand-soft: #7C97FF;  /* dark-mode accents / links */
-  --brand-tint: rgba(61, 99, 255, .14);
-  --brand-ring: rgba(61, 99, 255, .40);
+  /* ── Brand (1a Primary) ─────────────────────────────────── */
+  --brand:        #2563EB;
+  --brand-strong: #1D4ED8;  /* hover/pressed */
+  --brand-soft:   #2563EB;  /* links (라이트에선 primary 그대로) */
+  --brand-tint:   #EEF4FF;  /* 연한 배경 */
+  --brand-line:   #BFDBFE;  /* 연파랑 보더(로그인 버튼 등) */
+  --brand-ring:   rgba(37, 99, 235, .35);
+  --chip-line:    #DBE2EC;  /* 칩 보더 */
+  --dash-line:    #CDD5E1;  /* 더보기 점선 */
 
   /* ── Accent ─────────────────────────────────────────────── */
-  --cyan:       #38BDF8;  /* blueprint lines / measure (secondary accent) */
-  --cyan-tint:  rgba(56, 189, 248, .14);
-  --teal:       #22D3B8;  /* 검증·성사·신규 (verified / matched / new) — 절제 사용 */
-  --teal-tint:  rgba(34, 211, 184, .15);
+  --cyan:       #086A9A;  --cyan-tint:  rgba(8, 106, 154, .10);
+  --teal:       #0C6E5F;  --teal-tint:  rgba(12, 110, 95, .10);
 
-  /* ── Semantic ───────────────────────────────────────────── */
-  --success:    #2CC08A; --success-tint: rgba(44,192,138,.16);
-  --warn:       #F5B544; --warn-tint:    rgba(245,181,68,.15);
-  --danger:     #F2695F; --danger-tint:  rgba(242,105,95,.15);
+  /* ── Semantic (라이트 대비 AA) ──────────────────────────── */
+  --success:    #15694C; --success-tint: rgba(21,105,76,.10);
+  --warn:       #8A5808; --warn-tint:    rgba(138,88,8,.12);
+  --danger:     #C2372E; --danger-tint:  rgba(194,55,46,.10);
   --info:       var(--brand);
 
-  /* ── Typography ─────────────────────────────────────────── */
+  /* ── Typography (1a 스케일) ─────────────────────────────── */
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont,
                system-ui, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
   --font-mono: "IBM Plex Mono", "Space Mono", ui-monospace, SFMono-Regular,
                Menlo, Consolas, monospace;
-  /* scale (px) */
-  --fs-display: 40px; --fs-h1: 28px; --fs-h2: 22px; --fs-h3: 18px;
-  --fs-body: 15px; --fs-sm: 13px; --fs-cap: 12px;
-  --lh-tight: 1.15; --lh-snug: 1.35; --lh-body: 1.55;
-  --tracking-tight: -0.02em; --tracking-wide: 0.12em;
+  --fs-display: 34px; --fs-h1: 26px; --fs-h2: 22px; --fs-h3: 17px;
+  --fs-body: 14.5px; --fs-sm: 13px; --fs-cap: 12.5px;
+  --lh-tight: 1.3; --lh-snug: 1.4; --lh-body: 1.6;
+  --tracking-tight: -0.02em; --tracking-wide: 0.08em;
   --w-regular: 400; --w-medium: 500; --w-semibold: 600; --w-bold: 700; --w-black: 800;
 
-  /* ── Space (8px base) ───────────────────────────────────── */
+  /* ── Space ──────────────────────────────────────────────── */
   --sp-1: 4px; --sp-2: 8px; --sp-3: 12px; --sp-4: 16px;
   --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px;
+  --sec-y: 48px;            /* 섹션 상하 패딩 */
 
-  /* ── Radius (각진 인프라) ───────────────────────────────── */
-  --r-xs: 6px; --r-sm: 8px; --r-md: 10px; --r-lg: 12px; --r-xl: 16px; --r-pill: 999px;
+  /* ── Radius (1a) ────────────────────────────────────────── */
+  --r-xs: 6px; --r-sm: 8px; --r-md: 10px; --r-lg: 12px; --r-card: 14px; --r-xl: 16px; --r-pill: 999px;
 
-  /* ── Elevation ──────────────────────────────────────────── */
-  --sh-1: 0 1px 2px rgba(0,0,0,.45);
-  --sh-2: 0 8px 24px rgba(0,0,0,.40);
+  /* ── Elevation (1a) ─────────────────────────────────────── */
+  --sh-1: 0 1px 3px rgba(15,23,42,.06);
+  --sh-2: 0 8px 24px rgba(15,23,42,.10);
+  --sh-card: 0 4px 14px rgba(37,99,235,.08);   /* 카드 hover */
+  --sh-search: 0 6px 20px rgba(37,99,235,.10); /* 히어로 검색창 */
   --sh-focus: 0 0 0 3px var(--brand-ring);
-  --sh-glow:  0 0 0 1px var(--brand-tint), 0 10px 30px rgba(61,99,255,.16);
 
-  /* ── Blueprint graphic language ─────────────────────────── */
-  --grid-line: rgba(124, 151, 255, .05);   /* 8px 그리드 노출 오버레이 */
-  --grid-size: 8px;
-  --tick: rgba(124, 151, 255, .28);          /* corner ticks / measure marks */
+  /* ── Hero / Footer ──────────────────────────────────────── */
+  --hero-grad: linear-gradient(180deg, #F5F8FF 0%, #FFFFFF 100%);
+  --tool-grad: linear-gradient(160deg, #F5F8FF, #FFFFFF);
+  --footer-bg: #0F172A;
+  --footer-text: #94A3B8;
 
   /* ── Layout ─────────────────────────────────────────────── */
   --maxw: 1120px;
   --z-header: 100; --z-modal: 1000;
-  --dur-fast: 120ms; --dur: 200ms; --ease: cubic-bezier(.2,.7,.2,1);
+  --dur-fast: 120ms; --dur: 150ms; --ease: ease;
 }
 
-/* ── Light theme ────────────────────────────────────────────── */
-[data-theme="light"] {
-  --bg:        #F5F7FC;
-  --surface:   #FFFFFF;
-  --surface-2: #F0F3FA;
-  --surface-3: #E7ECF7;
-  --line:      #D7DEEC;
-  --line-soft: #E7ECF5;
+/* ── Dark theme (토글 유지 — 1b 다크 팔레트로 매핑) ─────────── */
+[data-theme="dark"] {
+  --bg:        #0B1526;
+  --surface:   #101C30;
+  --surface-2: #15233C;
+  --surface-3: #1B2C4A;
+  --line:      #24334F;
+  --line-soft: #1B2840;
 
-  --text:   #141C2E;   /* contrast ~13:1 on --bg */
-  --muted:  #4E5B79;
-  --faint:  #606B85;   /* AA(≥4.5:1) 확보 — 결과 수·라벨·안내가 중장년에게도 읽히게 */
+  --text:   #E8EEFC;
+  --heading:#F4F7FF;
+  --muted:  #9FB0CE;
+  --faint:  #8fa3c4;
+  --hint:   #64789B;
   --on-brand: #FFFFFF;
 
-  --brand-soft: #2445D4;             /* links read darker on light */
-  /* 시맨틱·액센트: 라이트 배경 대비 확보(작은 배지 텍스트 AA ≥4.5:1) */
-  --teal:    #0C6E5F;
-  --cyan:    #086A9A;
-  --success: #15694C;
-  --warn:    #8A5808;
-  --danger:  #C2372E;
-  --brand-tint: rgba(61, 99, 255, .10);
-  --grid-line: rgba(36, 69, 212, .05);
-  --tick: rgba(36, 69, 212, .28);
-  --sh-1: 0 1px 2px rgba(16,24,40,.10);
-  --sh-2: 0 8px 24px rgba(16,24,40,.12);
+  --brand:        #3B82F6;
+  --brand-strong: #2563EB;
+  --brand-soft:   #7FB0FF;
+  --brand-tint:   rgba(59, 130, 246, .14);
+  --brand-line:   rgba(59, 130, 246, .45);
+  --brand-ring:   rgba(59, 130, 246, .40);
+  --chip-line:    #2C3D5E;
+  --dash-line:    #33456A;
+
+  --cyan:  #38BDF8; --cyan-tint: rgba(56,189,248,.14);
+  --teal:  #22D3B8; --teal-tint: rgba(34,211,184,.15);
+  --success: #2CC08A; --success-tint: rgba(44,192,138,.16);
+  --warn:    #F5B544; --warn-tint:    rgba(245,181,68,.15);
+  --danger:  #F2695F; --danger-tint:  rgba(242,105,95,.15);
+
+  --sh-1: 0 1px 2px rgba(0,0,0,.45);
+  --sh-2: 0 8px 24px rgba(0,0,0,.40);
+  --sh-card: 0 4px 14px rgba(0,0,0,.35);
+  --sh-search: 0 6px 20px rgba(59,130,246,.18);
+
+  --hero-grad: linear-gradient(180deg, #0D1A30 0%, #0B1526 100%);
+  --tool-grad: linear-gradient(160deg, #12203A, #101C30);
+  --footer-bg: #0A111F;
+  --footer-text: #8FA3C4;
 }
