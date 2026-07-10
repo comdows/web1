@@ -318,6 +318,7 @@ export interface PublicDeal {
   id: string; category_id: string; region: "domestic" | "overseas"; revenue_band: string;
   mode: string; summary: string; highlights: string[]; sale_reason: string | null;
   status: "open" | "in_progress"; is_demo: boolean; posted: string;
+  owner_verified?: boolean; proofs?: string[]; // 0022 — 운영자 확인·준비 증빙 태그
 }
 export async function fetchDeals(): Promise<PublicDeal[]> {
   return rest<PublicDeal[]>("v_deals_public?select=*&order=posted.desc&limit=100");
@@ -327,6 +328,7 @@ export interface DealSubPayload {
   mode: string; summary: string; highlights: string; sale_reason: string;
   ack?: boolean; // 비중개(정보 게시·소개만) 확인 체크 — 오인 접수 방지 기록
   assets?: string[];             // 이전할 자산 체크리스트 — 게시 시 하이라이트 칩으로 합류
+  proofs?: string[];             // 준비 증빙 유무 태그(매출·트래픽·상표 등 — 수치·가격 아님)
   handover?: string;             // 운영 인수인계(없음/1개월/3개월 동행)
   verify_note?: string;          // 비공개 검증 자료(URL·도메인 이메일) — 게시·공유 금지, 운영자 확인 전용
   contact_consent_at?: string;   // 매도자 이메일 공유 동의 시각(쌍방 확인 시 상대에게 공유)
@@ -527,8 +529,39 @@ export async function listDealSubmissions(statuses: string[]): Promise<DealSubmi
 export async function publishDeal(row: {
   id: string; category_id: string; region: "domestic" | "overseas"; revenue_band: string;
   mode: string; summary: string; highlights: string[]; sale_reason: string | null; owner_id: string;
+  proofs?: string[]; owner_verified?: boolean;
 }): Promise<void> {
   await rest("deals", { method: "POST", headers: { Prefer: "return=minimal" }, body: JSON.stringify(row) });
+}
+/* 매물 운영자 확인 토글(admin — verify_note 검증 후) */
+export async function setDealVerified(dealId: string, verified: boolean): Promise<void> {
+  await rest(`deals?id=eq.${encodeURIComponent(dealId)}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ owner_verified: verified }),
+  });
+}
+
+/* ── 매물 익명 Q&A(0022) — 질문 등록(본인), 공개는 answered만(신원 비노출 뷰) ── */
+export interface DealQA { deal_id: string; question: string; answer: string | null; answered_at: string | null }
+export async function fetchDealQuestions(dealId: string): Promise<DealQA[]> {
+  return rest<DealQA[]>(`v_deal_questions_public?deal_id=eq.${encodeURIComponent(dealId)}&select=*&limit=20`).catch(() => []);
+}
+export async function askDealQuestion(dealId: string, question: string): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  await rest("deal_questions", {
+    method: "POST", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ deal_id: dealId, asker_id: uid, question: question.trim() }),
+  });
+}
+export interface PendingDealQ { id: string; deal_id: string; question: string; status: string; created_at: string }
+export async function listPendingDealQuestions(): Promise<PendingDealQ[]> {
+  return rest<PendingDealQ[]>("deal_questions?status=eq.pending&select=id,deal_id,question,status,created_at&order=created_at.asc&limit=100");
+}
+export async function answerDealQuestion(id: string, answer: string, hide = false): Promise<void> {
+  await rest(`deal_questions?id=eq.${id}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify(hide ? { status: "hidden" } : { answer: answer.trim(), status: "answered", answered_at: new Date().toISOString() }),
+  });
 }
 export async function reviewDealSubmission(id: string, patch: {
   status: "approved" | "rejected" | "hold"; review_reason?: string; approved_deal_id?: string;
@@ -654,8 +687,8 @@ export async function updateDealStatus(id: string, status: "open" | "in_progress
     method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status }),
   });
 }
-export async function listDealsAdmin(): Promise<{ id: string; status: string; summary: string; is_demo: boolean; category_id: string; mode: string }[]> {
-  return rest("deals?select=id,status,summary,is_demo,category_id,mode&order=posted.desc&limit=100");
+export async function listDealsAdmin(): Promise<{ id: string; status: string; summary: string; is_demo: boolean; category_id: string; mode: string; owner_verified?: boolean }[]> {
+  return rest("deals?select=id,status,summary,is_demo,category_id,mode,owner_verified&order=posted.desc&limit=100");
 }
 
 /* 브리프 ↔ 매물 조건 대조(클라이언트 매칭 — 분야 + 형태) */

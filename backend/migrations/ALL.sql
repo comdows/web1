@@ -1,9 +1,4 @@
 -- ============================================================
--- 세모플 백엔드 전체 마이그레이션 (한 번에 실행용)
--- 구성: 0001~0014 + 0015 아웃리치
--- ============================================================
-
--- ============================================================
 -- 세모플 DB 스키마 v1  (Supabase/Postgres)
 -- 기준: redesign/handoff/API Spec.md (v0.9)
 -- 미래 기능(검수·라이프사이클·클레임·제휴·거래소·부스트·분석)을 선반영.
@@ -478,7 +473,6 @@ language sql stable as $$
            p.verified desc, p.name
   limit p_limit;
 $$;
-
 -- ============================================================
 -- 세모플 RLS 정책 v1 — 권한의 단일 원천 (0001 다음에 실행)
 -- 역할: anon(비로그인) / user / operator(플랫폼 소유) / admin
@@ -646,7 +640,6 @@ create policy "admin manage charges" on public.charges for all
 alter table public.events enable row level security;
 create policy "anyone insert event" on public.events for insert with check (true);
 create policy "admin read events"   on public.events for select using (public.is_admin());
-
 -- ============================================================
 -- 세모플 시드 v1 — build-seed.mjs 생성물 (직접 수정 금지)
 -- 그룹 6 · 분야 45 · 플랫폼 1637
@@ -2409,7 +2402,6 @@ insert into public.boost_tiers (id, name, placement, cpm, est_ctr, sort) values
   ('cat_top',     '분야 상단 노출',   '해당 분야 목록 최상단',       5000, 0.0150, 1),
   ('search_boost','검색 상위 노출',   '관련 검색결과 상단(AD 표기)', 6000, 0.0180, 2)
 on conflict (id) do nothing;
-
 -- ============================================================
 -- 세모플 0004 — 2·3단계 오픈 (0001~0003 실행된 DB에 이어서 실행)
 -- 제휴 매칭 보드(공개 접수·검수·게시) + 거래소 매각 접수(검수·익명화 경유)
@@ -2522,7 +2514,6 @@ create or replace view public.v_partner_posts_public
   select id, title, category_id, type_id, give_text, get_text, want_categories,
          size_text, detail, status, published_at::date as posted
   from public.partner_posts where status in ('published','matched');
-
 -- ============================================================
 -- 세모플 0005 — 소개 이행 + 동의 기록 + 탈퇴 대비 + 데이터 정정
 -- (0001~0004 실행된 DB에 이어서 실행 · 멱등: 재실행 무해)
@@ -2645,7 +2636,6 @@ update public.platforms set region = 'overseas' where id in (
   'shopify','cafe24','global','malltail','delivered','sellerhub','shopigate','sell3','reverb',
   'globalsellers','agoda','booking','hotelscombined','trivago','kr2','youtube','noom','stipop'
 ) and region = 'domestic';
-
 -- ============================================================
 -- 0006 — AI 도구 시드 (그룹 1 · 분야 10 · 도구 78) — 재실행 안전
 -- ============================================================
@@ -2751,11 +2741,9 @@ on conflict (id) do nothing;
 -- 기존 등재 도구를 AI 분야로 이동
 update public.platforms set category_id = 'ai_video' where id = 'vrew';
 update public.platforms set category_id = 'ai_audio' where id = 'typecast';
-
 -- 0007 — 데이터 정정 (재실행 안전)
 -- 올웨이즈: URL이 노트폴리오(notefolio.net)로 잘못 배정돼 있던 확정 오류 정정
 update public.platforms set url = 'https://alwayz.co' where id = 'allways';
-
 -- ============================================================
 -- 세모플 0008 — RLS 하드닝 (0001~0007 실행된 DB에 이어서 실행 · 멱등)
 -- 크리티컬 갭 감사(2026-07-04) P0-1: 검수 우회·상태 위조·폭주 차단.
@@ -2869,7 +2857,6 @@ group by query order by cnt desc limit 20;
 drop policy if exists "admin read favorites" on public.favorites;
 create policy "admin read favorites" on public.favorites for select
   using (user_id = auth.uid() or public.is_admin());
-
 -- ============================================================
 -- 세모플 0009 — 계정 자기결정권 + 접수 상한 + 연락처 패턴 확장
 -- (0001~0008 실행된 DB에 이어서 실행 · 멱등)
@@ -2983,7 +2970,6 @@ alter table public.deals add constraint chk_deal_reason_nocontact
 alter table public.deals drop constraint if exists chk_deal_highlights_nocontact;
 alter table public.deals add constraint chk_deal_highlights_nocontact
   check ( array_to_string(highlights, ' ') !~* '(@|https?://|www\.|0\d{1,2}[-. ]?\d{3,4}[-. ]?\d{4}|공일공|카카오톡|카톡|kakao|텔레그램|텔레그람|telegram|인스타|\yinsta(gram)?\y|디스코드|discord|(^|[^가-힣])라인\s?아이디|\yline[ -]?id\y|위챗|wechat|지메일)' ) not valid;
-
 -- ============================================================
 -- 세모플 0010 — 운영 통지·정리 (0001~0009 실행된 DB에 이어서 실행 · 멱등)
 -- 크리티컬 갭 감사 P2: ① 검수 결과 통지 채널(관리자가 반려·게시 안내 메일을 보낼 수단이 없었음)
@@ -3023,7 +3009,6 @@ begin
 end $$;
 revoke execute on function public.purge_old_events(integer) from public, anon;
 grant execute on function public.purge_old_events(integer) to authenticated;
-
 -- ============================================================
 -- 세모플 0011 — 제휴 수익화 실행 준비 (0001~0010 실행된 DB에 이어서 실행 · 멱등)
 -- 3상품(스폰서 슬롯·연결료 A/B/C·Pro 멤버십)의 주문→무통장 입금 확인→활성화→환불
@@ -3393,7 +3378,6 @@ begin
     where post_id = p_post_id and status = 'pending';
   end if;
 end $$;
-
 -- ============================================================
 -- 세모플 0012 — 과금·매칭 QA 하드닝 (0001~0011 실행된 DB에 이어서 실행 · 멱등)
 -- 종합 QA(적대적 교차 검증 확정 38건)의 서버측 수정 배치:
@@ -3715,7 +3699,6 @@ begin
 end $$;
 revoke execute on function public.admin_introduce(text, uuid, text) from public, anon;
 grant execute on function public.admin_introduce(text, uuid, text) to authenticated;
-
 -- ============================================================
 -- 세모플 0013 — 3차 QA(실사용 여정) 서버측 수정 (0001~0012 실행된 DB에 이어서 실행 · 멱등)
 -- 본인 게시물에 대한 자기 신청(EOI) 차단: 클라이언트 가드와 별개로 RLS가 강제.
@@ -3751,7 +3734,6 @@ create policy "insert own interest" on public.deal_interests for insert
     and status = 'pending' and introduced_at is null and introduced_by is null
     and not public.is_own_deal(deal_id)
   );
-
 -- ============================================================
 -- 세모플 0014 — 판단 필드 시드(수수료대·정산·입점조건·강점)
 -- (0001~0013 실행된 DB에 이어 실행 · 멱등 — 라이브 platforms 행을 UPDATE)
@@ -5404,7 +5386,6 @@ from (values
   ('consensus', null, null, null, '가입 후 바로 사용(무료 플랜·구독형)', '논문 근거 기반 학술 질의응답에 강점')
 ) as v(id, fee_band, fee_text, settle_text, enter_text, strength)
 where p.id = v.id;
-
 -- ============================================================
 -- 세모플 0015 — 제휴 제안 아웃리치(회원→특정 플랫폼 직접 제안) "발송 직전"까지
 -- (0001~0014 실행된 DB에 이어 실행 · 멱등)
@@ -5474,8 +5455,6 @@ grant execute on function public.outreach_quota_left(uuid) to authenticated;
 insert into public.app_settings (key, value) values
   ('outreach', '{"server_send": false, "from_name": "세모플 제휴", "daily_cap": 10}')
 on conflict (key) do nothing;
-
-
 -- ============================================================
 -- 세모플 0016 — 고신뢰 자동 등재(D) + 사후 검수 (수집기 D 경로용)
 -- (0001~0015 실행된 DB에 이어 실행 · 멱등)
@@ -5594,8 +5573,6 @@ begin
 end $$;
 revoke execute on function public.review_auto_listed(text, boolean, text) from public, anon;
 grant  execute on function public.review_auto_listed(text, boolean, text) to authenticated;
-
-
 -- ============================================================
 -- 세모플 0017 — 계측 보강(측정): events.ref(유입경로) + 퍼널·유입 admin 뷰
 -- (0001~0016 실행된 DB에 이어 실행 · 멱등)
@@ -5633,8 +5610,6 @@ select coalesce(nullif(ref, ''), '(직접)') as ref,
 from public.events
 where created_at > now() - interval '7 days' and public.is_admin()
 group by 1 order by sessions desc, events desc limit 20;
-
-
 -- ============================================================
 -- 세모플 0018 — 인앱 알림(리텐션 루프 C1)
 -- (0001~0017 실행된 DB에 이어 실행 · 멱등)
@@ -5674,8 +5649,6 @@ create policy "own notif update" on public.notifications for update
 drop policy if exists "admin notif insert" on public.notifications;
 create policy "admin notif insert" on public.notifications for insert
   with check (public.is_admin());
-
-
 -- ============================================================
 -- 세모플 0019 — 공개 인기 집계 뷰(B2: 검색·추천 행동신호 랭킹)
 -- (0001~0018 실행된 DB에 이어 실행 · 멱등)
@@ -5707,8 +5680,6 @@ having ( 3.0 * count(distinct session_id) filter (where type = 'outbound')
 
 -- 뷰는 기본 grant가 없다 — 공개 읽기를 위해 명시 grant(집계 컬럼만 노출되므로 안전)
 grant select on public.v_platform_popularity to anon, authenticated;
-
-
 -- ============================================================
 -- 세모플 0020 — 링크 신선도(신뢰 가시화 D1b)
 -- (0001~0019 실행된 DB에 이어 실행 · 멱등)
@@ -5725,8 +5696,6 @@ alter table public.platforms add constraint chk_platforms_link_status
   check ( link_status is null or link_status in ('ok', 'warn', 'dead') ) not valid;
 create index if not exists idx_platforms_deadlink
   on public.platforms(link_checked_at desc) where link_status = 'dead' and archived_at is null;
-
-
 -- ============================================================
 -- 세모플 0021 — 소개 후 성사·후기 회수 루프(D3b)
 -- (0001~0020 실행된 DB에 이어 실행 · 멱등)
@@ -5768,3 +5737,57 @@ select
   count(*) filter (where outcome = 'no')            as no_deal
 from public.intro_outcomes
 where public.is_admin();
+-- ============================================================
+-- 세모플 0022 — 거래소 신뢰 마무리(E-B)
+-- (0001~0021 실행된 DB에 이어 실행 · 멱등)
+--
+-- ① 매물 "운영자 확인 ✓" — SellForm이 약속하던 표시를 실제로: deals.owner_verified(관리자가
+--    verify_note 검증 후 토글) + 공개 뷰 노출. ② 준비 증빙 유무 태그(proofs — 수치·가격 아님,
+--    가격·밸류에이션 필드 금지 원칙 준수). ③ 소개(연락처 공유) 전 익명 Q&A — 질문자 신원은
+--    공개 뷰에 컬럼 자체가 없다(익명성 원칙). 게시는 관리자 검수(answered) 후에만.
+-- ============================================================
+
+-- ── 1) deals: 검증·증빙 태그 ──
+alter table public.deals add column if not exists owner_verified boolean not null default false;
+alter table public.deals add column if not exists proofs text[] not null default '{}';
+
+-- ── 2) 공개 뷰 재정의(0002 definer 패턴 — 작성자 식별자 여전히 비노출) ──
+create or replace view public.v_deals_public
+  with (security_invoker = false) as
+  select id, category_id, region, revenue_band, mode, summary, highlights, sale_reason,
+         status, is_demo, posted, owner_verified, proofs
+  from public.deals where status <> 'closed';
+
+-- ── 3) 익명 Q&A ──
+create table if not exists public.deal_questions (
+  id          uuid primary key default gen_random_uuid(),
+  deal_id     text not null references public.deals(id) on delete cascade,
+  asker_id    uuid not null references public.profiles(id) on delete cascade,
+  question    text not null check (char_length(question) between 5 and 300),
+  answer      text,
+  status      text not null default 'pending' check (status in ('pending', 'answered', 'hidden')),
+  created_at  timestamptz not null default now(),
+  answered_at timestamptz
+);
+create index if not exists idx_deal_questions_deal on public.deal_questions(deal_id, status, created_at desc);
+alter table public.deal_questions enable row level security;
+-- 질문 등록은 본인 명의로만
+drop policy if exists "own question insert" on public.deal_questions;
+create policy "own question insert" on public.deal_questions for insert
+  with check (asker_id = auth.uid());
+-- 원본 행 열람은 본인 질문 + admin(답변·검수). 공개 노출은 아래 뷰로만.
+drop policy if exists "own question read" on public.deal_questions;
+create policy "own question read" on public.deal_questions for select
+  using (asker_id = auth.uid() or public.is_admin());
+drop policy if exists "admin question update" on public.deal_questions;
+create policy "admin question update" on public.deal_questions for update
+  using (public.is_admin()) with check (public.is_admin());
+
+-- 공개 Q&A 뷰 — answered만, 질문자 신원 컬럼 없음(definer)
+create or replace view public.v_deal_questions_public
+  with (security_invoker = false) as
+  select deal_id, question, answer, answered_at
+  from public.deal_questions
+  where status = 'answered'
+  order by answered_at desc;
+grant select on public.v_deal_questions_public to anon, authenticated;
