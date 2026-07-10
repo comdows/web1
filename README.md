@@ -63,7 +63,7 @@ backend/
 - [x] **`0017_measurement.sql` 실행 완료**(계측 보강 — `events.ref`(유입경로) 컬럼 + 퍼널·유입 admin 뷰 `v_funnel_7d`/`v_referrers_7d`. 멱등. 실행 후 방문이 쌓이면 관리 콘솔 "퍼널·유입" 패널에 노출→클릭→외부방문 전환율·유입경로가 채워짐)
 - [x] **`0018_notifications.sql` 실행 완료**(인앱 알림 — `notifications` 테이블 + RLS(본인만 열람·읽음, 생성은 admin 봇). 멱등. 실행 후 `match-notify` 워크플로가 ①인수 브리프↔신규 매물 ②관심 분야(즐겨찾기 유도) 신규 플랫폼 알림을 넣고, 헬스체크는 관심 플랫폼 죽은 링크를 알림 → 회원 헤더 🔔에 표시. 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요)
 - [x] **`0026_billing_exchange.sql` 실행 완료(2026-07-10)**(수익화 v2 — 거래소 리스팅료·연장·인수자 멤버십·크레딧 충전을 place_order가 처리, 가격을 `app_settings 'prices'`로 단일화(변경 시 SQL 수정 불필요), 구독 플랜별 공존(uq_subs_active→user+plan), 만료 임박 뷰 `v_expiring_subs`(match-notify가 D-7 인앱 알림), buyer 48시간 선공개(스위치 off면 무효). 멱등. **실행해도 아무것도 켜지지 않음** — listing/buyer_membership/buyer_early 스위치 기본 false)
-- [ ] **`0025_reviews.sql` 실행**(플랫폼 이용 후기 — `reviews` 테이블(1인 1리뷰·검수 후 게시·본인 수정은 재검수 강제 RLS) + 공개 뷰 `v_reviews_public`(익명)·평점 집계 `v_review_stats`(표시 전용 — 정렬 랭킹 미반영). 멱등. 실행 후 상세 "이용 후기" 섹션·카드 ★평점·관리 콘솔 "⭐ 리뷰 검수 큐"가 동작)
+- [x] **`0025_reviews.sql` 실행 완료(2026-07-10)**(플랫폼 이용 후기 — `reviews` 테이블(1인 1리뷰·검수 후 게시·본인 수정은 재검수 강제 RLS) + 공개 뷰 `v_reviews_public`(익명)·평점 집계 `v_review_stats`(표시 전용 — 정렬 랭킹 미반영). 멱등. 실행 후 상세 "이용 후기" 섹션·카드 ★평점·관리 콘솔 "⭐ 리뷰 검수 큐"가 동작)
 - [x] **`0024_notify_email.sql` 실행 완료(2026-07-10)**(알림 이메일 레이어 — `app_settings 'notify_email'`(기본 **enabled:false**) + `notify_email_log`(사용자당 하루 1통을 unique로 DB에서 강제). 멱등. **실행해도 아무것도 발송되지 않음** — 코드·스위치만 준비되고, 켜는 절차는 아래)
 - [ ] (선택) **알림 이메일 켜기**(인앱 알림 요약을 하루 1통 이메일로 — 인프라·법적 준비 후에만):
   ① 이메일 발송 서비스 계정(Resend 등) + 발신 도메인 SPF/DKIM/DMARC 인증(아웃리치 발송과 동일 스택)
