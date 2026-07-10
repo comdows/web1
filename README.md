@@ -96,6 +96,7 @@ backend/
 
 | 문서 | 내용 |
 |---|---|
+| ops-checklist.md | 운영자 액션 체크리스트 — 검색엔진 등록·이메일 켜기·특허 시한·운영 루틴 |
 | pricing-policy.md | 가격정책 v1 — 확정 예정가·게이트·환불·결제 운영 |
 | patent-plan.md | 발명 명세서 초안 4건 + 출원 전략(공지예외 시한) |
 | stage2-monetization-plan.md / stage3-exchange-plan.md | 제휴 수익화 · 거래소 법적 구조 기획 |
