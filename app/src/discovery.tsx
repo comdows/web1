@@ -4,10 +4,10 @@ import { categories, groups, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import hubIntros from "./data/hub-intros.ko.json"; // 분야 허브 편집 인트로(검색 랜딩 안내)
 const HUB: Record<string, { intro: string; pickBy: string[] }> = hubIntros as never;
-import { Avatar, Badge, PlatformCard, ShareButton, SuggestInput } from "./components";
+import { Avatar, Badge, PlatformCard, ReportButton, ShareButton, SuggestInput } from "./components";
 import { RecentQ, fuzzyCorrect } from "./lib/suggest";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
-import { amOperatorOf, createCorrection, createOperatorClaim, fetchPlatformNews, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent } from "./lib/api";
+import { amOperatorOf, createCorrection, createOperatorClaim, deleteMyReview, fetchPlatformNews, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent } from "./lib/api";
 import type { OperatorClaim, PlatformNews, PublicReview } from "./lib/api";
 import { useReviewStats } from "./lib/reviews";
 import { hasContact } from "./lib/anonymity";
@@ -179,6 +179,7 @@ function NewsSection({ platformId }: { platformId: string }) {
               <a href={n.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13.5 }}>{n.title} ↗</a>
               <div className="frm-note">{n.source}{n.published_at ? ` · ${n.published_at.slice(0, 10)}` : ""}</div>
             </div>
+            <span style={{ flexShrink: 0 }}><ReportButton targetType="platform_news" targetId={String(n.id)} /></span>
           </div>
         ))}
       </div>
@@ -198,17 +199,18 @@ function ReviewSection({ platformId }: { platformId: string }) {
   const [rating, setRating] = useState(5);
   const [body, setBody] = useState("");
   const [mineStatus, setMineStatus] = useState<"" | "pending" | "published" | "hidden">("");
+  const [mineId, setMineId] = useState(""); // 본인 삭제(0028)용
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [sent, setSent] = useState(false);
   useEffect(() => {
-    setReviews(null); setMineStatus(""); setSent(false); setErr(""); setBody(""); setRating(5);
+    setReviews(null); setMineStatus(""); setMineId(""); setSent(false); setErr(""); setBody(""); setRating(5);
     if (!remoteEnabled) return;
     let alive = true;
     fetchReviews(platformId).then((r) => { if (alive) setReviews(r); });
     if (session) {
       getMyReview(platformId).then((m) => {
-        if (alive && m) { setMineStatus(m.status); setRating(m.rating); setBody(m.body); }
+        if (alive && m) { setMineStatus(m.status); setMineId(m.id); setRating(m.rating); setBody(m.body); }
       }).catch(() => { /* noop */ });
     }
     return () => { alive = false; };
@@ -239,7 +241,10 @@ function ReviewSection({ platformId }: { platformId: string }) {
                   <span style={{ color: "var(--brand)", fontSize: 13 }} aria-label={`별점 ${r.rating}점`}>{STAR(r.rating)}</span>
                   <p style={{ margin: "4px 0 0", fontSize: 13.5 }}>{r.body}</p>
                 </div>
-                <span className="mono" style={{ color: "var(--faint)", fontSize: 11, flexShrink: 0 }}>{r.created_at.slice(0, 10)}</span>
+                <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
+                  <span className="mono" style={{ color: "var(--faint)", fontSize: 11 }}>{r.created_at.slice(0, 10)}</span>
+                  <ReportButton targetType="review" targetId={r.id} />
+                </span>
               </div>
             ))}
           </div>
@@ -268,9 +273,24 @@ function ReviewSection({ platformId }: { platformId: string }) {
                 placeholder="예: 정산이 빨라서 재고 회전에 좋았어요. 다만 초기 입점 심사가 2주쯤 걸렸습니다." />
             </label>
             {err && <div className="err">{err}</div>}
-            <button className="btn primary sm" style={{ alignSelf: "flex-start" }} disabled={busy} type="submit">
-              {mineStatus ? "후기 수정 제출" : "후기 남기기"}
-            </button>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <button className="btn primary sm" disabled={busy} type="submit">
+                {mineStatus ? "후기 수정 제출" : "후기 남기기"}
+              </button>
+              {mineId && (
+                <button type="button" className="linklike" style={{ fontSize: 12.5, color: "var(--faint)" }} disabled={busy}
+                  onClick={async () => {
+                    if (!confirm("내 후기를 삭제할까요? 되돌릴 수 없어요.")) return;
+                    setBusy(true); setErr("");
+                    try {
+                      await deleteMyReview(mineId);
+                      setMineId(""); setMineStatus(""); setBody(""); setRating(5);
+                      fetchReviews(platformId).then(setReviews);
+                    } catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+                    finally { setBusy(false); }
+                  }}>내 후기 삭제</button>
+              )}
+            </div>
           </form>
         )}
     </>
@@ -384,6 +404,7 @@ export function PlatformDetail({ id }: { id?: string }) {
         ⓘ <b>수수료대·정산 주기·입점 조건은 공개 정보를 바탕으로 한 세모플의 개략 추정치</b>이며 해당 플랫폼의 공식 수치가 아닙니다.
         요율·조건은 카테고리·시기·계약에 따라 다르고 수시로 바뀌므로, 실제 값은 반드시 <b>공식 사이트</b>에서 확인하세요.
         <CorrectionBox p={p} />
+        <div style={{ marginTop: 6 }}>사기·폐업·부적절 등재 등 문제가 있다면: <ReportButton targetType="platform" targetId={p.id} /></div>
       </div>
 
       <NewsSection platformId={p.id} />

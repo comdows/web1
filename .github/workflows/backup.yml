@@ -1,5 +1,5 @@
 # 주간 데이터 백업 — Supabase 사용자 생성 데이터를 암호화 아티팩트로 보존(90일 롤링).
-# service key 불사용: admin 봇 JWT(RLS)로만 읽는다. 실패 시 GitHub 기본 실패 메일이 알림 역할.
+# service key 불사용: admin 봇 JWT(RLS)로만 읽는다. 실패 시 ops-alert 이슈 + GitHub 기본 실패 메일.
 # 필요 Secrets: SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_BOT_EMAIL, ADMIN_BOT_PASSWORD, BACKUP_PASSPHRASE
 # 복원 절차: README.md '운영 루틴 > 백업·복원' 참고.
 name: Weekly data backup
@@ -7,6 +7,9 @@ on:
   schedule:
     - cron: "0 19 * * 0"   # 매주 월요일 04:00 KST
   workflow_dispatch:
+permissions:
+  contents: read
+  issues: write   # 실패 알림(ops-alert 이슈)
 jobs:
   backup:
     runs-on: ubuntu-latest
@@ -38,3 +41,11 @@ jobs:
           path: backend/collect/backup-*.json.gpg
           retention-days: 90
           if-no-files-found: error
+      - name: 실패 알림(ops-alert 이슈)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sf -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues" \
+            -d "{\"title\":\"[운영] ${{ github.workflow }} 실패 — 확인 필요\",\"body\":\"실행 로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"labels\":[\"ops-alert\"]}"

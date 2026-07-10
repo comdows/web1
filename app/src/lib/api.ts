@@ -3,7 +3,7 @@
  * 없으면 로컬(JSON) 모드. 원격 실패 시 로컬로 폴백 → 백엔드 장애에도 발견 기능 유지. */
 import { platforms, categories, categoryById } from "../data";
 import type { Platform } from "../data";
-import { getAccessToken, getSession } from "./auth";
+import { getAccessToken, getSession, signOut } from "./auth";
 import { sortByRelevance } from "./search";
 
 const SB_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
@@ -32,6 +32,12 @@ export async function rest<T>(pathAndQuery: string, init?: RequestInit): Promise
       const j = JSON.parse(detail) as { code?: string; message?: string };
       if (typeof j.message === "string" && (j.code === "P0001" || /[가-힣]/.test(j.message))) serverMsg = j.message;
     } catch { /* JSON 아님 — 일반 문구 사용 */ }
+    // 세션이 있는데 401 = 만료·회수된 토큰(refresh는 통과했지만 REST가 거부한 잔여 케이스).
+    // stale 세션에 갇히지 않게 정리하고 앱에 알린다(App.tsx 배너가 재로그인 유도).
+    if (res.status === 401 && getSession()) {
+      signOut();
+      window.dispatchEvent(new CustomEvent("sm:session-expired"));
+    }
     const msg = serverMsg || (res.status === 401 || res.status === 403 ? "권한이 없어요. 다시 로그인해 주세요."
       : res.status === 400 || res.status === 409 || res.status === 422 ? "입력값을 확인해 주세요."
       : res.status === 404 ? "대상을 찾을 수 없어요."
@@ -595,7 +601,7 @@ export async function answerDealQuestion(id: string, answer: string, hide = fals
 }
 
 /* ── 플랫폼 이용 후기(0025) — 게시는 검수(published) 후, 공개 뷰는 작성자 비노출 ── */
-export interface PublicReview { platform_id: string; rating: number; body: string; created_at: string }
+export interface PublicReview { platform_id: string; rating: number; body: string; created_at: string; id: string }
 export async function fetchReviews(platformId: string): Promise<PublicReview[]> {
   return rest<PublicReview[]>(`v_reviews_public?platform_id=eq.${encodeURIComponent(platformId)}&select=*&limit=30`).catch(() => []);
 }
@@ -638,6 +644,86 @@ export async function moderateReview(id: string, publish: boolean): Promise<void
     body: JSON.stringify({ status: publish ? "published" : "hidden", reviewed_at: new Date().toISOString() }),
   });
 }
+/* 게시된 리뷰 사후 관리 — 재숨김은 위 moderateReview(id, false) 그대로 재사용 */
+export async function listPublishedReviews(): Promise<PendingReview[]> {
+  return rest<PendingReview[]>("reviews?status=eq.published&select=id,platform_id,rating,body,created_at&order=created_at.desc&limit=100");
+}
+/* 본인 리뷰 삭제(0028 own review delete) — 오게시·오타 정정의 최종 수단 */
+export async function deleteMyReview(id: string): Promise<void> {
+  await rest(`reviews?id=eq.${id}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+}
+
+/* ── 신고(0028 reports) — 게시물 문제 신고: 접수는 회원, 처리는 관리 콘솔 큐 ── */
+export type ReportTargetType = "review" | "partner_post" | "deal" | "platform_news" | "platform";
+export async function createReport(targetType: ReportTargetType, targetId: string, reason: string): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  try {
+    await rest("reports", {
+      method: "POST", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ reporter_id: uid, target_type: targetType, target_id: targetId, reason: reason.trim() }),
+    });
+  } catch (ex) {
+    const s = (ex as { status?: number }).status;
+    if (s === 409) throw new Error("이미 신고한 대상이에요 — 운영자가 순차 확인합니다.");
+    if (s === 403) throw new Error("접수 한도(미처리 5건)를 초과했거나 접수가 제한된 계정이에요.");
+    throw ex;
+  }
+}
+export interface ReportRow {
+  id: string; target_type: ReportTargetType; target_id: string; reason: string;
+  status: "pending" | "resolved" | "dismissed"; resolve_note: string | null; created_at: string;
+}
+export async function listReports(): Promise<ReportRow[]> {
+  return rest<ReportRow[]>("reports?status=eq.pending&select=id,target_type,target_id,reason,status,resolve_note,created_at&order=created_at.asc&limit=100");
+}
+export async function resolveReport(id: string, status: "resolved" | "dismissed", note: string): Promise<void> {
+  await rest(`reports?id=eq.${id}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ status, resolve_note: note.trim() || null, resolved_by: getSession()?.user.id ?? null, resolved_at: new Date().toISOString() }),
+  });
+}
+
+/* ── 문의(0028 inquiries) — 인앱 접수·내역, 관리자 답변(답변 시 인앱 알림) ── */
+export interface Inquiry {
+  id: string; title: string; body: string; status: "open" | "answered" | "closed";
+  reply: string | null; replied_at: string | null; created_at: string; user_id?: string;
+}
+export async function createInquiry(title: string, body: string): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  try {
+    await rest("inquiries", {
+      method: "POST", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ user_id: uid, title: title.trim(), body: body.trim() }),
+    });
+  } catch (ex) {
+    if ((ex as { status?: number }).status === 403) throw new Error("답변 대기 중인 문의가 3건이에요 — 답변 후 다시 접수할 수 있어요.");
+    throw ex;
+  }
+}
+export async function listMyInquiries(): Promise<Inquiry[]> {
+  if (!remoteEnabled || !getSession()) return [];
+  const uid = getSession()!.user.id;
+  return rest<Inquiry[]>(`inquiries?user_id=eq.${uid}&select=id,title,body,status,reply,replied_at,created_at&order=created_at.desc&limit=30`).catch(() => []);
+}
+export async function listOpenInquiries(): Promise<Inquiry[]> {
+  return rest<Inquiry[]>("inquiries?status=eq.open&select=id,user_id,title,body,status,reply,replied_at,created_at&order=created_at.asc&limit=100");
+}
+export async function replyInquiry(id: string, userId: string, reply: string): Promise<void> {
+  await rest(`inquiries?id=eq.${id}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ reply: reply.trim(), status: "answered", replied_by: getSession()?.user.id ?? null, replied_at: new Date().toISOString() }),
+  });
+  // 인앱 알림(0018 — admin insert 정책·unique 멱등) — 재답변 시 중복 대신 병합
+  await rest("notifications?on_conflict=user_id,kind,ref_id", {
+    method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({
+      user_id: userId, kind: "inquiry_reply", ref_type: "inquiry", ref_id: id,
+      title: "문의에 답변이 등록됐어요", body: reply.trim().slice(0, 120), url: "?view=support",
+    }),
+  }).catch(() => { /* 알림 실패는 답변 자체를 되돌리지 않음 */ });
+}
 export async function reviewDealSubmission(id: string, patch: {
   status: "approved" | "rejected" | "hold"; review_reason?: string; approved_deal_id?: string;
 }): Promise<void> {
@@ -674,20 +760,22 @@ export interface IntroQueueRow {
   contact_consent_at: string | null; owner_confirmed_at: string | null;
 }
 /* 관리 콘솔 상단 요약 — 작업 큐별 대기 건수(한눈에 '뭐가 밀렸나'). 각 큐와 동일 필터. */
-export interface QueueCounts { submission: number; partner: number; deal: number; operator: number; deposit: number; intro: number }
+export interface QueueCounts { submission: number; partner: number; deal: number; operator: number; deposit: number; intro: number; report: number; inquiry: number }
 export async function fetchQueueCounts(): Promise<QueueCounts> {
   const n = async (pathQ: string) => {
     try { return (await rest<{ id?: string }[]>(pathQ)).length; } catch { return 0; }
   };
-  const [submission, partner, deal, operator, deposit, intro] = await Promise.all([
+  const [submission, partner, deal, operator, deposit, intro, report, inquiry] = await Promise.all([
     n("submissions?status=in.(pending,hold)&select=id&limit=200"),
     n("partner_posts?status=eq.pending&select=id&limit=200"),
     n("deal_submissions?status=in.(pending,hold)&select=id&limit=200"),
     n("operator_claims?status=in.(pending,code_sent)&select=id&limit=200"),
     n("v_admin_charges?status=eq.awaiting_deposit&select=id&limit=200"),
     n("v_admin_intro_queue?status=eq.pending&select=id&limit=200"),
+    n("reports?status=eq.pending&select=id&limit=200"),
+    n("inquiries?status=eq.open&select=id&limit=200"),
   ]);
-  return { submission, partner, deal, operator, deposit, intro };
+  return { submission, partner, deal, operator, deposit, intro, report, inquiry };
 }
 export async function listAdminIntroQueue(): Promise<IntroQueueRow[]> {
   return rest<IntroQueueRow[]>("v_admin_intro_queue?status=eq.pending&select=*&order=created_at.asc&limit=100");
@@ -815,6 +903,61 @@ export async function fetchAdminMetrics(): Promise<AdminMetrics> {
     restCount("deal_interests?status=eq.introduced&select=id"),
   ]);
   return { members, favs, searches7d, outbound7d, livePosts, liveDeals, introduced: introP + introD };
+}
+
+/* ── 관리자: 회원 조회·정지(0028 v_admin_members + admin_set_suspended RPC) ── */
+export interface AdminMember {
+  id: string; email: string | null; display_name: string | null; role: string;
+  suspended_at: string | null; created_at: string;
+  submissions: number; partner_posts: number; deal_subs: number; reviews: number;
+}
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+export async function searchAdminMembers(q: string): Promise<AdminMember[]> {
+  const v = q.trim();
+  if (!v) return [];
+  const filter = UUID_RE.test(v)
+    ? `id=eq.${v}`
+    : `or=(email.ilike.*${encodeURIComponent(v)}*,display_name.ilike.*${encodeURIComponent(v)}*)`;
+  return rest<AdminMember[]>(`v_admin_members?${filter}&select=*&limit=20`);
+}
+export async function setMemberSuspended(userId: string, suspend: boolean): Promise<void> {
+  await rest("rpc/admin_set_suspended", {
+    method: "POST", body: JSON.stringify({ p_user: userId, p_suspend: suspend }),
+  });
+}
+
+/* ── 관리자: 운영 스위치(app_settings — admin write RLS는 0011) ── */
+export interface AppSetting { key: string; value: Record<string, unknown> }
+export async function listAppSettings(): Promise<AppSetting[]> {
+  return rest<AppSetting[]>("app_settings?select=key,value&order=key.asc");
+}
+export async function updateAppSetting(key: string, value: Record<string, unknown>): Promise<void> {
+  await rest(`app_settings?key=eq.${encodeURIComponent(key)}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ value }),
+  });
+}
+
+/* ── 관리자: 최근 처리 내역 — 별도 테이블 없이 각 큐의 처리분을 모아 보여준다(분쟁·문의 대응 근거) ── */
+export interface ProcessedItem { kind: string; id: string; label: string; status: string; reason: string | null; at: string }
+export async function listRecentProcessed(): Promise<ProcessedItem[]> {
+  const safe = <T,>(p: Promise<T[]>) => p.catch(() => [] as T[]);
+  const [subs, posts, deals, reviews] = await Promise.all([
+    safe(rest<{ id: string; payload: { name?: string }; status: string; review_reason: string | null; reviewed_at: string | null }[]>(
+      "submissions?status=in.(approved,rejected,hold)&select=id,payload,status,review_reason,reviewed_at&order=reviewed_at.desc.nullslast&limit=30")),
+    safe(rest<{ id: string; title: string; status: string; review_reason: string | null; reviewed_at: string | null; created_at: string }[]>(
+      "partner_posts?status=in.(published,rejected,closed,matched)&select=id,title,status,review_reason,reviewed_at,created_at&order=created_at.desc&limit=30")),
+    safe(rest<{ id: string; approved_deal_id: string | null; payload: { summary?: string }; status: string; review_reason: string | null; reviewed_at: string | null }[]>(
+      "deal_submissions?status=in.(approved,rejected)&select=id,approved_deal_id,payload,status,review_reason,reviewed_at&order=reviewed_at.desc.nullslast&limit=30")),
+    safe(rest<{ id: string; platform_id: string; status: string; reviewed_at: string | null }[]>(
+      "reviews?status=in.(published,hidden)&select=id,platform_id,status,reviewed_at&order=reviewed_at.desc.nullslast&limit=30")),
+  ]);
+  const items: ProcessedItem[] = [
+    ...subs.map((s) => ({ kind: "제보", id: s.id, label: s.payload?.name ?? "(이름 없음)", status: s.status, reason: s.review_reason, at: s.reviewed_at ?? "" })),
+    ...posts.map((p) => ({ kind: "제휴", id: p.id, label: p.title, status: p.status, reason: p.review_reason, at: p.reviewed_at ?? p.created_at })),
+    ...deals.map((d) => ({ kind: "매각", id: d.id, label: d.approved_deal_id ?? ((d.payload?.summary ?? "").slice(0, 30) || d.id.slice(0, 8)), status: d.status, reason: d.review_reason, at: d.reviewed_at ?? "" })),
+    ...reviews.map((r) => ({ kind: "리뷰", id: r.id, label: r.platform_id, status: r.status, reason: null, at: r.reviewed_at ?? "" })),
+  ];
+  return items.sort((a, b) => (b.at || "").localeCompare(a.at || "")).slice(0, 60);
 }
 
 /* ── 인앱 알림(0018) — 본인 알림 열람·읽음 처리(생성은 봇 잡이 admin으로) ── */
@@ -997,11 +1140,19 @@ export async function registerOptout(email: string): Promise<void> {
 }
 
 /* ── 플랫폼 소식(0027) — 수집기가 연결한 공개 뉴스, 상세 "최근 소식" 섹션용 ── */
-export interface PlatformNews { title: string; url: string; source: string; published_at: string | null }
+export interface PlatformNews { id: number; title: string; url: string; source: string; published_at: string | null }
 export async function fetchPlatformNews(platformId: string): Promise<PlatformNews[]> {
   return rest<PlatformNews[]>(
-    `platform_news?platform_id=eq.${encodeURIComponent(platformId)}&select=title,url,source,published_at&order=published_at.desc.nullslast&limit=5`,
+    `platform_news?platform_id=eq.${encodeURIComponent(platformId)}&select=id,title,url,source,published_at&order=published_at.desc.nullslast&limit=5`,
   ).catch(() => []);
+}
+/* 관리자: 최근 수집 소식 조회·오탐 삭제(0027 admin delete 정책) */
+export async function listRecentPlatformNews(): Promise<(PlatformNews & { platform_id: string; created_at: string })[]> {
+  return rest<(PlatformNews & { platform_id: string; created_at: string })[]>(
+    "platform_news?select=id,platform_id,title,url,source,published_at,created_at&order=created_at.desc&limit=50");
+}
+export async function deletePlatformNews(id: number): Promise<void> {
+  await rest(`platform_news?id=eq.${id}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
 }
 
 /* ── 운영자 대시보드(0023) — 인증된 운영자에게 내 플랫폼 데이터 개방 ── */

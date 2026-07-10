@@ -14,13 +14,17 @@ import {
   adminDeclineInterest, adminIntroduce, cancelCharge, confirmDeposit, createSponsorSlot, declinePendingInterests,
   listAdminCharges, listPartnerPosts, listSponsorSlotsAdmin, listSubmissions, listSubscriptionsAdmin,
   answerDealQuestion, listPendingDealQuestions, listPendingReviews, moderateReview, setDealVerified,
-  markOwnerConfirmed, partnerRefCode, publishDeal, refundCharge, remoteEnabled,
+  markOwnerConfirmed, partnerRefCode, publishDeal, refundCharge, remoteEnabled, rest,
   reviewDealSubmission, reviewOperatorClaim, reviewPartnerPost, reviewSubmission,
   transitionPlatform, updateDealStatus, updatePlatform,
+  listReports, resolveReport, listPublishedReviews, listRecentPlatformNews, deletePlatformNews,
+  searchAdminMembers, setMemberSuspended, listAppSettings, updateAppSetting, listRecentProcessed,
+  listOpenInquiries, replyInquiry,
 } from "./lib/api";
 import type {
   AdminChargeRow, BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin,
   PendingDealQ, PendingReview, SponsorSlotAdmin, Submission, SubscriptionAdmin,
+  ReportRow, AdminMember, AppSetting, ProcessedItem, Inquiry, PlatformNews,
 } from "./lib/api";
 import { checkAnonymity } from "./lib/anonymity";
 import { scoreBriefDeal } from "./lib/match";
@@ -813,6 +817,365 @@ function ReviewQueue() {
   );
 }
 
+/* ── 🚩 신고 큐(0028) — 회원 신고를 확인하고 해결/기각. 조치(숨김·삭제·상태 변경)는 각 큐·패널에서. ── */
+const REPORT_TYPE_KO: Record<ReportRow["target_type"], string> = {
+  review: "리뷰", partner_post: "제휴 제안", deal: "매물", platform_news: "소식 기사", platform: "플랫폼",
+};
+function ReportQueue() {
+  const go = useNav();
+  const [items, setItems] = useState<ReportRow[] | null>(null);
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  const [previews, setPreviews] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState("");
+  const reload = useCallback(() => {
+    listReports().then(setItems).catch(() => setItems(null));
+  }, []);
+  useEffect(reload, [reload]);
+  const act = async (id: string, status: "resolved" | "dismissed") => {
+    setBusy(id);
+    try { await resolveReport(id, status, notes[id] ?? ""); reload(); }
+    catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(""); }
+  };
+  /* 대상 내용 미리보기 — admin RLS로 원본 조회(리뷰·제휴는 관리자만 열람 가능) */
+  const loadPreview = async (r: ReportRow) => {
+    try {
+      let text = "(내용 없음)";
+      if (r.target_type === "review") {
+        const rows = await rest<{ body: string; status: string; platform_id: string }[]>(`reviews?id=eq.${r.target_id}&select=body,status,platform_id`);
+        text = rows[0] ? `[${rows[0].status}] ${rows[0].platform_id} — ${rows[0].body}` : "(삭제됨)";
+      } else if (r.target_type === "partner_post") {
+        const rows = await rest<{ title: string; status: string }[]>(`partner_posts?id=eq.${r.target_id}&select=title,status`);
+        text = rows[0] ? `[${rows[0].status}] ${rows[0].title}` : "(삭제됨)";
+      } else if (r.target_type === "platform_news") {
+        const rows = await rest<{ title: string; url: string }[]>(`platform_news?id=eq.${r.target_id}&select=title,url`);
+        text = rows[0] ? `${rows[0].title} (${rows[0].url})` : "(삭제됨)";
+      }
+      setPreviews((p) => ({ ...p, [r.id]: text }));
+    } catch { setPreviews((p) => ({ ...p, [r.id]: "(조회 실패)" })); }
+  };
+  if (items === null) return <div className="empty">신고 큐를 불러오지 못했어요(0028 마이그레이션 필요 여부 확인).</div>;
+  if (items.length === 0) return <div className="empty">대기 중인 신고가 없습니다 ✓</div>;
+  return (
+    <>
+      {items.map((r) => (
+        <div className="admin-card" key={r.id}>
+          <div className="admin-card-h">
+            <b>🚩 {REPORT_TYPE_KO[r.target_type]}</b>
+            <span className="mono" style={{ fontSize: 11 }}>{r.target_id}</span>
+            <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: "auto" }}>{r.created_at.slice(0, 10)}</span>
+          </div>
+          <p style={{ margin: "6px 0", fontSize: 13 }}><b>신고 사유</b> — {r.reason}</p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 6 }}>
+            {(r.target_type === "review" || r.target_type === "partner_post" || r.target_type === "platform_news") && (
+              previews[r.id]
+                ? <span className="frm-note" style={{ flexBasis: "100%" }}>대상: {previews[r.id]}</span>
+                : <button className="linklike" style={{ fontSize: 12.5 }} onClick={() => loadPreview(r)}>대상 내용 보기</button>
+            )}
+            {r.target_type === "deal" && <button className="linklike" style={{ fontSize: 12.5 }} onClick={() => go("deal", { id: r.target_id })}>매물 페이지 →</button>}
+            {r.target_type === "platform" && <button className="linklike" style={{ fontSize: 12.5 }} onClick={() => go("detail", { id: r.target_id })}>플랫폼 상세 →</button>}
+          </div>
+          <div className="frm-note" style={{ marginBottom: 6 }}>
+            조치가 필요하면 해당 큐·패널에서 처리하세요(리뷰 → 게시된 리뷰 관리, 소식 → 소식 관리, 제휴·매물 → 게시 중).
+          </div>
+          <div className="admin-form">
+            <label style={{ flex: 1, minWidth: 260 }}>처리 메모(선택 — 이력 근거)
+              <input value={notes[r.id] ?? ""} onChange={(e) => setNotes((n) => ({ ...n, [r.id]: e.target.value }))} maxLength={300}
+                placeholder="예: 후기 숨김 처리함 / 확인 결과 문제 없음" />
+            </label>
+          </div>
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button className="btn primary sm" disabled={busy === r.id} onClick={() => act(r.id, "resolved")}>✓ 해결(조치함)</button>
+            <button className="btn ghost sm" disabled={busy === r.id} onClick={() => act(r.id, "dismissed")}>기각(문제 없음)</button>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/* ── 📬 문의 큐(0028) — open 문의에 답변 → answered + 인앱 알림 ── */
+function InquiryQueue() {
+  const [items, setItems] = useState<Inquiry[] | null>(null);
+  const [replies, setReplies] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState("");
+  const [errs, setErrs] = useState<Record<string, string>>({});
+  const reload = useCallback(() => {
+    listOpenInquiries().then(setItems).catch(() => setItems(null));
+  }, []);
+  useEffect(reload, [reload]);
+  const act = async (i: Inquiry) => {
+    const text = (replies[i.id] ?? "").trim();
+    if (text.length < 5) { setErrs((e) => ({ ...e, [i.id]: "답변을 5자 이상 입력하세요." })); return; }
+    setErrs((e) => ({ ...e, [i.id]: "" })); setBusy(i.id);
+    try { await replyInquiry(i.id, i.user_id!, text); reload(); }
+    catch (ex) { setErrs((e) => ({ ...e, [i.id]: ex instanceof Error ? ex.message : String(ex) })); }
+    finally { setBusy(""); }
+  };
+  if (items === null) return <div className="empty">문의 큐를 불러오지 못했어요(0028 마이그레이션 필요 여부 확인).</div>;
+  if (items.length === 0) return <div className="empty">대기 중인 문의가 없습니다 ✓</div>;
+  return (
+    <>
+      {items.map((i) => (
+        <div className="admin-card" key={i.id}>
+          <div className="admin-card-h">
+            <b>📬 {i.title}</b>
+            <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: "auto" }}>{i.created_at.slice(0, 10)}</span>
+          </div>
+          <p style={{ margin: "6px 0", fontSize: 13, whiteSpace: "pre-wrap" }}>{i.body}</p>
+          <div className="admin-form">
+            <label style={{ flex: 1, minWidth: 260 }}>답변(회원에게 인앱 알림으로 전달)
+              <textarea rows={3} value={replies[i.id] ?? ""} onChange={(e) => setReplies((r) => ({ ...r, [i.id]: e.target.value }))} maxLength={2000} />
+            </label>
+          </div>
+          {errs[i.id] && <div className="err">{errs[i.id]}</div>}
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button className="btn primary sm" disabled={busy === i.id} onClick={() => act(i)}>✓ 답변 완료</button>
+          </div>
+        </div>
+      ))}
+    </>
+  );
+}
+
+/* ── 🗞 소식 관리(0027·0028) — 자동 수집된 기사 오탐 삭제(공개 피드라 대응 시급) ── */
+function NewsPanel() {
+  const [items, setItems] = useState<(PlatformNews & { platform_id: string; created_at: string })[] | null>(null);
+  const [busy, setBusy] = useState(0);
+  const reload = useCallback(() => {
+    listRecentPlatformNews().then(setItems).catch(() => setItems(null));
+  }, []);
+  useEffect(reload, [reload]);
+  if (items === null) return <div className="empty">소식을 불러오지 못했어요(0027 마이그레이션 필요 여부 확인).</div>;
+  if (items.length === 0) return <div className="empty">수집된 소식이 아직 없습니다 — 주간 수집기가 채웁니다.</div>;
+  return (
+    <details>
+      <summary style={{ cursor: "pointer", fontSize: 13.5, marginBottom: 8 }}>최근 수집 {items.length}건 펼치기 — 오탐(다른 회사 기사)은 삭제하세요</summary>
+      <div className="sub-list">
+        {items.map((n) => (
+          <div className="sub-item" key={n.id}>
+            <div style={{ minWidth: 0 }}>
+              <b className="mono" style={{ fontSize: 12 }}>{n.platform_id}</b>{" "}
+              <a href={n.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13 }}>{n.title} ↗</a>
+              <div className="frm-note">{n.source} · 수집 {n.created_at.slice(0, 10)}</div>
+            </div>
+            <button className="btn ghost sm" disabled={busy === n.id} style={{ flexShrink: 0 }}
+              onClick={async () => {
+                if (!confirm(`이 기사를 ${n.platform_id} 소식에서 삭제할까요?`)) return;
+                setBusy(n.id);
+                try { await deletePlatformNews(n.id); reload(); }
+                catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+                finally { setBusy(0); }
+              }}>삭제</button>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+/* ── 🧹 게시된 리뷰 관리(0028) — 사후 문제(신고 등) 발생 시 재숨김(moderateReview 재사용) ── */
+function PublishedReviewsPanel() {
+  const [items, setItems] = useState<PendingReview[] | null>(null);
+  const [busy, setBusy] = useState("");
+  const reload = useCallback(() => {
+    listPublishedReviews().then(setItems).catch(() => setItems(null));
+  }, []);
+  useEffect(reload, [reload]);
+  if (items === null) return <div className="empty">게시된 리뷰를 불러오지 못했어요.</div>;
+  if (items.length === 0) return <div className="empty">게시 중인 리뷰가 없습니다.</div>;
+  return (
+    <details>
+      <summary style={{ cursor: "pointer", fontSize: 13.5, marginBottom: 8 }}>게시 중 {items.length}건 펼치기 — 신고된 후기는 여기서 숨깁니다</summary>
+      <div className="sub-list">
+        {items.map((r) => (
+          <div className="sub-item" key={r.id} style={{ alignItems: "flex-start" }}>
+            <div style={{ minWidth: 0 }}>
+              <b>{localPlatforms.find((x) => x.id === r.platform_id)?.name ?? r.platform_id}</b>{" "}
+              <span style={{ color: "var(--brand)", fontSize: 13 }}>{"★".repeat(r.rating)}</span>{" "}
+              <span className="mono" style={{ color: "var(--faint)", fontSize: 11 }}>{r.id.slice(0, 8)} · {r.created_at.slice(0, 10)}</span>
+              <p style={{ margin: "4px 0 0", fontSize: 13 }}>{r.body}</p>
+            </div>
+            <button className="btn ghost sm" disabled={busy === r.id} style={{ flexShrink: 0 }}
+              onClick={async () => {
+                if (!confirm("이 후기를 숨길까요? (공개 목록·평점에서 제외)")) return;
+                setBusy(r.id);
+                try { await moderateReview(r.id, false); reload(); }
+                catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+                finally { setBusy(""); }
+              }}>숨김</button>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
+/* ── 👥 회원 관리(0028) — 이메일·이름·ID 검색 + 정지 토글(쓰기만 차단, 읽기·로그인 유지) ── */
+function MembersPanel() {
+  const [q, setQ] = useState("");
+  const [rows, setRows] = useState<AdminMember[] | null>(null);
+  const [busy, setBusy] = useState("");
+  const [err, setErr] = useState("");
+  const search = async () => {
+    setErr("");
+    try { setRows(await searchAdminMembers(q)); }
+    catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); setRows(null); }
+  };
+  const toggle = async (m: AdminMember) => {
+    const suspend = !m.suspended_at;
+    const label = suspend ? "정지" : "정지 해제";
+    if (!confirm(`${m.email ?? m.id}\n이 회원을 ${label}할까요?\n(정지 = 새 글·신청·문의 작성만 차단, 열람·로그인은 유지 — 이의 제기 가능)`)) return;
+    setBusy(m.id); setErr("");
+    try { await setMemberSuspended(m.id, suspend); await search(); }
+    catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(""); }
+  };
+  return (
+    <>
+      <div className="admin-form" style={{ marginBottom: 8 }}>
+        <label style={{ flex: 1, minWidth: 240 }}>이메일 · 이름 · 회원 ID 검색
+          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="예: user@example.com"
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); void search(); } }} />
+        </label>
+        <button className="btn sm" onClick={search} style={{ alignSelf: "flex-end" }}>검색</button>
+      </div>
+      {err && <div className="err">{err}</div>}
+      {rows === null ? <div className="frm-note">스팸·악성 계정 대응: 검색 → 콘텐츠 수 확인 → 정지. (0028 마이그레이션 필요)</div>
+        : rows.length === 0 ? <div className="empty">검색 결과가 없습니다.</div>
+        : (
+          <div className="sub-list">
+            {rows.map((m) => (
+              <div className="sub-item" key={m.id}>
+                <div style={{ minWidth: 0 }}>
+                  <b>{m.email ?? "(이메일 없음)"}</b>{" "}
+                  {m.display_name && <span className="faint">{m.display_name}</span>}{" "}
+                  {m.role === "admin" && <Badge kind="verify">admin</Badge>}
+                  {m.suspended_at && <Badge kind="muted">⛔ 정지 중 ({m.suspended_at.slice(0, 10)}~)</Badge>}
+                  <div className="frm-note">
+                    가입 {m.created_at.slice(0, 10)} · 제보 {m.submissions} · 제휴 {m.partner_posts} · 매각 {m.deal_subs} · 리뷰 {m.reviews}
+                    {" · "}<span className="mono" style={{ fontSize: 10.5 }}>{m.id}</span>
+                  </div>
+                </div>
+                {m.role !== "admin" && (
+                  <button className={`btn sm ${m.suspended_at ? "" : "ghost"}`} disabled={busy === m.id} style={{ flexShrink: 0 }}
+                    onClick={() => toggle(m)}>{m.suspended_at ? "정지 해제" : "정지"}</button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+    </>
+  );
+}
+
+/* ── ⚙️ 운영 스위치(app_settings) — SQL 없이 콘솔에서 토글(0011 admin write RLS).
+ * boolean 값은 체크박스, 그 외는 JSON 직접 편집(파스 검증 후 저장). */
+const SETTING_HINTS: Record<string, string> = {
+  billing: "과금 스위치(스폰서·연결료·멤버십·리스팅·bank 계좌) — 켜면 실제 결제 안내가 노출됩니다",
+  prices: "가격표(원) — 변경 즉시 반영",
+  autolist: "수집기 자동 등재 — collector_id가 봇 uid와 일치할 때만 동작",
+  notify_email: "알림 이메일 발송 — Edge Function·SMTP 준비 후에만 켜세요",
+  outreach: "제휴 제안 서버 발송 — 발신 도메인 인증 후에만 켜세요",
+  pricing_announced_at: "유료화 공지일(YYYY-MM-DD 문자열) — 설정 시 30일 배너 노출",
+};
+function SettingsPanel() {
+  const [rows, setRows] = useState<AppSetting[] | null>(null);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState("");
+  const [msg, setMsg] = useState<Record<string, string>>({});
+  const reload = useCallback(() => {
+    listAppSettings().then(setRows).catch(() => setRows(null));
+  }, []);
+  useEffect(reload, [reload]);
+  if (rows === null) return <div className="empty">설정을 불러오지 못했어요.</div>;
+  const saveJson = async (key: string) => {
+    const draft = drafts[key];
+    if (draft === undefined) return;
+    let parsed: unknown;
+    try { parsed = JSON.parse(draft); }
+    catch { setMsg((m) => ({ ...m, [key]: "JSON 형식이 아니에요 — 저장 취소" })); return; }
+    setBusy(key);
+    try { await updateAppSetting(key, parsed as Record<string, unknown>); setMsg((m) => ({ ...m, [key]: "저장됨 ✓" })); reload(); }
+    catch (ex) { setMsg((m) => ({ ...m, [key]: ex instanceof Error ? ex.message : String(ex) })); }
+    finally { setBusy(""); }
+  };
+  const toggleBool = async (key: string, obj: Record<string, unknown>, sub: string) => {
+    const next = { ...obj, [sub]: !obj[sub] };
+    setBusy(key);
+    try { await updateAppSetting(key, next); reload(); }
+    catch (ex) { setMsg((m) => ({ ...m, [key]: ex instanceof Error ? ex.message : String(ex) })); }
+    finally { setBusy(""); }
+  };
+  return (
+    <>
+      <div className="frm-note" style={{ marginBottom: 8 }}>
+        ⚠ 이 스위치들은 <b>실제 과금·발송·자동 등재</b>를 켭니다 — 켜기 전 README의 게이트 체크리스트를 확인하세요.
+      </div>
+      {rows.map((s) => {
+        const isObj = s.value !== null && typeof s.value === "object" && !Array.isArray(s.value);
+        const obj = isObj ? (s.value as Record<string, unknown>) : null;
+        const bools = obj ? Object.keys(obj).filter((k) => typeof obj[k] === "boolean") : [];
+        return (
+          <div className="admin-card" key={s.key}>
+            <div className="admin-card-h"><b className="mono">{s.key}</b>
+              {SETTING_HINTS[s.key] && <span className="faint" style={{ fontSize: 12 }}>{SETTING_HINTS[s.key]}</span>}
+            </div>
+            {bools.length > 0 && (
+              <div style={{ display: "flex", gap: 14, flexWrap: "wrap", margin: "6px 0" }}>
+                {bools.map((b) => (
+                  <label key={b} className="facet-opt" style={{ fontSize: 13 }}>
+                    <input type="checkbox" checked={obj![b] === true} disabled={busy === s.key}
+                      onChange={() => toggleBool(s.key, obj!, b)} /> {b}
+                  </label>
+                ))}
+              </div>
+            )}
+            <details>
+              <summary style={{ cursor: "pointer", fontSize: 12.5, color: "var(--faint)" }}>JSON 직접 편집</summary>
+              <div className="admin-form" style={{ marginTop: 6 }}>
+                <textarea rows={3} className="mono" style={{ flex: 1, fontSize: 12 }}
+                  value={drafts[s.key] ?? JSON.stringify(s.value, null, 1)}
+                  onChange={(e) => setDrafts((d) => ({ ...d, [s.key]: e.target.value }))} />
+              </div>
+              <button className="btn sm" style={{ marginTop: 6 }} disabled={busy === s.key} onClick={() => saveJson(s.key)}>저장</button>
+            </details>
+            {msg[s.key] && <div className="frm-note">{msg[s.key]}</div>}
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
+/* ── 🗂 최근 처리 내역 — 각 큐의 처리분 취합(분쟁·문의 대응 근거, 별도 테이블 없음) ── */
+function RecentProcessedPanel() {
+  const [items, setItems] = useState<ProcessedItem[] | null>(null);
+  useEffect(() => { listRecentProcessed().then(setItems).catch(() => setItems([])); }, []);
+  if (items === null) return <div className="empty">불러오는 중…</div>;
+  if (items.length === 0) return <div className="empty">아직 처리 내역이 없습니다.</div>;
+  const STATUS_KO: Record<string, string> = {
+    approved: "승인", rejected: "반려", hold: "보류", published: "게시", hidden: "숨김", closed: "마감", matched: "성사",
+  };
+  return (
+    <details>
+      <summary style={{ cursor: "pointer", fontSize: 13.5, marginBottom: 8 }}>최근 처리 {items.length}건 펼치기 (제보·제휴·매각·리뷰)</summary>
+      <div className="sub-list">
+        {items.map((it) => (
+          <div className="sub-item" key={`${it.kind}:${it.id}`}>
+            <div style={{ minWidth: 0 }}>
+              <Badge kind="muted">{it.kind}</Badge> <b style={{ fontSize: 13 }}>{it.label}</b>{" "}
+              <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{it.at ? it.at.slice(0, 10) : ""}</span>
+              <span style={{ fontSize: 12.5, marginLeft: 6 }}>→ {STATUS_KO[it.status] ?? it.status}</span>
+              {it.reason && <div className="frm-note">사유: {it.reason}</div>}
+            </div>
+          </div>
+        ))}
+      </div>
+    </details>
+  );
+}
+
 /* ── 💳 과금 운영(0011·0012) — 전 청구 뷰(v_admin_charges) 기반: 입금 대기·취소·결제 완료·환불.
  * FLAGS와 무관하게 상시 렌더(오픈 전 리허설) — 권한은 RLS is_admin이 강제. */
 const chargeKindLabel = (c: { kind: string; fee_tier: string | null }) =>
@@ -1331,12 +1694,13 @@ export function Admin() {
 
       {/* 오늘 처리 대기 — 큐별 건수 요약(제보만 보이던 문제 해소) + 클릭 시 해당 섹션으로 점프 */}
       {counts && (() => {
-        const total = counts.submission + counts.partner + counts.deal + counts.operator + counts.deposit + counts.intro;
+        const total = counts.submission + counts.partner + counts.deal + counts.operator + counts.deposit + counts.intro + counts.report + counts.inquiry;
         const jump = (id: string) => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
         const items: [string, number, string][] = [
           ["제보", counts.submission, "q-submission"], ["제휴 제안", counts.partner, "q-partner"],
           ["매물", counts.deal, "q-deal"], ["운영자 인증", counts.operator, "q-operator"],
           ["입금 확인", counts.deposit, "q-billing"], ["소개 대기", counts.intro, "q-intro"],
+          ["신고", counts.report, "q-report"], ["문의", counts.inquiry, "q-inquiry"],
         ];
         return (
           <div className="banner" style={{ marginBottom: 18, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
@@ -1374,6 +1738,18 @@ export function Admin() {
       <div className="sec-title" id="q-review">⭐ 리뷰 검수 큐 (이용 후기 — 검수 후 익명 게시)</div>
       <ReviewQueue />
 
+      <div className="sec-title" id="q-report">🚩 신고 큐{counts?.report ? ` · ${counts.report}건` : ""}</div>
+      <ReportQueue />
+
+      <div className="sec-title" id="q-inquiry">📬 문의 큐{counts?.inquiry ? ` · ${counts.inquiry}건` : ""}</div>
+      <InquiryQueue />
+
+      <div className="sec-title">🧹 게시된 리뷰 관리 (사후 재숨김)</div>
+      <PublishedReviewsPanel />
+
+      <div className="sec-title">🗞 소식 관리 (자동 수집 — 오탐 삭제)</div>
+      <NewsPanel />
+
       <div className="sec-title" id="q-operator">🏷 운영자 인증 신청{counts?.operator ? ` · ${counts.operator}건` : ""}</div>
       <OperatorClaimQueue />
 
@@ -1397,6 +1773,15 @@ export function Admin() {
 
       <div className="sec-title">✏️ 플랫폼 정보 편집 · 보강 큐</div>
       <PlatformEditor />
+
+      <div className="sec-title">👥 회원 관리 (검색 · 정지)</div>
+      <MembersPanel />
+
+      <div className="sec-title">⚙️ 운영 스위치 (app_settings)</div>
+      <SettingsPanel />
+
+      <div className="sec-title">🗂 최근 처리 내역</div>
+      <RecentProcessedPanel />
 
       <div className="sec-title">라이프사이클 전이</div>
       <p className="lead" style={{ maxWidth: 620, marginTop: -6 }}>

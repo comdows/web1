@@ -6,7 +6,9 @@ import { useFavs, useCompare, Recent } from "./lib/store";
 import { usePlatforms, usePlatformStats } from "./lib/platforms";
 import { useReviewStats } from "./lib/reviews";
 import { avatarHue, faviconUrl } from "./lib/util";
-import { trackEvent, trackImpression } from "./lib/api";
+import { createReport, trackEvent, trackImpression } from "./lib/api";
+import type { ReportTargetType } from "./lib/api";
+import { getSession } from "./lib/auth";
 import { suggest } from "./lib/suggest";
 import type { Suggestion } from "./lib/suggest";
 import { FLAGS } from "./config";
@@ -122,7 +124,7 @@ export function Footer() {
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
             <button className="foot-link" onClick={() => go("terms")}>이용약관</button>
             <button className="foot-link" onClick={() => go("privacy")}>개인정보처리방침</button>
-            {FLAGS.contactEmail && <a className="foot-link" href={`mailto:${FLAGS.contactEmail}`}>문의</a>}
+            <button className="foot-link" onClick={() => go("support")}>문의·도움말</button>
           </div>
         </div>
       </div>
@@ -193,6 +195,46 @@ export function SuggestInput({ value, onChange, placeholder, ariaLabel, autoFocu
           ))}
         </ul>
       )}
+    </span>
+  );
+}
+
+/* 신고 버튼(0028) — 게시물 문제 신고: 클릭 → 인라인 사유 입력 → 접수(운영자 검수 큐).
+ * 신고 내용은 관리자만 보므로 연락처 차단(CONTACT_RE) 불필요. 비로그인은 안내만. */
+export function ReportButton({ targetType, targetId }: { targetType: ReportTargetType; targetId: string }) {
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  const [state, setState] = useState<"idle" | "busy" | "done" | "need-login" | "error">("idle");
+  const [err, setErr] = useState("");
+  if (state === "done") return <span className="frm-note">✓ 신고 접수됨 — 운영자가 확인해요</span>;
+  if (state === "need-login") return <span className="frm-note">신고에는 로그인이 필요해요</span>;
+  if (!open) {
+    return (
+      <button className="linklike" style={{ fontSize: 12, opacity: 0.75 }}
+        onClick={() => { if (!getSession()) { setState("need-login"); return; } setOpen(true); }}>
+        🚩 신고
+      </button>
+    );
+  }
+  const submit = async () => {
+    if (reason.trim().length < 10) { setErr("사유를 10자 이상 적어 주세요"); return; }
+    setState("busy"); setErr("");
+    try {
+      await createReport(targetType, targetId, reason);
+      setState("done");
+    } catch (ex) {
+      setState("error"); setErr(ex instanceof Error ? ex.message : "접수에 실패했어요");
+      setTimeout(() => setState("idle"), 0);
+    }
+  };
+  return (
+    <span style={{ display: "inline-flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+      <input value={reason} onChange={(e) => setReason(e.target.value)} maxLength={500}
+        placeholder="신고 사유(10자 이상)" aria-label="신고 사유"
+        style={{ fontSize: 12, padding: "4px 8px", border: "1px solid var(--line, #ddd)", borderRadius: 6, minWidth: 180 }} />
+      <button className="btn ghost sm" disabled={state === "busy"} onClick={submit}>{state === "busy" ? "접수 중…" : "접수"}</button>
+      <button className="linklike" style={{ fontSize: 12 }} onClick={() => { setOpen(false); setErr(""); }}>취소</button>
+      {err && <span className="frm-note" style={{ color: "#c0392b" }}>{err}</span>}
     </span>
   );
 }
