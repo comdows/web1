@@ -13,13 +13,14 @@ import {
   listDealSubmissions, listOperatorClaims,
   adminDeclineInterest, adminIntroduce, cancelCharge, confirmDeposit, createSponsorSlot, declinePendingInterests,
   listAdminCharges, listPartnerPosts, listSponsorSlotsAdmin, listSubmissions, listSubscriptionsAdmin,
+  answerDealQuestion, listPendingDealQuestions, setDealVerified,
   markOwnerConfirmed, partnerRefCode, publishDeal, refundCharge, remoteEnabled,
   reviewDealSubmission, reviewOperatorClaim, reviewPartnerPost, reviewSubmission,
   transitionPlatform, updateDealStatus, updatePlatform,
 } from "./lib/api";
 import type {
   AdminChargeRow, BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin,
-  SponsorSlotAdmin, Submission, SubscriptionAdmin,
+  PendingDealQ, SponsorSlotAdmin, Submission, SubscriptionAdmin,
 } from "./lib/api";
 import { checkAnonymity } from "./lib/anonymity";
 import { scoreBriefDeal } from "./lib/match";
@@ -580,7 +581,7 @@ function assetChips(p: { assets?: string[]; handover?: string }): string[] {
 /* ── 매물 검수 큐 (deal_submissions → 익명화·코드명 부여 후 게시) ── */
 function DealSubQueue() {
   const [items, setItems] = useState<DealSubmissionRow[] | null>(null);
-  const [drafts, setDrafts] = useState<Record<string, { code: string; summary: string; highlights: string; reason: string }>>({});
+  const [drafts, setDrafts] = useState<Record<string, { code: string; summary: string; highlights: string; reason: string; verified: boolean }>>({});
   const [errs, setErrs] = useState<Record<string, string>>({});
   const [loadErr, setLoadErr] = useState(false);
   const [busy, setBusy] = useState("");
@@ -600,6 +601,7 @@ function DealSubQueue() {
             code: `D-${base + i}`, summary: r.payload.summary ?? "",
             highlights: [r.payload.highlights, ...assetChips(r.payload)].filter(Boolean).join(", "),
             reason: isEquitySub(r.payload.mode) ? EQUITY_REJECT : "",
+            verified: false,
           };
         });
         return n;
@@ -619,6 +621,7 @@ function DealSubQueue() {
           revenue_band: s.payload.revenue_band ?? "", mode: s.payload.mode ?? "",
           summary: d.summary.trim(), highlights: d.highlights ? d.highlights.split(",").map((x) => x.trim()).filter(Boolean) : [],
           sale_reason: s.payload.sale_reason || null, owner_id: s.submitter_id,
+          proofs: s.payload.proofs ?? [], owner_verified: d.verified,
         });
       } catch (pubEx) {
         // 코드명 충돌: 같은 접수의 재승인(이미 게시됨)이면 게시를 건너뛰고 접수 상태만 갱신
@@ -645,7 +648,7 @@ function DealSubQueue() {
   return (
     <>
       {items.map((s) => {
-        const d = drafts[s.id] ?? { code: "", summary: "", highlights: "", reason: "" };
+        const d = drafts[s.id] ?? { code: "", summary: "", highlights: "", reason: "", verified: false };
         const set = (patch: Partial<typeof d>) => setDrafts((r) => ({ ...r, [s.id]: { ...d, ...patch } }));
         const equity = isEquitySub(s.payload.mode);
         // 익명성 자동 점검 — 원문과 게시 초안 양쪽의 누출 위험을 검수자에게 하이라이트
@@ -668,12 +671,16 @@ function DealSubQueue() {
             {(s.payload.assets?.length || s.payload.handover) && (
               <p style={{ margin: "2px 0 6px", fontSize: 12.5, color: "var(--muted)" }}>
                 자산: {s.payload.assets?.length ? s.payload.assets.join(", ") : "미기재"} · 인수인계: {s.payload.handover ?? "미기재"}
+                {s.payload.proofs?.length ? <> · 준비 증빙: {s.payload.proofs.join(", ")}</> : null}
               </p>
             )}
             {s.payload.verify_note && (
               <div className="frm-note" style={{ marginBottom: 6 }}>
                 🔒 비공개 검증 자료(게시에 복사 금지): <span className="mono" style={{ fontSize: 12 }}>{s.payload.verify_note}</span>
-                {" — "}확인되면 하이라이트에 "운영자 확인 ✓" 칩을 직접 추가하세요.
+                <label className="facet-opt" style={{ fontSize: 12.5, marginTop: 4 }}>
+                  <input type="checkbox" checked={d.verified} onChange={() => set({ verified: !d.verified })} />
+                  검증 자료 확인 완료 — 게시 시 <b>운영자 확인 ✓</b> 배지 부여
+                </label>
               </div>
             )}
             {equity && (
@@ -706,6 +713,59 @@ function DealSubQueue() {
           </div>
         );
       })}
+    </>
+  );
+}
+
+/* ── 매물 익명 Q&A 답변 큐 (0022) — pending 질문에 매도자 확인을 거쳐 답변 입력 →
+ * answered로 게시(공개 뷰는 질문자 신원 컬럼 자체가 없음). 부적절 질문은 hidden. ── */
+function DealQAQueue() {
+  const [items, setItems] = useState<PendingDealQ[] | null>(null);
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [busy, setBusy] = useState("");
+  const [errs, setErrs] = useState<Record<string, string>>({});
+  const reload = useCallback(() => {
+    listPendingDealQuestions().then(setItems).catch(() => setItems(null));
+  }, []);
+  useEffect(reload, [reload]);
+  const act = async (q: PendingDealQ, hide: boolean) => {
+    const a = (answers[q.id] ?? "").trim();
+    if (!hide && !a) { setErrs((e) => ({ ...e, [q.id]: "답변을 입력하세요 — 게시는 답변과 함께만 됩니다." })); return; }
+    // 답변에도 연락처·신원 유추 표현이 실리면 안 됨(공개 게시물)
+    if (!hide) {
+      const anon = checkAnonymity(a);
+      if (anon.length > 0) { setErrs((e) => ({ ...e, [q.id]: `익명성 점검: ${anon.map((f) => `"${f.snippet}"`).join(" · ")} — 수정 후 게시하세요.` })); return; }
+    }
+    setErrs((e) => ({ ...e, [q.id]: "" })); setBusy(q.id);
+    try { await answerDealQuestion(q.id, a, hide); reload(); }
+    catch (ex) { setErrs((e) => ({ ...e, [q.id]: ex instanceof Error ? ex.message : String(ex) })); }
+    finally { setBusy(""); }
+  };
+  if (items === null) return <div className="empty">질문 큐를 불러오지 못했어요(0022 마이그레이션 필요 여부 확인).</div>;
+  if (items.length === 0) return <div className="empty">대기 중인 매물 질문이 없습니다 ✓</div>;
+  return (
+    <>
+      {items.map((q) => (
+        <div className="admin-card" key={q.id}>
+          <div className="admin-card-h">
+            <b>💬 {q.deal_id}</b>
+            <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: "auto" }}>{q.created_at.slice(0, 10)}</span>
+          </div>
+          <p style={{ margin: "6px 0", fontSize: 13 }}>{q.question}</p>
+          <div className="frm-note" style={{ marginBottom: 6 }}>매도자에게 확인 후 답변을 입력하세요 — 게시되면 질문·답변만 익명으로 공개됩니다.</div>
+          <div className="admin-form">
+            <label style={{ flex: 1, minWidth: 260 }}>답변
+              <input value={answers[q.id] ?? ""} onChange={(e) => setAnswers((r) => ({ ...r, [q.id]: e.target.value }))} maxLength={400}
+                placeholder="예: 매도자 확인 결과, 주요 매출은 자체몰 비중이 높습니다(밴드 표현만)." />
+            </label>
+          </div>
+          {errs[q.id] && <div className="err">{errs[q.id]}</div>}
+          <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+            <button className="btn primary sm" disabled={busy === q.id} onClick={() => act(q, false)}>✓ 답변 게시</button>
+            <button className="btn ghost sm" disabled={busy === q.id} onClick={() => act(q, true)}>숨김(게시 안 함)</button>
+          </div>
+        </div>
+      ))}
     </>
   );
 }
@@ -1105,7 +1165,7 @@ function OperatorClaimQueue() {
    성사돼도 '모집 중'으로 남아 신규 신청이 계속 들어오던 문제 해결 */
 function LivePanel() {
   const [posts, setPosts] = useState<PartnerPostAdmin[]>([]);
-  const [deals, setDeals] = useState<{ id: string; status: string; summary: string; is_demo: boolean }[]>([]);
+  const [deals, setDeals] = useState<{ id: string; status: string; summary: string; is_demo: boolean; owner_verified?: boolean }[]>([]);
   const [busy, setBusy] = useState("");
   const reload = useCallback(() => {
     listPartnerPosts(["published", "matched"]).then(setPosts).catch(() => setPosts([]));
@@ -1128,6 +1188,12 @@ function LivePanel() {
     catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
     finally { setBusy(""); }
   };
+  const toggleVerified = async (id: string, verified: boolean) => {
+    setBusy(id);
+    try { await setDealVerified(id, verified); reload(); }
+    catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(""); }
+  };
   if (posts.length === 0 && deals.length === 0) return <div className="empty">게시 중인 제안·매물이 없습니다.</div>;
   return (
     <>
@@ -1147,9 +1213,12 @@ function LivePanel() {
         <div className="sub-item" key={d.id}>
           <div style={{ minWidth: 0 }}>
             <b>🏦 {d.id}</b> <Badge kind={d.status === "in_progress" ? "soon" : "good"}>{d.status === "in_progress" ? "진행 중" : "모집 중"}</Badge>
+            {d.owner_verified && <Badge kind="verify">운영자 확인 ✓</Badge>}
             <div className="frm-note">{d.summary.slice(0, 60)}</div>
           </div>
           <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+            <button className="btn ghost sm" disabled={busy === d.id} onClick={() => toggleVerified(d.id, !d.owner_verified)}
+              title="verify_note(비공개 검증 자료) 확인 후에만 부여하세요">{d.owner_verified ? "확인 해제" : "운영자 확인 ✓"}</button>
             {d.status === "open" && <button className="btn ghost sm" disabled={busy === d.id} onClick={() => moveDeal(d.id, "in_progress")}>진행 중으로</button>}
             {d.status === "in_progress" && <button className="btn ghost sm" disabled={busy === d.id} onClick={() => moveDeal(d.id, "open")}>모집 중으로</button>}
             <button className="btn ghost sm" disabled={busy === d.id} onClick={() => moveDeal(d.id, "closed")}>마감(내리기)</button>
@@ -1255,6 +1324,9 @@ export function Admin() {
 
       <div className="sec-title" id="q-deal">🏦 매물 검수 (익명화 → 코드명 게시){counts?.deal ? ` · ${counts.deal}건` : ""}</div>
       <DealSubQueue />
+
+      <div className="sec-title" id="q-dealqa">💬 매물 질문 답변 큐 (익명 Q&A — 검수 후 게시)</div>
+      <DealQAQueue />
 
       <div className="sec-title" id="q-operator">🏷 운영자 인증 신청{counts?.operator ? ` · ${counts.operator}건` : ""}</div>
       <OperatorClaimQueue />

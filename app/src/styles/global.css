@@ -53,6 +53,15 @@ button{font-family:inherit}
   border-radius:var(--r-md);padding:11px 22px;cursor:pointer;flex:0 0 auto}
 .search .go:hover{background:var(--brand-strong)}
 
+/* 검색 자동완성 드롭다운 */
+.suggest{position:absolute;top:calc(100% + 10px);left:-8px;right:-8px;z-index:60;margin:0;padding:6px;list-style:none;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--sh-2);
+  max-height:320px;overflow:auto;text-align:left}
+.sug-item{display:flex;align-items:baseline;gap:10px;padding:9px 12px;border-radius:var(--r-sm);cursor:pointer;font-size:14px;color:var(--text)}
+.sug-item.on{background:var(--brand-tint)}
+.sug-label{font-weight:var(--w-semibold);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sug-sub{margin-left:auto;font-size:12px;color:var(--hint);flex:0 0 auto}
+
 /* 의도 칩 (1a) */
 .intent-chips{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
 .ichip{font-size:13px;font-weight:var(--w-semibold);color:#334155;background:var(--surface);

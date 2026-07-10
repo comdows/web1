@@ -1,11 +1,13 @@
-import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode, KeyboardEvent as RKeyboardEvent } from "react";
 import type { Platform } from "./data";
 import { categoryById } from "./data";
 import { useFavs, useCompare, Recent } from "./lib/store";
-import { usePlatformStats } from "./lib/platforms";
+import { usePlatforms, usePlatformStats } from "./lib/platforms";
 import { avatarHue, faviconUrl } from "./lib/util";
 import { trackEvent, trackImpression } from "./lib/api";
+import { suggest } from "./lib/suggest";
+import type { Suggestion } from "./lib/suggest";
 import { FLAGS } from "./config";
 import { useNav } from "./nav";
 
@@ -128,6 +130,68 @@ export function Footer() {
       </div>
       <div className="foot-cap">© 2026 세모플 SEMOPL — 세상의 모든 플랫폼 · {total.toLocaleString()}개 등재</div>
     </div></footer>
+  );
+}
+
+/* 검색 자동완성 입력(1a 핸드오프 권장) — 플랫폼명·분야명 제안 + 최근 검색어.
+ * 키보드 ↑↓/Enter/Esc, 선택: 플랫폼→상세, 분야→onPickCategory, 텍스트→onSubmitQuery. */
+export function SuggestInput({ value, onChange, placeholder, ariaLabel, autoFocus, onSubmitQuery, onPickCategory }: {
+  value: string; onChange: (v: string) => void; placeholder: string; ariaLabel: string; autoFocus?: boolean;
+  onSubmitQuery: (q: string) => void; onPickCategory: (catId: string) => void;
+}) {
+  const go = useNav();
+  const platforms = usePlatforms();
+  const [open, setOpen] = useState(false);
+  const [active, setActive] = useState(-1);
+  const boxRef = useRef<HTMLSpanElement>(null);
+  const items = useMemo<Suggestion[]>(() => (open ? suggest(value, platforms) : []), [open, value, platforms]);
+
+  // 바깥 클릭으로 닫기
+  useEffect(() => {
+    const onDoc = (e: MouseEvent) => { if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, []);
+  useEffect(() => { setActive(-1); }, [value]);
+
+  const pick = (s: Suggestion) => {
+    setOpen(false);
+    if (s.kind === "platform") { trackEvent("click", s.id); go("detail", { id: s.id }); }
+    else if (s.kind === "category") onPickCategory(s.id);
+    else onSubmitQuery(s.id);
+  };
+  const key = (e: RKeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "ArrowDown") { e.preventDefault(); setOpen(true); setActive((a) => Math.min(a + 1, items.length - 1)); }
+    else if (e.key === "ArrowUp") { e.preventDefault(); setActive((a) => Math.max(a - 1, -1)); }
+    else if (e.key === "Escape") { setOpen(false); setActive(-1); }
+    else if (e.key === "Enter") {
+      if (open && active >= 0 && items[active]) pick(items[active]);
+      else { setOpen(false); onSubmitQuery(value); }
+    }
+  };
+
+  return (
+    <span ref={boxRef} style={{ position: "relative", flex: 1, minWidth: 0, display: "flex" }}
+      role="combobox" aria-expanded={open && items.length > 0} aria-haspopup="listbox">
+      <input value={value} aria-label={ariaLabel} placeholder={placeholder} autoFocus={autoFocus}
+        aria-autocomplete="list" aria-activedescendant={active >= 0 ? `sug-${active}` : undefined}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)} onKeyDown={key}
+        style={{ flex: 1, minWidth: 0, background: "none", border: "none", outline: "none", font: "inherit", color: "inherit" }} />
+      {open && items.length > 0 && (
+        <ul className="suggest" role="listbox" aria-label="검색 제안">
+          {items.map((s, i) => (
+            <li key={`${s.kind}:${s.id}`} id={`sug-${i}`} role="option" aria-selected={i === active}
+              className={`sug-item${i === active ? " on" : ""}`}
+              onMouseDown={(e) => { e.preventDefault(); pick(s); }}
+              onMouseEnter={() => setActive(i)}>
+              <span className="sug-label">{s.label}</span>
+              {s.sub && <span className="sug-sub">{s.sub}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </span>
   );
 }
 

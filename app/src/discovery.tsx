@@ -4,7 +4,8 @@ import { categories, groups, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import hubIntros from "./data/hub-intros.ko.json"; // 분야 허브 편집 인트로(검색 랜딩 안내)
 const HUB: Record<string, { intro: string; pickBy: string[] }> = hubIntros as never;
-import { Avatar, Badge, PlatformCard, ShareButton } from "./components";
+import { Avatar, Badge, PlatformCard, ShareButton, SuggestInput } from "./components";
+import { RecentQ } from "./lib/suggest";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
 import { amOperatorOf, createCorrection, createOperatorClaim, getMyClaim, getPlatform, remoteEnabled, trackEvent } from "./lib/api";
 import type { OperatorClaim } from "./lib/api";
@@ -391,7 +392,9 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
     <div className="page container search-page">
       <div className="search" style={{ maxWidth: "none", marginBottom: 18 }}>
         <span className="ico">⌕</span>
-        <input value={q} onChange={(e) => setQ(e.target.value)} aria-label="플랫폼·분야 검색" placeholder="플랫폼·분야 검색" autoFocus />
+        <SuggestInput value={q} onChange={setQ} ariaLabel="플랫폼·분야 검색" placeholder="플랫폼·분야 검색" autoFocus
+          onSubmitQuery={(v) => { RecentQ.push(v); setQ(v); }}
+          onPickCategory={(catId) => { setQ(""); if (!cats.has(catId)) toggleCat(catId); }} />
       </div>
       <button className="btn ghost sm filters-toggle" onClick={() => setShowFilters((v) => !v)}>
         {showFilters ? "필터 접기 ▴" : `필터 열기${activeChips.length ? ` (${activeChips.length}개 적용 중)` : ""} ▾`}

@@ -7,11 +7,11 @@ import { FLAGS } from "./config";
 import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
 import {
-  applyToPartnerPost, createBuyerBrief, createDealSubmission, createPartnerPost,
-  fetchDeals, fetchPartnerPosts, fetchSponsorSlots, founderOptIn, listMyDealInterests, listMyPartnerInterests, listMyPartnerPosts,
+  applyToPartnerPost, askDealQuestion, createBuyerBrief, createDealSubmission, createPartnerPost,
+  fetchDealQuestions, fetchDeals, fetchPartnerPosts, fetchSponsorSlots, founderOptIn, listMyDealInterests, listMyPartnerInterests, listMyPartnerPosts,
   partnerRefCode, placeOrder, registerDealInterest, remoteEnabled,
 } from "./lib/api";
-import type { SponsorSlotPublic } from "./lib/api";
+import type { DealQA, SponsorSlotPublic } from "./lib/api";
 import { bankTransferProvider } from "./lib/billing";
 import type { DepositInstructions } from "./lib/billing";
 import type { PartnerPost, PublicDeal } from "./lib/api";
@@ -48,6 +48,8 @@ const DEAL_MODES = ["자산 전부 양수도(운영 승계 포함)", "자산 선
 const BRIEF_MODES = ["형태 무관(자산 양수도)", ...DEAL_MODES];
 export const isEquityMode = (m: string) => /지분|투자|주식/.test(m);
 const ASSET_ITEMS = ["도메인·앱", "소스코드·저장소", "상표·브랜드", "회원 DB", "입점·공급 계약", "SNS·콘텐츠 계정", "재고·설비"];
+// 준비 증빙 태그 — "무엇이 준비돼 있는지" 유무만(수치·가격 아님 — 밸류에이션 필드 금지 원칙)
+const PROOF_ITEMS = ["매출 증빙 준비", "트래픽 지표 준비", "상표·도메인 소유 확인", "계약 승계 가능"];
 const HANDOVER_OPTS = ["없음(자료 전달만)", "1개월 동행", "3개월 동행"];
 const SALE_REASONS = ["이직·전업", "신사업 집중", "건강·개인 사정", "성장 한계(자본·인력)", "기타"];
 const BUDGET_BANDS = ["~1억", "1~5억", "5~20억", "20억+"];
@@ -577,13 +579,14 @@ export function Partners() {
 function SellForm({ onDone }: { onDone: () => void }) {
   const go = useNav();
   // 초안 자동 저장 — 10여 필드 폼이 세션 만료·이탈로 유실되지 않게(제출 성공 시 삭제)
-  const [d0] = useState(() => Draft.load<Record<string, string> & { assets?: string[] }>("sell"));
+  const [d0] = useState(() => Draft.load<Record<string, string> & { assets?: string[]; proofs?: string[] }>("sell"));
   const [track, setTrack] = useState<"asset" | "equity">("asset");
   const [cat, setCat] = useState(d0?.cat ?? "");
   const [region, setRegion] = useState<"domestic" | "overseas">((d0?.region as "domestic" | "overseas") ?? "domestic");
   const [band, setBand] = useState(d0?.band ?? REVENUE_BANDS[1]);
   const [mode, setMode] = useState(d0?.mode ?? DEAL_MODES[0]);
   const [assets, setAssets] = useState<Set<string>>(new Set(d0?.assets ?? []));
+  const [proofs, setProofs] = useState<Set<string>>(new Set(d0?.proofs ?? []));
   const [handover, setHandover] = useState(d0?.handover ?? HANDOVER_OPTS[1]);
   const [summary, setSummary] = useState(d0?.summary ?? "");
   const [highlights, setHighlights] = useState(d0?.highlights ?? "");
@@ -597,12 +600,13 @@ function SellForm({ onDone }: { onDone: () => void }) {
   const [findings, setFindings] = useState<AnonFinding[]>([]); // 익명성 자동 점검 결과
   const [warnAck, setWarnAck] = useState(false);               // 경고 확인 후 2단 제출
   const toggleAsset = (a: string) => setAssets((s) => { const n = new Set(s); if (n.has(a)) n.delete(a); else n.add(a); return n; });
+  const toggleProof = (p: string) => setProofs((s) => { const n = new Set(s); if (n.has(p)) n.delete(p); else n.add(p); return n; });
   useEffect(() => {
     const t = setTimeout(() => Draft.save("sell", {
-      cat, region, band, mode, assets: [...assets], handover, summary, highlights, reasonPreset, reasonNote, verify,
+      cat, region, band, mode, assets: [...assets], proofs: [...proofs], handover, summary, highlights, reasonPreset, reasonNote, verify,
     }), 500);
     return () => clearTimeout(t);
-  }, [cat, region, band, mode, assets, handover, summary, highlights, reasonPreset, reasonNote, verify]);
+  }, [cat, region, band, mode, assets, proofs, handover, summary, highlights, reasonPreset, reasonNote, verify]);
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     // verify(비공개 검증 자료)는 URL·이메일 기입이 목적이라 익명성 검사에서 제외 — 게시·공유되지 않음
@@ -617,7 +621,7 @@ function SellForm({ onDone }: { onDone: () => void }) {
         category_id: cat, region, revenue_band: band, mode,
         summary: summary.trim(), highlights: highlights.trim(),
         sale_reason: reasonNote.trim() ? `${reasonPreset} — ${reasonNote.trim()}` : reasonPreset,
-        assets: [...assets], handover, verify_note: verify.trim(),
+        assets: [...assets], proofs: [...proofs], handover, verify_note: verify.trim(),
         ack, contact_consent_at: new Date().toISOString(),
       });
       Draft.clear("sell");
@@ -667,6 +671,16 @@ function SellForm({ onDone }: { onDone: () => void }) {
                 ℹ️ 회원 DB 이전에는 <b>개인정보보호법 제27조(영업양도 통지)</b> 절차가 필요해요 — 소개 후 자문사와 확인하세요.
               </div>
             )}
+          </div>
+          <div>
+            <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 4 }}>준비된 증빙 <span style={{ fontWeight: 400, color: "var(--faint)" }}>(유무 태그만 게시 — 수치·가격은 소개 후 NDA 하에 직접 공유)</span></div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {PROOF_ITEMS.map((p) => (
+                <label key={p} className="facet-opt" style={{ fontSize: 12.5 }}>
+                  <input type="checkbox" checked={proofs.has(p)} onChange={() => toggleProof(p)} /> {p}
+                </label>
+              ))}
+            </div>
           </div>
           <label>운영 인수인계
             <select value={handover} onChange={(e) => setHandover(e.target.value)}>{HANDOVER_OPTS.map((h) => <option key={h} value={h}>{h}</option>)}</select>
@@ -805,6 +819,61 @@ function InterestForm({ dealId, onDone }: { dealId: string; onDone: () => void }
   );
 }
 
+/* 매물 익명 Q&A(0022) — 열 때만 로드(카드 수만큼 선요청 방지). 질문자 신원은 공개 뷰에
+ * 컬럼 자체가 없고, 게시는 검수(answered) 후에만 — 익명성 원칙 유지. */
+function DealQABlock({ dealId }: { dealId: string }) {
+  const { session } = useSession();
+  const go = useNav();
+  const [open, setOpen] = useState(false);
+  const [qas, setQas] = useState<DealQA[] | null>(null);
+  const [q, setQ] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [sent, setSent] = useState(false);
+  useEffect(() => {
+    if (open && qas === null) fetchDealQuestions(dealId).then(setQas).catch(() => setQas([]));
+  }, [open, qas, dealId]);
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const text = q.trim();
+    if (text.length < 5) { setErr("질문을 5자 이상 적어 주세요."); return; }
+    if (hasContact(text)) { setErr(CONTACT_MSG); return; }
+    setErr(""); setBusy(true);
+    try { await askDealQuestion(dealId, text); setQ(""); setSent(true); }
+    catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(false); }
+  };
+  if (!open) {
+    return <button className="linklike" style={{ fontSize: 12.5, marginTop: 6 }} onClick={() => setOpen(true)}>💬 익명 질문·답변 보기 →</button>;
+  }
+  return (
+    <div style={{ marginTop: 8, borderTop: "1px solid var(--line)", paddingTop: 8 }}>
+      <div style={{ fontSize: 12.5, fontWeight: 600, marginBottom: 4 }}>💬 익명 Q&A
+        <button className="linklike" style={{ fontSize: 12, marginLeft: 8 }} onClick={() => setOpen(false)}>접기</button>
+      </div>
+      {qas === null ? <div className="frm-note">불러오는 중…</div>
+        : qas.length === 0 ? <div className="frm-note">아직 게시된 질문이 없어요 — 첫 질문을 남겨 보세요.</div>
+        : qas.map((x, i) => (
+          <div key={i} style={{ fontSize: 12.5, margin: "4px 0" }}>
+            <div><b>Q.</b> {x.question}</div>
+            <div style={{ color: "var(--muted)" }}><b>A.</b> {x.answer}</div>
+          </div>
+        ))}
+      {sent ? <div className="ok" style={{ fontSize: 12.5 }}>질문이 접수됐어요 — 매도자 확인을 거쳐 익명으로 게시됩니다.</div>
+        : !session ? <div className="frm-note">질문에는 로그인이 필요해요. <button className="linklike" onClick={() => go("account")}>로그인 →</button></div>
+        : (
+          <form onSubmit={submit} style={{ display: "flex", gap: 6, marginTop: 6 }}>
+            <input value={q} onChange={(e) => setQ(e.target.value)} maxLength={300} style={{ flex: 1, minWidth: 0 }}
+              placeholder="예: 재고 이전 조건이 있나요? (연락처·수치 질문은 소개 후에)" />
+            <button className="btn ghost sm" disabled={busy} type="submit">질문</button>
+          </form>
+        )}
+      {err && <div className="err" style={{ fontSize: 12.5 }}>{err}</div>}
+      <div className="frm-note" style={{ marginTop: 4 }}>질문은 검수 후 매도자 확인을 거쳐 <b>익명으로만</b> 게시돼요 — 질문자 정보는 노출되지 않습니다.</div>
+    </div>
+  );
+}
+
 export function Exchange() {
   const { session } = useSession();
   const go = useNav();
@@ -825,9 +894,9 @@ export function Exchange() {
   }, [session]);
 
   // 원격 실패/미연결 시 정적 데모로 폴백
-  const shown: { id: string; category: string; region: string; revenue: string; mode: string; summary: string; status: string; demo: boolean; posted: string; highlights?: string[]; sale_reason?: string | null }[] =
+  const shown: { id: string; category: string; region: string; revenue: string; mode: string; summary: string; status: string; demo: boolean; posted: string; highlights?: string[]; sale_reason?: string | null; verified?: boolean; proofs?: string[] }[] =
     deals !== null
-      ? deals.map((d) => ({ id: d.id, category: d.category_id, region: d.region === "overseas" ? "해외" : "국내", revenue: d.revenue_band, mode: d.mode, summary: d.summary, status: d.status, demo: d.is_demo, posted: d.posted, highlights: d.highlights, sale_reason: d.sale_reason }))
+      ? deals.map((d) => ({ id: d.id, category: d.category_id, region: d.region === "overseas" ? "해외" : "국내", revenue: d.revenue_band, mode: d.mode, summary: d.summary, status: d.status, demo: d.is_demo, posted: d.posted, highlights: d.highlights, sale_reason: d.sale_reason, verified: d.owner_verified, proofs: d.proofs }))
       : listings.deals.map((d) => ({ ...d, demo: Boolean(d.demo) }));
 
   return (
@@ -944,11 +1013,17 @@ export function Exchange() {
         {shown.map((d) => (
           <div className="pcard" key={d.id}>
             <div className="top"><div><h4>{d.id} {d.demo && <Badge kind="muted">데모</Badge>}
-              {d.status === "open" ? <Badge kind="good">모집 중</Badge> : <Badge kind="soon">{d.status === "in_progress" ? "진행 중" : d.status}</Badge>}</h4>
+              {d.status === "open" ? <Badge kind="good">모집 중</Badge> : <Badge kind="soon">{d.status === "in_progress" ? "진행 중" : d.status}</Badge>}
+              {d.verified && <span title="운영자가 비공개 검증 자료(플랫폼 URL·도메인 이메일 등)를 확인한 매물"><Badge kind="verify">운영자 확인 ✓</Badge></span>}</h4>
               <div className="cat">{categoryById(d.category)?.name ?? d.category}</div></div></div>
             <p>{d.summary}</p>
             {d.highlights && d.highlights.length > 0 && (
               <div className="chips-row" style={{ margin: "4px 0" }}>{d.highlights.map((h, i) => <span key={i} className="fchip">{h}</span>)}</div>
+            )}
+            {d.proofs && d.proofs.length > 0 && (
+              <div className="chips-row" style={{ margin: "4px 0" }} title="준비 여부 태그입니다 — 수치·가격이 아니며, 원본 증빙은 소개 후 NDA 하에 직접 확인하세요">
+                {d.proofs.map((p, i) => <span key={i} className="fchip">🧾 {p}</span>)}
+              </div>
             )}
             <p style={{ fontSize: 12.5 }} className="faint">{d.region} · {d.revenue} · {d.mode} · {d.posted}
               {d.sale_reason ? ` · 사유: ${d.sale_reason}` : ""}</p>
@@ -970,6 +1045,7 @@ export function Exchange() {
               )
             )}
             {d.status === "open" && d.demo && <div className="frm-note">예시 카드입니다 — 실제 매물이 올라오면 여기서 관심 등록할 수 있어요.</div>}
+            {!d.demo && remoteEnabled && !isEquityMode(d.mode) && <DealQABlock dealId={d.id} />}
           </div>
         ))}
       </div>
