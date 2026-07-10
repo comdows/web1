@@ -62,6 +62,7 @@ backend/
   ③ 이후 수집기는 directUrl 소스(HN 등) + 분야추정 + 신뢰도≥80만 lifecycle=review로 자동 등재 → 관리 콘솔 "🤖 자동 등재 사후 검수"에서 확정/내리기 스팟체크(국내 뉴스는 기사 URL이라 자동 등재 대상 아님 → 일괄 승인으로)
 - [x] **`0017_measurement.sql` 실행 완료**(계측 보강 — `events.ref`(유입경로) 컬럼 + 퍼널·유입 admin 뷰 `v_funnel_7d`/`v_referrers_7d`. 멱등. 실행 후 방문이 쌓이면 관리 콘솔 "퍼널·유입" 패널에 노출→클릭→외부방문 전환율·유입경로가 채워짐)
 - [x] **`0018_notifications.sql` 실행 완료**(인앱 알림 — `notifications` 테이블 + RLS(본인만 열람·읽음, 생성은 admin 봇). 멱등. 실행 후 `match-notify` 워크플로가 ①인수 브리프↔신규 매물 ②관심 분야(즐겨찾기 유도) 신규 플랫폼 알림을 넣고, 헬스체크는 관심 플랫폼 죽은 링크를 알림 → 회원 헤더 🔔에 표시. 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요)
+- [ ] **`0026_billing_exchange.sql` 실행**(수익화 v2 — 거래소 리스팅료·연장·인수자 멤버십·크레딧 충전을 place_order가 처리, 가격을 `app_settings 'prices'`로 단일화(변경 시 SQL 수정 불필요), 구독 플랜별 공존(uq_subs_active→user+plan), 만료 임박 뷰 `v_expiring_subs`(match-notify가 D-7 인앱 알림), buyer 48시간 선공개(스위치 off면 무효). 멱등. **실행해도 아무것도 켜지지 않음** — listing/buyer_membership/buyer_early 스위치 기본 false)
 - [ ] **`0025_reviews.sql` 실행**(플랫폼 이용 후기 — `reviews` 테이블(1인 1리뷰·검수 후 게시·본인 수정은 재검수 강제 RLS) + 공개 뷰 `v_reviews_public`(익명)·평점 집계 `v_review_stats`(표시 전용 — 정렬 랭킹 미반영). 멱등. 실행 후 상세 "이용 후기" 섹션·카드 ★평점·관리 콘솔 "⭐ 리뷰 검수 큐"가 동작)
 - [x] **`0024_notify_email.sql` 실행 완료(2026-07-10)**(알림 이메일 레이어 — `app_settings 'notify_email'`(기본 **enabled:false**) + `notify_email_log`(사용자당 하루 1통을 unique로 DB에서 강제). 멱등. **실행해도 아무것도 발송되지 않음** — 코드·스위치만 준비되고, 켜는 절차는 아래)
 - [ ] (선택) **알림 이메일 켜기**(인앱 알림 요약을 하루 1통 이메일로 — 인프라·법적 준비 후에만):
@@ -90,7 +91,7 @@ backend/
   ② Bing 웹마스터 도구 — GSC 가져오기 지원(가장 쉬움). Bing은 ChatGPT 검색의 소스라 중요
   ③ 네이버 서치어드바이저 → 사이트 등록 → HTML 파일 인증(`naver*.html`을 `app/public/`에) → 사이트맵 제출
 - [ ] 특허 출원 — 발명 4건, 공지예외 12개월 시한 (patent-plan.md)
-- [ ] 유료화 게이트 도달 시(0011·0012로 시스템은 준비 완료 — 스위치만 꺼져 있음. 파운더 50%는 `profiles.founder_discount_until` 수동 부여 시 서버가 자동 적용): ① 통신판매업 신고 ② pricing-policy.md §6-2 무통장 한시 허용 단서 개정 ③ 처리방침 §1 증빙 발행 정보 추가+TERMS_VERSION 상향 ④ app_settings 'pricing_announced_at' 설정(30일 공지 — 사이트 배너 자동 노출) ⑤ 30일 후 app_settings 'billing' 상품별 true + config.ts FLAGS.billing true + 재배포(**둘 다 켜야 열림**). 운영: 입금 확인 시 현금영수증/세금계산서 홈택스 수기 발행 후 승인번호 메모
+- [ ] 유료화 게이트 도달 시(0011·0012·0026으로 시스템 준비 완료 — 제휴 G1~G3 + **거래소 X1(활성 매물 10건↑·브리프 20건↑ → listing 스위치)·X2(월 소개 5건↑ → buyer_membership·buyer_early 스위치)**, 상세 조건은 pricing-policy.md §3 — 스위치만 꺼져 있음. 파운더 50%는 `profiles.founder_discount_until` 수동 부여 시 서버가 자동 적용): ① 통신판매업 신고 ② pricing-policy.md §6-2 무통장 한시 허용 단서 개정 ③ 처리방침 §1 증빙 발행 정보 추가+TERMS_VERSION 상향 ④ app_settings 'pricing_announced_at' 설정(30일 공지 — 사이트 배너 자동 노출) ⑤ 30일 후 app_settings 'billing' 상품별 true + config.ts FLAGS.billing true + 재배포(**둘 다 켜야 열림**). 운영: 입금 확인 시 현금영수증/세금계산서 홈택스 수기 발행 후 승인번호 메모
 
 ## 문서 인덱스
 

@@ -20,6 +20,7 @@ import { Draft, useInterests } from "./lib/store";
 import { scorePartnerFit } from "./lib/match";
 import type { AnonFinding } from "./lib/anonymity";
 import { estimateValue, fmtRange, VAL_YEARS } from "./lib/valuation";
+import { PRICES, won } from "./lib/pricing";
 import type { ValueResult } from "./lib/valuation";
 
 const ISSUE = (title: string, body: string, labels?: string) =>
@@ -380,7 +381,7 @@ export function Partners() {
                       <Badge kind="muted">{EFFORT[t.effort]}</Badge>
                       {t.feeTier === "A"
                         ? <Badge kind="good">연결 무료</Badge>
-                        : <Badge kind="soon">연결료 {t.feeTier === "B" ? "22,000" : "77,000"}원 · 예정</Badge>}
+                        : <Badge kind="soon">연결료 {won(t.feeTier === "B" ? PRICES.connB : PRICES.connC)} · 예정</Badge>}
                     </div>
                     <p style={{ margin: "4px 0 0" }}>{t.desc}</p>
                     {open && (
@@ -436,15 +437,16 @@ export function Partners() {
         <div className="pcard"><h4>무료 <Badge kind="good">현재</Badge></h4>
           <p>등재·제휴 프로필·매칭 신청·배너교환형 제휴 무제한. 소개까지 전 과정 무료.
             배너 교환 등 <b>무정산형(A형) 연결은 유료화 후에도 무료</b>입니다.</p></div>
-        <div className="pcard"><h4>스폰서 노출 <Badge kind={FLAGS.billing.sponsor ? "good" : "soon"}>{FLAGS.billing.sponsor ? "신청 가능" : "예정"} · 월 99,000원</Badge></h4>
+        <div className="pcard"><h4>스폰서 노출 <Badge kind={FLAGS.billing.sponsor ? "good" : "soon"}>{FLAGS.billing.sponsor ? "신청 가능" : "예정"} · 월 {won(PRICES.sponsor)}</Badge></h4>
           <p>매칭 보드 상단 고정 2슬롯(<b>AD 표기</b>, VAT 포함). 디렉토리 검색·비교 결과는 어떤 경우에도 판매하지 않습니다.</p>
           {FLAGS.billing.sponsor && (session
             ? <p className="frm-note">신청: 계정 → 내 활동의 <b>게시 중인 내 제안</b>에서 "보드 상단 고정 신청"</p>
             : <p className="frm-note"><button className="linklike" onClick={() => go("account")}>로그인 후 신청 →</button> (게시 중인 제안이 있어야 신청할 수 있어요)</p>)}</div>
-        <div className="pcard"><h4>연결료 <Badge kind="soon">예정 · 건 22,000~77,000원</Badge></h4>
-          <p>양측 동의 후 <b>연락처를 상호 공유하는 순간</b>에만 정액(레퍼럴형 22,000 · 깊은 연동형 77,000, VAT 포함).
+        <div className="pcard"><h4>연결료 <Badge kind="soon">예정 · 건 {won(PRICES.connB)}~{won(PRICES.connC)}</Badge></h4>
+          <p>양측 동의 후 <b>연락처를 상호 공유하는 순간</b>에만 정액(레퍼럴형 {won(PRICES.connB)} · 깊은 연동형 {won(PRICES.connC)}, VAT 포함).
+            선불 크레딧 충전({won(PRICES.credit50.pay)}→{won(PRICES.credit50.get)} 적립 등)으로 지갑처럼 쓸 수 있어요(오픈 시).
             신청·매칭 확인까지는 무료, <b>소개가 이행되지 않으면 전액 자동 환불</b>.</p></div>
-        <div className="pcard"><h4>Pro 멤버십 <Badge kind={FLAGS.billing.membership ? "good" : "soon"}>{FLAGS.billing.membership ? "신청 가능" : "예정"} · 월 66,000원</Badge></h4>
+        <div className="pcard"><h4>Pro 멤버십 <Badge kind={FLAGS.billing.membership ? "good" : "soon"}>{FLAGS.billing.membership ? "신청 가능" : "예정"} · 월 {won(PRICES.pro)}</Badge></h4>
           <p>레퍼럴형 연결 월 3건 포함 · 검증 배지 · 우선 검수 · 파트너 검색 무제한(VAT 포함).</p>
           {FLAGS.billing.membership && !session && (
             <p className="frm-note"><button className="linklike" onClick={() => go("account")}>로그인 후 Pro 신청 →</button></p>
@@ -503,8 +505,7 @@ export function Partners() {
             onClick={() => setBoardType(boardType === id ? "" : id)}>{typeLabel(id)}</button>
         ))}
       </div>
-      {sponsors.length > 0 && (
-        <div className="card-grid" style={{ marginBottom: 10 }}>
+      <div className="card-grid" style={{ marginBottom: 10 }}>
           {sponsors.map((sp) => (
             <div className="pcard" key={`sp-${sp.slot_no}`} style={{ borderColor: "var(--warn)" }}>
               <div className="top"><div style={{ minWidth: 0 }}>
@@ -516,8 +517,16 @@ export function Partners() {
               <div className="frm-note">스폰서 게재 — 노출 위치만 구매한 것이며 검수·소개 절차는 일반 제안과 동일합니다.</div>
             </div>
           ))}
+          {sponsors.length < 2 && (
+            /* 빈 슬롯 셀프 안내(자기 서비스 안내 — 매칭 보드 한정, 디렉토리에는 어떤 광고도 없음) */
+            <div className="pcard" style={{ borderStyle: "dashed" }}>
+              <h4><Badge kind="ad">AD</Badge> 이 자리에 우리 플랫폼 제안 고정</h4>
+              <p style={{ fontSize: 13 }}>보드 상단 스폰서 슬롯 — 월 {won(PRICES.sponsor)}{FLAGS.billing.sponsor ? "" : " (예정)"} · AD 표기.
+                게시 중인 내 제안을 상단에 고정합니다. 디렉토리 검색·비교 결과는 판매하지 않아요.</p>
+              <p className="faint" style={{ fontSize: 12 }}>{FLAGS.billing.sponsor ? "계정 → 내 활동의 게시 중 제안에서 신청할 수 있어요." : "유료화 오픈 시 신청 가능 — 파운더 할인(첫 12개월 50%) 대상이에요."}</p>
+            </div>
+          )}
         </div>
-      )}
       <div className="result-meta">
         제휴 제안 {posts === null ? "…" : realItems.length + demoItems.length}건
         {matchedReal > 0 && ` · 성사된 소개 ${matchedReal}건`}
@@ -972,7 +981,7 @@ export function Exchange() {
       ) : done ? (
         <div className="done-card">
           {done === "sell"
-            ? "접수됐어요 ✓ 검수·익명화(보통 3영업일 이내, 1인 운영 순차 검수) 후 코드명(D-1xx)으로 게시됩니다. 진행 상태는 계정 → 내 활동에서 확인할 수 있어요."
+            ? <>접수됐어요 ✓ 검수·익명화(보통 3영업일 이내, 1인 운영 순차 검수) 후 코드명(D-1xx)으로 게시됩니다. 진행 상태는 계정 → 내 활동에서 확인할 수 있어요.<div className="frm-note" style={{ marginTop: 6 }}>💡 지금은 <b>무료 베타</b> — 유료화(리스팅료 90일 {won(PRICES.listing)}, 소개 무제한 포함) 후에도 진행 중인 접수·게재 건은 무료로 마무리됩니다.</div></>
             : "브리프 등록 완료 ✓ 조건에 맞는 새 매물이 올라오면 계정 → 내 활동에 맞는 매물로 표시돼요."}
           {FLAGS.contactEmail && <div className="frm-note" style={{ marginTop: 6 }}>문의: <a href={`mailto:${FLAGS.contactEmail}`}>{FLAGS.contactEmail}</a></div>}
           <div style={{ marginTop: 10 }}><button className="btn ghost sm" onClick={() => { setDone(""); setForm(""); }}>확인</button></div>
@@ -996,10 +1005,10 @@ export function Exchange() {
         <div className="pcard"><h4>무료 <Badge kind="good">현재</Badge></h4>
           <p>매물 등록(검수·익명화 포함)·인수 브리프·관심 등록·가치 자가 진단·소개까지 전 과정 무료(베타).
             브리프·관심 등록은 유료화 후에도 무료입니다.</p></div>
-        <div className="pcard"><h4>매물 리스팅료 <Badge kind="soon">예정 · 90일 220,000원</Badge></h4>
-          <p>검수·익명화·게재 중 소개 무제한 포함(연장 +90일 110,000원, VAT 포함). <b>성사·거래액과 무관</b> —
+        <div className="pcard"><h4>매물 리스팅료 <Badge kind="soon">예정 · 90일 {won(PRICES.listing)}</Badge></h4>
+          <p>검수·익명화·게재 중 소개 무제한 포함(연장 +90일 {won(PRICES.listingExt)}, VAT 포함). <b>성사·거래액과 무관</b> —
             팔리든 안 팔리든 같은 금액이고, 검수 반려 시 전액 환불됩니다.</p></div>
-        <div className="pcard"><h4>인수자 멤버십 <Badge kind="soon">예정 · 월 55,000원</Badge></h4>
+        <div className="pcard"><h4>인수자 멤버십 <Badge kind="soon">예정 · 월 {won(PRICES.buyer)}</Badge></h4>
           <p>신규 매물 48시간 선공개 + 브리프 무제한(VAT 포함).</p></div>
       </div>
       <p className="sub faint" style={{ fontSize: 12.5, marginBottom: 18 }}>
