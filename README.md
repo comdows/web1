@@ -52,18 +52,18 @@ backend/
 
 - [x] Supabase 마이그레이션 **0001~0011 전체 실행 완료(2026-07-05)** — 신규 SQL은 `backend/migrations/`에 추가 후 SQL Editor에서 실행
 - [x] `0012_billing_hardening.sql` 실행 완료(2026-07-05 — 종합 QA 수정)
-- [ ] **`0013_qa3.sql` 실행**(3차 QA — 본인 게시물 자기 신청 RLS 차단. 실행 전에도 클라이언트 가드로 버튼은 숨겨짐)
-- [ ] **`0014_judgment_seed.sql` 실행**(판단 필드 시드 — 수수료대·정산·입점조건·강점 1,637행 UPDATE. 정적 빌드엔 이미 반영, 원격 DB 반영용)
-- [ ] **`0015_outreach.sql` 실행**(제휴 제안 아웃리치 — 발송 기록·수신거부·게이트. 실행 후에도 서버 발송은 off, 회원 본인 메일로 발송)
-- [ ] **`0016_autolist.sql` 실행**(자동 수집 고신뢰 자동 등재 + 사후 검수 — `auto_listed` 컬럼·`auto_list_candidate`/`review_auto_listed` RPC·`app_settings 'autolist'`. **스위치 기본 off** → 실행해도 수집기는 전부 검수 큐로. 자동 수집 소스 확장(벤처스퀘어·스타트업레시피)과 스마트 중복제거(호스트 정규화·이름 퍼지)는 이 마이그레이션 없이도 동작)
+- [x] **`0013_qa3.sql` 실행 완료**(3차 QA — 본인 게시물 자기 신청 RLS 차단. 실행 전에도 클라이언트 가드로 버튼은 숨겨짐)
+- [x] **`0014_judgment_seed.sql` 실행 완료**(판단 필드 시드 — 수수료대·정산·입점조건·강점 1,637행 UPDATE. 정적 빌드엔 이미 반영, 원격 DB 반영용)
+- [x] **`0015_outreach.sql` 실행 완료**(제휴 제안 아웃리치 — 발송 기록·수신거부·게이트. 실행 후에도 서버 발송은 off, 회원 본인 메일로 발송)
+- [x] **`0016_autolist.sql` 실행 완료**(자동 수집 고신뢰 자동 등재 + 사후 검수 — `auto_listed` 컬럼·`auto_list_candidate`/`review_auto_listed` RPC·`app_settings 'autolist'`. **스위치 기본 off** → 실행해도 수집기는 전부 검수 큐로. 자동 수집 소스 확장(벤처스퀘어·스타트업레시피)과 스마트 중복제거(호스트 정규화·이름 퍼지)는 이 마이그레이션 없이도 동작)
 - [ ] (선택) **자동 등재 켜기**(수집 신뢰도를 몇 주 지켜본 뒤에만 — "자동 등재 없음" 원칙을 부분 개방):
   ① 검수 큐의 🤖 자동 수집 카드 신뢰도 배지를 관찰(고신뢰=80↑가 실제로 정확한지 확인)
   ② `app_settings 'autolist'` → `{"enabled": true, "min_confidence": 80, "collector_id": "<봇 계정 uid>"}` (uid는 `select id from profiles where display_name...` 또는 auth.users에서 확인)
   ③ 이후 수집기는 directUrl 소스(HN 등) + 분야추정 + 신뢰도≥80만 lifecycle=review로 자동 등재 → 관리 콘솔 "🤖 자동 등재 사후 검수"에서 확정/내리기 스팟체크(국내 뉴스는 기사 URL이라 자동 등재 대상 아님 → 일괄 승인으로)
-- [ ] **`0017_measurement.sql` 실행**(계측 보강 — `events.ref`(유입경로) 컬럼 + 퍼널·유입 admin 뷰 `v_funnel_7d`/`v_referrers_7d`. 멱등. 실행 후 방문이 쌓이면 관리 콘솔 "퍼널·유입" 패널에 노출→클릭→외부방문 전환율·유입경로가 채워짐)
-- [ ] **`0018_notifications.sql` 실행**(인앱 알림 — `notifications` 테이블 + RLS(본인만 열람·읽음, 생성은 admin 봇). 멱등. 실행 후 `match-notify` 워크플로가 ①인수 브리프↔신규 매물 ②관심 분야(즐겨찾기 유도) 신규 플랫폼 알림을 넣고, 헬스체크는 관심 플랫폼 죽은 링크를 알림 → 회원 헤더 🔔에 표시. 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요)
+- [x] **`0017_measurement.sql` 실행 완료**(계측 보강 — `events.ref`(유입경로) 컬럼 + 퍼널·유입 admin 뷰 `v_funnel_7d`/`v_referrers_7d`. 멱등. 실행 후 방문이 쌓이면 관리 콘솔 "퍼널·유입" 패널에 노출→클릭→외부방문 전환율·유입경로가 채워짐)
+- [x] **`0018_notifications.sql` 실행 완료**(인앱 알림 — `notifications` 테이블 + RLS(본인만 열람·읽음, 생성은 admin 봇). 멱등. 실행 후 `match-notify` 워크플로가 ①인수 브리프↔신규 매물 ②관심 분야(즐겨찾기 유도) 신규 플랫폼 알림을 넣고, 헬스체크는 관심 플랫폼 죽은 링크를 알림 → 회원 헤더 🔔에 표시. 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요)
 - [ ] **`0025_reviews.sql` 실행**(플랫폼 이용 후기 — `reviews` 테이블(1인 1리뷰·검수 후 게시·본인 수정은 재검수 강제 RLS) + 공개 뷰 `v_reviews_public`(익명)·평점 집계 `v_review_stats`(표시 전용 — 정렬 랭킹 미반영). 멱등. 실행 후 상세 "이용 후기" 섹션·카드 ★평점·관리 콘솔 "⭐ 리뷰 검수 큐"가 동작)
-- [ ] **`0024_notify_email.sql` 실행**(알림 이메일 레이어 — `app_settings 'notify_email'`(기본 **enabled:false**) + `notify_email_log`(사용자당 하루 1통을 unique로 DB에서 강제). 멱등. **실행해도 아무것도 발송되지 않음** — 코드·스위치만 준비되고, 켜는 절차는 아래)
+- [x] **`0024_notify_email.sql` 실행 완료(2026-07-10)**(알림 이메일 레이어 — `app_settings 'notify_email'`(기본 **enabled:false**) + `notify_email_log`(사용자당 하루 1통을 unique로 DB에서 강제). 멱등. **실행해도 아무것도 발송되지 않음** — 코드·스위치만 준비되고, 켜는 절차는 아래)
 - [ ] (선택) **알림 이메일 켜기**(인앱 알림 요약을 하루 1통 이메일로 — 인프라·법적 준비 후에만):
   ① 이메일 발송 서비스 계정(Resend 등) + 발신 도메인 SPF/DKIM/DMARC 인증(아웃리치 발송과 동일 스택)
   ② `supabase functions deploy send-notify-email` + `supabase secrets set RESEND_API_KEY=... NOTIFY_EMAIL_FROM="세모플 알림 <notify@도메인>" CRON_SECRET=<임의 문자열>`
@@ -71,11 +71,11 @@ backend/
   ④ `app_settings 'notify_email'` → `{"enabled": true, "daily_cap": 1, "from_name": "세모플 알림"}`
   ⑤ 스케줄: Supabase cron(대시보드 → Integrations → Cron) 또는 notify.yml 마지막에 `curl -X POST <함수URL> -H "x-cron-secret: $CRON_SECRET"` 스텝 추가 — 스위치 off면 호출돼도 skip(무해)
   발송 정책: 사용자당 하루 1통·최근 7일 미읽음만·본문은 "미읽음 N건" 요약뿐(알림 원문 비포함, 링크는 알림 센터)·수신거부 대조 후 제외
-- [ ] **`0019_popularity.sql` 실행**(검색·추천 행동신호 — 공개 인기 집계 뷰 `v_platform_popularity`. 멱등. platform_id·score만 노출(개인 행동로그 비노출)·세션 distinct 집계. 실행 후 방문이 쌓이면 검색 "인기순" 정렬·관련도 2차 보정·추천이 자동 반영. 데이터 적을 땐 효과 미미)
-- [ ] **`0020_freshness.sql` 실행**(링크 신선도 — `platforms.link_status`/`link_checked_at`. 멱등. 실행 후 월간 헬스체크가 링크 생존을 기록 → 카드/상세에 "⚠ 링크 확인"·"검증" 배지 노출. 죽은 링크 관심 등록자 알림은 기존 대로)
-- [ ] **`0021_intro_outcomes.sql` 실행**(소개 후 성사·후기 — `intro_outcomes` 테이블 + RLS(본인만) + `v_intro_success` 관리 요약. 멱등. 실행 후 소개 완료된 매칭에 계정 "내 활동"에서 성사 응답을 받고 관리 콘솔에 성사율 표시)
-- [ ] **`0022_deal_trust.sql` 실행**(거래소 신뢰 — `deals.owner_verified`(운영자 확인 ✓ 배지, 검증 자료 확인 후 관리 콘솔에서 토글)·`proofs`(준비 증빙 유무 태그 — 수치·가격 아님) + 매물 익명 Q&A `deal_questions`+공개 뷰(answered만·질문자 신원 컬럼 없음). 멱등. 실행 후 매각폼 증빙 체크·매물 카드 배지/Q&A·관리 콘솔 "💬 매물 질문 답변 큐"가 동작)
-- [ ] **`0023_operator_dash.sql` 실행**(운영자 대시보드 — `operator_platform_stats` definer RPC(운영자 본인 플랫폼만·30일 노출/클릭/외부방문/즐겨찾기 집계값만, 개별 행동로그 비노출) + `outreach_proposals` 운영자 read 정책(내 플랫폼이 받은 제휴 제안 열람). 멱등. 실행 후 계정 페이지에 "내 플랫폼 (운영자)" 섹션이 동작 — 인증 운영자에게만 표시)
+- [x] **`0019_popularity.sql` 실행 완료**(검색·추천 행동신호 — 공개 인기 집계 뷰 `v_platform_popularity`. 멱등. platform_id·score만 노출(개인 행동로그 비노출)·세션 distinct 집계. 실행 후 방문이 쌓이면 검색 "인기순" 정렬·관련도 2차 보정·추천이 자동 반영. 데이터 적을 땐 효과 미미)
+- [x] **`0020_freshness.sql` 실행 완료**(링크 신선도 — `platforms.link_status`/`link_checked_at`. 멱등. 실행 후 월간 헬스체크가 링크 생존을 기록 → 카드/상세에 "⚠ 링크 확인"·"검증" 배지 노출. 죽은 링크 관심 등록자 알림은 기존 대로)
+- [x] **`0021_intro_outcomes.sql` 실행 완료**(소개 후 성사·후기 — `intro_outcomes` 테이블 + RLS(본인만) + `v_intro_success` 관리 요약. 멱등. 실행 후 소개 완료된 매칭에 계정 "내 활동"에서 성사 응답을 받고 관리 콘솔에 성사율 표시)
+- [x] **`0022_deal_trust.sql` 실행 완료(2026-07-10)**(거래소 신뢰 — `deals.owner_verified`(운영자 확인 ✓ 배지, 검증 자료 확인 후 관리 콘솔에서 토글)·`proofs`(준비 증빙 유무 태그 — 수치·가격 아님) + 매물 익명 Q&A `deal_questions`+공개 뷰(answered만·질문자 신원 컬럼 없음). 멱등. 실행 후 매각폼 증빙 체크·매물 카드 배지/Q&A·관리 콘솔 "💬 매물 질문 답변 큐"가 동작)
+- [x] **`0023_operator_dash.sql` 실행 완료(2026-07-10)**(운영자 대시보드 — `operator_platform_stats` definer RPC(운영자 본인 플랫폼만·30일 노출/클릭/외부방문/즐겨찾기 집계값만, 개별 행동로그 비노출) + `outreach_proposals` 운영자 read 정책(내 플랫폼이 받은 제휴 제안 열람). 멱등. 실행 후 계정 페이지에 "내 플랫폼 (운영자)" 섹션이 동작 — 인증 운영자에게만 표시)
 - [ ] (선택) **제휴 제안 서버 발송 켜기**(세모플이 대표 이메일로 직접 발송 — 법적·인프라 준비 후에만):
   ① 이메일 발송 서비스 계정(Resend 등) + 발신 도메인 SPF/DKIM/DMARC 인증
   ② `supabase functions deploy send-proposal` + `supabase secrets set RESEND_API_KEY=... EMAIL_FROM="세모플 제휴 <partner@도메인>"`

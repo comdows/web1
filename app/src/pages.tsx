@@ -893,11 +893,13 @@ export function Exchange() {
     listMyDealInterests().then((rows) => setInterested(new Set(rows.map((r) => r.deal_id ?? "").filter(Boolean)))).catch(() => { /* noop */ });
   }, [session]);
 
-  // 원격 실패/미연결 시 정적 데모로 폴백
+  // 원격 실패/미연결 시 정적 데모로 폴백.
+  // 지분 거래 형태로 접수됐던 실매물은 보드에서 제외 — 게시·소개하지 않는다는 원칙(3중 가드의 마지막 층).
   const shown: { id: string; category: string; region: string; revenue: string; mode: string; summary: string; status: string; demo: boolean; posted: string; highlights?: string[]; sale_reason?: string | null; verified?: boolean; proofs?: string[] }[] =
-    deals !== null
+    (deals !== null
       ? deals.map((d) => ({ id: d.id, category: d.category_id, region: d.region === "overseas" ? "해외" : "국내", revenue: d.revenue_band, mode: d.mode, summary: d.summary, status: d.status, demo: d.is_demo, posted: d.posted, highlights: d.highlights, sale_reason: d.sale_reason, verified: d.owner_verified, proofs: d.proofs }))
-      : listings.deals.map((d) => ({ ...d, demo: Boolean(d.demo) }));
+      : listings.deals.map((d) => ({ ...d, demo: Boolean(d.demo) }))
+    ).filter((d) => d.demo || !isEquityMode(d.mode));
 
   return (
     <div className="page container">
@@ -1027,12 +1029,7 @@ export function Exchange() {
             )}
             <p style={{ fontSize: 12.5 }} className="faint">{d.region} · {d.revenue} · {d.mode} · {d.posted}
               {d.sale_reason ? ` · 사유: ${d.sale_reason}` : ""}</p>
-            {d.status === "open" && !d.demo && isEquityMode(d.mode) && (
-              <div className="frm-note">
-                ⚠ 지분 거래 형태로 접수된 매물이에요 — 세모플은 지분 거래를 게시·소개하지 않아 관심 등록을 받지 않습니다(정리 예정).
-              </div>
-            )}
-            {d.status === "open" && !d.demo && !isEquityMode(d.mode) && (
+            {d.status === "open" && !d.demo && (
               interested.has(d.id) ? <div className="ok" style={{ fontSize: 13 }}>관심 등록 완료 ✓ 진행 상태는 계정 → 내 활동에서 확인하세요</div>
               : interestIn === d.id ? (
                 !session
@@ -1045,7 +1042,7 @@ export function Exchange() {
               )
             )}
             {d.status === "open" && d.demo && <div className="frm-note">예시 카드입니다 — 실제 매물이 올라오면 여기서 관심 등록할 수 있어요.</div>}
-            {!d.demo && remoteEnabled && !isEquityMode(d.mode) && <DealQABlock dealId={d.id} />}
+            {!d.demo && remoteEnabled && <DealQABlock dealId={d.id} />}
           </div>
         ))}
       </div>

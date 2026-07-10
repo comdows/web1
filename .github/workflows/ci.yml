@@ -1,0 +1,30 @@
+# CI — PR·작업 브랜치 push마다 린트+타입체크+빌드(프리렌더·EN 금지 링크 검사 포함) 검증.
+# 배포는 pages.yml(master 전용)이 따로 담당 — 이 워크플로는 게이트만.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [master]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: app/package-lock.json
+      - run: npm ci
+      - run: npm run lint
+      # build = tsc -b + 시드 검증 + vite + 프리렌더 ko/en(EN 금지 링크 grep이 실패 시 빌드 중단)
+      - run: npm run build
