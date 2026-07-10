@@ -147,6 +147,51 @@ function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
   );
 }
 
+/* ── 정정·보강 제안 검수 카드 — 회원·운영자가 제안한 판단 필드 교정을 대상 플랫폼에 적용 ── */
+const CORRECTION_LABELS: Record<string, string> = {
+  fee_band: "수수료대", fee_text: "수수료 표기", settle_text: "정산 주기", enter_text: "입점 조건", strength: "강점", url: "URL",
+};
+function CorrectionCard({ s, onDone }: { s: Submission; onDone: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [reason, setReason] = useState("");
+  const pid = s.payload.target_platform_id ?? "";
+  const fields = s.payload.fields ?? {};
+  const entries = Object.entries(fields).filter(([, v]) => v != null && String(v).trim() !== "");
+  const act = async (fn: () => Promise<void>) => {
+    setErr(""); setBusy(true);
+    try { await fn(); onDone(); } catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); } finally { setBusy(false); }
+  };
+  const apply = () => act(async () => {
+    if (!pid) throw new Error("대상 플랫폼 id가 없어요");
+    if (entries.length) await updatePlatform(pid, Object.fromEntries(entries) as Parameters<typeof updatePlatform>[1]);
+    await reviewSubmission(s.id, { status: "approved", approved_platform_id: pid });
+  });
+  return (
+    <div className="admin-card">
+      <div className="admin-card-h">
+        <b>✏️ 정정 제안 — {s.payload.name}</b>
+        <a href={s.payload.url} target="_blank" rel="noopener noreferrer" className="mono" style={{ fontSize: 12 }}>{s.payload.url} ↗</a>
+        <Badge kind="soon">정정</Badge>
+        {s.payload.by_operator && <Badge kind="verify">✓ 운영자 확인</Badge>}
+        <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: "auto" }}>{s.created_at.slice(0, 10)}</span>
+      </div>
+      <div className="frm-note">대상: <span className="mono">{pid}</span> — 아래 제안 값을 확인하고 적용하세요{s.payload.by_operator ? " (운영자 제출 — 우선)" : ""}.</div>
+      {entries.length === 0 ? <div className="frm-note">제안 필드 없음(메모만) — 메모: {s.payload.desc || "-"}</div>
+        : <ul style={{ margin: "6px 0", fontSize: 13 }}>
+            {entries.map(([k, v]) => <li key={k}><b>{CORRECTION_LABELS[k] ?? k}</b> → {String(v)}</li>)}
+          </ul>}
+      {s.payload.desc && <div className="frm-note">메모: {s.payload.desc}</div>}
+      {err && <div className="err">{err}</div>}
+      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+        <button className="btn primary sm" disabled={busy} onClick={apply}>✓ 정정 적용</button>
+        <button className="btn ghost sm" disabled={busy} onClick={() => act(() => reviewSubmission(s.id, { status: "rejected", review_reason: reason || "정정 미채택" }))}>반려</button>
+        <input value={reason} onChange={(e) => setReason(e.target.value)} placeholder="반려 사유" style={{ flex: 1, minWidth: 100 }} />
+      </div>
+    </div>
+  );
+}
+
 /* ── (C) 1클릭 일괄 승인 — 사람을 없애지 말고 확장한다. ────────────────
  * 자동 수집(auto:) + 분야 추정 있음 + 중복 의심 없음 + id 슬러그 유효한 "고신뢰" 후보만
  * 기본 체크 → 관리자가 한 번 훑고 "선택 N건 승인·등재". id/분야는 자동 추정값을 그대로 쓴다. */
@@ -1183,7 +1228,9 @@ export function Admin() {
         : queue.length === 0 ? <div className="empty">대기 중인 제보가 없습니다 ✓</div>
         : <>
             <BatchApprovePanel queue={queue} onDone={reload} />
-            {queue.map((s) => <ReviewCard key={s.id} s={s} onDone={reload} />)}
+            {queue.map((s) => s.payload.kind === "correction"
+              ? <CorrectionCard key={s.id} s={s} onDone={reload} />
+              : <ReviewCard key={s.id} s={s} onDone={reload} />)}
           </>}
 
       <div className="sec-title" id="q-autolist">🤖 자동 등재 사후 검수</div>
