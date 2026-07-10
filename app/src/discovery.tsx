@@ -264,12 +264,46 @@ export function PlatformDetail({ id }: { id?: string }) {
         <CorrectionBox p={p} />
       </div>
 
-      {related.length > 0 && (
-        <>
-          <div className="sec-title">같은 분야의 다른 플랫폼</div>
-          <div className="card-grid">{related.map((r) => <PlatformCard key={r.id} p={r} showCat={false} />)}</div>
-        </>
-      )}
+      {related.length > 0 && (() => {
+        const alts = related.slice(0, 3);
+        const cols = [p, ...alts];
+        const val = (pl: Platform, k: string): string => {
+          if (k === "fee") return pl.fee_band ? `${FEE_LABEL[pl.fee_band].l}${pl.fee_text ? ` ${pl.fee_text}` : ""}` : "—";
+          if (k === "settle") return pl.settle_text || "—";
+          if (k === "enter") return pl.enter_text || "—";
+          return pl.strength || "—";
+        };
+        const rows: [string, string][] = [["수수료대", "fee"], ["정산 주기", "settle"], ["입점 조건", "enter"], ["강점", "strength"]];
+        const pickBy = HUB[p.category]?.pickBy ?? [];
+        const addAll = () => { for (const c of cols) if (!cmp.has(c.id) && !cmp.full) cmp.toggle(c.id); go("compare"); };
+        return (
+          <>
+            <div className="sec-title">대안 비교 — 같은 기준으로</div>
+            {pickBy.length > 0 && <div className="frm-note" style={{ marginBottom: 6 }}>이 분야는 <b>{pickBy.slice(0, 3).join(" · ")}</b>{pickBy.length > 3 ? " 등" : ""}을 따져보세요.</div>}
+            <div style={{ overflowX: "auto" }}>
+              <table className="cmp-mini" style={{ borderCollapse: "collapse", width: "100%", fontSize: 13 }}>
+                <thead><tr>
+                  <th style={{ textAlign: "left", padding: "6px 8px", color: "var(--faint)" }}>항목</th>
+                  {cols.map((c, i) => <th key={c.id} style={{ textAlign: "left", padding: "6px 8px", whiteSpace: "nowrap" }}>
+                    <button className="linklike" onClick={() => go("detail", { id: c.id })}>{c.name}</button>{i === 0 && <span className="est"> 현재</span>}
+                  </th>)}
+                </tr></thead>
+                <tbody>{rows.map(([label, k]) => (
+                  <tr key={k} style={{ borderTop: "1px solid var(--line)" }}>
+                    <td style={{ padding: "6px 8px", color: "var(--muted)", whiteSpace: "nowrap" }}>{label}{(k === "fee" || k === "settle") && <span className="est"> 추정</span>}</td>
+                    {cols.map((c) => <td key={c.id} style={{ padding: "6px 8px" }}>{val(c, k)}</td>)}
+                  </tr>
+                ))}</tbody>
+              </table>
+            </div>
+            <div style={{ marginTop: 8 }}><button className="btn ghost sm" onClick={addAll}>이 대안들 비교함에 담기 →</button></div>
+            <p className="sub faint" style={{ fontSize: 12, marginTop: 6 }}>수수료·정산은 공개 정보 기반 개략 추정치예요. 빈 칸은 <button className="linklike" onClick={() => document.querySelector(".panel-note")?.scrollIntoView({ behavior: "smooth" })}>정정 제안</button>으로 채워주시면 반영됩니다.</p>
+
+            <div className="sec-title">같은 분야의 다른 플랫폼</div>
+            <div className="card-grid">{related.map((r) => <PlatformCard key={r.id} p={r} showCat={false} />)}</div>
+          </>
+        );
+      })()}
       {(() => {
         const rec = Recent.list().filter((x) => x !== p.id).map((x) => index.get(x)).filter(Boolean).slice(0, 4) as Platform[];
         if (rec.length < 2) return null;
