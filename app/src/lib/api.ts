@@ -323,6 +323,11 @@ export interface PublicDeal {
 export async function fetchDeals(): Promise<PublicDeal[]> {
   return rest<PublicDeal[]>("v_deals_public?select=*&order=posted.desc&limit=100");
 }
+/* 매물 단건(코드명 영구 링크용) — 없거나 마감이면 null */
+export async function fetchDeal(id: string): Promise<PublicDeal | null> {
+  const rows = await rest<PublicDeal[]>(`v_deals_public?id=eq.${encodeURIComponent(id)}&select=*&limit=1`).catch(() => [] as PublicDeal[]);
+  return rows[0] ?? null;
+}
 export interface DealSubPayload {
   category_id: string; region: "domestic" | "overseas"; revenue_band: string;
   mode: string; summary: string; highlights: string; sale_reason: string;

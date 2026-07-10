@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { listings, categoryById, groups, categoriesByGroup, partnerGoals, partnerGroups, partnerTypes } from "./data";
 import type { PartnerType } from "./data";
-import { Badge } from "./components";
+import { Badge, ShareButton } from "./components";
 import { FLAGS } from "./config";
 import { useNav } from "./nav";
 import { useSession } from "./lib/auth";
 import {
   applyToPartnerPost, askDealQuestion, createBuyerBrief, createDealSubmission, createPartnerPost,
-  fetchDealQuestions, fetchDeals, fetchPartnerPosts, fetchSponsorSlots, founderOptIn, listMyDealInterests, listMyPartnerInterests, listMyPartnerPosts,
+  fetchDeal, fetchDealQuestions, fetchDeals, fetchPartnerPosts, fetchSponsorSlots, founderOptIn, listMyDealInterests, listMyPartnerInterests, listMyPartnerPosts,
   partnerRefCode, placeOrder, registerDealInterest, remoteEnabled,
 } from "./lib/api";
 import type { DealQA, SponsorSlotPublic } from "./lib/api";
@@ -883,6 +883,88 @@ function DealQABlock({ dealId }: { dealId: string }) {
   );
 }
 
+/* ── 매물 상세(코드명 영구 링크 ?view=deal&id=D-101) — 카드 정보 + Q&A + 관심 등록을 한 화면에.
+ * 익명성 유지: 코드명·밴드 표현만(작성자 정보 없음 — v_deals_public 그대로). 매도자가 직접 공유할 수 있는 링크. */
+export function DealDetailPage({ id }: { id?: string }) {
+  const go = useNav();
+  const { session } = useSession();
+  const [deal, setDeal] = useState<PublicDeal | null | undefined>(undefined);
+  const [interested, setInterested] = useState(false);
+  const [showInterest, setShowInterest] = useState(false);
+  useEffect(() => {
+    setDeal(undefined); setInterested(false); setShowInterest(false);
+    if (!id || !remoteEnabled) { setDeal(null); return; }
+    let alive = true;
+    fetchDeal(id).then((d) => { if (alive) setDeal(d); });
+    if (session) listMyDealInterests().then((rows) => { if (alive) setInterested(rows.some((r) => r.deal_id === id)); }).catch(() => { /* noop */ });
+    return () => { alive = false; };
+  }, [id, session]);
+  useEffect(() => {
+    if (deal) document.title = `매물 ${deal.id} — 세모플 거래소`;
+    return () => { document.title = "세모플 — 세상의 모든 플랫폼"; };
+  }, [deal]);
+
+  if (deal === undefined) return <div className="page container"><div className="empty">불러오는 중…</div></div>;
+  if (deal === null) return (
+    <div className="page container">
+      <div className="empty">매물을 찾을 수 없어요 — 마감됐거나 주소가 바뀐 매물입니다.{" "}
+        <button className="linklike" onClick={() => go("exchange")}>매물 보드로 →</button></div>
+    </div>
+  );
+  const equity = isEquityMode(deal.mode);
+  const cat = categoryById(deal.category_id);
+  return (
+    <div className="page container">
+      <button className="linklike" onClick={() => go("exchange")}>← 매물 보드</button>
+      <h1>🏦 {deal.id} {deal.is_demo && <Badge kind="muted">데모</Badge>}
+        {deal.status === "open" ? <Badge kind="good">모집 중</Badge> : <Badge kind="soon">{deal.status === "in_progress" ? "진행 중" : deal.status}</Badge>}
+        {deal.owner_verified && <span title="운영자가 비공개 검증 자료를 확인한 매물"><Badge kind="verify">운영자 확인 ✓</Badge></span>}
+      </h1>
+      <p className="lead" style={{ maxWidth: 640 }}>{deal.summary}</p>
+      {deal.highlights && deal.highlights.length > 0 && (
+        <div className="chips-row" style={{ margin: "4px 0" }}>{deal.highlights.map((h, i) => <span key={i} className="fchip">{h}</span>)}</div>
+      )}
+      {deal.proofs && deal.proofs.length > 0 && (
+        <div className="chips-row" style={{ margin: "4px 0" }} title="준비 여부 태그 — 수치·가격이 아니며 원본은 소개 후 NDA 하에 확인">
+          {deal.proofs.map((p, i) => <span key={i} className="fchip">🧾 {p}</span>)}
+        </div>
+      )}
+      <div className="facts" style={{ marginTop: 10 }}>
+        <div className="fact"><div className="k">분야</div><div className="v">{cat?.icon} {cat?.name ?? deal.category_id}</div></div>
+        <div className="fact"><div className="k">지역</div><div className="v">{deal.region === "overseas" ? "해외" : "국내"}</div></div>
+        <div className="fact"><div className="k">연매출 밴드</div><div className="v">{deal.revenue_band}</div></div>
+        <div className="fact"><div className="k">희망 형태</div><div className="v">{deal.mode}</div></div>
+        <div className="fact"><div className="k">게시일</div><div className="v">{deal.posted}</div></div>
+        {deal.sale_reason && <div className="fact"><div className="k">매각 사유</div><div className="v">{deal.sale_reason}</div></div>}
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "12px 0" }}>
+        <ShareButton small={false} title={`매물 ${deal.id} — 세모플 거래소`} url={`${location.origin}${import.meta.env.BASE_URL}?view=deal&id=${encodeURIComponent(deal.id)}`} />
+        <button className="fchip" onClick={() => go("deal-guide")}>양수도 가이드 →</button>
+      </div>
+      {equity ? (
+        <div className="frm-note">지분 거래 형태 매물은 게시·소개하지 않습니다 — <button className="linklike" onClick={() => go("exchange")}>보드로 돌아가기</button></div>
+      ) : deal.is_demo ? (
+        <div className="frm-note">예시 매물입니다 — 실제 매물이 올라오면 여기서 관심 등록할 수 있어요.</div>
+      ) : (
+        <>
+          {deal.status === "open" && (
+            interested ? <div className="ok" style={{ fontSize: 13 }}>관심 등록 완료 ✓ 진행 상태는 계정 → 내 활동에서 확인하세요</div>
+            : showInterest ? (
+              !session
+                ? <div className="frm-note">관심 등록에는 로그인이 필요해요. <button className="linklike" onClick={() => go("account")}>로그인 →</button></div>
+                : <InterestForm dealId={deal.id} onDone={() => { setInterested(true); setShowInterest(false); }} />
+            ) : <button className="btn primary" onClick={() => setShowInterest(true)}>이 매물에 관심 등록 →</button>
+          )}
+          <DealQABlock dealId={deal.id} />
+        </>
+      )}
+      <p className="sub faint" style={{ fontSize: 12.5, marginTop: 14 }}>
+        🕶️ 매물은 코드명으로만 게시됩니다. 밴드·태그는 개략 표현이며, 원본 확인과 협상은 쌍방 동의 소개 후 당사자 간 직접 진행됩니다.
+      </p>
+    </div>
+  );
+}
+
 export function Exchange() {
   const { session } = useSession();
   const go = useNav();
@@ -981,7 +1063,7 @@ export function Exchange() {
       ) : done ? (
         <div className="done-card">
           {done === "sell"
-            ? <>접수됐어요 ✓ 검수·익명화(보통 3영업일 이내, 1인 운영 순차 검수) 후 코드명(D-1xx)으로 게시됩니다. 진행 상태는 계정 → 내 활동에서 확인할 수 있어요.<div className="frm-note" style={{ marginTop: 6 }}>💡 지금은 <b>무료 베타</b> — 유료화(리스팅료 90일 {won(PRICES.listing)}, 소개 무제한 포함) 후에도 진행 중인 접수·게재 건은 무료로 마무리됩니다.</div></>
+            ? <>접수됐어요 ✓ 검수·익명화(보통 3영업일 이내, 1인 운영 순차 검수) 후 코드명(D-1xx)으로 게시됩니다. 진행 상태는 계정 → 내 활동에서 확인할 수 있어요.<div className="frm-note" style={{ marginTop: 6 }}>💡 지금은 <b>무료 베타</b> — 유료화(리스팅료 90일 {won(PRICES.listing)}, 소개 무제한 포함) 후에도 진행 중인 접수·게재 건은 무료로 마무리됩니다. 게시되면 코드명 상세 링크가 생겨 직접 공유할 수도 있어요.</div></>
             : "브리프 등록 완료 ✓ 조건에 맞는 새 매물이 올라오면 계정 → 내 활동에 맞는 매물로 표시돼요."}
           {FLAGS.contactEmail && <div className="frm-note" style={{ marginTop: 6 }}>문의: <a href={`mailto:${FLAGS.contactEmail}`}>{FLAGS.contactEmail}</a></div>}
           <div style={{ marginTop: 10 }}><button className="btn ghost sm" onClick={() => { setDone(""); setForm(""); }}>확인</button></div>
@@ -1051,6 +1133,11 @@ export function Exchange() {
               )
             )}
             {d.status === "open" && d.demo && <div className="frm-note">예시 카드입니다 — 실제 매물이 올라오면 여기서 관심 등록할 수 있어요.</div>}
+            {!d.demo && remoteEnabled && (
+              <div className="pcard-actions" style={{ marginTop: 4 }}>
+                <button className="linklike" style={{ fontSize: 12.5 }} onClick={() => go("deal", { id: d.id })}>상세·공유 링크 →</button>
+              </div>
+            )}
             {!d.demo && remoteEnabled && <DealQABlock dealId={d.id} />}
           </div>
         ))}
