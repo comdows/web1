@@ -9,17 +9,16 @@ import { trackEvent, trackImpression } from "./lib/api";
 import { FLAGS } from "./config";
 import { useNav } from "./nav";
 
+/* 1a 로고 마크 — 라운드 사각(#2563eb) + "세" */
 export function LogoMark({ size = 26 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 48 48" fill="none" aria-hidden>
-      <path d="M24 7 L41 37 H7 Z" stroke="var(--brand-soft)" strokeWidth="3" fill="none" strokeLinejoin="round" />
-    </svg>
+    <span className="logo-sq" aria-hidden style={size !== 26 ? { width: size, height: size, fontSize: Math.round(size * 0.54), borderRadius: Math.round(size * 0.27) } : undefined}>세</span>
   );
 }
 
 export function Logo() {
   return (
-    <span className="logo"><LogoMark /><span className="word">세모<b>플</b></span></span>
+    <span className="logo"><LogoMark /><span className="word">세모플</span></span>
   );
 }
 
@@ -27,11 +26,14 @@ export function Badge({ kind, children }: { kind: "new" | "good" | "soon" | "mut
   return <span className={`badge ${kind}`}>{children}</span>;
 }
 
+/* 1a 아바타 — 연한 브랜드색 배경 + 진한 이니셜(파비콘 로드되면 실제 로고) */
 export function Avatar({ name, url, size }: { name: string; url: string; size?: "lg" }) {
   const [imgOk, setImgOk] = useState(true);
   const fav = faviconUrl(url);
+  const hue = avatarHue(name);
   return (
-    <span className={`avatar${size === "lg" ? " lg" : ""}`} style={{ background: `hsl(${avatarHue(name)} 45% 40%)` }}>
+    <span className={`avatar${size === "lg" ? " lg" : ""}`}
+      style={{ background: `hsl(${hue} 75% 94%)`, color: `hsl(${hue} 65% 38%)` }}>
       {fav && imgOk
         ? <img src={fav} alt="" loading="lazy" onError={() => setImgOk(false)} />
         : name.charAt(0)}
@@ -55,26 +57,30 @@ export function PlatformCard({ p, showCat = true, fit }: { p: Platform; showCat?
   useEffect(() => { trackImpression(p.id); }, [p.id]); // 노출 계측(세션당 1회 dedup·벌크)
   const openDetail = () => { trackEvent("click", p.id); go("detail", { id: p.id }); };
   const toggleFav = () => { if (!on) trackEvent("favorite", p.id); favs.toggle(p.id); };
+  // 1a: 카드 전체 클릭 → 상세. 내부 컨트롤(★·비교·공식링크)은 전파 차단.
+  const stop = (e: { stopPropagation: () => void }) => e.stopPropagation();
   return (
-    <div className={`pcard${fit ? " fit" : ""}`}>
+    <div className={`pcard${fit ? " fit" : ""}`} role="link" tabIndex={0} aria-label={`${p.name} 상세`}
+      onClick={openDetail}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); openDetail(); } }}>
       <div className="top">
         <Avatar name={p.name} url={p.url} />
         <div style={{ minWidth: 0 }}>
-          <h4><button className="pname" onClick={openDetail}>{p.name}</button>
+          <h4><span className="pname">{p.name}</span>
             {p.new && <Badge kind="new">NEW</Badge>}{p.verified && <Badge kind="verify">✓ 검증</Badge>}{fit && <Badge kind="good">{fit}</Badge>}
             {p.link_status === "dead" && <span title="최근 점검에서 접속 불가 — 확인 필요"><Badge kind="muted">⚠ 링크 확인</Badge></span>}</h4>
-          {showCat && cat && <div className="cat">{cat.icon} {cat.name}</div>}
+          {showCat && cat && <div className="cat">{cat.name}</div>}
         </div>
         <button className={`star ${on ? "on" : ""}`} aria-label="즐겨찾기"
-          onClick={toggleFav}>{on ? "★" : "☆"}</button>
+          onClick={(e) => { stop(e); toggleFav(); }}>{on ? "★" : "☆"}</button>
       </div>
       <p>{p.blurb}</p>
       <div className="pcard-actions">
+        <span className="cta">자세히 보기 →</span>
         <a className="ext" href={p.url} target="_blank" rel="noopener noreferrer"
-          onClick={() => { Recent.push(p.id); trackEvent("outbound", p.id); }}>공식 사이트 ↗</a>
-        <button className="linklike" onClick={openDetail}>상세</button>
+          onClick={(e) => { stop(e); Recent.push(p.id); trackEvent("outbound", p.id); }}>공식 ↗</a>
         <button className={`cmp-btn ${inCmp ? "on" : ""}`} disabled={!inCmp && cmp.full}
-          onClick={() => cmp.toggle(p.id)} title={cmp.full && !inCmp ? "최대 4개" : "비교 담기"}>
+          onClick={(e) => { stop(e); cmp.toggle(p.id); }} title={cmp.full && !inCmp ? "최대 4개" : "비교 담기"}>
           {inCmp ? "✓ 비교" : "+ 비교"}
         </button>
       </div>
@@ -120,7 +126,7 @@ export function Footer() {
       <div className="foot-cap" style={{ fontSize: 11.5, opacity: 0.7 }}>
         운영: 세모플 운영자{FLAGS.contactEmail ? ` · 문의 ${FLAGS.contactEmail}` : ""} · 개인정보 보호책임자: 운영자 겸임
       </div>
-      <div className="foot-cap mono">© 2026 SEMOPL · {total.toLocaleString()} PLATFORMS · GRID 8PX</div>
+      <div className="foot-cap">© 2026 세모플 SEMOPL — 세상의 모든 플랫폼 · {total.toLocaleString()}개 등재</div>
     </div></footer>
   );
 }

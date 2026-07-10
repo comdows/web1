@@ -2,17 +2,17 @@ import { lazy, Suspense, useEffect, useMemo, useState, useCallback } from "react
 import type { ReactNode, KeyboardEvent } from "react";
 import { groups, categories, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
-import { Logo, LogoMark, StatTile, PlatformCard, Footer } from "./components";
+import { Logo, PlatformCard, Footer } from "./components";
+import { GroupIcon, IcSearch, IcBell, IcHandshake, IcExchange, IcSparkle } from "./icons";
 import { usePlatforms, usePlatformStats, usePlatformIndex } from "./lib/platforms";
 import { usePopularity } from "./lib/popularity";
-import { pickRecommended, sortByRelevance } from "./lib/search";
+import { pickRecommended } from "./lib/search";
 import { consumeLastVisit, useFavs, useCompare, useInterests, useRecent } from "./lib/store";
 import { FLAGS } from "./config";
 import { NavContext } from "./nav";
 import type { ViewName } from "./nav";
 import { PlatformDetail, SearchResults, Compare, Onboarding } from "./discovery";
-/* 코드 스플리팅 — 발견(홈·검색·상세)만 메인 청크에 두고 나머지 뷰는 지연 로드.
- * 단일 685KB 청크가 모바일 첫 로드를 막던 문제(감사 P2): 프리렌더 /p/ 유입의 대부분은 상세 뷰만 쓴다. */
+/* 코드 스플리팅 — 발견(홈·검색·상세)만 메인 청크에 두고 나머지 뷰는 지연 로드. */
 const Partners   = lazy(() => import("./pages").then((m) => ({ default: m.Partners })));
 const Exchange   = lazy(() => import("./pages").then((m) => ({ default: m.Exchange })));
 const DealGuide  = lazy(() => import("./pages").then((m) => ({ default: m.DealGuide })));
@@ -29,8 +29,9 @@ const Notifications = lazy(() => import("./notifications").then((m) => ({ defaul
 import { useSession } from "./lib/auth";
 import { fetchRecentPlatforms, remoteEnabled, rest, trackEvent, unreadNotifCount } from "./lib/api";
 
-type Sort = "default" | "new" | "name";
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
+/* 인기 데이터가 비어 있을 때 "이번 주 많이 찾은"의 대표 폴백(잘 알려진 국내외 대표군) */
+const FEATURED_FALLBACK = ["smartstore", "coupang", "kmong", "wadiz", "11st", "tumblbug", "amazongs", "navershopl"];
 
 function readParams() {
   const p = new URLSearchParams(location.search);
@@ -41,20 +42,11 @@ function readParams() {
     view: pre ? ("detail" as ViewName) : cpre ? ("search" as ViewName) : (p.get("view") as ViewName) || "home",
     id: pre ? pre[1] : p.get("id") || "",
     q: p.get("q") || "",
-    group: p.get("group") || "",
     fav: p.get("fav") === "1",
-    onlyNew: p.get("new") === "1",
-    sort: (p.get("sort") as Sort) || "default",
   };
 }
 
-function sortPlatforms(list: Platform[], sort: Sort): Platform[] {
-  if (sort === "new") return [...list].sort((a, b) => (b.new ? 1 : 0) - (a.new ? 1 : 0));
-  if (sort === "name") return [...list].sort((a, b) => a.name.localeCompare(b.name, "ko"));
-  return list;
-}
-/* 접근성 있는 헤더 내비 항목 — role/tabIndex/키보드로 마우스 없이도 이동 가능,
-   모바일에선 라벨이 숨겨지므로 aria-label로 스크린리더 대응 */
+/* 접근성 있는 헤더 내비 항목 */
 function NavItem({ active, onClick, label, children }: { active?: boolean; onClick: () => void; label: string; children: ReactNode }) {
   const key = (e: KeyboardEvent) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onClick(); } };
   return (
@@ -64,7 +56,8 @@ function NavItem({ active, onClick, label, children }: { active?: boolean; onCli
   );
 }
 function useTheme() {
-  const [theme, setTheme] = useState<string>(() => { try { return localStorage.getItem("sm.theme") || "dark"; } catch { return "dark"; } });
+  // 1a 채택안은 라이트 기본 — 저장된 선호가 있으면 존중
+  const [theme, setTheme] = useState<string>(() => { try { return localStorage.getItem("sm.theme") || "light"; } catch { return "light"; } });
   useEffect(() => { document.documentElement.setAttribute("data-theme", theme); try { localStorage.setItem("sm.theme", theme); } catch { /* noop */ } }, [theme]);
   return { toggle: () => setTheme((t) => (t === "dark" ? "light" : "dark")) };
 }
@@ -88,13 +81,10 @@ export default function App() {
       .catch(() => { /* 공지 없음 */ });
   }, []);
   const [searchQ, setSearchQ] = useState(init.q);
-  // home-only state
+  // home-only state (1a: 히어로 검색은 검색 페이지로 보냄, fav는 ★ 보기)
   const [q, setQ] = useState(init.view === "home" ? init.q : "");
-  const [group, setGroup] = useState(init.group);
   const [fav, setFav] = useState(init.fav);
-  const [onlyNew, setOnlyNew] = useState(init.onlyNew);
-  const [sort, setSort] = useState<Sort>(init.sort);
-  const [open, setOpen] = useState<Set<string>>(new Set());
+  const [expanded, setExpanded] = useState<Set<string>>(new Set()); // 분야별 "더 보기" 그룹
   const favs = useFavs();
   const cmp = useCompare();
   const theme = useTheme();
@@ -103,15 +93,11 @@ export default function App() {
   useEffect(() => {
     if (!session) { setUnreadNotif(0); return; }
     unreadNotifCount().then(setUnreadNotif).catch(() => setUnreadNotif(0));
-  }, [session, view]); // view 변화 시 재조회 → 알림 읽고 나오면 배지 갱신
+  }, [session, view]);
   const platforms = usePlatforms();
   const pop = usePopularity();
   const stats = usePlatformStats();
   const index = usePlatformIndex();
-  const searchIndex = useMemo(
-    () => platforms.map((p) => ({ p, hay: (p.name + " " + p.blurb + " " + (categoryById(p.category)?.name ?? "")).toLowerCase() })),
-    [platforms]
-  );
 
   const go = useCallback<(v: ViewName, params?: { id?: string; q?: string }) => void>((v, params) => {
     setView(v);
@@ -121,60 +107,77 @@ export default function App() {
     if (v !== "home") sp.set("view", v);
     if (v === "detail" && params?.id) sp.set("id", params.id);
     if (v === "search" && params?.q) sp.set("q", params.q);
-    // 프리렌더 경로(/p/<id>/)에서 이동해도 항상 앱 기본 경로로 복귀
     history.pushState(null, "", import.meta.env.BASE_URL + (sp.toString() ? `?${sp}` : ""));
     window.scrollTo(0, 0);
   }, []);
 
+  /* 분야 카드 → 검색 뷰(해당 분야 필터) — SearchResults가 URL cats 파라미터를 읽는다 */
+  const goCat = useCallback((catId: string) => {
+    history.pushState(null, "", import.meta.env.BASE_URL + "?view=search&cats=" + encodeURIComponent(catId));
+    setSearchQ("");
+    setView("search");
+    window.scrollTo(0, 0);
+  }, []);
+
   useEffect(() => {
-    const onPop = () => { const p = readParams(); setView(p.view); setDetailId(p.id); setSearchQ(p.q); };
+    const onPop = () => { const p = readParams(); setView(p.view); setDetailId(p.id); setSearchQ(p.q); setFav(p.fav); };
     window.addEventListener("popstate", onPop);
     return () => window.removeEventListener("popstate", onPop);
   }, []);
 
-  // 탭 타이틀 — 클릭 이동뿐 아니라 뒤로가기(popstate)·URL 직접 진입에서도 현재 화면과 일치
+  // 탭 타이틀 동기화
   useEffect(() => {
-    if (view === "detail") return; // 상세는 PlatformDetail이 플랫폼명으로 직접 설정
-    // 분야 허브(/c/<분야>) 진입은 분야명으로 — 여러 분야 탭 비교 시 구분(프리렌더 타이틀 유지)
+    if (view === "detail") return;
     const pathCat = location.pathname.match(/\/c\/([a-z0-9_-]+)\/?$/)?.[1];
     const catName = pathCat ? categoryById(pathCat)?.name : undefined;
     document.title = catName ? `${catName} 플랫폼 — 세모플`
       : VIEW_TITLES[view] ? `${VIEW_TITLES[view]} — 세모플` : "세모플 — 세상의 모든 플랫폼";
   }, [view]);
 
-  // sync home filter state to URL only while on home
+  // 홈 상태 → URL(q·fav만)
   useEffect(() => {
     if (view !== "home") return;
     const p = new URLSearchParams();
-    if (q) p.set("q", q); if (group) p.set("group", group); if (fav) p.set("fav", "1");
-    if (onlyNew) p.set("new", "1"); if (sort !== "default") p.set("sort", sort);
+    if (q) p.set("q", q); if (fav) p.set("fav", "1");
     history.replaceState(null, "", p.toString() ? `?${p}` : location.pathname);
-  }, [view, q, group, fav, onlyNew, sort]);
+  }, [view, q, fav]);
 
-  const toggleCat = useCallback((id: string) => setOpen((prev) => { const n = new Set(prev); if (n.has(id)) n.delete(id); else n.add(id); return n; }), []);
+  const submitSearch = () => { if (q.trim()) { trackEvent("search", undefined, q.trim()); go("search", { q: q.trim() }); } };
 
-  const query = q.trim().toLowerCase();
-  const flatMode = query.length > 0 || fav || onlyNew;
-  const flatResults = useMemo(() => {
-    if (!flatMode) return [] as Platform[];
-    let list = query ? searchIndex.filter((x) => query.split(/\s+/).every((t) => x.hay.includes(t))).map((x) => x.p) : platforms.slice();
-    if (fav) { const set = new Set(favs.all()); list = list.filter((p) => set.has(p.id)); }
-    if (onlyNew) list = list.filter((p) => p.new);
-    if (sort === "default" && query) list = sortByRelevance(list, query, pop); // 관련도(1차)+인기(2차)
-    else list = sortPlatforms(list, sort);
-    return list.slice(0, 200);
-  }, [flatMode, query, fav, onlyNew, sort, favs, platforms, searchIndex, pop]);
-  const newPlatforms = useMemo(() => platforms.filter((p) => p.new).slice(0, 24), [platforms]);
-  const shownGroups = group ? groups.filter((g) => g.id === group) : groups;
+  /* 이번 주 많이 찾은 플랫폼 — 인기 집계(0019) 상위, 데이터 없으면 대표 폴백+신규로 채움 */
+  const popular = useMemo(() => {
+    const ranked = pop.size
+      ? [...platforms].filter((p) => (pop.get(p.id) ?? 0) > 0).sort((a, b) => (pop.get(b.id) ?? 0) - (pop.get(a.id) ?? 0))
+      : [];
+    const picked: Platform[] = ranked.slice(0, 8);
+    if (picked.length < 8) {
+      const have = new Set(picked.map((p) => p.id));
+      for (const id of FEATURED_FALLBACK) {
+        if (picked.length >= 8) break;
+        const p = index.get(id); if (p && !have.has(p.id)) { picked.push(p); have.add(p.id); }
+      }
+      for (const p of platforms) {
+        if (picked.length >= 8) break;
+        if (p.new && !have.has(p.id)) { picked.push(p); have.add(p.id); }
+      }
+    }
+    return picked;
+  }, [platforms, pop, index]);
+
+  const aiCount = useMemo(() => platforms.filter((p) => p.category.startsWith("ai_")).length, [platforms]);
+  const favPlatforms = useMemo(() => {
+    const set = new Set(favs.all());
+    return platforms.filter((p) => set.has(p.id));
+  }, [favs, platforms]);
 
   const cmpNames = cmp.all().map((id) => index.get(id)?.name).filter(Boolean).join(", ");
 
-  // ★ 저장 넛지 — 비로그인 + 즐겨찾기 2개 이상, 1회 닫으면 끝(비교 바와 동시 노출 안 함)
+  // ★ 저장 넛지
   const [nudgeClosed, setNudgeClosed] = useState<boolean>(() => { try { return !!localStorage.getItem("sm.nudge.fav.v1"); } catch { return true; } });
   const showNudge = remoteEnabled && !session && favs.count >= 2 && !nudgeClosed && cmp.count === 0 && view !== "account";
   const closeNudge = () => { try { localStorage.setItem("sm.nudge.fav.v1", "1"); } catch { /* noop */ } setNudgeClosed(true); };
 
-  // 🕘 최근 본 / ✨ 관심 분야 / 🆕 재방문 델타
+  // 🕘 최근 본 / ✨ 관심 분야 / 재방문 델타
   const recentIds = useRecent();
   const recentPlatforms = useMemo(() => recentIds.map((x) => index.get(x)).filter(Boolean).slice(0, 12) as Platform[], [recentIds, index]);
   const interests = useInterests();
@@ -189,32 +192,38 @@ export default function App() {
     fetchRecentPlatforms(60).then((rows) => setSinceCount(rows.filter((r) => r.created && r.created > last).length)).catch(() => { /* noop */ });
   }, []);
 
+  /* 의도 칩 → 그룹 섹션 스크롤 / AI 파인더 */
+  const scrollToGroup = (gid: string) => {
+    const el = document.getElementById(`g-${gid}`);
+    if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 80, behavior: "smooth" });
+  };
+  const toggleExpand = (gid: string) => setExpanded((prev) => { const n = new Set(prev); if (n.has(gid)) n.delete(gid); else n.add(gid); return n; });
+
   return (
     <NavContext.Provider value={go}>
       <header className="site-header"><div className="container inner">
-        <NavItem onClick={() => go("home")} label="홈"><Logo /></NavItem>
+        <NavItem onClick={() => { setFav(false); go("home"); }} label="홈"><Logo /></NavItem>
         <nav>
-          <NavItem active={view === "home"} onClick={() => go("home")} label="분야별">📂 <span className="navlbl">분야별</span></NavItem>
-          <NavItem active={view === "search"} onClick={() => go("search")} label="검색">🔎 <span className="navlbl">검색</span></NavItem>
-          <NavItem active={view === "onboarding"} onClick={() => go("onboarding")} label="추천">✨ <span className="navlbl">추천</span></NavItem>
-          <NavItem active={view === "partners"} onClick={() => go("partners")} label="제휴">🤝 <span className="navlbl">제휴</span>{!FLAGS.stage2 && <span className="soon">준비중</span>}</NavItem>
-          <NavItem active={view === "exchange"} onClick={() => go("exchange")} label="거래소">🏦 <span className="navlbl">거래소</span>{!FLAGS.stage3 && <span className="soon">준비중</span>}</NavItem>
-          {/* 검색어를 함께 지워야 '즐겨찾기 N개'인데 교집합 0건이 뜨는 혼란이 없다 */}
+          <NavItem active={view === "home" || view === "search"} onClick={() => { setFav(false); go("home"); }} label="플랫폼 찾기">플랫폼 찾기</NavItem>
+          <NavItem active={view === "partners"} onClick={() => go("partners")} label="제휴 매칭">제휴 매칭{!FLAGS.stage2 && <span className="soon">준비중</span>}</NavItem>
+          <NavItem active={view === "exchange"} onClick={() => go("exchange")} label="거래소">거래소{!FLAGS.stage3 && <span className="soon">준비중</span>}</NavItem>
+          <NavItem active={view === "ai-finder"} onClick={() => go("ai-finder")} label="AI 도구">AI 도구</NavItem>
           <NavItem onClick={() => { setQ(""); setFav(true); go("home"); }} label={`즐겨찾기 ${favs.count}개`}>★ {favs.count}</NavItem>
         </nav>
-        <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12, flexShrink: 0 }}>
+          <a href={`${import.meta.env.BASE_URL}en/`} style={{ fontSize: 13.5, color: "var(--faint)" }}>English</a>
           {remoteEnabled && session && (
             <NavItem active={view === "notifications"} onClick={() => go("notifications")} label="알림">
-              <span style={{ position: "relative" }}>🔔
-                {unreadNotif > 0 && <span className="notif-badge" style={{ position: "absolute", top: -6, right: -8, background: "var(--danger)", color: "#fff", fontSize: 10, lineHeight: "15px", minWidth: 15, height: 15, borderRadius: 8, padding: "0 4px", textAlign: "center", fontWeight: 700 }}>{unreadNotif > 9 ? "9+" : unreadNotif}</span>}
+              <span style={{ position: "relative", display: "inline-flex", color: "var(--muted)" }}><IcBell size={17} />
+                {unreadNotif > 0 && <span className="notif-badge" style={{ position: "absolute", top: -7, right: -9, background: "var(--danger)", color: "#fff", fontSize: 10, lineHeight: "15px", minWidth: 15, height: 15, borderRadius: 8, padding: "0 4px", textAlign: "center", fontWeight: 700 }}>{unreadNotif > 9 ? "9+" : unreadNotif}</span>}
               </span>
             </NavItem>
           )}
           {remoteEnabled && (
-            <NavItem active={view === "account" || view === "admin"} onClick={() => go("account")} label={session ? "내 계정" : "로그인"}>
-              👤 <span className="navlbl">{session ? (profile?.display_name || "내 계정") : "로그인"}</span>
-              {isAdmin && <span className="soon" style={{ background: "var(--teal-tint)", color: "var(--teal)" }}>admin</span>}
-            </NavItem>
+            <button className="btn login" onClick={() => go("account")}>
+              {session ? (profile?.display_name || "내 계정") : "로그인"}
+              {isAdmin && <span className="soon" style={{ marginLeft: 4, color: "var(--teal)" }}>admin</span>}
+            </button>
           )}
           <button className="theme-btn" onClick={theme.toggle} aria-label="테마 전환">◐</button>
         </div>
@@ -245,137 +254,133 @@ export default function App() {
         : view === "privacy" ? <Privacy />
         : view === "notifications" ? <Notifications />
         : (
-        <main className="container">
+        <main>
+          {/* ── 1a 히어로: 검색 + 의도 칩 + 지표 스트립을 한 시각 단위로 ── */}
           <section className="hero">
-            <div className="hero-bp" aria-hidden><LogoMark size={300} /></div>
-            <div className="eyebrow">SEMOPL · 세상의 모든 플랫폼</div>
-            <h1>어떤 분야에 어떤 플랫폼이 있을까?</h1>
-            <p className="sub">사업자가 나가서 붙을 수 있는 플랫폼과 <b>일을 도와주는 AI 도구</b>까지, 같은 기준으로 정리했습니다. 빠르게 훑고 ★로 저장하세요.</p>
-            {sinceCount > 0 && (
-              <button className="fchip on" style={{ marginBottom: 10 }} onClick={() => go("weekly")}>
-                🆕 다녀간 사이 새 플랫폼·AI {sinceCount}개 →
-              </button>
-            )}
-            <div className="search">
-              <button type="button" className="ico" aria-label="검색" onClick={() => { if (q.trim()) { trackEvent("search", undefined, q.trim()); go("search", { q }); } }}>⌕</button>
-              <input value={q} onChange={(e) => setQ(e.target.value)} aria-label="플랫폼·분야 검색" placeholder="플랫폼·분야 검색 (예: 쿠팡, 크라우드펀딩, 수출)"
-                onKeyDown={(e) => { if (e.key === "Enter" && q.trim()) { trackEvent("search", undefined, q.trim()); go("search", { q }); } }} />
-            </div>
-            <div className="toolbar">
-              <select className="select" aria-label="정렬" value={sort} onChange={(e) => setSort(e.target.value as Sort)}>
-                <option value="default">기본 정렬</option><option value="new">신규 우선</option><option value="name">가나다</option>
-              </select>
-              <button className={`btn ghost ${onlyNew ? "on" : ""}`} onClick={() => setOnlyNew((v) => !v)}>🆕 신규만</button>
-              <button className={`btn ghost ${fav ? "on" : ""}`} onClick={() => setFav((v) => !v)}>★ 내 즐겨찾기</button>
-              <button className="btn ghost" onClick={() => go("onboarding")}>✨ 추천받기</button>
-              {group && <button className="btn ghost" onClick={() => setGroup("")}>✕ {groups.find((g) => g.id === group)?.name}</button>}
-              {remoteEnabled
-                ? <button className="btn primary" onClick={() => go("submit")}>+ 플랫폼 제보</button>
-                : <a className="btn primary" href={REPORT_URL} target="_blank" rel="noopener noreferrer">+ 플랫폼 제보</a>}
-            </div>
-            <div className="stats">
-              <StatTile n={stats.total.toLocaleString()} l="플랫폼" tone="b" />
-              <StatTile n={String(categories.length)} l="분야" />
-              <StatTile n={String(stats.newCount)} l="신규" tone="t" />
+            <div className="hero-in">
+              <h1>어떤 분야에 어떤 플랫폼이 있을까?</h1>
+              <p className="sub">입점·소싱·홍보·AI까지 — 사업에 필요한 플랫폼을 분야별로 찾아보세요.</p>
+              <div className="search">
+                <span className="ico" aria-hidden><IcSearch size={18} /></span>
+                <input value={q} onChange={(e) => setQ(e.target.value)} aria-label="플랫폼·분야 검색"
+                  placeholder="플랫폼 이름이나 분야를 검색해 보세요 — 예: 스마트스토어, 재능마켓"
+                  onKeyDown={(e) => { if (e.key === "Enter") submitSearch(); }} />
+                <button className="go" onClick={submitSearch}>검색</button>
+              </div>
+              <div className="intent-chips">
+                <button className="ichip" onClick={() => scrollToGroup("commerce")}>입점하고 싶어요</button>
+                <button className="ichip" onClick={() => scrollToGroup("trade")}>상품을 소싱해요</button>
+                <button className="ichip" onClick={() => scrollToGroup("service")}>서비스를 알리고 싶어요</button>
+                <button className="ichip" onClick={() => go("ai-finder")}>AI 도구를 찾아요</button>
+              </div>
+              {sinceCount > 0 && (
+                <button className="fchip on" onClick={() => go("weekly")}>다녀간 사이 새 플랫폼·AI {sinceCount}개 →</button>
+              )}
+              <div className="stat-strip">
+                <div className="cell"><span className="n">{stats.total.toLocaleString()}</span><span className="l">등록 플랫폼</span></div>
+                <div className="cell"><span className="n">{categories.length}</span><span className="l">분야</span></div>
+                <div className="cell"><span className="n">{aiCount.toLocaleString()}</span><span className="l">AI 도구</span></div>
+              </div>
             </div>
           </section>
 
-          {/* 2·3단계 진입점 — 헤더 아이콘 외에 홈 본문에서 처음 노출 */}
-          <div className="promo-grid">
-            <button className="gcard promo" onClick={() => go("partners")}>
-              <div className="g-ic">🤝</div><h4>제휴 매칭 <span className="badge good">오픈</span></h4>
-              <div className="g-cats">광고 자리 맞바꾸기, 회원 서로 보내기, 소개 보상(레퍼럴) — 다른 플랫폼과 손잡고 함께 크는 22가지 방법. 전부 무료 베타.</div>
-              <div className="g-meta" style={{ marginTop: 8 }}>제안 등록 → 검수 게시 → 세모플이 소개</div>
-            </button>
-            <button className="gcard promo" onClick={() => go("exchange")}>
-              <div className="g-ic">🏦</div><h4>플랫폼 거래소 <span className="badge good">오픈</span></h4>
-              <div className="g-cats">운영하던 플랫폼의 매각·인수를 익명 리스팅으로. 코드명 게시, 쌍방 동의 시에만 소개.</div>
-              <div className="g-meta" style={{ marginTop: 8 }}>매각 접수(비공개) · 인수 브리프</div>
-            </button>
-          </div>
-
-          {flatMode ? (
-            <>
-              <div className="result-meta">{fav ? "내 즐겨찾기" : onlyNew ? "신규 플랫폼" : `"${q}" 검색결과`} · {flatResults.length}개{flatResults.length >= 200 ? " (상위 200)" : ""}</div>
-              {flatResults.length === 0
-                ? (
-                  <div className="empty">
-                    {fav ? "아직 즐겨찾기한 플랫폼이 없어요. 카드의 ☆를 눌러 저장하세요." : (
-                      <>
-                        "{q}" 결과가 없습니다 — 이렇게 해보세요.
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center", marginTop: 10 }}>
-                          <button className="btn ghost sm" onClick={() => go("search", { q })}>상세 검색(필터) →</button>
-                          <button className="btn ghost sm" onClick={() => go("ai-finder")}>AI 도구 찾기 →</button>
-                          <button className="btn primary sm" onClick={() => go("submit")}>+ 이 플랫폼 제보</button>
-                        </div>
-                      </>
-                    )}
-                  </div>
-                )
-                : <div className="card-grid">{flatResults.map((p) => <PlatformCard key={p.id} p={p} />)}</div>}
-            </>
+          {fav ? (
+            /* ★ 즐겨찾기 보기 */
+            <section className="home-sec"><div className="container">
+              <div className="sec-title" style={{ marginTop: 0 }}>내 즐겨찾기 <span className="faint" style={{ fontSize: 14, fontWeight: 600 }}>{favPlatforms.length}개</span>
+                <button className="linklike" style={{ marginLeft: "auto" }} onClick={() => setFav(false)}>홈으로 →</button></div>
+              {favPlatforms.length === 0
+                ? <div className="empty">아직 즐겨찾기한 플랫폼이 없어요. 카드의 ☆를 눌러 저장하세요.</div>
+                : <div className="card-grid">{favPlatforms.map((p) => <PlatformCard key={p.id} p={p} />)}</div>}
+            </div></section>
           ) : (
             <>
-              {recentPlatforms.length >= 2 && (<>
-                <div className="sec-title">🕘 최근 본 플랫폼</div>
-                <div className="hstrip">{recentPlatforms.map((p) => <PlatformCard key={p.id} p={p} />)}</div>
-              </>)}
-              {interestRecs.length > 0 && (<>
-                <div className="sec-title">✨ 내 관심 분야 추천 <button className="linklike" style={{ textTransform: "none", letterSpacing: 0 }} onClick={() => go("onboarding")}>조건 다시 고르기 →</button></div>
-                <div className="hstrip">{interestRecs.map((p) => <PlatformCard key={p.id} p={p} />)}</div>
-              </>)}
-              {newPlatforms.length > 0 && (<>
-                <div className="sec-title">🆕 새로 나온 플랫폼 <button className="linklike" style={{ textTransform: "none", letterSpacing: 0 }} onClick={() => go("weekly")}>주간 아카이브 →</button></div>
-                <div className="hstrip">{newPlatforms.map((p) => <PlatformCard key={p.id} p={p} />)}</div>
-              </>)}
-              <div className="sec-title">분야 한눈에 보기</div>
-              <div className="groups">
+              {/* ── 1a 이번 주 많이 찾은 플랫폼 ── */}
+              <section className="home-sec"><div className="container">
+                <div className="sec-title" style={{ marginTop: 0 }}>이번 주 많이 찾은 플랫폼
+                  <button className="sec-link" onClick={() => go("search")}>전체 보기 →</button></div>
+                <div className="pop-grid">{popular.map((p) => <PlatformCard key={p.id} p={p} />)}</div>
+
+                {recentPlatforms.length >= 2 && (<>
+                  <div className="sec-title">최근 본 플랫폼</div>
+                  <div className="hstrip">{recentPlatforms.map((p) => <PlatformCard key={p.id} p={p} />)}</div>
+                </>)}
+                {interestRecs.length > 0 && (<>
+                  <div className="sec-title">내 관심 분야 추천
+                    <button className="sec-link" onClick={() => go("onboarding")}>조건 다시 고르기 →</button></div>
+                  <div className="hstrip">{interestRecs.map((p) => <PlatformCard key={p.id} p={p} />)}</div>
+                </>)}
+              </div></section>
+
+              {/* ── 1a 분야별로 찾아보기: 그룹별 3열 카드 + 더 보기 ── */}
+              <section className="home-sec alt"><div className="container">
+                <div className="sec-title" style={{ marginTop: 0, marginBottom: 6 }}>분야별로 찾아보기
+                  <button className="sec-link" onClick={() => go("packs")}>업종별 시작 조합 →</button></div>
+                <p className="sec-sub" style={{ margin: "0 0 8px" }}>{categories.length}개 분야 · 그룹별 상위 분야만 먼저 보여드려요</p>
                 {groups.map((g) => {
-                  const cats = categoriesByGroup(g.id);
-                  const cnt = cats.reduce((s, c) => s + (stats.counts.get(c.id) ?? 0), 0);
+                  const cats = [...categoriesByGroup(g.id)].sort((a, b) => (stats.counts.get(b.id) ?? 0) - (stats.counts.get(a.id) ?? 0));
+                  const isOpen = expanded.has(g.id);
+                  const shown = isOpen ? cats : cats.slice(0, 5);
+                  const rest = cats.length - 5;
+                  const total = cats.reduce((s, c) => s + (stats.counts.get(c.id) ?? 0), 0);
                   return (
-                    <button className="gcard" key={g.id} onClick={() => { setGroup(g.id); window.scrollTo({ top: 420, behavior: "smooth" }); }}>
-                      <div className="g-ic">{g.icon}</div><h4>{g.name}</h4>
-                      <div className="g-meta">{cats.length} 분야 · {cnt.toLocaleString()} 플랫폼</div>
-                      <div className="g-cats">{cats.slice(0, 5).map((c) => c.name).join(" · ")}{cats.length > 5 ? " …" : ""}</div>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="banner" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", margin: "6px 0 14px" }}>
-                <span>🧰 무엇부터 붙어야 할지 막막하다면 — 업종별 시작 조합(판매채널+AI 도구)을 정리해 뒀어요.</span>
-                <button className="btn primary sm" onClick={() => go("packs")}>업종별 시작 조합 →</button>
-              </div>
-              <div className="sec-title">디렉토리</div>
-              {shownGroups.map((g) => (
-                <div key={g.id} style={{ marginBottom: 24 }}>
-                  <h3 style={{ fontSize: 16, margin: "18px 0 10px" }}>{g.icon} {g.name}</h3>
-                  {g.id === "ai" && (
-                    <div className="banner" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 10 }}>
-                      <span>🧭 어떤 AI가 필요한지 모르겠다면 — 해결하고 싶은 일만 고르면 시작 조합을 추천해 드려요.</span>
-                      <button className="btn primary sm" onClick={() => go("ai-finder")}>AI 도구 찾기 →</button>
-                    </div>
-                  )}
-                  {categoriesByGroup(g.id).map((c) => {
-                    const isOpen = open.has(c.id);
-                    return (
-                      <div className={`acc ${isOpen ? "open" : ""}`} key={c.id}>
-                        <button className="acc-h" onClick={() => toggleCat(c.id)}>
-                          <span className="ic">{c.icon}</span><span className="nm">{c.name}</span>
-                          <span className="ct">{stats.counts.get(c.id) ?? 0}</span><span className="chev">▸</span>
-                        </button>
-                        {isOpen && (
-                          <div className="acc-b">
-                            {(stats.counts.get(c.id) ?? 0) === 0
-                              ? <div className="empty">이 분야는 아직 비어 있어요. <button className="linklike" onClick={() => go("submit")}>+ 첫 플랫폼 제보하기</button></div>
-                              : <div className="card-grid">{platforms.filter((p) => p.category === c.id).map((p) => <PlatformCard key={p.id} p={p} showCat={false} />)}</div>}
-                          </div>
+                    <div key={g.id} id={`g-${g.id}`} style={{ scrollMarginTop: 80 }}>
+                      <div className="group-h">
+                        <GroupIcon id={g.id} size={18} />
+                        <h3>{g.name}</h3>
+                        <span className="g-ct">{cats.length}개 분야 · {total.toLocaleString()}개</span>
+                      </div>
+                      <div className="cat-grid">
+                        {shown.map((c) => (
+                          <button className="ccard" key={c.id} onClick={() => goCat(c.id)}>
+                            <span style={{ minWidth: 0 }}>
+                              <span className="c-name">{c.name}</span>
+                              <span className="c-desc" style={{ display: "block", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.desc}</span>
+                            </span>
+                            <span className="c-ct">{stats.counts.get(c.id) ?? 0}</span>
+                          </button>
+                        ))}
+                        {rest > 0 && (
+                          <button className="ccard more" onClick={() => toggleExpand(g.id)}>
+                            <span>{isOpen ? "접기 ↑" : `+ ${rest}개 분야 더 보기`}</span>
+                          </button>
                         )}
                       </div>
-                    );
-                  })}
+                    </div>
+                  );
+                })}
+              </div></section>
+
+              {/* ── 1a 도구 섹션: 찾는 걸로 끝나지 않아요 ── */}
+              <section className="home-sec tools"><div className="container">
+                <div className="sec-title" style={{ marginTop: 0 }}>찾는 걸로 끝나지 않아요</div>
+                <div className="tool-grid">
+                  <button className="tcard" onClick={() => go("partners")}>
+                    <IcHandshake size={24} />
+                    <span className="t-title">제휴 매칭</span>
+                    <p>플랫폼과 사업자를 연결해 드립니다. 조건을 등록하면 맞는 파트너를 찾아드려요.</p>
+                    <span className="t-cta">매칭 신청하기 →</span>
+                  </button>
+                  <button className="tcard" onClick={() => go("exchange")}>
+                    <IcExchange size={24} />
+                    <span className="t-title">플랫폼 거래소</span>
+                    <p>운영 중인 스토어·계정·플랫폼을 안전하게 사고팔 수 있는 거래 공간.</p>
+                    <span className="t-cta">거래소 둘러보기 →</span>
+                  </button>
+                  <button className="tcard" onClick={() => go("ai-finder")}>
+                    <IcSparkle size={24} />
+                    <span className="t-title">AI로 찾기</span>
+                    <p>"수공예품을 해외에 팔고 싶어요"처럼 상황을 고르면 맞는 도구 조합을 추천해요.</p>
+                    <span className="t-cta">AI에게 물어보기 →</span>
+                  </button>
                 </div>
-              ))}
+                <div style={{ marginTop: 16, fontSize: 13, color: "var(--faint)" }}>
+                  찾는 플랫폼이 없나요?{" "}
+                  {remoteEnabled
+                    ? <button className="linklike" onClick={() => go("submit")}>+ 플랫폼 제보하기</button>
+                    : <a className="linklike" href={REPORT_URL} target="_blank" rel="noopener noreferrer">+ 플랫폼 제보하기</a>}
+                </div>
+              </div></section>
             </>
           )}
         </main>
@@ -391,7 +396,7 @@ export default function App() {
       )}
       {cmp.count > 0 && view !== "compare" && (
         <div className="container"><div className="cmp-bar">
-          <span className="mono" style={{ color: "var(--brand-soft)" }}>비교 {cmp.count}/4</span>
+          <span style={{ color: "var(--brand)", fontWeight: 700, fontSize: 13 }}>비교 {cmp.count}/4</span>
           <span className="names">{cmpNames}</span>
           <button className="btn ghost sm" onClick={() => cmp.clear()}>비우기</button>
           <button className="btn primary sm" onClick={() => go("compare")}>비교하기 →</button>
