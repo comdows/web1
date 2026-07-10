@@ -61,7 +61,8 @@ export function PlatformCard({ p, showCat = true, fit }: { p: Platform; showCat?
         <Avatar name={p.name} url={p.url} />
         <div style={{ minWidth: 0 }}>
           <h4><button className="pname" onClick={openDetail}>{p.name}</button>
-            {p.new && <Badge kind="new">NEW</Badge>}{fit && <Badge kind="good">{fit}</Badge>}</h4>
+            {p.new && <Badge kind="new">NEW</Badge>}{p.verified && <Badge kind="verify">✓ 검증</Badge>}{fit && <Badge kind="good">{fit}</Badge>}
+            {p.link_status === "dead" && <span title="최근 점검에서 접속 불가 — 확인 필요"><Badge kind="muted">⚠ 링크 확인</Badge></span>}</h4>
           {showCat && cat && <div className="cat">{cat.icon} {cat.name}</div>}
         </div>
         <button className={`star ${on ? "on" : ""}`} aria-label="즐겨찾기"

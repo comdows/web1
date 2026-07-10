@@ -240,7 +240,11 @@ export function PlatformDetail({ id }: { id?: string }) {
         <div className="fact"><div className="k">분야</div><div className="v">{cat?.icon} {cat?.name}</div></div>
         <div className="fact"><div className="k">지역</div><div className="v">{p.region}</div></div>
         <div className="fact"><div className="k">신규 여부</div><div className="v">{p.new ? "🆕 최근 등록" : "기존 등록"}</div></div>
-        <div className="fact"><div className="k">공식 주소</div><div className="v mono" style={{ fontSize: 12, wordBreak: "break-all" }}>{p.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}</div></div>
+        <div className="fact"><div className="k">공식 주소</div><div className="v mono" style={{ fontSize: 12, wordBreak: "break-all" }}>
+          {p.url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+          {p.link_status === "dead" && <span className="est" style={{ color: "var(--warn)" }}> ⚠ 최근 점검 접속 불가</span>}
+          {p.link_checked_at && <span className="faint" style={{ fontSize: 11 }}> · 링크 확인 {p.link_checked_at.slice(0, 7).replace("-", ".")}</span>}
+        </div></div>
         {p.fee_band && (
           <div className="fact"><div className="k">수수료대 <span className="est">추정</span></div><div className="v">
             <Badge kind={FEE_LABEL[p.fee_band].k}>{FEE_LABEL[p.fee_band].l}</Badge>{p.fee_text ? ` ${p.fee_text}` : ""}
