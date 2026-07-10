@@ -2,7 +2,8 @@ import { lazy, Suspense, useEffect, useMemo, useState, useCallback } from "react
 import type { ReactNode, KeyboardEvent } from "react";
 import { groups, categories, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
-import { Logo, PlatformCard, Footer } from "./components";
+import { Logo, PlatformCard, Footer, SuggestInput } from "./components";
+import { RecentQ } from "./lib/suggest";
 import { GroupIcon, IcSearch, IcBell, IcHandshake, IcExchange, IcSparkle } from "./icons";
 import { usePlatforms, usePlatformStats, usePlatformIndex } from "./lib/platforms";
 import { usePopularity } from "./lib/popularity";
@@ -142,7 +143,13 @@ export default function App() {
     history.replaceState(null, "", p.toString() ? `?${p}` : location.pathname);
   }, [view, q, fav]);
 
-  const submitSearch = () => { if (q.trim()) { trackEvent("search", undefined, q.trim()); go("search", { q: q.trim() }); } };
+  const submitSearch = (query?: string) => {
+    const v = (query ?? q).trim();
+    if (!v) return;
+    RecentQ.push(v);
+    trackEvent("search", undefined, v);
+    go("search", { q: v });
+  };
 
   /* 이번 주 많이 찾은 플랫폼 — 인기 집계(0019) 상위, 데이터 없으면 대표 폴백+신규로 채움 */
   const popular = useMemo(() => {
@@ -262,10 +269,10 @@ export default function App() {
               <p className="sub">입점·소싱·홍보·AI까지 — 사업에 필요한 플랫폼을 분야별로 찾아보세요.</p>
               <div className="search">
                 <span className="ico" aria-hidden><IcSearch size={18} /></span>
-                <input value={q} onChange={(e) => setQ(e.target.value)} aria-label="플랫폼·분야 검색"
+                <SuggestInput value={q} onChange={setQ} ariaLabel="플랫폼·분야 검색"
                   placeholder="플랫폼 이름이나 분야를 검색해 보세요 — 예: 스마트스토어, 재능마켓"
-                  onKeyDown={(e) => { if (e.key === "Enter") submitSearch(); }} />
-                <button className="go" onClick={submitSearch}>검색</button>
+                  onSubmitQuery={(v) => submitSearch(v)} onPickCategory={goCat} />
+                <button className="go" onClick={() => submitSearch()}>검색</button>
               </div>
               <div className="intent-chips">
                 <button className="ichip" onClick={() => scrollToGroup("commerce")}>입점하고 싶어요</button>
