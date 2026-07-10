@@ -8,7 +8,7 @@ import { useSession } from "./lib/auth";
 import {
   briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
-  fetchAdminMetrics, fetchFunnel, fetchOutboundCounts, fetchQueueCounts, fetchReferrers, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin,
+  fetchAdminMetrics, fetchFunnel, fetchIntroSuccess, fetchOutboundCounts, fetchQueueCounts, fetchReferrers, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin,
   reviewAutoListed,
   listDealSubmissions, listOperatorClaims,
   adminDeclineInterest, adminIntroduce, cancelCharge, confirmDeposit, createSponsorSlot, declinePendingInterests,
@@ -283,9 +283,11 @@ function AutoListedQueue() {
 function FunnelPanel() {
   const [f, setF] = useState<Awaited<ReturnType<typeof fetchFunnel>>>(null);
   const [refs, setRefs] = useState<Awaited<ReturnType<typeof fetchReferrers>>>([]);
+  const [intro, setIntro] = useState<Awaited<ReturnType<typeof fetchIntroSuccess>>>(null);
   useEffect(() => {
     fetchFunnel().then(setF).catch(() => { /* noop */ });
     fetchReferrers().then(setRefs).catch(() => { /* noop */ });
+    fetchIntroSuccess().then(setIntro).catch(() => { /* noop */ });
   }, []);
   if (!f) return null;
   const pct = (a: number, b: number) => (b > 0 ? Math.round((a / b) * 1000) / 10 : 0);
@@ -307,6 +309,17 @@ function FunnelPanel() {
             {refs.slice(0, 12).map((r) => (
               <Badge key={r.ref} kind="muted">{r.ref} · {r.sessions}</Badge>
             ))}
+          </div>
+        </div>
+      )}
+      {intro && intro.responded > 0 && (
+        <div style={{ marginTop: 10 }}>
+          <div className="frm-note" style={{ marginBottom: 4 }}>소개 후속 응답 {intro.responded}건</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <Badge kind="good">성사 {intro.success}</Badge>
+            <Badge kind="soon">진행 중 {intro.progressing}</Badge>
+            <Badge kind="muted">무산 {intro.no_deal}</Badge>
+            <span className="faint" style={{ fontSize: 12 }}>성사율 {Math.round((intro.success / intro.responded) * 100)}%</span>
           </div>
         </div>
       )}

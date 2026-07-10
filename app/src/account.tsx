@@ -13,13 +13,32 @@ import { FLAGS } from "./config";
 import {
   briefMatchesDeal, cancelDealSubmission, cancelSubmission, closeMyPost, createSubmission,
   deactivateBrief, deleteMyAccount, fetchDeals, listInterestsOnMyPosts, listMyBriefs, listMyCharges, listMyDealInterests,
-  listMyDealSubmissions, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions,
-  partnerRefCode, placeOrder, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
+  listMyDealSubmissions, listMyIntroOutcomes, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions,
+  partnerRefCode, placeOrder, recordIntroOutcome, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
 } from "./lib/api";
 import { bankTransferProvider, fetchBillingSettings } from "./lib/billing";
 import { scoreBriefDeal } from "./lib/match";
 import type { DepositInstructions } from "./lib/billing";
-import type { BuyerBriefRow, DealSubmissionRow, MyCharge, MyInterestRow, MyPostInterest, PartnerPostAdmin, PublicDeal, Submission } from "./lib/api";
+import type { BuyerBriefRow, DealSubmissionRow, IntroOutcomeKind, MyCharge, MyInterestRow, MyPostInterest, PartnerPostAdmin, PublicDeal, Submission } from "./lib/api";
+
+const OUTCOME_LABEL: Record<IntroOutcomeKind, string> = { progressing: "진행 중", success: "성사됨 🎉", no: "성사 안 됨" };
+/* 소개 후 성사·후기 회수(0021) — 성공보수 아닌 품질 신호. 응답하면 갱신 가능. */
+function OutcomePrompt({ refType, refId, current, onDone }: { refType: "partner" | "deal"; refId: string; current?: IntroOutcomeKind; onDone: (o: IntroOutcomeKind) => void }) {
+  const [busy, setBusy] = useState(false);
+  const set = async (o: IntroOutcomeKind) => { setBusy(true); try { await recordIntroOutcome(refType, refId, o); onDone(o); } catch { /* noop */ } finally { setBusy(false); } };
+  if (current) return (
+    <div className="frm-note" style={{ marginTop: 4 }}>응답 감사합니다 — <b>{OUTCOME_LABEL[current]}</b>.
+      {current !== "success" && <> <button className="linklike" disabled={busy} onClick={() => set("success")}>성사로 변경</button></>}</div>
+  );
+  return (
+    <div className="frm-note" style={{ marginTop: 4, display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+      이 소개, 어떻게 됐나요?
+      {(["progressing", "success", "no"] as IntroOutcomeKind[]).map((o) => (
+        <button key={o} className="btn ghost sm" disabled={busy} onClick={() => set(o)}>{OUTCOME_LABEL[o]}</button>
+      ))}
+    </div>
+  );
+}
 
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
 
@@ -194,6 +213,7 @@ export function Account() {
   const [acts, setActs] = useState<{ pp: PartnerPostAdmin[]; ds: DealSubmissionRow[]; pi: MyInterestRow[]; di: MyInterestRow[]; br: BuyerBriefRow[] } | null>(null);
   const [actsErr, setActsErr] = useState(false);
   const [briefDeals, setBriefDeals] = useState<PublicDeal[]>([]); // 브리프 조건 대조용(공개 뷰)
+  const [outcomes, setOutcomes] = useState<Map<string, IntroOutcomeKind>>(new Map()); // 소개 후 성사 응답(0021)
 
   useEffect(() => { setName(profile?.display_name ?? ""); }, [profile?.display_name]);
   useEffect(() => {
@@ -205,6 +225,7 @@ export function Account() {
       .catch(() => { if (alive) { setSubsError(true); setSubs(null); } });
     setActsErr(false);
     listInterestsOnMyPosts().then((r) => { if (alive) setInbox(r); }).catch(() => { /* noop */ });
+    listMyIntroOutcomes().then((m) => { if (alive) setOutcomes(m); }).catch(() => { /* noop */ });
     listMyCharges().then((r) => { if (alive) setCharges(r); }).catch(() => { /* noop */ });
     fetchBillingSettings().then((s) => { if (alive) setBank(s?.bank ?? ""); });
     Promise.all([listMyPartnerPosts(), listMyDealSubmissions(), listMyPartnerInterests(), listMyDealInterests(), listMyBriefs()])
@@ -544,10 +565,14 @@ export function Account() {
               <div style={{ minWidth: 0 }}>🤝 <b>매칭 신청</b> — "{i.partner_posts?.title ?? i.post_id}"
                 {i.status === "declined" && <div className="frm-note">제안자가 다른 상대와 진행했거나 모집을 마감했어요 — 보드의 다른 제안도 살펴보세요.</div>}
                 {i.status === "introduced" && (
-                  <div className="frm-note">
-                    소개 메일이 발송됐어요 — 메일함(스팸함 포함)을 확인하세요.
-                    {FLAGS.contactEmail && <> 24시간 내 미도착 시 <a href={`mailto:${FLAGS.contactEmail}?subject=${encodeURIComponent(`[세모플] 소개 메일 미도착 — ${i.partner_posts?.title ?? ""}`)}`}>문의</a>.</>}
-                  </div>
+                  <>
+                    <div className="frm-note">
+                      소개 메일이 발송됐어요 — 메일함(스팸함 포함)을 확인하세요.
+                      {FLAGS.contactEmail && <> 24시간 내 미도착 시 <a href={`mailto:${FLAGS.contactEmail}?subject=${encodeURIComponent(`[세모플] 소개 메일 미도착 — ${i.partner_posts?.title ?? ""}`)}`}>문의</a>.</>}
+                    </div>
+                    <OutcomePrompt refType="partner" refId={i.id} current={outcomes.get(`partner:${i.id}`)}
+                      onDone={(o) => setOutcomes((m) => new Map(m).set(`partner:${i.id}`, o))} />
+                  </>
                 )}
               </div>
               <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
@@ -564,10 +589,14 @@ export function Account() {
             <div className="sub-item" key={i.id}>
               <div style={{ minWidth: 0 }}>🏦 <b>인수 관심</b> — 매물 {i.deal_id}
                 {i.status === "introduced" && (
-                  <div className="frm-note">
-                    소개 메일이 발송됐어요 — 메일함(스팸함 포함)을 확인하세요.
-                    {FLAGS.contactEmail && <> 24시간 내 미도착 시 <a href={`mailto:${FLAGS.contactEmail}?subject=${encodeURIComponent(`[세모플] 소개 메일 미도착 — ${i.deal_id ?? ""}`)}`}>문의</a>.</>}
-                  </div>
+                  <>
+                    <div className="frm-note">
+                      소개 메일이 발송됐어요 — 메일함(스팸함 포함)을 확인하세요.
+                      {FLAGS.contactEmail && <> 24시간 내 미도착 시 <a href={`mailto:${FLAGS.contactEmail}?subject=${encodeURIComponent(`[세모플] 소개 메일 미도착 — ${i.deal_id ?? ""}`)}`}>문의</a>.</>}
+                    </div>
+                    <OutcomePrompt refType="deal" refId={i.id} current={outcomes.get(`deal:${i.id}`)}
+                      onDone={(o) => setOutcomes((m) => new Map(m).set(`deal:${i.id}`, o))} />
+                  </>
                 )}
               </div>
               <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
