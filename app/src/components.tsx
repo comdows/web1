@@ -4,6 +4,7 @@ import type { Platform } from "./data";
 import { categoryById } from "./data";
 import { useFavs, useCompare, Recent } from "./lib/store";
 import { usePlatforms, usePlatformStats } from "./lib/platforms";
+import { useReviewStats } from "./lib/reviews";
 import { avatarHue, faviconUrl } from "./lib/util";
 import { trackEvent, trackImpression } from "./lib/api";
 import { suggest } from "./lib/suggest";
@@ -56,6 +57,7 @@ export function PlatformCard({ p, showCat = true, fit }: { p: Platform; showCat?
   const on = favs.has(p.id);
   const inCmp = cmp.has(p.id);
   const cat = categoryById(p.category);
+  const rstat = useReviewStats().get(p.id); // 표시 전용 — 정렬에는 반영 안 함(0025)
   useEffect(() => { trackImpression(p.id); }, [p.id]); // 노출 계측(세션당 1회 dedup·벌크)
   const openDetail = () => { trackEvent("click", p.id); go("detail", { id: p.id }); };
   const toggleFav = () => { if (!on) trackEvent("favorite", p.id); favs.toggle(p.id); };
@@ -71,7 +73,7 @@ export function PlatformCard({ p, showCat = true, fit }: { p: Platform; showCat?
           <h4><span className="pname">{p.name}</span>
             {p.new && <Badge kind="new">NEW</Badge>}{p.verified && <Badge kind="verify">✓ 검증</Badge>}{fit && <Badge kind="good">{fit}</Badge>}
             {p.link_status === "dead" && <span title="최근 점검에서 접속 불가 — 확인 필요"><Badge kind="muted">⚠ 링크 확인</Badge></span>}</h4>
-          {showCat && cat && <div className="cat">{cat.name}</div>}
+          {showCat && cat && <div className="cat">{cat.name}{rstat && <span title={`이용 후기 ${rstat.review_count}건 평균`}> · ★{rstat.avg_rating} ({rstat.review_count})</span>}</div>}
         </div>
         <button className={`star ${on ? "on" : ""}`} aria-label="즐겨찾기"
           onClick={(e) => { stop(e); toggleFav(); }}>{on ? "★" : "☆"}</button>

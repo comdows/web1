@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 import { categories, groups, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import hubIntros from "./data/hub-intros.ko.json"; // 분야 허브 편집 인트로(검색 랜딩 안내)
@@ -7,8 +7,10 @@ const HUB: Record<string, { intro: string; pickBy: string[] }> = hubIntros as ne
 import { Avatar, Badge, PlatformCard, ShareButton, SuggestInput } from "./components";
 import { RecentQ } from "./lib/suggest";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
-import { amOperatorOf, createCorrection, createOperatorClaim, getMyClaim, getPlatform, remoteEnabled, trackEvent } from "./lib/api";
-import type { OperatorClaim } from "./lib/api";
+import { amOperatorOf, createCorrection, createOperatorClaim, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent } from "./lib/api";
+import type { OperatorClaim, PublicReview } from "./lib/api";
+import { useReviewStats } from "./lib/reviews";
+import { hasContact } from "./lib/anonymity";
 import { pickRecommended, sortByRelevance, sortByPopularity } from "./lib/search";
 import { usePopularity } from "./lib/popularity";
 import { rankSimilar } from "./lib/match";
@@ -156,6 +158,96 @@ function CorrectionBox({ p }: { p: Platform }) {
 }
 
 /* ─────────────── Platform Detail ─────────────── */
+/* ── 이용 후기(0025) — 게시는 검수(published) 후에만, 작성자 비노출(익명 게시).
+ * 평점은 표시 전용 — 검색 정렬 랭킹에 반영하지 않는다(디렉토리 중립성). */
+const STAR = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
+function ReviewSection({ platformId }: { platformId: string }) {
+  const go = useNav();
+  const { session } = useSession();
+  const stat = useReviewStats().get(platformId);
+  const [reviews, setReviews] = useState<PublicReview[] | null>(null);
+  const [rating, setRating] = useState(5);
+  const [body, setBody] = useState("");
+  const [mineStatus, setMineStatus] = useState<"" | "pending" | "published" | "hidden">("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [sent, setSent] = useState(false);
+  useEffect(() => {
+    setReviews(null); setMineStatus(""); setSent(false); setErr(""); setBody(""); setRating(5);
+    if (!remoteEnabled) return;
+    let alive = true;
+    fetchReviews(platformId).then((r) => { if (alive) setReviews(r); });
+    if (session) {
+      getMyReview(platformId).then((m) => {
+        if (alive && m) { setMineStatus(m.status); setRating(m.rating); setBody(m.body); }
+      }).catch(() => { /* noop */ });
+    }
+    return () => { alive = false; };
+  }, [platformId, session]);
+  if (!remoteEnabled) return null;
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    const text = body.trim();
+    if (text.length < 10) { setErr("후기를 10자 이상 적어 주세요 — 어떤 점이 좋았고 아쉬웠는지가 다음 사업자에게 도움이 돼요."); return; }
+    if (hasContact(text)) { setErr("연락처·이메일·URL·메신저 ID는 적을 수 없어요."); return; }
+    setErr(""); setBusy(true);
+    try { await submitReview(platformId, rating, text); setSent(true); setMineStatus("pending"); }
+    catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(false); }
+  };
+  return (
+    <>
+      <div className="sec-title">이용 후기
+        {stat && <span style={{ textTransform: "none", letterSpacing: 0, marginLeft: 8 }}>★{stat.avg_rating} · {stat.review_count}건</span>}
+      </div>
+      {reviews === null ? <div className="empty">불러오는 중…</div>
+        : reviews.length === 0 ? <div className="empty">아직 게시된 후기가 없어요 — 이용해 보셨다면 첫 후기를 남겨 주세요.</div>
+        : (
+          <div className="sub-list" style={{ marginBottom: 10 }}>
+            {reviews.map((r, i) => (
+              <div className="sub-item" key={i} style={{ alignItems: "flex-start" }}>
+                <div style={{ minWidth: 0 }}>
+                  <span style={{ color: "var(--brand)", fontSize: 13 }} aria-label={`별점 ${r.rating}점`}>{STAR(r.rating)}</span>
+                  <p style={{ margin: "4px 0 0", fontSize: 13.5 }}>{r.body}</p>
+                </div>
+                <span className="mono" style={{ color: "var(--faint)", fontSize: 11, flexShrink: 0 }}>{r.created_at.slice(0, 10)}</span>
+              </div>
+            ))}
+          </div>
+        )}
+      {sent ? <div className="ok" style={{ fontSize: 13 }}>후기가 접수됐어요 — 검수 후 익명으로 게시됩니다.</div>
+        : !session ? <div className="frm-note">후기 작성에는 로그인이 필요해요. <button className="linklike" onClick={() => go("account")}>로그인 →</button></div>
+        : (
+          <form className="frm" onSubmit={submit} style={{ maxWidth: 560 }}>
+            {mineStatus && (
+              <div className="frm-note">
+                {mineStatus === "pending" ? "내 후기가 검수 대기 중이에요 — 아래에서 수정해 다시 제출할 수 있어요."
+                  : "이미 남긴 후기가 있어요 — 수정하면 다시 검수를 거쳐 게시돼요."}
+              </div>
+            )}
+            <div style={{ display: "flex", gap: 4, alignItems: "center" }}>
+              <span style={{ fontSize: 13, fontWeight: 600 }}>별점</span>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button key={n} type="button" className="linklike" aria-label={`${n}점`} aria-pressed={rating === n}
+                  style={{ fontSize: 18, color: n <= rating ? "var(--brand)" : "var(--faint)", textDecoration: "none" }}
+                  onClick={() => setRating(n)}>★</button>
+              ))}
+              <span className="faint" style={{ fontSize: 12.5 }}>{rating}점</span>
+            </div>
+            <label>한 줄 후기 <span style={{ fontWeight: 400, color: "var(--faint)" }}>(10~500자 · 연락처·광고 금지 — 검수 후 익명 게시)</span>
+              <textarea rows={3} value={body} onChange={(e) => setBody(e.target.value)} maxLength={500}
+                placeholder="예: 정산이 빨라서 재고 회전에 좋았어요. 다만 초기 입점 심사가 2주쯤 걸렸습니다." />
+            </label>
+            {err && <div className="err">{err}</div>}
+            <button className="btn primary sm" style={{ alignSelf: "flex-start" }} disabled={busy} type="submit">
+              {mineStatus ? "후기 수정 제출" : "후기 남기기"}
+            </button>
+          </form>
+        )}
+    </>
+  );
+}
+
 export function PlatformDetail({ id }: { id?: string }) {
   const go = useNav();
   const favs = useFavs();
@@ -264,6 +356,8 @@ export function PlatformDetail({ id }: { id?: string }) {
         요율·조건은 카테고리·시기·계약에 따라 다르고 수시로 바뀌므로, 실제 값은 반드시 <b>공식 사이트</b>에서 확인하세요.
         <CorrectionBox p={p} />
       </div>
+
+      <ReviewSection platformId={p.id} />
 
       {related.length > 0 && (() => {
         const alts = related.slice(0, 3);

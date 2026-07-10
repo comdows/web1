@@ -563,6 +563,51 @@ export async function answerDealQuestion(id: string, answer: string, hide = fals
     body: JSON.stringify(hide ? { status: "hidden" } : { answer: answer.trim(), status: "answered", answered_at: new Date().toISOString() }),
   });
 }
+
+/* ── 플랫폼 이용 후기(0025) — 게시는 검수(published) 후, 공개 뷰는 작성자 비노출 ── */
+export interface PublicReview { platform_id: string; rating: number; body: string; created_at: string }
+export async function fetchReviews(platformId: string): Promise<PublicReview[]> {
+  return rest<PublicReview[]>(`v_reviews_public?platform_id=eq.${encodeURIComponent(platformId)}&select=*&limit=30`).catch(() => []);
+}
+export interface ReviewStat { avg_rating: number; review_count: number }
+export async function fetchReviewStats(): Promise<Map<string, ReviewStat>> {
+  const rows = await rest<({ platform_id: string } & ReviewStat)[]>("v_review_stats?select=*").catch(() => [] as ({ platform_id: string } & ReviewStat)[]);
+  return new Map(rows.map((r) => [r.platform_id, { avg_rating: Number(r.avg_rating), review_count: Number(r.review_count) }]));
+}
+export interface MyReview { id: string; rating: number; body: string; status: "pending" | "published" | "hidden" }
+export async function getMyReview(platformId: string): Promise<MyReview | null> {
+  const uid = getSession()?.user.id;
+  if (!uid) return null;
+  const rows = await rest<MyReview[]>(`reviews?platform_id=eq.${encodeURIComponent(platformId)}&user_id=eq.${uid}&select=id,rating,body,status&limit=1`);
+  return rows[0] ?? null;
+}
+/* 1인 1리뷰(unique) — 기존 리뷰가 있으면 갱신하되 재검수(pending)로 되돌린다(RLS도 강제) */
+export async function submitReview(platformId: string, rating: number, body: string): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  const mine = await getMyReview(platformId);
+  if (mine) {
+    await rest(`reviews?id=eq.${mine.id}`, {
+      method: "PATCH", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ rating, body: body.trim(), status: "pending" }),
+    });
+  } else {
+    await rest("reviews", {
+      method: "POST", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ platform_id: platformId, user_id: uid, rating, body: body.trim() }),
+    });
+  }
+}
+export interface PendingReview { id: string; platform_id: string; rating: number; body: string; created_at: string }
+export async function listPendingReviews(): Promise<PendingReview[]> {
+  return rest<PendingReview[]>("reviews?status=eq.pending&select=id,platform_id,rating,body,created_at&order=created_at.asc&limit=100");
+}
+export async function moderateReview(id: string, publish: boolean): Promise<void> {
+  await rest(`reviews?id=eq.${id}`, {
+    method: "PATCH", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ status: publish ? "published" : "hidden", reviewed_at: new Date().toISOString() }),
+  });
+}
 export async function reviewDealSubmission(id: string, patch: {
   status: "approved" | "rejected" | "hold"; review_reason?: string; approved_deal_id?: string;
 }): Promise<void> {
