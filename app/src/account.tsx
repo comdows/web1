@@ -14,7 +14,7 @@ import {
   briefMatchesDeal, cancelDealSubmission, cancelSubmission, closeMyPost, createSubmission,
   deactivateBrief, deleteMyAccount, fetchDeals, fetchOperatorStats, listInterestsOnMyPosts, listMyBriefs, listMyCharges, listMyDealInterests,
   listMyDealSubmissions, listMyIntroOutcomes, listMyOperatedPlatforms, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions, listReceivedProposals,
-  partnerRefCode, placeOrder, recordIntroOutcome, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
+  partnerRefCode, placeOrder, recordIntroOutcome, registerOptout, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
 } from "./lib/api";
 import { bankTransferProvider, fetchBillingSettings } from "./lib/billing";
 import { scoreBriefDeal } from "./lib/match";
@@ -184,6 +184,43 @@ function PrivacyLink() {
 }
 
 /* ── 계정 화면 ────────────────────────────────────────────── */
+/* ── 이메일 수신거부(정보통신망법 §50 — 0015 outreach_optout 공개 등록) ──
+ * 제휴 제안 메일·알림 요약 메일의 수신거부 링크가 도착하는 공개 페이지(로그인 불요).
+ * 등록만 가능하고 목록 조회는 관리자·서버 전용 — 주소 존재 여부가 새어나가지 않는다. */
+export function Optout() {
+  const [email, setEmail] = useState("");
+  const [done, setDone] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    setErr(""); setBusy(true);
+    try { await registerOptout(email); setDone(true); }
+    catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(false); }
+  };
+  return (
+    <main className="page container">
+      <h1>이메일 수신거부</h1>
+      <p className="lead" style={{ maxWidth: 560 }}>
+        입력한 주소로는 세모플이 보내는 <b>제휴 제안 메일과 알림 요약 메일</b>을 더 이상 발송하지 않습니다.
+        (가입 확인·비밀번호 재설정 등 계정 필수 메일은 계속 발송됩니다.)
+      </p>
+      {!remoteEnabled ? <RemoteOffNotice />
+        : done ? <div className="ok">수신거부가 등록됐어요 — 앞으로 이 주소로는 발송하지 않습니다.</div>
+        : (
+          <form className="frm auth-card" style={{ maxWidth: 420 }} onSubmit={submit}>
+            <label>이메일
+              <input type="email" required autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+            </label>
+            {err && <div className="err">{err}</div>}
+            <button className="btn primary" disabled={busy} type="submit">수신거부 등록</button>
+          </form>
+        )}
+    </main>
+  );
+}
+
 /* ── 내 플랫폼(운영자) 대시보드(0023) — 인증 운영자에게만 렌더(목록 비면 숨김).
  * 스탯은 definer RPC(운영자 본인 플랫폼만·30일 집계값만), 받은 제안은 0023 운영자 read 정책. */
 function OperatorDash() {

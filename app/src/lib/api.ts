@@ -908,6 +908,19 @@ export async function reviewOperatorClaim(c: { id: string; platform_id: string; 
   }
 }
 
+/* 이메일 수신거부 등록(0015 outreach_optout — 공개 insert 정책) — 제휴 제안·알림 메일 공통.
+ * 등록 후 조회는 관리자·서버만 가능해, 이미 등록된 주소의 재등록(409)은 성공으로 취급한다. */
+export async function registerOptout(email: string): Promise<void> {
+  try {
+    await rest("outreach_optout", {
+      method: "POST", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ email: email.trim().toLowerCase(), reason: "user_request" }),
+    });
+  } catch (ex) {
+    if ((ex as { status?: number }).status !== 409) throw ex;
+  }
+}
+
 /* ── 운영자 대시보드(0023) — 인증된 운영자에게 내 플랫폼 데이터 개방 ── */
 export interface OperatedPlatform { platform_id: string; granted_at: string }
 export async function listMyOperatedPlatforms(): Promise<OperatedPlatform[]> {

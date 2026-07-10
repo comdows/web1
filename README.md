@@ -62,7 +62,14 @@ backend/
   ③ 이후 수집기는 directUrl 소스(HN 등) + 분야추정 + 신뢰도≥80만 lifecycle=review로 자동 등재 → 관리 콘솔 "🤖 자동 등재 사후 검수"에서 확정/내리기 스팟체크(국내 뉴스는 기사 URL이라 자동 등재 대상 아님 → 일괄 승인으로)
 - [ ] **`0017_measurement.sql` 실행**(계측 보강 — `events.ref`(유입경로) 컬럼 + 퍼널·유입 admin 뷰 `v_funnel_7d`/`v_referrers_7d`. 멱등. 실행 후 방문이 쌓이면 관리 콘솔 "퍼널·유입" 패널에 노출→클릭→외부방문 전환율·유입경로가 채워짐)
 - [ ] **`0018_notifications.sql` 실행**(인앱 알림 — `notifications` 테이블 + RLS(본인만 열람·읽음, 생성은 admin 봇). 멱등. 실행 후 `match-notify` 워크플로가 ①인수 브리프↔신규 매물 ②관심 분야(즐겨찾기 유도) 신규 플랫폼 알림을 넣고, 헬스체크는 관심 플랫폼 죽은 링크를 알림 → 회원 헤더 🔔에 표시. 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요)
-- [ ] (선택) **알림 이메일 발송**(인앱 알림을 이메일로도 — 인프라·법적 준비 후에만): 아웃리치 발송(위)과 동일 스택(Resend + 발신 도메인 인증 + 정보통신망법 §50 수신거부·광고 표기). 현재는 인앱 알림만(발송 인프라 불요). 서버 발송은 별도 Edge Function + 게이트로 추가 예정.
+- [ ] **`0024_notify_email.sql` 실행**(알림 이메일 레이어 — `app_settings 'notify_email'`(기본 **enabled:false**) + `notify_email_log`(사용자당 하루 1통을 unique로 DB에서 강제). 멱등. **실행해도 아무것도 발송되지 않음** — 코드·스위치만 준비되고, 켜는 절차는 아래)
+- [ ] (선택) **알림 이메일 켜기**(인앱 알림 요약을 하루 1통 이메일로 — 인프라·법적 준비 후에만):
+  ① 이메일 발송 서비스 계정(Resend 등) + 발신 도메인 SPF/DKIM/DMARC 인증(아웃리치 발송과 동일 스택)
+  ② `supabase functions deploy send-notify-email` + `supabase secrets set RESEND_API_KEY=... NOTIFY_EMAIL_FROM="세모플 알림 <notify@도메인>" CRON_SECRET=<임의 문자열>`
+  ③ 정보통신망법 §50 대응: 수신거부 링크(`?view=optout` — 앱에 내장, outreach_optout 등록) 실동작 확인 + 처리방침에 알림 메일 항목 반영
+  ④ `app_settings 'notify_email'` → `{"enabled": true, "daily_cap": 1, "from_name": "세모플 알림"}`
+  ⑤ 스케줄: Supabase cron(대시보드 → Integrations → Cron) 또는 notify.yml 마지막에 `curl -X POST <함수URL> -H "x-cron-secret: $CRON_SECRET"` 스텝 추가 — 스위치 off면 호출돼도 skip(무해)
+  발송 정책: 사용자당 하루 1통·최근 7일 미읽음만·본문은 "미읽음 N건" 요약뿐(알림 원문 비포함, 링크는 알림 센터)·수신거부 대조 후 제외
 - [ ] **`0019_popularity.sql` 실행**(검색·추천 행동신호 — 공개 인기 집계 뷰 `v_platform_popularity`. 멱등. platform_id·score만 노출(개인 행동로그 비노출)·세션 distinct 집계. 실행 후 방문이 쌓이면 검색 "인기순" 정렬·관련도 2차 보정·추천이 자동 반영. 데이터 적을 땐 효과 미미)
 - [ ] **`0020_freshness.sql` 실행**(링크 신선도 — `platforms.link_status`/`link_checked_at`. 멱등. 실행 후 월간 헬스체크가 링크 생존을 기록 → 카드/상세에 "⚠ 링크 확인"·"검증" 배지 노출. 죽은 링크 관심 등록자 알림은 기존 대로)
 - [ ] **`0021_intro_outcomes.sql` 실행**(소개 후 성사·후기 — `intro_outcomes` 테이블 + RLS(본인만) + `v_intro_success` 관리 요약. 멱등. 실행 후 소개 완료된 매칭에 계정 "내 활동"에서 성사 응답을 받고 관리 콘솔에 성사율 표시)

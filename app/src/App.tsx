@@ -27,6 +27,7 @@ const Packs      = lazy(() => import("./growth").then((m) => ({ default: m.Packs
 const Terms      = lazy(() => import("./legal").then((m) => ({ default: m.Terms })));
 const Privacy    = lazy(() => import("./legal").then((m) => ({ default: m.Privacy })));
 const Notifications = lazy(() => import("./notifications").then((m) => ({ default: m.Notifications })));
+const Optout     = lazy(() => import("./account").then((m) => ({ default: m.Optout })));
 import { useSession } from "./lib/auth";
 import { fetchRecentPlatforms, remoteEnabled, rest, trackEvent, unreadNotifCount } from "./lib/api";
 
@@ -68,6 +69,7 @@ const VIEW_TITLES: Partial<Record<ViewName, string>> = {
   onboarding: "맞춤 추천", account: "계정", submit: "플랫폼 제보", admin: "관리 콘솔",
   terms: "이용약관", privacy: "개인정보처리방침", "deal-guide": "양수도 가이드", "value-check": "가치 자가 진단",
   "ai-finder": "AI 도구 찾기", weekly: "새로 나온 플랫폼·AI", packs: "업종별 시작 조합",
+  optout: "이메일 수신거부",
 };
 
 export default function App() {
@@ -260,6 +262,7 @@ export default function App() {
         : view === "terms" ? <Terms />
         : view === "privacy" ? <Privacy />
         : view === "notifications" ? <Notifications />
+        : view === "optout" ? <Optout />
         : (
         <main>
           {/* ── 1a 히어로: 검색 + 의도 칩 + 지표 스트립을 한 시각 단위로 ── */}
