@@ -51,14 +51,16 @@ interface DbPlatform {
   url: string; blurb: string; is_new: boolean;
   verified?: boolean; fee_band?: "low" | "mid" | "high" | null; fee_text?: string | null;
   settle_text?: string | null; enter_text?: string | null; strength?: string | null;
+  link_status?: "ok" | "warn" | "dead" | null; link_checked_at?: string | null;
 }
-const PLATFORM_COLS = "id,name,category_id,region,url,blurb,is_new,verified,fee_band,fee_text,settle_text,enter_text,strength";
+const PLATFORM_COLS = "id,name,category_id,region,url,blurb,is_new,verified,fee_band,fee_text,settle_text,enter_text,strength,link_status,link_checked_at";
 const fromDb = (r: DbPlatform): Platform => ({
   id: r.id, name: r.name, category: r.category_id,
   region: r.region === "overseas" ? "해외" : "국내",
   url: r.url, blurb: r.blurb, new: r.is_new || undefined,
   verified: r.verified || undefined, fee_band: r.fee_band ?? undefined, fee_text: r.fee_text ?? undefined,
   settle_text: r.settle_text ?? undefined, enter_text: r.enter_text ?? undefined, strength: r.strength ?? undefined,
+  link_status: r.link_status ?? undefined, link_checked_at: r.link_checked_at ?? undefined,
 });
 
 export interface SearchParams {

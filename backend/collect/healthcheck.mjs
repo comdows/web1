@@ -34,38 +34,68 @@ else console.log("SUPABASE env 없음 — 정적 시드로 점검");
 /* 죽은 링크가 있으면 그 플랫폼을 즐겨찾기(alert=true)한 회원에게 인앱 알림(notifications, 0018)을 넣는다.
  * admin 봇 필요(favorites admin read + notifications admin insert). 봇 Secrets 없으면 조용히 건너뜀(하위호환).
  * 멱등: unique(user_id, kind, ref_id) + ignore-duplicates → 같은 플랫폼 재점검해도 재알림 안 함. */
-async function notifyFavoritersOfDead(deadResults) {
+/* admin 봇 세션(1회 로그인 + 롤 확인) — 링크 상태 기록과 관심 등록자 알림이 공유. 봇 Secrets 없으면 null. */
+let _botCtx;
+async function botCtx() {
+  if (_botCtx !== undefined) return _botCtx;
   const email = process.env.ADMIN_BOT_EMAIL, pw = process.env.ADMIN_BOT_PASSWORD;
   const SB_URL = process.env.SUPABASE_URL, SB_KEY = process.env.SUPABASE_ANON_KEY;
-  if (!email || !pw || !SB_URL || !SB_KEY || deadResults.length === 0) return;
-  const rest = async (token, pathQ, init = {}) => {
-    const res = await fetch(`${SB_URL}/rest/v1/${pathQ}`, {
-      ...init, headers: { apikey: SB_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init.headers || {}) },
-    });
-    if (!res.ok) throw new Error(`${res.status} ${pathQ.split("?")[0]}: ${await res.text()}`);
-    const t = await res.text(); return t ? JSON.parse(t) : undefined;
-  };
+  if (!email || !pw || !SB_URL || !SB_KEY) { _botCtx = null; return null; }
   const lr = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
     method: "POST", headers: { apikey: SB_KEY, "Content-Type": "application/json" },
     body: JSON.stringify({ email, password: pw }),
   });
   if (!lr.ok) throw new Error(`봇 로그인 실패: ${lr.status}`);
   const token = (await lr.json()).access_token;
-  // 센티널: 봇이 admin 롤이 아니면 favorites admin-read가 0행이 돼 조용히 아무도 안 알림 → 런 실패시킴
+  const rest = async (pathQ, init = {}) => {
+    const res = await fetch(`${SB_URL}/rest/v1/${pathQ}`, {
+      ...init, headers: { apikey: SB_KEY, Authorization: `Bearer ${token}`, "Content-Type": "application/json", ...(init.headers || {}) },
+    });
+    if (!res.ok) throw new Error(`${res.status} ${pathQ.split("?")[0]}: ${await res.text()}`);
+    const t = await res.text(); return t ? JSON.parse(t) : undefined;
+  };
+  // 센티널: 봇이 admin 롤이 아니면 admin-only 동작이 조용히 0행 → 런 실패시킴
   const sub = JSON.parse(Buffer.from(token.split(".")[1], "base64url").toString()).sub;
-  const me = await rest(token, `profiles?id=eq.${sub}&select=role`);
-  if (me[0]?.role !== "admin") throw new Error(`봇 계정이 admin 롤이 아님(role=${me[0]?.role ?? "없음"}) — 알림 신뢰 불가`);
+  const me = await rest(`profiles?id=eq.${sub}&select=role`);
+  if (me[0]?.role !== "admin") throw new Error(`봇 계정이 admin 롤이 아님(role=${me[0]?.role ?? "없음"}) — 신뢰 불가`);
+  _botCtx = { rest };
+  return _botCtx;
+}
+const chunk = (a, n) => { const o = []; for (let i = 0; i < a.length; i += n) o.push(a.slice(i, i + n)); return o; };
 
+/* 링크 생존 상태를 플랫폼 행에 기록(ok/warn/dead + 확인시각) → 카드/상세 신선도 배지(0020).
+ * 회복(dead→ok)도 반영하려 세 상태 모두 기록. id 슬러그는 in.() 안전. 봇 Secrets 없으면 생략. */
+async function writeLinkStatus(results) {
+  const ctx = await botCtx();
+  if (!ctx) return;
+  const now = new Date().toISOString();
+  const byState = { ok: [], warn: [], dead: [] };
+  for (const r of results) if (byState[r.state]) byState[r.state].push(r.p.id);
+  for (const st of ["ok", "warn", "dead"]) {
+    for (const ids of chunk(byState[st], 100)) {
+      await ctx.rest(`platforms?id=in.(${ids.join(",")})`, {
+        method: "PATCH", headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ link_status: st, link_checked_at: now }),
+      });
+    }
+  }
+  console.log(`✓ 링크 상태 기록 — ok ${byState.ok.length}·warn ${byState.warn.length}·dead ${byState.dead.length}`);
+}
+
+async function notifyFavoritersOfDead(deadResults) {
+  if (FIXTURE_MODE || deadResults.length === 0) return;
+  const ctx = await botCtx();
+  if (!ctx) return;
   const byId = new Map(deadResults.map((r) => [r.p.id, r.p]));
   const ids = [...byId.keys()];
-  const favs = await rest(token, `favorites?alert=is.true&platform_id=in.(${ids.join(",")})&select=user_id,platform_id`);
+  const favs = await ctx.rest(`favorites?alert=is.true&platform_id=in.(${ids.join(",")})&select=user_id,platform_id`);
   if (!favs.length) { console.log("죽은 링크 관심 등록자 없음 — 알림 생략"); return; }
   const notifs = favs.map((f) => ({
     user_id: f.user_id, kind: "fav_change", ref_type: "platform", ref_id: f.platform_id,
     title: "관심 플랫폼 링크 확인 필요",
     body: `${byId.get(f.platform_id)?.name ?? f.platform_id}의 링크가 접속되지 않아요 — 대체 플랫폼을 찾아보세요.`,
   }));
-  await rest(token, "notifications?on_conflict=user_id,kind,ref_id", {
+  await ctx.rest("notifications?on_conflict=user_id,kind,ref_id", {
     method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
     body: JSON.stringify(notifs),
   });
@@ -129,5 +159,6 @@ if (dead.length > 0 && process.env.GITHUB_TOKEN && process.env.GITHUB_REPOSITORY
   console.log(res.ok ? "✓ 이슈 생성" : `이슈 생성 실패: ${res.status}`);
 }
 
-// 죽은 링크의 관심 등록자에게 인앱 알림(봇 Secrets 있을 때만)
+// 링크 상태를 플랫폼에 기록(신선도 배지) + 죽은 링크 관심 등록자 알림(봇 Secrets 있을 때만)
+await writeLinkStatus(results);
 await notifyFavoritersOfDead(dead);
