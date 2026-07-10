@@ -13,14 +13,14 @@ import {
   listDealSubmissions, listOperatorClaims,
   adminDeclineInterest, adminIntroduce, cancelCharge, confirmDeposit, createSponsorSlot, declinePendingInterests,
   listAdminCharges, listPartnerPosts, listSponsorSlotsAdmin, listSubmissions, listSubscriptionsAdmin,
-  answerDealQuestion, listPendingDealQuestions, setDealVerified,
+  answerDealQuestion, listPendingDealQuestions, listPendingReviews, moderateReview, setDealVerified,
   markOwnerConfirmed, partnerRefCode, publishDeal, refundCharge, remoteEnabled,
   reviewDealSubmission, reviewOperatorClaim, reviewPartnerPost, reviewSubmission,
   transitionPlatform, updateDealStatus, updatePlatform,
 } from "./lib/api";
 import type {
   AdminChargeRow, BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin,
-  PendingDealQ, SponsorSlotAdmin, Submission, SubscriptionAdmin,
+  PendingDealQ, PendingReview, SponsorSlotAdmin, Submission, SubscriptionAdmin,
 } from "./lib/api";
 import { checkAnonymity } from "./lib/anonymity";
 import { scoreBriefDeal } from "./lib/match";
@@ -770,6 +770,49 @@ function DealQAQueue() {
   );
 }
 
+/* ── ⭐ 리뷰 검수 큐(0025) — pending 후기를 게시(published)/숨김(hidden). 공개는 익명(작성자 비노출). ── */
+function ReviewQueue() {
+  const [items, setItems] = useState<PendingReview[] | null>(null);
+  const [busy, setBusy] = useState("");
+  const reload = useCallback(() => {
+    listPendingReviews().then(setItems).catch(() => setItems(null));
+  }, []);
+  useEffect(reload, [reload]);
+  const act = async (id: string, publish: boolean) => {
+    setBusy(id);
+    try { await moderateReview(id, publish); reload(); }
+    catch (ex) { alert(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(""); }
+  };
+  if (items === null) return <div className="empty">리뷰 큐를 불러오지 못했어요(0025 마이그레이션 필요 여부 확인).</div>;
+  if (items.length === 0) return <div className="empty">대기 중인 후기가 없습니다 ✓</div>;
+  return (
+    <>
+      {items.map((r) => {
+        const p = localPlatforms.find((x) => x.id === r.platform_id);
+        const anon = checkAnonymity(r.body);
+        return (
+          <div className="sub-item" key={r.id} style={{ alignItems: "flex-start" }}>
+            <div style={{ minWidth: 0 }}>
+              <b>{p?.name ?? r.platform_id}</b>{" "}
+              <span style={{ color: "var(--brand)", fontSize: 13 }}>{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>{" "}
+              <span className="mono" style={{ color: "var(--faint)", fontSize: 11 }}>{r.created_at.slice(0, 10)}</span>
+              <p style={{ margin: "4px 0 0", fontSize: 13 }}>{r.body}</p>
+              {anon.length > 0 && (
+                <div className="frm-note">🕶️ 점검: {anon.map((f) => `"${f.snippet}" (${f.hint})`).join(" · ")} — 연락처·광고성이면 숨김 처리하세요.</div>
+              )}
+            </div>
+            <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+              <button className="btn primary sm" disabled={busy === r.id} onClick={() => act(r.id, true)}>✓ 게시</button>
+              <button className="btn ghost sm" disabled={busy === r.id} onClick={() => act(r.id, false)}>숨김</button>
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 /* ── 💳 과금 운영(0011·0012) — 전 청구 뷰(v_admin_charges) 기반: 입금 대기·취소·결제 완료·환불.
  * FLAGS와 무관하게 상시 렌더(오픈 전 리허설) — 권한은 RLS is_admin이 강제. */
 const chargeKindLabel = (c: { kind: string; fee_tier: string | null }) =>
@@ -1327,6 +1370,9 @@ export function Admin() {
 
       <div className="sec-title" id="q-dealqa">💬 매물 질문 답변 큐 (익명 Q&A — 검수 후 게시)</div>
       <DealQAQueue />
+
+      <div className="sec-title" id="q-review">⭐ 리뷰 검수 큐 (이용 후기 — 검수 후 익명 게시)</div>
+      <ReviewQueue />
 
       <div className="sec-title" id="q-operator">🏷 운영자 인증 신청{counts?.operator ? ` · ${counts.operator}건` : ""}</div>
       <OperatorClaimQueue />
