@@ -1,6 +1,8 @@
-/* 매칭·관심 알림 생성 — GitHub Actions(notify.yml)가 주기 실행. 두 종류의 인앱 알림(notifications, 0018)을 만든다:
+/* 매칭·관심 알림 생성 — GitHub Actions(notify.yml)가 주기 실행. 인앱 알림(notifications, 0018)을 만든다:
  *   1) deal_match: 활성 인수 브리프(buyer_briefs.active) × 공개 매물(deals.open) 조건 매칭 → 브리프 소유자.
  *   2) cat_new:    즐겨찾기에서 유도한 "관심 분야"에 신규(is_new) 플랫폼 등재 → 즐겨찾기 소유자(사용자당 상한).
+ *   2.5) fav_news: 즐겨찾기한 플랫폼의 최근 7일 소식(platform_news, 0027) → 즐겨찾기 소유자(사용자당 상한).
+ *   3) sub_expiry: 구독 만료 임박(D-7) 갱신 안내(0026).
  * "접속해야만 확인" 문제를 오프사이트 인프라 없이 해소. (이메일 발송은 게이트 뒤 별도 — README 참고)
  *
  * 멱등: notifications.unique(user_id, kind, ref_id) + PostgREST on_conflict ignore-duplicates →
@@ -58,12 +60,13 @@ async function rest(token, pathQ, init = {}) {
 const CAT_NEW_CAP = 5; // 사용자당 1회 실행에서 "관심 분야 신규" 알림 상한(플러딩 방지 — 나머지는 다음 실행에 dedup으로 이어짐)
 
 /* ── 데이터 로드 ── */
-let briefs, deals, favorites, platforms, expiring, token;
+let briefs, deals, favorites, platforms, expiring, news, token;
 if (FIXTURE) {
   const fs = await import("node:fs");
   const fx = JSON.parse(fs.readFileSync(FIXTURE, "utf8"));
   briefs = fx.briefs || []; deals = fx.deals || [];
   favorites = fx.favorites || []; platforms = fx.platforms || []; expiring = fx.expiring || [];
+  news = fx.news || [];
 } else {
   token = await login();
   await assertAdmin(token);
@@ -73,8 +76,11 @@ if (FIXTURE) {
   platforms = await rest(token, "platforms?select=id,name,category_id,is_new&limit=5000");
   // 만료 임박 구독(0026 v_expiring_subs — admin 뷰). 뷰 미적용(마이그레이션 전) DB에서도 잡이 죽지 않게 폴백.
   expiring = await rest(token, "v_expiring_subs?select=user_id,plan_id,current_period_end").catch(() => []);
+  // 최근 7일 수집된 플랫폼 소식(0027) — 미적용 DB 폴백. published_at은 결측 가능해 created_at(수집 시각) 기준.
+  const since = new Date(Date.now() - 7 * 86400e3).toISOString();
+  news = await rest(token, `platform_news?created_at=gte.${since}&select=id,platform_id,title&order=created_at.desc&limit=1000`).catch(() => []);
 }
-console.log(`활성 브리프 ${briefs.length} · 공개 매물 ${deals.length} · 즐겨찾기 ${favorites.length} · 플랫폼 ${platforms.length} · 만료 임박 구독 ${(expiring || []).length}`);
+console.log(`활성 브리프 ${briefs.length} · 공개 매물 ${deals.length} · 즐겨찾기 ${favorites.length} · 플랫폼 ${platforms.length} · 만료 임박 구독 ${(expiring || []).length} · 최근 소식 ${(news || []).length}`);
 
 const notifs = [];
 
@@ -116,6 +122,29 @@ for (const [uid, favSet] of favByUser) {
     if (added >= CAT_NEW_CAP) break;
   }
 }
+/* 2.5) 즐겨찾기 플랫폼의 최근 소식(0027 platform_news) — 사용자당 상한(플러딩 방지),
+ *      ref_id=소식 id → 같은 기사로는 재실행해도 1회만(멱등). 링크는 플랫폼 상세(소식 섹션). */
+const FAV_NEWS_CAP = 3;
+const nameById = new Map(platforms.map((p) => [p.id, p.name]));
+const newsByPlatform = new Map(); // platform_id → [소식] (로드가 최신순이라 그대로 최신 우선)
+for (const n of news || []) { const a = newsByPlatform.get(n.platform_id) || []; a.push(n); newsByPlatform.set(n.platform_id, a); }
+for (const [uid, favSet] of favByUser) {
+  let added = 0;
+  for (const pid of favSet) {
+    for (const n of newsByPlatform.get(pid) || []) {
+      if (added >= FAV_NEWS_CAP) break;
+      notifs.push({
+        user_id: uid, kind: "fav_news", ref_type: "news", ref_id: String(n.id),
+        title: `즐겨찾기한 ${nameById.get(pid) || pid} 소식이 있어요`,
+        body: (n.title || "").slice(0, 120),
+        url: `?view=detail&id=${pid}`,
+      });
+      added++;
+    }
+    if (added >= FAV_NEWS_CAP) break;
+  }
+}
+
 /* 3) 구독 만료 임박(D-7) — 자동결제가 없는 구조라 갱신 주문을 인앱으로 안내(수익화 v2).
  *    ref_id에 만료일을 넣어 "같은 주기엔 1회만" 알림(주기 갱신되면 만료일이 바뀌어 새 알림). */
 const PLAN_KO = { pro: "Pro 멤버십", buyer: "인수자 멤버십" };
@@ -129,7 +158,7 @@ for (const e of expiring || []) {
     url: "?view=account",
   });
 }
-console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new + sub_expiry)`);
+console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new + fav_news + sub_expiry)`);
 
 if (DRY) {
   for (const n of notifs.slice(0, 30)) console.log(`  + ${n.user_id.slice(0, 8)}… ← ${n.ref_id}: ${n.title}`);

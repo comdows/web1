@@ -5,10 +5,10 @@ import type { Platform } from "./data";
 import hubIntros from "./data/hub-intros.ko.json"; // 분야 허브 편집 인트로(검색 랜딩 안내)
 const HUB: Record<string, { intro: string; pickBy: string[] }> = hubIntros as never;
 import { Avatar, Badge, PlatformCard, ShareButton, SuggestInput } from "./components";
-import { RecentQ } from "./lib/suggest";
+import { RecentQ, fuzzyCorrect } from "./lib/suggest";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
-import { amOperatorOf, createCorrection, createOperatorClaim, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent } from "./lib/api";
-import type { OperatorClaim, PublicReview } from "./lib/api";
+import { amOperatorOf, createCorrection, createOperatorClaim, fetchPlatformNews, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent } from "./lib/api";
+import type { OperatorClaim, PlatformNews, PublicReview } from "./lib/api";
 import { useReviewStats } from "./lib/reviews";
 import { hasContact } from "./lib/anonymity";
 import { pickRecommended, sortByRelevance, sortByPopularity } from "./lib/search";
@@ -158,6 +158,35 @@ function CorrectionBox({ p }: { p: Platform }) {
 }
 
 /* ─────────────── Platform Detail ─────────────── */
+/* ── 최근 소식(0027) — 수집기가 연결한 이 플랫폼 관련 공개 뉴스(있을 때만 렌더) ── */
+function NewsSection({ platformId }: { platformId: string }) {
+  const [news, setNews] = useState<PlatformNews[]>([]);
+  useEffect(() => {
+    setNews([]);
+    if (!remoteEnabled) return;
+    let alive = true;
+    fetchPlatformNews(platformId).then((n) => { if (alive) setNews(n); });
+    return () => { alive = false; };
+  }, [platformId]);
+  if (news.length === 0) return null;
+  return (
+    <>
+      <div className="sec-title">최근 소식</div>
+      <div className="sub-list" style={{ marginBottom: 10 }}>
+        {news.map((n) => (
+          <div className="sub-item" key={n.url}>
+            <div style={{ minWidth: 0 }}>
+              <a href={n.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 13.5 }}>{n.title} ↗</a>
+              <div className="frm-note">{n.source}{n.published_at ? ` · ${n.published_at.slice(0, 10)}` : ""}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="sub faint" style={{ fontSize: 12, marginTop: -4 }}>외부 매체 기사 링크입니다 — 내용은 각 매체 책임이며 세모플의 평가가 아닙니다.</p>
+    </>
+  );
+}
+
 /* ── 이용 후기(0025) — 게시는 검수(published) 후에만, 작성자 비노출(익명 게시).
  * 평점은 표시 전용 — 검색 정렬 랭킹에 반영하지 않는다(디렉토리 중립성). */
 const STAR = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
@@ -356,6 +385,8 @@ export function PlatformDetail({ id }: { id?: string }) {
         요율·조건은 카테고리·시기·계약에 따라 다르고 수시로 바뀌므로, 실제 값은 반드시 <b>공식 사이트</b>에서 확인하세요.
         <CorrectionBox p={p} />
       </div>
+
+      <NewsSection platformId={p.id} />
 
       <ReviewSection platformId={p.id} />
 
@@ -569,7 +600,12 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
             </div>
           )}
           {results.length === 0
-            ? <div className="empty">조건에 맞는 플랫폼이 없습니다. 필터를 줄여보세요. 찾는 플랫폼이 없다면 <button className="linklike" onClick={() => go("submit")}>+ 제보</button>해 주시면 검수 후 등재해 드려요.</div>
+            ? <div className="empty">
+                조건에 맞는 플랫폼이 없습니다.
+                {(() => { const fix = q.trim() ? fuzzyCorrect(q, platforms) : null; // 오타 교정(자모 편집거리) — 0건일 때만 계산
+                  return fix ? <> 혹시 <button className="linklike" onClick={() => setQ(fix)}><b>{fix}</b></button> 을(를) 찾으셨나요?</> : null; })()}
+                {" "}필터를 줄여보세요. 찾는 플랫폼이 없다면 <button className="linklike" onClick={() => go("submit")}>+ 제보</button>해 주시면 검수 후 등재해 드려요.
+              </div>
             : <div className="card-grid">{results.slice(0, 300).map((p) => <PlatformCard key={p.id} p={p} />)}</div>}
           {results.length > 300 && <div className="result-meta">상위 300개 표시 · 검색어·필터로 좁혀보세요.</div>}
         </div>

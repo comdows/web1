@@ -996,6 +996,14 @@ export async function registerOptout(email: string): Promise<void> {
   }
 }
 
+/* ── 플랫폼 소식(0027) — 수집기가 연결한 공개 뉴스, 상세 "최근 소식" 섹션용 ── */
+export interface PlatformNews { title: string; url: string; source: string; published_at: string | null }
+export async function fetchPlatformNews(platformId: string): Promise<PlatformNews[]> {
+  return rest<PlatformNews[]>(
+    `platform_news?platform_id=eq.${encodeURIComponent(platformId)}&select=title,url,source,published_at&order=published_at.desc.nullslast&limit=5`,
+  ).catch(() => []);
+}
+
 /* ── 운영자 대시보드(0023) — 인증된 운영자에게 내 플랫폼 데이터 개방 ── */
 export interface OperatedPlatform { platform_id: string; granted_at: string }
 export async function listMyOperatedPlatforms(): Promise<OperatedPlatform[]> {

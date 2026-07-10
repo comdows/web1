@@ -1,6 +1,7 @@
 /* 검색 관련도 — 기본 정렬 'relevance'가 no-op이던 문제 해결(감사2 P1).
  * 이름 정확일치 > 이름 시작 > 이름 포함 > 분야명 > 소개문, 토큰별 합산. */
 import { categoryById } from "../data";
+import { expandTerm } from "./suggest";
 import type { Platform } from "../data";
 
 export function scorePlatform(query: string, p: Platform): number {
@@ -12,11 +13,15 @@ export function scorePlatform(query: string, p: Platform): number {
   let score = 0;
   for (const t of q.split(/\s+/)) {
     if (!t) continue;
-    if (name === t) score += 100;
-    else if (name.startsWith(t)) score += 60;
-    else if (name.includes(t)) score += 40;
-    if (cat.includes(t)) score += 20;
-    if (blurb.includes(t)) score += 10;
+    // 원어 1.0 → 동의어 0.5 가중(동의어로 넓히되 원어 결과가 항상 위)
+    expandTerm(t).forEach((w, wi) => {
+      const m = wi === 0 ? 1 : 0.5;
+      if (name === w) score += 100 * m;
+      else if (name.startsWith(w)) score += 60 * m;
+      else if (name.includes(w)) score += 40 * m;
+      if (cat.includes(w)) score += 20 * m;
+      if (blurb.includes(w)) score += 10 * m;
+    });
   }
   return score;
 }
