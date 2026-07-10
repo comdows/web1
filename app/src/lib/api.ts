@@ -323,6 +323,11 @@ export interface PublicDeal {
 export async function fetchDeals(): Promise<PublicDeal[]> {
   return rest<PublicDeal[]>("v_deals_public?select=*&order=posted.desc&limit=100");
 }
+/* 매물 단건(코드명 영구 링크용) — 없거나 마감이면 null */
+export async function fetchDeal(id: string): Promise<PublicDeal | null> {
+  const rows = await rest<PublicDeal[]>(`v_deals_public?id=eq.${encodeURIComponent(id)}&select=*&limit=1`).catch(() => [] as PublicDeal[]);
+  return rows[0] ?? null;
+}
 export interface DealSubPayload {
   category_id: string; region: "domestic" | "overseas"; revenue_band: string;
   mode: string; summary: string; highlights: string; sale_reason: string;
@@ -989,6 +994,14 @@ export async function registerOptout(email: string): Promise<void> {
   } catch (ex) {
     if ((ex as { status?: number }).status !== 409) throw ex;
   }
+}
+
+/* ── 플랫폼 소식(0027) — 수집기가 연결한 공개 뉴스, 상세 "최근 소식" 섹션용 ── */
+export interface PlatformNews { title: string; url: string; source: string; published_at: string | null }
+export async function fetchPlatformNews(platformId: string): Promise<PlatformNews[]> {
+  return rest<PlatformNews[]>(
+    `platform_news?platform_id=eq.${encodeURIComponent(platformId)}&select=title,url,source,published_at&order=published_at.desc.nullslast&limit=5`,
+  ).catch(() => []);
 }
 
 /* ── 운영자 대시보드(0023) — 인증된 운영자에게 내 플랫폼 데이터 개방 ── */

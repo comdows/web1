@@ -2,10 +2,14 @@
  *
  * 흐름: 소스 수집(RSS/API) → 정규화 → 중복 제거(기존 등재 + 봇의 과거 제보) → 봇 계정으로
  * submissions에 후보 투입 → 관리 콘솔 "제보 검수 큐"에서 사람이 승인해야만 등재된다(자동 등재 없음).
+ * 부가(G-C): 국내 뉴스 기사 제목이 "기존 등재 플랫폼"과 매칭되면 platform_news(0027)로 연결
+ *   — 신규 후보 플로우와 독립이며, 실패해도 후보 투입 결과에 영향 없음.
  *
  * 필요 환경변수(GitHub Secrets):
  *   SUPABASE_URL, SUPABASE_ANON_KEY  — 공개 anon 키(서비스 키 아님)
  *   BOT_EMAIL, BOT_PASSWORD          — 사이트에서 가입한 봇 계정(일반 회원 — RLS로 본인 제보만 가능)
+ *   ADMIN_BOT_EMAIL, ADMIN_BOT_PASSWORD (선택) — 소식(platform_news) 투입용 admin 봇(notify·digest와 동일 계정).
+ *     미설정이면 소식 매핑만 건너뛴다(후보 수집은 정상 동작).
  *
  * 로컬 검증: node collect.mjs --dry [--fixture 디렉토리]
  *   --dry: 수집·중복제거까지만 하고 출력(DB 미접속·미투입)
@@ -102,6 +106,7 @@ function parseAtom(xml) {
 function parseRss(xml) {
   return blocks(xml, "item").map((e) => ({
     name: decode(field(e, "title")), url: decode(field(e, "link")), desc: decode(field(e, "description")).slice(0, 160),
+    pub: decode(field(e, "pubDate")),
   }));
 }
 function parseHN(json) {
@@ -205,20 +210,100 @@ function confidence(c) {
 /* 개별 소스 실패는 흡수하되(일시 장애·포맷 변경 가능성), 전 소스 동시 실패는
  * 수집기 자체의 고장(네트워크·차단·파서 붕괴)이므로 런을 실패시켜 알림을 받는다 — 조용한 수집 정체 방지 */
 let sourceFails = 0;
+/* 국내 뉴스 원문 항목(제목 전체 보존 — NAME_CUT 미적용). 기존 플랫폼 소식 매핑(G-C)용. */
+const newsRaw = [];
+function takeItems(items, src) {
+  if (src.region === "domestic") {
+    for (const it of items) {
+      if (it.name && it.url) newsRaw.push({ title: it.name.trim(), url: it.url, pub: it.pub || "", sourceLabel: src.label });
+    }
+  }
+  return normalize(items, src);
+}
 async function fetchSource(src) {
   if (FIXTURE_DIR) {
     const p = path.join(FIXTURE_DIR, src.fixture);
     if (!fs.existsSync(p)) return [];
-    return normalize(src.parse(fs.readFileSync(p, "utf8")), src);
+    return takeItems(src.parse(fs.readFileSync(p, "utf8")), src);
   }
   try {
     const res = await fetch(src.url, { headers: { "User-Agent": "semopl-collector/1.0 (+https://comdows.github.io/web1/)" } });
     if (!res.ok) { console.warn(`[skip] ${src.id}: HTTP ${res.status}`); sourceFails++; return []; }
-    return normalize(src.parse(await res.text()), src);
+    return takeItems(src.parse(await res.text()), src);
   } catch (e) {
     console.warn(`[skip] ${src.id}: ${e.message}`);
     sourceFails++;
     return [];
+  }
+}
+
+/* ── 소식 매핑(G-C): 기사 제목에 기존 플랫폼명이 등장하면 그 플랫폼의 소식으로 연결 ──
+ * 부분 문자열 오탐 방지: 이름 앞은 한글·영숫자 불가(예: "원데이클래스"의 "클래스" 차단),
+ * 2자 한글 이름(쿠팡·옥션·토스…)은 뒤가 비한글이거나 흔한 조사일 때만("토스트" 차단, "쿠팡이" 허용).
+ * 영문 전용 이름은 4자 미만 제외("AI" 등). 최장 이름 매치 우선. */
+const NEWS_MAX_PER_RUN = 30; // 공개 노출 콘텐츠 상한(오탐 시 관리 콘솔·SQL로 삭제 가능한 규모 유지)
+const AFTER_PARTICLE = /^[이가은는을를과와의도만에서로측]/; // 2자 이름 직후 허용 조사(대표형)
+function nameInTitle(t, n) {
+  let i = t.indexOf(n);
+  while (i !== -1) {
+    const before = i === 0 ? "" : t[i - 1];
+    const after = t.slice(i + n.length, i + n.length + 1);
+    const beforeOk = !before || !/[가-힣a-z0-9]/i.test(before);
+    const afterOk = n.length >= 3 || !after || !/[가-힣]/.test(after) || AFTER_PARTICLE.test(after);
+    if (beforeOk && afterOk) return true;
+    i = t.indexOf(n, i + 1);
+  }
+  return false;
+}
+function matchNewsPlatform(title, plats) {
+  const t = (title || "").toLowerCase();
+  let best = null;
+  for (const p of plats) {
+    const n = (p.name || "").toLowerCase().trim();
+    if (n.length < 2 || (/^[\x20-\x7e]+$/.test(n) && n.length < 4)) continue;
+    if (nameInTitle(t, n) && (!best || n.length > best.n.length)) best = { p, n };
+  }
+  return best?.p ?? null;
+}
+function buildNewsRows(raw, plats) {
+  const seenUrl = new Set();
+  const rows = [];
+  for (const it of raw) {
+    if (rows.length >= NEWS_MAX_PER_RUN) break;
+    if (it.title.length < 4 || seenUrl.has(it.url)) continue;
+    const p = matchNewsPlatform(it.title, plats);
+    if (!p) continue;
+    seenUrl.add(it.url);
+    const d = new Date(it.pub);
+    rows.push({
+      platform_id: p.id, title: it.title.slice(0, 300), url: it.url,
+      source: it.sourceLabel, published_at: isNaN(d.getTime()) ? null : d.toISOString(),
+    });
+  }
+  return rows;
+}
+/* platform_news insert는 RLS가 admin 전용(0027) — notify·digest와 동일한 admin 봇으로 별도 로그인.
+ * 실패는 경고만(후보 수집 결과를 깨지 않음). */
+async function pushNews(rows) {
+  if (!process.env.ADMIN_BOT_EMAIL || !process.env.ADMIN_BOT_PASSWORD) {
+    console.log("소식 매핑: ADMIN_BOT_EMAIL 미설정 — 투입 생략(collect.yml secrets에 추가하면 활성화)");
+    return 0;
+  }
+  try {
+    const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
+      method: "POST", headers: { apikey: SB_KEY, "Content-Type": "application/json" },
+      body: JSON.stringify({ email: process.env.ADMIN_BOT_EMAIL, password: process.env.ADMIN_BOT_PASSWORD }),
+    });
+    if (!res.ok) throw new Error(`admin 봇 로그인 실패: ${res.status}`);
+    const adminToken = (await res.json()).access_token;
+    await rest("platform_news?on_conflict=url", {
+      method: "POST", headers: { Prefer: "resolution=ignore-duplicates,return=minimal" },
+      body: JSON.stringify(rows),
+    }, adminToken);
+    return rows.length;
+  } catch (e) {
+    console.warn(`소식 투입 실패(후보 수집과 무관·무시): ${e.message}`);
+    return 0;
   }
 }
 
@@ -253,7 +338,7 @@ const seen = new Set();
 let candidates = collected.filter((c) => { const h = host(c.url); if (seen.has(h)) return false; seen.add(h); return true; });
 
 if (DRY && !SB_URL) {
-  console.log(`\n[dry] DB 미접속 — 후보 ${candidates.length}건 (신뢰도·자동등재대상 표시):`);
+  console.log(`\n[dry] DB 미접속 — 후보 ${candidates.length}건 · 뉴스 원문 ${newsRaw.length}건(플랫폼 매칭은 DB 필요):`);
   for (const c of candidates.slice(0, 40)) {
     const sc = confidence(c), cat = guessCategory(c.name, c.desc);
     const auto = c.directUrl && cat && sc >= 80 ? "★자동" : "검수";
@@ -263,7 +348,7 @@ if (DRY && !SB_URL) {
 }
 
 // 2차: 기존 등재 플랫폼 + 봇의 과거 제보와 dedup (호스트 정규화 + 이름 퍼지 매칭)
-const platforms = await rest("platforms?select=url,name");
+const platforms = await rest("platforms?select=id,url,name");
 const knownHosts = new Set(platforms.map((p) => host(p.url)).filter(Boolean));
 const knownKeys = new Set(platforms.map((p) => nameKey(p.name)).filter(Boolean));
 
@@ -282,41 +367,51 @@ candidates = candidates
 console.log(`중복 제거 후 신규 후보 ${candidates.length}건 (상한 ${MAX_PER_RUN})`);
 for (const c of candidates) console.log(`  + [${c.source}] (${c.confidence}) ${c.name} | ${c.url}`);
 
+// 소식 매핑(G-C): 국내 뉴스 원문 ↔ 기존 플랫폼 — 후보 플로우와 별개(중복 제거와 무관하게 계산)
+const newsRows = buildNewsRows(newsRaw, platforms);
+console.log(`기존 플랫폼 소식 매칭 ${newsRows.length}건 (뉴스 원문 ${newsRaw.length}건 중, 상한 ${NEWS_MAX_PER_RUN})`);
+for (const r of newsRows) console.log(`  ~ [${r.source}] ${r.platform_id} ← ${r.title.slice(0, 60)}`);
+
 if (DRY) { console.log("[dry] 투입 생략"); process.exit(0); }
-if (candidates.length === 0) { console.log("신규 후보 없음 — 종료"); process.exit(0); }
 
 // 자동 등재(D) 스위치 — app_settings 'autolist'.enabled + collector_id 일치할 때만.
 // 기본 off → 전부 검수 큐로(오늘 동작 그대로). 켜져 있어도 confidence≥min & directUrl만 자동 등재.
-let auto = { enabled: false, min_confidence: 80, collector_id: null };
-try {
-  const rows = await rest("app_settings?key=eq.autolist&select=value");
-  if (rows?.[0]?.value) auto = { ...auto, ...rows[0].value };
-} catch { /* 설정 없으면 off로 간주 */ }
-const autoOn = !!auto.enabled && auto.collector_id === uid;
-
 let listed = 0, queued = 0;
-for (const c of candidates) {
-  const payload = {
-    name: c.name, url: c.url, category_id: c.category_id, region: c.region,
-    desc: c.desc, confidence: c.confidence, note: `auto:${c.source} (${c.sourceLabel})`,
-  };
-  if (autoOn && c.directUrl && c.category_id && c.confidence >= auto.min_confidence) {
-    // 서버 RPC가 재검증(스위치·collector_id·중복·id 생성)하고 lifecycle='review'+auto_listed로 등재.
-    try {
-      await rest("rpc/auto_list_candidate", {
-        method: "POST",
-        body: JSON.stringify({ p_payload: payload, p_confidence: c.confidence }),
-      }, token);
-      listed++;
-      continue;
-    } catch (e) {
-      console.warn(`[auto-list 실패→검수 큐로] ${c.name}: ${e.message}`);
+if (candidates.length > 0) {
+  let auto = { enabled: false, min_confidence: 80, collector_id: null };
+  try {
+    const rows = await rest("app_settings?key=eq.autolist&select=value");
+    if (rows?.[0]?.value) auto = { ...auto, ...rows[0].value };
+  } catch { /* 설정 없으면 off로 간주 */ }
+  const autoOn = !!auto.enabled && auto.collector_id === uid;
+
+  for (const c of candidates) {
+    const payload = {
+      name: c.name, url: c.url, category_id: c.category_id, region: c.region,
+      desc: c.desc, confidence: c.confidence, note: `auto:${c.source} (${c.sourceLabel})`,
+    };
+    if (autoOn && c.directUrl && c.category_id && c.confidence >= auto.min_confidence) {
+      // 서버 RPC가 재검증(스위치·collector_id·중복·id 생성)하고 lifecycle='review'+auto_listed로 등재.
+      try {
+        await rest("rpc/auto_list_candidate", {
+          method: "POST",
+          body: JSON.stringify({ p_payload: payload, p_confidence: c.confidence }),
+        }, token);
+        listed++;
+        continue;
+      } catch (e) {
+        console.warn(`[auto-list 실패→검수 큐로] ${c.name}: ${e.message}`);
+      }
     }
+    await rest("submissions", {
+      method: "POST", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ submitter_id: uid, payload }),
+    });
+    queued++;
   }
-  await rest("submissions", {
-    method: "POST", headers: { Prefer: "return=minimal" },
-    body: JSON.stringify({ submitter_id: uid, payload }),
-  });
-  queued++;
+} else {
+  console.log("신규 후보 없음");
 }
-console.log(`✓ 자동 등재 ${listed}건(사후 검수 대기) · 검수 큐 투입 ${queued}건 — 관리 콘솔에서 확인하세요.`);
+
+const newsPushed = newsRows.length ? await pushNews(newsRows) : 0;
+console.log(`✓ 자동 등재 ${listed}건(사후 검수 대기) · 검수 큐 투입 ${queued}건 · 소식 연결 ${newsPushed}건(중복 무시) — 관리 콘솔에서 확인하세요.`);

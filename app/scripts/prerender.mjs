@@ -54,7 +54,7 @@ function pageFor(p) {
 }
 
 /* 분야 허브 /c/<id>/ — "OO 플랫폼 목록" 롱테일 검색 랜딩 (ItemList JSON-LD) */
-function catPage(c) {
+function catPage(c, hasCompare) {
   const list = data.platforms.filter((p) => p.category === c.id);
   const title = `${c.name} 플랫폼 ${list.length}곳 — 목록·비교 | 세모플`;
   // 인트로 첫 문장을 검색 스니펫으로(있으면) — 목록 나열보다 클릭 유도가 큼
@@ -90,6 +90,7 @@ function catPage(c) {
 <main style="max-width:720px;margin:32px auto;padding:0 20px">
   <p><a href="/web1/">세모플 — 세상의 모든 플랫폼</a></p>
   <h1>${esc(c.icon)} ${esc(c.name)} 플랫폼 ${list.length}곳</h1>
+  ${hasCompare ? `<p><a href="/web1/c/${c.id}/compare/">📊 ${esc(c.name)} 비교표 — 수수료·정산·입점 조건 한눈에 →</a></p>` : ""}
   ${introHtml}
   <h2>${esc(c.name)} 플랫폼 목록</h2>
   <ul>${list.map((p) => `<li><a href="/web1/p/${p.id}/">${esc(p.name)}</a>${p.region === "해외" ? " (해외)" : ""} — ${esc(p.blurb)}</li>`).join("")}</ul>
@@ -103,12 +104,67 @@ function catPage(c) {
     .replace("</head>", `  <link rel="canonical" href="${canonical}">\n  <script type="application/ld+json">${ld}</script>\n  </head>`)
     .replace(/(<div id="root">)(<\/div>)/, `$1${body}$2`);
 }
+/* 분야 비교 페이지 /c/<id>/compare/ — 판단 필드(0014·1,637건)를 표로 재사용한 롱테일 랜딩.
+ * 순위가 아니라 "비교"다: 가나다순 고정·기준 명시(디렉토리 중립 원칙 — 유료 개입 없음). */
+const FEE_KO = { low: "낮음", mid: "중간", high: "높음" };
+const compareList = (c) => data.platforms
+  .filter((p) => p.category === c.id && (p.fee_band || p.fee_text || p.settle_text || p.enter_text || p.strength))
+  .sort((a, b) => a.name.localeCompare(b.name, "ko"));
+function comparePage(c, list) {
+  const title = `${c.name} 플랫폼 비교 — 수수료·정산·입점 조건 | 세모플`;
+  const introLede = HUB[c.id]?.intro?.split(/\n\n+/)[0]?.replace(/\s+/g, " ").trim();
+  const desc = `${c.name} 플랫폼 ${list.length}곳의 수수료대·정산 주기·입점 조건·강점을 한 표로 비교(공개 정보 기반 추정 · 가나다순).`.slice(0, 155);
+  const canonical = `${SITE}/c/${c.id}/compare/`;
+  const ld = JSON.stringify({
+    "@context": "https://schema.org", "@type": "ItemList", name: title, numberOfItems: list.length,
+    itemListElement: list.slice(0, 30).map((p, i) => ({ "@type": "ListItem", position: i + 1, name: p.name, url: `${SITE}/p/${p.id}/` })),
+  });
+  const rows = list.map((p) =>
+    `<tr><td><a href="/web1/p/${p.id}/">${esc(p.name)}</a></td>` +
+    `<td>${p.fee_band ? esc(FEE_KO[p.fee_band] ?? p.fee_band) : "—"}${p.fee_text ? `<br><small>${esc(p.fee_text)}</small>` : ""}</td>` +
+    `<td>${esc(p.settle_text || "—")}</td><td>${esc(p.enter_text || "—")}</td><td>${esc(p.strength || "—")}</td></tr>`).join("\n");
+  const pickBy = HUB[c.id]?.pickBy;
+  const body = `
+<main style="max-width:920px;margin:32px auto;padding:0 20px">
+  <p><a href="/web1/">세모플</a> › <a href="/web1/c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a> › 비교</p>
+  <h1>${esc(c.name)} 플랫폼 비교 — 수수료·정산·입점 조건</h1>
+  ${introLede ? `<p>${esc(introLede)}</p>` : `<p>${esc(c.desc)}</p>`}
+  <p>아래 표는 ${esc(c.name)} 분야 플랫폼 ${list.length}곳을 <strong>가나다순</strong>으로 정리한 것입니다(순위·추천순 아님).
+  수수료·정산·입점 조건은 공개 정보를 바탕으로 한 세모플의 <strong>개략 추정치</strong>이며 공식 수치가 아닙니다 — 실제 값은 각 공식 사이트에서 확인하세요.</p>
+  <div style="overflow-x:auto"><table border="1" cellpadding="6" style="border-collapse:collapse;font-size:14px">
+    <thead><tr><th>플랫폼</th><th>수수료대(추정)</th><th>정산 주기(추정)</th><th>입점 조건</th><th>강점</th></tr></thead>
+    <tbody>${rows}</tbody>
+  </table></div>
+  ${pickBy?.length ? `<h2>고를 때 따져볼 기준</h2><ul>${pickBy.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>` : ""}
+  <p><a href="/web1/c/${c.id}/">${esc(c.name)} 전체 목록 →</a> · <a href="/web1/?view=compare">직접 골라 비교하기 →</a> · <a href="/web1/">세모플 홈</a></p>
+</main>`;
+  return template
+    .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
+    .replace(/(<meta name="description" content=")[^"]*(")/, `$1${esc(desc)}$2`)
+    .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${esc(title)}$2`)
+    .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${esc(desc)}$2`)
+    .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonical}$2`)
+    .replace("</head>", `  <link rel="canonical" href="${canonical}">\n  <script type="application/ld+json">${ld}</script>\n  </head>`)
+    .replace(/(<div id="root">)(<\/div>)/, `$1${body}$2`);
+}
+
 let catCount = 0;
+let cmpCount = 0;
+const cmpIds = new Set(); // sitemap·허브 링크용 — 비교표가 실제 생성된 분야만
 for (const c of data.categories) {
   const dir = path.join(DIST, "c", c.id);
   fs.mkdirSync(dir, { recursive: true });
-  fs.writeFileSync(path.join(dir, "index.html"), catPage(c));
+  const cl = compareList(c);
+  const hasCompare = cl.length >= 3; // 3곳 미만이면 "비교"가 성립 안 함 — 얇은 페이지 방지
+  fs.writeFileSync(path.join(dir, "index.html"), catPage(c, hasCompare));
   catCount++;
+  if (hasCompare) {
+    const cdir = path.join(dir, "compare");
+    fs.mkdirSync(cdir, { recursive: true });
+    fs.writeFileSync(path.join(cdir, "index.html"), comparePage(c, cl));
+    cmpIds.add(c.id);
+    cmpCount++;
+  }
 }
 
 let count = 0;
@@ -176,6 +232,7 @@ const staticUrls = ["", "?view=partners", "?view=exchange", "?view=ai-finder", "
 const urls = [
   ...staticUrls.map((u) => ({ loc: `${SITE}/${u}`, lastmod: today })),
   ...data.categories.map((c) => ({ loc: `${SITE}/c/${c.id}/`, lastmod: today })),
+  ...[...cmpIds].map((id) => ({ loc: `${SITE}/c/${id}/compare/`, lastmod: today })),
   ...data.platforms.map((p) => ({ loc: `${SITE}/p/${p.id}/`, lastmod: p.new ? today : null })),
 ];
 fs.writeFileSync(path.join(DIST, "sitemap.xml"),
@@ -205,4 +262,4 @@ const feedXml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
   `\n</channel></rss>\n`;
 fs.writeFileSync(path.join(DIST, "feed.xml"), feedXml);
 
-console.log(`프리렌더 상세 ${count}p + 분야 허브 ${catCount}p + sitemap(${urls.length} URL) + feed.xml(${feedList.length}) + robots.txt 생성`);
+console.log(`프리렌더 상세 ${count}p + 분야 허브 ${catCount}p + 비교표 ${cmpCount}p + sitemap(${urls.length} URL) + feed.xml(${feedList.length}) + robots.txt 생성`);
