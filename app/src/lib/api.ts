@@ -731,6 +731,23 @@ export async function markAllNotifsRead(): Promise<void> {
     body: JSON.stringify({ read_at: new Date().toISOString() }) });
 }
 
+/* ── 소개 후 성사·후기(0021) — 본인 응답 기록/조회(재응답=갱신) ── */
+export type IntroOutcomeKind = "progressing" | "success" | "no";
+export async function listMyIntroOutcomes(): Promise<Map<string, IntroOutcomeKind>> {
+  if (!remoteEnabled || !getSession()) return new Map();
+  const rows = await rest<{ ref_type: string; ref_id: string; outcome: IntroOutcomeKind }[]>(
+    "intro_outcomes?select=ref_type,ref_id,outcome").catch(() => []);
+  return new Map(rows.map((r) => [`${r.ref_type}:${r.ref_id}`, r.outcome]));
+}
+export async function recordIntroOutcome(refType: "partner" | "deal", refId: string, outcome: IntroOutcomeKind, note = ""): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  await rest("intro_outcomes?on_conflict=ref_type,ref_id,user_id", {
+    method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({ ref_type: refType, ref_id: refId, user_id: uid, outcome, note }),
+  });
+}
+
 /* ── 관리자: 7일 퍼널·유입경로(0017 뷰 — is_admin 가드는 뷰 내부) ── */
 export interface Funnel7d {
   impressions: number; clicks: number; outbounds: number; searches: number;
@@ -742,6 +759,11 @@ export async function fetchFunnel(): Promise<Funnel7d | null> {
 }
 export async function fetchReferrers(): Promise<{ ref: string; sessions: number; events: number }[]> {
   return rest<{ ref: string; sessions: number; events: number }[]>("v_referrers_7d?select=*").catch(() => []);
+}
+/* 소개 성사율(0021 v_intro_success — 관리 전용, 뷰 내부 is_admin 가드) */
+export async function fetchIntroSuccess(): Promise<{ responded: number; success: number; progressing: number; no_deal: number } | null> {
+  const rows = await rest<{ responded: number; success: number; progressing: number; no_deal: number }[]>("v_intro_success?select=*").catch(() => []);
+  return rows[0] ?? null;
 }
 
 /* ── 관리자: 플랫폼 인라인 편집 + 정보 보강 큐 (admin write platforms RLS) ── */
