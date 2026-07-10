@@ -165,9 +165,17 @@ export async function removeFavorite(platformId: string): Promise<void> {
   });
 }
 
+export interface CorrectionFields {
+  fee_band?: string; fee_text?: string; settle_text?: string; enter_text?: string; strength?: string; url?: string;
+}
 export interface SubmissionPayload {
   name: string; url: string; category_id: string; region: "domestic" | "overseas"; desc: string; note?: string;
   confidence?: number; // 자동 수집기가 매긴 신뢰도(0~100) — 일괄 승인 우선순위 참고
+  // 정정 제안(기존 항목 판단 필드 교정·보강) — payload.kind로 검수 큐가 분기
+  kind?: "correction";
+  target_platform_id?: string;
+  fields?: CorrectionFields;
+  by_operator?: boolean; // 인증 운영자가 제출(높은 신뢰 — 우선 처리)
 }
 export interface Submission {
   id: string; payload: SubmissionPayload; status: "pending" | "hold" | "approved" | "rejected";
@@ -179,6 +187,19 @@ export async function createSubmission(payload: SubmissionPayload): Promise<void
   await rest("submissions", {
     method: "POST", headers: { Prefer: "return=minimal" },
     body: JSON.stringify({ payload, submitter_id: uid }),
+  });
+}
+/* 기존 항목 정정·보강 제안 — 신규 등재와 같은 submissions 큐로(payload.kind='correction').
+ * 인증 운영자면 by_operator=true(관리 큐에서 우선·신뢰 배지). 대상 식별정보는 표시용으로 payload에 함께 실음. */
+export async function createCorrection(
+  target: { id: string; name: string; url: string; category: string; region: string },
+  fields: CorrectionFields, note: string, byOperator: boolean
+): Promise<void> {
+  return createSubmission({
+    name: target.name, url: target.url, category_id: target.category,
+    region: target.region === "해외" ? "overseas" : "domestic",
+    desc: note, note: "correction", kind: "correction",
+    target_platform_id: target.id, fields, by_operator: byOperator,
   });
 }
 export async function listMySubmissions(): Promise<Submission[]> {

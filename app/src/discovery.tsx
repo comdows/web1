@@ -6,7 +6,7 @@ import hubIntros from "./data/hub-intros.ko.json"; // 분야 허브 편집 인�
 const HUB: Record<string, { intro: string; pickBy: string[] }> = hubIntros as never;
 import { Avatar, Badge, PlatformCard, ShareButton } from "./components";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
-import { amOperatorOf, createOperatorClaim, getMyClaim, getPlatform, remoteEnabled, trackEvent } from "./lib/api";
+import { amOperatorOf, createCorrection, createOperatorClaim, getMyClaim, getPlatform, remoteEnabled, trackEvent } from "./lib/api";
 import type { OperatorClaim } from "./lib/api";
 import { pickRecommended, sortByRelevance, sortByPopularity } from "./lib/search";
 import { usePopularity } from "./lib/popularity";
@@ -86,6 +86,71 @@ function OperatorClaimBox({ platformId, platformUrl }: { platformId: string; pla
         </form>
       )}
     </div>
+  );
+}
+
+/* 정보 정정·보강 제안 — 기존 항목의 판단 필드(수수료·정산·입점·강점·URL)를 회원이 교정 제안한다.
+ * 인증 운영자면 by_operator=true(관리 큐 우선). 앱 내 처리(외부 GitHub 이슈 대체). */
+function CorrectionBox({ p }: { p: Platform }) {
+  const go = useNav();
+  const { session } = useSession();
+  const [isOp, setIsOp] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [f, setF] = useState({ fee_band: p.fee_band ?? "", fee_text: p.fee_text ?? "", settle_text: p.settle_text ?? "", enter_text: p.enter_text ?? "", strength: p.strength ?? "", url: "" });
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [done, setDone] = useState(false);
+  useEffect(() => {
+    setIsOp(false);
+    if (!session || !remoteEnabled) return;
+    let alive = true;
+    amOperatorOf(p.id).then((v) => { if (alive) setIsOp(v); }).catch(() => { /* noop */ });
+    return () => { alive = false; };
+  }, [p.id, session]);
+  if (!remoteEnabled) return null;
+
+  const submit = async () => {
+    setErr("");
+    const base: Record<string, string> = { fee_band: p.fee_band ?? "", fee_text: p.fee_text ?? "", settle_text: p.settle_text ?? "", enter_text: p.enter_text ?? "", strength: p.strength ?? "", url: "" };
+    const fields: Record<string, string> = {};
+    for (const k of Object.keys(base)) { const v = (f as Record<string, string>)[k].trim(); if (v && v !== base[k]) fields[k] = v; }
+    if (Object.keys(fields).length === 0 && !note.trim()) { setErr("바뀐 내용을 입력해 주세요."); return; }
+    setBusy(true);
+    try { await createCorrection({ id: p.id, name: p.name, url: p.url, category: p.category, region: p.region }, fields, note.trim(), isOp); setDone(true); setOpen(false); }
+    catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(false); }
+  };
+
+  if (done) return <div className="banner" style={{ marginTop: 8 }}>✓ 정정 제안이 접수됐어요 — 검수 후 반영됩니다. 감사합니다{isOp ? " (운영자 확인 우선 처리)" : ""}.</div>;
+  if (!session) return (
+    <span> 정보가 다르면 <button className="linklike" onClick={() => go("account")}>로그인 후 정정 제안 →</button> 부탁드립니다.</span>
+  );
+  if (!open) return (
+    <span> {isOp
+      ? <><b>운영자님 — 정확한 정보를 채워주세요.</b> <button className="linklike" onClick={() => setOpen(true)}>정보 채우기·정정 →</button></>
+      : <>정보가 다르면 <button className="linklike" onClick={() => setOpen(true)}>정정 제안 →</button> 부탁드립니다.</>}</span>
+  );
+  return (
+    <form className="frm" style={{ marginTop: 10 }} onSubmit={(e) => { e.preventDefault(); submit(); }}>
+      <div className="frm-note">{isOp ? "운영자 확인으로 우선 반영됩니다." : "공개 정보 기준으로 정정·보강을 제안해 주세요 — 검수 후 반영됩니다."} 바뀐 항목만 입력하면 됩니다.</div>
+      <label>수수료대
+        <select value={f.fee_band} onChange={(e) => setF({ ...f, fee_band: e.target.value })}>
+          <option value="">모름/변경 없음</option><option value="low">낮음</option><option value="mid">중간</option><option value="high">높음</option>
+        </select>
+      </label>
+      <label>수수료 표기 <input value={f.fee_text} onChange={(e) => setF({ ...f, fee_text: e.target.value })} placeholder="예: ~4–10.8%" maxLength={80} /></label>
+      <label>정산 주기 <input value={f.settle_text} onChange={(e) => setF({ ...f, settle_text: e.target.value })} placeholder="예: 월 2회, D+7" maxLength={80} /></label>
+      <label>입점 조건 <input value={f.enter_text} onChange={(e) => setF({ ...f, enter_text: e.target.value })} placeholder="예: 사업자등록 필요" maxLength={120} /></label>
+      <label>강점 한 줄 <input value={f.strength} onChange={(e) => setF({ ...f, strength: e.target.value })} placeholder="예: 신선식품 새벽배송망" maxLength={120} /></label>
+      <label>URL 정정(폐업·이전 시) <input value={f.url} onChange={(e) => setF({ ...f, url: e.target.value })} placeholder="https://… (바뀐 공식 주소)" /></label>
+      <label>메모(선택) <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="근거·출처 등" maxLength={200} /></label>
+      {err && <div className="err">{err}</div>}
+      <div style={{ display: "flex", gap: 8 }}>
+        <button className="btn primary sm" type="submit" disabled={busy}>{busy ? "제출 중…" : "정정 제안 보내기"}</button>
+        <button className="btn ghost sm" type="button" onClick={() => setOpen(false)}>취소</button>
+      </div>
+    </form>
   );
 }
 
@@ -192,7 +257,7 @@ export function PlatformDetail({ id }: { id?: string }) {
       <div className="panel-note banner">
         ⓘ <b>수수료대·정산 주기·입점 조건은 공개 정보를 바탕으로 한 세모플의 개략 추정치</b>이며 해당 플랫폼의 공식 수치가 아닙니다.
         요율·조건은 카테고리·시기·계약에 따라 다르고 수시로 바뀌므로, 실제 값은 반드시 <b>공식 사이트</b>에서 확인하세요.
-        정보가 다르면 <a href={`https://github.com/comdows/web1/issues/new?title=${encodeURIComponent("[정보 정정] " + p.name)}`} target="_blank" rel="noopener noreferrer">정정 제보</a> 부탁드립니다.
+        <CorrectionBox p={p} />
       </div>
 
       {related.length > 0 && (
