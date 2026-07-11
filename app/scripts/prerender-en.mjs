@@ -7,9 +7,11 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { SITE_URL } from "../site.config.mjs";
+
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const DIST = path.join(ROOT, "dist");
-const SITE = "https://comdows.github.io/web1";
+const SITE = SITE_URL;
 
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.json"), "utf8"));
 const EN = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.en.json"), "utf8"));
@@ -433,7 +435,7 @@ fs.writeFileSync(path.join(DIST, "llms.txt"), [
 fs.mkdirSync(path.join(DIST, "en/data"), { recursive: true });
 fs.writeFileSync(path.join(DIST, "en/data/platforms.json"), JSON.stringify({
   meta: { title: "Korean commerce & trade platforms (SEMOPL English directory)", built: today0,
-    license: "CC BY 4.0 — attribution: SEMOPL (comdows.github.io/web1/en)", count: enPlats.length,
+    license: `CC BY 4.0 — attribution: SEMOPL (${SITE.replace(/^https?:\/\//, "")}/en)`, count: enPlats.length,
     note: "Neutral directory. Fees/requirements intentionally omitted — see each official site." },
   platforms: enPlats.map((p) => ({ id: p.id, name: en(p.id).name, category: p.category,
     categoryName: catEn(p.category).name, region: p.region === "해외" ? "global" : "korea",
@@ -442,7 +444,7 @@ fs.writeFileSync(path.join(DIST, "en/data/platforms.json"), JSON.stringify({
 }, null, 1));
 fs.writeFileSync(path.join(DIST, "en/data/ai-stack.json"), JSON.stringify({
   meta: { title: "AI tools verified for the Korean market (SEMOPL)", built: today0,
-    license: "CC BY 4.0 — attribution: SEMOPL (comdows.github.io/web1/en/ai)", count: AI.tools.length,
+    license: `CC BY 4.0 — attribution: SEMOPL (${SITE.replace(/^https?:\/\//, "")}/en/ai)`, count: AI.tools.length,
     note: "Fields verified against official sources on lastVerified date. Pricing intentionally omitted. paymentAbroad=unknown means not verifiable without signup." },
   tools: AI.tools.map((t) => ({ ...t, page: AI.profiles[t.id] ? `${SITE}/en/ai/${t.id}/` : null })),
 }, null, 1));

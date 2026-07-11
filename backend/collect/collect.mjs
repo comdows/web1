@@ -227,7 +227,7 @@ async function fetchSource(src) {
     return takeItems(src.parse(fs.readFileSync(p, "utf8")), src);
   }
   try {
-    const res = await fetch(src.url, { headers: { "User-Agent": "semopl-collector/1.0 (+https://comdows.github.io/web1/)" } });
+    const res = await fetch(src.url, { headers: { "User-Agent": `semopl-collector/1.0 (+${process.env.SITE_URL ?? "https://comdows.github.io/web1"}/)` } });
     if (!res.ok) { console.warn(`[skip] ${src.id}: HTTP ${res.status}`); sourceFails++; return []; }
     return takeItems(src.parse(await res.text()), src);
   } catch (e) {

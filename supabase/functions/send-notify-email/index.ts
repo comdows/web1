@@ -20,7 +20,7 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
-const SITE = "https://comdows.github.io/web1/";
+const SITE = (Deno.env.get("SITE_URL") ?? "https://comdows.github.io/web1") + "/"; // 도메인 전환 시 switch-domain.mjs가 폴백 갱신
 const OPTOUT_URL = `${SITE}?view=optout`;
 
 Deno.serve(async (req) => {

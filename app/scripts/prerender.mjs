@@ -6,15 +6,22 @@
 import fs from "node:fs";
 import path from "node:path";
 
+import { SITE_URL, SITE_BASE, CUSTOM_DOMAIN } from "../site.config.mjs";
+
 const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 const DIST = path.join(ROOT, "dist");
-const SITE = "https://comdows.github.io/web1";
+const SITE = SITE_URL;          // canonical·sitemap·og 접두어(끝 슬래시 없음)
+const BASE = SITE_BASE;         // 정적 본문 내부 링크 접두어(끝 슬래시 포함)
 
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.json"), "utf8"));
 const EN = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.en.json"), "utf8")); // 영어 쌍둥이 존재 판정(hreflang)
 // 분야 허브 편집 인트로(한국어) — 검색 랜딩 본문. 없으면 목록만.
 const HUB = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/hub-intros.ko.json"), "utf8")); } catch { return {}; } })();
-const template = fs.readFileSync(path.join(DIST, "index.html"), "utf8");
+/* 템플릿 로드 시 og:url·og:image를 설정 도메인으로 일괄 정규화 —
+ * index.html 원본의 절대 URL이 어떤 산출물에도 그대로 새지 않게(서브페이지 og:image 포함). */
+const template = fs.readFileSync(path.join(DIST, "index.html"), "utf8")
+  .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${SITE}/$2`)
+  .replace(/(<meta property="og:image" content=")[^"]*(")/, `$1${SITE}/og-card.png$2`);
 const catById = new Map(data.categories.map((c) => [c.id, c]));
 
 const esc = (s) => String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -28,7 +35,7 @@ function pageFor(p) {
 
   const staticBody = `
 <main style="max-width:720px;margin:32px auto;padding:0 20px">
-  <p><a href="/web1/">세모플 — 세상의 모든 플랫폼</a> › <a href="/web1/?view=search&amp;q=${encodeURIComponent(cat?.name ?? "")}">${esc(cat?.icon ?? "")} ${esc(cat?.name ?? "")}</a></p>
+  <p><a href="${BASE}">세모플 — 세상의 모든 플랫폼</a> › <a href="${BASE}?view=search&amp;q=${encodeURIComponent(cat?.name ?? "")}">${esc(cat?.icon ?? "")} ${esc(cat?.name ?? "")}</a></p>
   <h1>${esc(p.name)}</h1>
   <p>${esc(cat?.icon ?? "")} ${esc(cat?.name ?? "")} · ${esc(p.region)}${p.new ? " · 🆕 최근 등록" : ""}</p>
   <p>${esc(p.blurb)}</p>
@@ -39,7 +46,7 @@ function pageFor(p) {
     ${p.enter_text ? `<li>입점 조건: ${esc(p.enter_text)}</li>` : ""}
     <li>공식 사이트: <a href="${esc(p.url)}" rel="noopener">${esc(p.url.replace(/^https?:\/\//, ""))}</a></li>
   </ul>
-  ${similar.length ? `<h2>같은 분야의 다른 플랫폼</h2><ul>${similar.map((s) => `<li><a href="/web1/p/${s.id}/">${esc(s.name)}</a> — ${esc(s.blurb)}</li>`).join("")}</ul>` : ""}
+  ${similar.length ? `<h2>같은 분야의 다른 플랫폼</h2><ul>${similar.map((s) => `<li><a href="${BASE}p/${s.id}/">${esc(s.name)}</a> — ${esc(s.blurb)}</li>`).join("")}</ul>` : ""}
   <p>세모플은 ${data.platforms.length.toLocaleString()}개 플랫폼·AI 도구를 같은 기준으로 정리한 B2B 디렉토리입니다. 수수료·정산 등은 공개 정보 기반 개략 추정치이며 공식 수치가 아닙니다 — 실제 조건은 공식 사이트에서 확인하세요.</p>
 </main>`;
 
@@ -88,12 +95,12 @@ function catPage(c, hasCompare) {
     : `<p>${esc(c.desc)} — 같은 기준으로 정리했습니다.</p>`;
   const body = `
 <main style="max-width:720px;margin:32px auto;padding:0 20px">
-  <p><a href="/web1/">세모플 — 세상의 모든 플랫폼</a></p>
+  <p><a href="${BASE}">세모플 — 세상의 모든 플랫폼</a></p>
   <h1>${esc(c.icon)} ${esc(c.name)} 플랫폼 ${list.length}곳</h1>
-  ${hasCompare ? `<p><a href="/web1/c/${c.id}/compare/">📊 ${esc(c.name)} 비교표 — 수수료·정산·입점 조건 한눈에 →</a></p>` : ""}
+  ${hasCompare ? `<p><a href="${BASE}c/${c.id}/compare/">📊 ${esc(c.name)} 비교표 — 수수료·정산·입점 조건 한눈에 →</a></p>` : ""}
   ${introHtml}
   <h2>${esc(c.name)} 플랫폼 목록</h2>
-  <ul>${list.map((p) => `<li><a href="/web1/p/${p.id}/">${esc(p.name)}</a>${p.region === "해외" ? " (해외)" : ""} — ${esc(p.blurb)}</li>`).join("")}</ul>
+  <ul>${list.map((p) => `<li><a href="${BASE}p/${p.id}/">${esc(p.name)}</a>${p.region === "해외" ? " (해외)" : ""} — ${esc(p.blurb)}</li>`).join("")}</ul>
 </main>`;
   return template
     .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
@@ -120,13 +127,13 @@ function comparePage(c, list) {
     itemListElement: list.slice(0, 30).map((p, i) => ({ "@type": "ListItem", position: i + 1, name: p.name, url: `${SITE}/p/${p.id}/` })),
   });
   const rows = list.map((p) =>
-    `<tr><td><a href="/web1/p/${p.id}/">${esc(p.name)}</a></td>` +
+    `<tr><td><a href="${BASE}p/${p.id}/">${esc(p.name)}</a></td>` +
     `<td>${p.fee_band ? esc(FEE_KO[p.fee_band] ?? p.fee_band) : "—"}${p.fee_text ? `<br><small>${esc(p.fee_text)}</small>` : ""}</td>` +
     `<td>${esc(p.settle_text || "—")}</td><td>${esc(p.enter_text || "—")}</td><td>${esc(p.strength || "—")}</td></tr>`).join("\n");
   const pickBy = HUB[c.id]?.pickBy;
   const body = `
 <main style="max-width:920px;margin:32px auto;padding:0 20px">
-  <p><a href="/web1/">세모플</a> › <a href="/web1/c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a> › 비교</p>
+  <p><a href="${BASE}">세모플</a> › <a href="${BASE}c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a> › 비교</p>
   <h1>${esc(c.name)} 플랫폼 비교 — 수수료·정산·입점 조건</h1>
   ${introLede ? `<p>${esc(introLede)}</p>` : `<p>${esc(c.desc)}</p>`}
   <p>아래 표는 ${esc(c.name)} 분야 플랫폼 ${list.length}곳을 <strong>가나다순</strong>으로 정리한 것입니다(순위·추천순 아님).
@@ -136,7 +143,7 @@ function comparePage(c, list) {
     <tbody>${rows}</tbody>
   </table></div>
   ${pickBy?.length ? `<h2>고를 때 따져볼 기준</h2><ul>${pickBy.map((b) => `<li>${esc(b)}</li>`).join("")}</ul>` : ""}
-  <p><a href="/web1/c/${c.id}/">${esc(c.name)} 전체 목록 →</a> · <a href="/web1/?view=compare">직접 골라 비교하기 →</a> · <a href="/web1/">세모플 홈</a></p>
+  <p><a href="${BASE}c/${c.id}/">${esc(c.name)} 전체 목록 →</a> · <a href="${BASE}?view=compare">직접 골라 비교하기 →</a> · <a href="${BASE}">세모플 홈</a></p>
 </main>`;
   return template
     .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
@@ -188,8 +195,8 @@ const homeBody = `
   <p>${data.platforms.length.toLocaleString()}개 한국 비즈니스 플랫폼·AI 도구를 ${data.categories.length}개 분야, 같은 기준으로 정리한 B2B 디렉토리입니다.
   사업자가 입점·판매·홍보·소싱할 곳을 찾고, 플랫폼끼리 제휴하고, 사업을 넘길 곳을 만나는 인프라입니다.</p>
   <h2>분야별 플랫폼 목록</h2>
-  <ul>${data.categories.map((c) => `<li><a href="/web1/c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a> — ${esc(c.desc)}</li>`).join("")}</ul>
-  <p><a href="/web1/?view=partners">제휴 매칭</a> · <a href="/web1/?view=exchange">플랫폼 거래소</a> · <a href="/web1/?view=ai-finder">AI 도구 찾기</a> · <a href="/web1/en/">English directory</a></p>
+  <ul>${data.categories.map((c) => `<li><a href="${BASE}c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a> — ${esc(c.desc)}</li>`).join("")}</ul>
+  <p><a href="${BASE}?view=partners">제휴 매칭</a> · <a href="${BASE}?view=exchange">플랫폼 거래소</a> · <a href="${BASE}?view=ai-finder">AI 도구 찾기</a> · <a href="${BASE}en/">English directory</a></p>
 </main>`;
 // 홈 구조화 데이터 — 브랜드 지식패널·사이트링크 검색창 후보(Organization + WebSite) + Dataset(공개 데이터셋)
 const homeLd = JSON.stringify([
@@ -206,6 +213,8 @@ const homeLd = JSON.stringify([
     ] },
 ]);
 fs.writeFileSync(path.join(DIST, "index.html"), template
+  .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${SITE}/$2`)
+  .replace(/(<meta property="og:image" content=")[^"]*(")/, `$1${SITE}/og-card.png$2`)
   .replace("</head>", `  <link rel="canonical" href="${SITE}/">\n  <link rel="alternate" type="application/rss+xml" title="세모플 새 플랫폼" href="${SITE}/feed.xml">\n  <script type="application/ld+json">${homeLd}</script>\n  </head>`)
   .replace(/(<div id="root">)(<\/div>)/, `$1${homeBody}$2`));
 
@@ -214,9 +223,9 @@ const nfBody = `
 <main style="max-width:720px;margin:32px auto;padding:0 20px">
   <h1>페이지를 찾을 수 없어요</h1>
   <p>주소가 바뀌었거나 삭제된 페이지예요. 찾으시던 플랫폼은 검색으로 다시 찾을 수 있습니다.</p>
-  <p><a href="/web1/">← 세모플 홈</a> · <a href="/web1/?view=search">플랫폼 검색</a></p>
+  <p><a href="${BASE}">← 세모플 홈</a> · <a href="${BASE}?view=search">플랫폼 검색</a></p>
   <h2>분야로 찾기</h2>
-  <ul>${data.categories.slice(0, 12).map((c) => `<li><a href="/web1/c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a></li>`).join("")}</ul>
+  <ul>${data.categories.slice(0, 12).map((c) => `<li><a href="${BASE}c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a></li>`).join("")}</ul>
 </main>`;
 fs.writeFileSync(path.join(DIST, "404.html"), template
   .replace(/<title>[^<]*<\/title>/, `<title>페이지를 찾을 수 없어요 | 세모플</title>`)
@@ -240,6 +249,10 @@ fs.writeFileSync(path.join(DIST, "sitemap.xml"),
   urls.map((u) => `  <url><loc>${u.loc.replace(/&/g, "&amp;")}</loc>${u.lastmod ? `<lastmod>${u.lastmod}</lastmod>` : ""}</url>`).join("\n") +
   `\n</urlset>\n`);
 fs.writeFileSync(path.join(DIST, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml\n`);
+
+/* 커스텀 도메인이 설정된 경우에만 CNAME 생성(GitHub Pages 커스텀 도메인 바인딩) —
+ * 미설정 빌드에 CNAME이 섞이면 Pages 설정이 깨지므로 반드시 조건부. */
+if (CUSTOM_DOMAIN) fs.writeFileSync(path.join(DIST, "CNAME"), CUSTOM_DOMAIN + "\n");
 
 /* 신규 등재 RSS 2.0 피드 — 재크롤 신호 + 구독 유입. 정적 데이터엔 등재일이 없어 new 표식을 최신 프록시로. */
 const feedItems = data.platforms.filter((p) => p.new).slice(0, 50);

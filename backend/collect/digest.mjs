@@ -10,7 +10,7 @@ const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_ANON_KEY;
 const REPO = process.env.GITHUB_REPOSITORY;
 const GH = process.env.GITHUB_TOKEN;
-const CONSOLE_URL = "https://comdows.github.io/web1/?view=admin";
+const CONSOLE_URL = `${process.env.SITE_URL ?? "https://comdows.github.io/web1"}/?view=admin`; // 도메인 전환 시 switch-domain.mjs가 폴백 갱신
 
 async function login() {
   const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
