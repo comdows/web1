@@ -41,13 +41,15 @@ const SITUATIONS = [
 // blurb만으로는 못 거르는 실무 구분을 큐레이션 — 상황 선택 시 맞는 도구를 앞으로 + 배지 표시.
 // (id 기준이라 정적/원격 데이터 모두에서 동작. 새 도구는 아래 집합에 추가.)
 const NOCODE = new Set([  // 코딩 없이 쓰는 앱 빌더·자동화(개발자용 에디터·자체호스팅 제외)
-  "lovable", "bolt-new", "replit", "v0",            // ai_code: 대화형 앱 빌더
+  "lovable", "bolt-new", "replit", "v0", "base44",  // ai_code: 대화형 앱 빌더
   "zapier", "make-com", "lindy", "manus", "relevance-ai", // ai_auto: 노코드 자동화(n8n·dify 제외)
+  "gumloop", "bardeen", "activepieces", "genspark", "browse-ai",
 ]);
 const COMMERCE = new Set([  // 쇼핑몰·판매에 바로 쓰는 도구(상품사진·상세페이지·고객응대·광고)
-  "remove-bg", "photoroom", "canva",                // 상품 사진·상세페이지
-  "channeltalk", "tidio", "intercom", "zendesk-ai", // 고객 응대
+  "remove-bg", "photoroom", "canva", "clipdrop",    // 상품 사진·상세페이지
+  "channeltalk", "tidio", "intercom", "zendesk-ai", "chatbase", "gorgias", "crisp", // 고객 응대
   "adcreative", "predis", "surfer", "wrtn",         // 광고·마케팅 문구
+  "vcat", "creatify", "arcads", "looka", "ms-designer", // 광고 소재·브랜딩
 ]);
 
 /* 도구가 현재 선택된 상황에 특히 맞으면 배지 라벨을 돌려준다(없으면 null).
@@ -104,7 +106,7 @@ export function AiFinder() {
     <main className="page container">
       <h1>🧠 AI 도구 찾기 <Badge kind="good">무료</Badge></h1>
       <p className="lead" style={{ maxWidth: 640 }}>
-        전 세계 AI 도구 {source.filter((p) => p.category.startsWith("ai_")).length || 80}개를 같은 기준으로 정리했어요.
+        전 세계 AI 도구 {source.filter((p) => p.category.startsWith("ai_")).length || 163}개를 같은 기준으로 정리했어요.
         무엇을 해결하고 싶은지 고르면 <b>시작 조합</b>을 추천해 드립니다 — 도구 이름을 몰라도 됩니다.
       </p>
 
