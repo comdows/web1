@@ -2,6 +2,7 @@
 
 > 사업자용 B2B 인프라: **발견**(플랫폼·AI 도구 디렉토리 1,637개) → **제휴**(매칭 보드) → **거래**(자산·사업 양수도 익명 리스팅).
 > 라이브: https://comdows.github.io/web1/ · 스택: React(Vite+TS) SPA + Supabase(PostgREST/RLS) + GitHub Pages/Actions
+> 커스텀 도메인 전환: 주소는 `app/site.config.mjs` 단일 설정 — 구매 후 `node scripts/switch-domain.mjs <도메인>` 1회 + [domain-setup.md](domain-setup.md) 절차
 
 ## 구조
 

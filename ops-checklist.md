@@ -9,7 +9,7 @@
 안 해서 검색 유입의 첫 단추가 안 끼워진 상태입니다. 등록만 하면 자산이 일하기 시작합니다.
 
 1. **Google Search Console** — https://search.google.com/search-console
-   - 속성 추가 → "URL 접두어" → `https://comdows.github.io/web1/`
+   - 속성 추가 → "URL 접두어" → `https://comdows.github.io/web1/` (커스텀 도메인 전환 시 domain-setup.md §6 참고)
    - 인증 방식: **HTML 파일** 선택 → 받은 `google*.html` 파일을 이 세션(또는 다음 세션)에
      전달하면 `app/public/`에 넣고 배포해 드립니다 (직접 하려면: 파일을 `app/public/`에 커밋 → Pages 배포 후 "확인")
    - 인증 후: Sitemaps 메뉴 → `sitemap.xml` 제출

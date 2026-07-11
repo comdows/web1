@@ -13,8 +13,9 @@ import { fetchOutreachConfig, recordOutreach, sendProposalServer } from "./lib/a
 import type { OutreachInput } from "./lib/api";
 import { proposalSubject, proposalBody, GENERIC_MECHANICS } from "./data/proposal-templates";
 import { checkAnonymity } from "./lib/anonymity";
+import { SITE_URL } from "../site.config.mjs";
 
-const SITE = typeof location !== "undefined" ? `${location.origin}${import.meta.env.BASE_URL}` : "https://comdows.github.io/web1/";
+const SITE = typeof location !== "undefined" ? `${location.origin}${import.meta.env.BASE_URL}` : `${SITE_URL}/`;
 
 export function ProposalComposer({ target, onClose }: { target: Platform; onClose: () => void }) {
   const go = useNav();
