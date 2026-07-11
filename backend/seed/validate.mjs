@@ -12,6 +12,7 @@ const DUP_ALLOW = new Set([
   "naver.com", "coupang.com", "kakao.com", "amazon.com", "google.com", "smartstore.naver.com",
   "shopping.naver.com", "cafe24.com", "wadiz.kr", "musinsa.com", "baemin.com", "29cm.co.kr",
   "github.com", "adobe.com", "deepl.com",
+  "labs.google",   // Google Labs 산하 별개 제품(ImageFX /fx · Flow /flow — 검토 완료)
   // 앱 스토어 상세 링크(여러 앱이 같은 호스트) · 같은 회사의 복수 서비스(검토 완료)
   "apps.apple.com", "play.google.com", "rakuten.co.jp", "kurly.com", "wanted.co.kr",
   "kakaomobility.com", "ridibooks.com", "findsemusa.com", "castingn.com", "incheoneum.or.kr",
