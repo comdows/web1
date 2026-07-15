@@ -4336,7 +4336,8 @@
       "url": "https://typecast.ai/",
       "blurb": "감정 표현 TTS 기반의 AI 성우 음성 생성 서비스.",
       "enter_text": "가입 후 바로 사용(무료 체험 제공)",
-      "strength": "감정 표현 TTS로 AI 성우 음성 생성에 강점"
+      "strength": "감정 표현 TTS로 AI 성우 음성 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "pozalabs",
@@ -15585,7 +15586,8 @@
       "url": "https://vrew.ai/ko",
       "blurb": "AI 자동 자막·음성인식 기반 영상 편집 툴.",
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "AI 자동 자막·음성인식 영상 편집에 강점"
+      "strength": "AI 자동 자막·음성인식 영상 편집에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "aistudios",
@@ -15595,7 +15597,8 @@
       "url": "https://www.aistudios.com",
       "blurb": "AI 아바타·텍스트 투 비디오 제작 SaaS.",
       "enter_text": "가입 후 사용(요금제 구독)",
-      "strength": "AI 아바타·텍스트 투 비디오 제작에 강점"
+      "strength": "AI 아바타·텍스트 투 비디오 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "videomonster",
@@ -16148,7 +16151,8 @@
       "blurb": "OpenAI의 범용 AI 챗봇 — 글쓰기·분석·이미지 생성까지 가장 널리 쓰이는 기본기.",
       "new": true,
       "enter_text": "가입 후 무료 사용, 유료 구독 제공",
-      "strength": "글쓰기·분석·이미지 생성까지 두루 강한 범용 챗봇"
+      "strength": "글쓰기·분석·이미지 생성까지 두루 강한 범용 챗봇",
+      "ai_pricing": "freemium"
     },
     {
       "id": "claude-ai",
@@ -16159,7 +16163,8 @@
       "blurb": "Anthropic의 AI 어시스턴트 — 긴 문서 이해와 꼼꼼한 글쓰기·코딩에 강점.",
       "new": true,
       "enter_text": "가입 후 무료 사용, 유료 구독 제공",
-      "strength": "긴 문서 이해·꼼꼼한 글쓰기·코딩에 강점"
+      "strength": "긴 문서 이해·꼼꼼한 글쓰기·코딩에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "gemini",
@@ -16170,7 +16175,8 @@
       "blurb": "구글의 AI 챗봇 — 검색·지메일·유튜브 등 구글 서비스와 연동.",
       "new": true,
       "enter_text": "가입 후 무료 사용, 유료 구독 제공",
-      "strength": "검색·지메일·유튜브 등 구글 서비스 연동에 강점"
+      "strength": "검색·지메일·유튜브 등 구글 서비스 연동에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "ms-copilot",
@@ -16181,7 +16187,8 @@
       "blurb": "윈도우·엣지·오피스에 내장되는 마이크로소프트의 AI 비서.",
       "new": true,
       "enter_text": "가입 후 무료 사용, 유료 구독 제공",
-      "strength": "윈도우·엣지·오피스 내장 연동에 강점"
+      "strength": "윈도우·엣지·오피스 내장 연동에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "wrtn",
@@ -16192,7 +16199,8 @@
       "blurb": "국내 대표 AI 포털 — 챗봇·이미지·과제 도구를 한국어 중심으로 제공.",
       "new": true,
       "enter_text": "가입 후 무료 사용",
-      "strength": "한국어 중심 챗봇·이미지·과제 도구 통합"
+      "strength": "한국어 중심 챗봇·이미지·과제 도구 통합",
+      "ai_pricing": "free"
     },
     {
       "id": "clova-x",
@@ -16203,7 +16211,8 @@
       "blurb": "네이버의 한국어 특화 AI 챗봇 — 국내 정보·쇼핑 맥락 이해.",
       "new": true,
       "enter_text": "가입 후 무료 사용",
-      "strength": "한국어·국내 정보·쇼핑 맥락 이해에 강점"
+      "strength": "한국어·국내 정보·쇼핑 맥락 이해에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "grok",
@@ -16214,7 +16223,8 @@
       "blurb": "xAI의 AI 챗봇 — X(트위터) 실시간 정보 반영이 특징.",
       "new": true,
       "enter_text": "가입 후 사용(유료 구독 위주)",
-      "strength": "X(트위터) 실시간 정보 반영에 강점"
+      "strength": "X(트위터) 실시간 정보 반영에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "lechat",
@@ -16225,7 +16235,8 @@
       "blurb": "유럽 미스트랄의 챗봇 — 빠른 응답 속도와 넓은 무료 사용 폭.",
       "new": true,
       "enter_text": "가입 후 무료 사용, 유료 구독 제공",
-      "strength": "빠른 응답 속도·넓은 무료 사용 폭"
+      "strength": "빠른 응답 속도·넓은 무료 사용 폭",
+      "ai_pricing": "freemium"
     },
     {
       "id": "notion-ai",
@@ -16236,7 +16247,8 @@
       "blurb": "노션 문서 안에서 요약·초안·번역을 처리하는 업무용 글쓰기 AI.",
       "new": true,
       "enter_text": "노션 가입 후 유료 애드온 사용",
-      "strength": "노션 문서 내 요약·초안·번역에 강점"
+      "strength": "노션 문서 내 요약·초안·번역에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "gamma-app",
@@ -16247,7 +16259,8 @@
       "blurb": "프롬프트 한 줄로 발표자료·문서·웹페이지를 만들어 주는 생성 도구.",
       "new": true,
       "enter_text": "가입 후 무료 크레딧, 유료 구독",
-      "strength": "프롬프트로 발표자료·문서·웹페이지 생성"
+      "strength": "프롬프트로 발표자료·문서·웹페이지 생성",
+      "ai_pricing": "freemium"
     },
     {
       "id": "jasper",
@@ -16258,7 +16271,8 @@
       "blurb": "브랜드 톤을 학습해 마케팅 카피·블로그를 쓰는 기업용 글쓰기 AI.",
       "new": true,
       "enter_text": "가입 후 유료 구독(체험 제공)",
-      "strength": "브랜드 톤 학습 마케팅 카피·블로그 생성"
+      "strength": "브랜드 톤 학습 마케팅 카피·블로그 생성",
+      "ai_pricing": "paid"
     },
     {
       "id": "copy-ai",
@@ -16269,7 +16283,8 @@
       "blurb": "광고 카피·세일즈 문구 템플릿이 풍부한 카피라이팅 AI.",
       "new": true,
       "enter_text": "가입 후 무료 플랜·유료 구독",
-      "strength": "광고·세일즈 카피 템플릿이 풍부"
+      "strength": "광고·세일즈 카피 템플릿이 풍부",
+      "ai_pricing": "freemium"
     },
     {
       "id": "writesonic",
@@ -16280,7 +16295,8 @@
       "blurb": "SEO 블로그·광고 문구를 빠르게 뽑는 콘텐츠 생성 AI.",
       "new": true,
       "enter_text": "가입 후 무료 플랜·유료 구독",
-      "strength": "SEO 블로그·광고 문구 빠른 생성에 강점"
+      "strength": "SEO 블로그·광고 문구 빠른 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "grammarly",
@@ -16291,7 +16307,8 @@
       "blurb": "영문 문법·톤 교정 — 영어 이메일·문서 품질을 올려주는 도구.",
       "new": true,
       "enter_text": "가입 후 무료 사용, 유료 구독 제공",
-      "strength": "영문 문법·톤 교정에 강점"
+      "strength": "영문 문법·톤 교정에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "deepl-write",
@@ -16302,7 +16319,8 @@
       "blurb": "영어·독일어 문장을 자연스럽게 다듬어 주는 교정 AI.",
       "new": true,
       "enter_text": "가입 후 무료 사용, 유료 구독 제공",
-      "strength": "영어·독일어 문장 자연스러운 교정에 강점"
+      "strength": "영어·독일어 문장 자연스러운 교정에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "sudowrite",
@@ -16313,7 +16331,8 @@
       "blurb": "소설·창작 글쓰기에 특화된 스토리텔링 AI.",
       "new": true,
       "enter_text": "가입 후 유료 구독(체험 제공)",
-      "strength": "소설·창작 스토리텔링에 특화"
+      "strength": "소설·창작 스토리텔링에 특화",
+      "ai_pricing": "paid"
     },
     {
       "id": "midjourney",
@@ -16324,7 +16343,8 @@
       "blurb": "예술적 완성도로 유명한 이미지 생성 AI.",
       "new": true,
       "enter_text": "가입 후 구독 시작(웹·디스코드에서 이용)",
-      "strength": "예술적·회화적 스타일 이미지 생성에 강점"
+      "strength": "예술적·회화적 스타일 이미지 생성에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "adobe-firefly",
@@ -16335,7 +16355,8 @@
       "blurb": "상업 사용을 고려한 어도비의 이미지 생성 — 포토샵과 연동.",
       "new": true,
       "enter_text": "어도비 계정 가입 후 사용(크레딧 기반)",
-      "strength": "상업 사용 고려·포토샵 연동 이미지 생성에 강점"
+      "strength": "상업 사용 고려·포토샵 연동 이미지 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "canva",
@@ -16346,7 +16367,8 @@
       "blurb": "디자인 툴 캔바에 내장된 이미지 생성·매직 편집 기능.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료·구독 혼합)",
-      "strength": "디자인 툴 내장 이미지 생성·매직 편집에 강점"
+      "strength": "디자인 툴 내장 이미지 생성·매직 편집에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "ideogram",
@@ -16357,7 +16379,8 @@
       "blurb": "이미지 속 글자(타이포그래피) 표현에 강한 생성 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 체험 제공)",
-      "strength": "이미지 속 글자·타이포그래피 표현에 강점"
+      "strength": "이미지 속 글자·타이포그래피 표현에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "leonardo-ai",
@@ -16368,7 +16391,8 @@
       "blurb": "게임·제품 컨셉 아트에 강한 이미지 생성 스튜디오.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧 제공)",
-      "strength": "게임·제품 컨셉 아트 생성에 강점"
+      "strength": "게임·제품 컨셉 아트 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "stability-ai",
@@ -16379,7 +16403,8 @@
       "blurb": "오픈소스 이미지 생성 모델 — 직접 설치·커스터마이즈 가능.",
       "new": true,
       "enter_text": "오픈소스 모델 직접 설치 또는 API 이용",
-      "strength": "오픈소스 기반 직접 설치·커스터마이즈에 강점"
+      "strength": "오픈소스 기반 직접 설치·커스터마이즈에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "flux-bfl",
@@ -16390,7 +16415,8 @@
       "blurb": "고품질 오픈 가중치 이미지 생성 모델 FLUX 시리즈.",
       "new": true,
       "enter_text": "오픈 가중치 직접 이용 또는 API 연동",
-      "strength": "고품질 오픈 가중치 이미지 생성에 강점"
+      "strength": "고품질 오픈 가중치 이미지 생성에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "recraft",
@@ -16401,7 +16427,8 @@
       "blurb": "벡터·브랜드 스타일 유지에 강한 디자이너용 생성 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료·구독 혼합)",
-      "strength": "벡터·브랜드 스타일 유지 디자인에 강점"
+      "strength": "벡터·브랜드 스타일 유지 디자인에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "remove-bg",
@@ -16412,7 +16439,8 @@
       "blurb": "사진 배경을 자동으로 지워 주는 원클릭 도구.",
       "new": true,
       "enter_text": "가입 없이도 이용 가능(API·크레딧 제공)",
-      "strength": "사진 배경 자동 제거 원클릭 처리에 강점"
+      "strength": "사진 배경 자동 제거 원클릭 처리에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "photoroom",
@@ -16423,7 +16451,8 @@
       "blurb": "상품 사진 배경 제거·연출에 특화 — 쇼핑몰 상세컷 제작에 유용.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 체험 제공)",
-      "strength": "상품 사진 배경 제거·연출, 상세컷 제작에 강점"
+      "strength": "상품 사진 배경 제거·연출, 상세컷 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "sora",
@@ -16434,7 +16463,8 @@
       "blurb": "OpenAI의 텍스트→영상 생성 서비스.",
       "new": true,
       "enter_text": "OpenAI 계정 가입·구독 후 사용",
-      "strength": "텍스트 기반 영상 생성에 강점"
+      "strength": "텍스트 기반 영상 생성에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "runway",
@@ -16445,7 +16475,8 @@
       "blurb": "영상 생성·편집(제거·확장) 도구의 선두 주자.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧 제공)",
-      "strength": "영상 생성·편집(제거·확장) 통합 작업에 강점"
+      "strength": "영상 생성·편집(제거·확장) 통합 작업에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "kling",
@@ -16456,7 +16487,8 @@
       "blurb": "인물 동작 표현에 강한 고품질 영상 생성 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧 제공)",
-      "strength": "인물 동작 표현·고품질 영상 생성에 강점"
+      "strength": "인물 동작 표현·고품질 영상 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "pika",
@@ -16467,7 +16499,8 @@
       "blurb": "짧은 밈·효과 영상 생성에 강한 도구.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 체험 제공)",
-      "strength": "짧은 밈·효과 영상 생성에 강점"
+      "strength": "짧은 밈·효과 영상 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "luma",
@@ -16478,7 +16511,8 @@
       "blurb": "사실적인 텍스트→영상 생성 모델.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 체험 제공)",
-      "strength": "사실적인 텍스트→영상 생성에 강점"
+      "strength": "사실적인 텍스트→영상 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "heygen",
@@ -16489,7 +16523,8 @@
       "blurb": "AI 아바타가 대본을 읽어 주는 영상 — 강의·홍보 영상 제작.",
       "new": true,
       "enter_text": "가입 후 사용(무료 체험 후 구독)",
-      "strength": "AI 아바타 대본 낭독, 강의·홍보 영상 제작에 강점"
+      "strength": "AI 아바타 대본 낭독, 강의·홍보 영상 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "synthesia",
@@ -16500,7 +16535,8 @@
       "blurb": "기업 교육용 AI 아바타 영상 제작 플랫폼.",
       "new": true,
       "enter_text": "가입 후 구독 시작(기업용 플랜)",
-      "strength": "기업 교육용 AI 아바타 영상 제작에 강점"
+      "strength": "기업 교육용 AI 아바타 영상 제작에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "descript",
@@ -16511,7 +16547,8 @@
       "blurb": "문서를 고치듯 영상·팟캐스트를 편집하는 도구.",
       "new": true,
       "enter_text": "가입 후 사용(무료 플랜 제공)",
-      "strength": "문서 편집 방식의 영상·팟캐스트 편집에 강점"
+      "strength": "문서 편집 방식의 영상·팟캐스트 편집에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "capcut",
@@ -16522,7 +16559,8 @@
       "blurb": "자동 자막·템플릿으로 숏폼을 빠르게 만드는 편집 앱.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 기능 다수)",
-      "strength": "자동 자막·템플릿 기반 숏폼 제작에 강점"
+      "strength": "자동 자막·템플릿 기반 숏폼 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "elevenlabs",
@@ -16533,7 +16571,8 @@
       "blurb": "자연스러운 AI 성우·더빙 — 다국어 보이스오버 제작.",
       "new": true,
       "enter_text": "가입 후 사용(무료 크레딧 후 구독)",
-      "strength": "자연스러운 AI 성우·다국어 더빙 제작에 강점"
+      "strength": "자연스러운 AI 성우·다국어 더빙 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "suno",
@@ -16544,7 +16583,8 @@
       "blurb": "가사만 쓰면 노래를 만들어 주는 음악 생성 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧 제공)",
-      "strength": "가사 입력만으로 노래 생성에 강점"
+      "strength": "가사 입력만으로 노래 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "udio",
@@ -16555,7 +16595,8 @@
       "blurb": "장르·보컬 스타일을 지정하는 고음질 음악 생성 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧 제공)",
-      "strength": "장르·보컬 지정 고음질 음악 생성에 강점"
+      "strength": "장르·보컬 지정 고음질 음악 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "supertone",
@@ -16566,7 +16607,8 @@
       "blurb": "하이브 계열 음성 합성·변환 기술 — 콘텐츠용 보이스 제작.",
       "new": true,
       "enter_text": "가입 후 사용(콘텐츠용 보이스 제작)",
-      "strength": "음성 합성·변환 콘텐츠 보이스 제작에 강점"
+      "strength": "음성 합성·변환 콘텐츠 보이스 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "murf",
@@ -16577,7 +16619,8 @@
       "blurb": "비즈니스 나레이션용 AI 보이스 스튜디오.",
       "new": true,
       "enter_text": "가입 후 사용(무료 체험 후 구독)",
-      "strength": "비즈니스 나레이션용 AI 보이스 제작에 강점"
+      "strength": "비즈니스 나레이션용 AI 보이스 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "adobe-podcast",
@@ -16588,7 +16631,8 @@
       "blurb": "녹음 잡음을 스튜디오 품질로 보정해 주는 도구.",
       "new": true,
       "enter_text": "어도비 계정 가입 후 사용",
-      "strength": "녹음 잡음 제거·음질 보정에 강점"
+      "strength": "녹음 잡음 제거·음질 보정에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "github-copilot",
@@ -16599,7 +16643,8 @@
       "blurb": "IDE 안에서 코드를 제안하는 코드 자동완성의 표준.",
       "new": true,
       "enter_text": "가입 후 구독 시작(IDE 확장 설치)",
-      "strength": "IDE 내 코드 자동완성·제안에 강점"
+      "strength": "IDE 내 코드 자동완성·제안에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "cursor",
@@ -16610,7 +16655,8 @@
       "blurb": "AI 중심으로 설계된 코드 에디터 — 코드베이스와 대화하며 수정.",
       "new": true,
       "enter_text": "에디터 설치·가입 후 사용(무료 플랜 제공)",
-      "strength": "코드베이스와 대화하며 수정하는 작업에 강점"
+      "strength": "코드베이스와 대화하며 수정하는 작업에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "claude-code",
@@ -16621,7 +16667,8 @@
       "blurb": "터미널·IDE에서 작업을 통째로 맡기는 Anthropic의 코딩 에이전트.",
       "new": true,
       "enter_text": "가입 후 터미널·IDE에서 사용",
-      "strength": "작업 단위를 맡기는 터미널·IDE 코딩 에이전트에 강점"
+      "strength": "작업 단위를 맡기는 터미널·IDE 코딩 에이전트에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "windsurf",
@@ -16632,7 +16679,8 @@
       "blurb": "멀티파일 작업을 자동화하는 에이전트형 AI IDE.",
       "new": true,
       "enter_text": "에디터 설치·가입 후 사용(무료 플랜 제공)",
-      "strength": "멀티파일 작업 자동화 에이전트형 IDE에 강점"
+      "strength": "멀티파일 작업 자동화 에이전트형 IDE에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "replit",
@@ -16643,7 +16691,8 @@
       "blurb": "브라우저에서 앱을 만들고 배포까지 — AI 에이전트 내장.",
       "new": true,
       "enter_text": "가입 후 브라우저에서 바로 사용",
-      "strength": "브라우저 기반 앱 개발·배포, AI 에이전트 내장에 강점"
+      "strength": "브라우저 기반 앱 개발·배포, AI 에이전트 내장에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "v0",
@@ -16654,7 +16703,8 @@
       "blurb": "프롬프트로 웹 UI(리액트)를 생성하는 Vercel의 도구.",
       "new": true,
       "enter_text": "가입 후 사용(무료 크레딧 제공)",
-      "strength": "프롬프트로 리액트 웹 UI 생성에 강점"
+      "strength": "프롬프트로 리액트 웹 UI 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "lovable",
@@ -16665,7 +16715,8 @@
       "blurb": "대화만으로 웹 서비스를 만들어 주는 AI 앱 빌더.",
       "new": true,
       "enter_text": "가입 후 사용(무료 크레딧 제공)",
-      "strength": "대화 기반 웹 서비스 생성에 강점"
+      "strength": "대화 기반 웹 서비스 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "bolt-new",
@@ -16676,7 +16727,8 @@
       "blurb": "브라우저에서 풀스택 앱을 생성·실행하는 AI 빌더.",
       "new": true,
       "enter_text": "가입 후 브라우저에서 바로 사용",
-      "strength": "브라우저에서 풀스택 앱 생성·실행에 강점"
+      "strength": "브라우저에서 풀스택 앱 생성·실행에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "devin",
@@ -16687,7 +16739,8 @@
       "blurb": "이슈를 맡기면 스스로 코딩하는 AI 소프트웨어 엔지니어.",
       "new": true,
       "enter_text": "가입·구독 후 이슈 위임하여 사용",
-      "strength": "이슈를 맡아 자율 코딩하는 에이전트에 강점"
+      "strength": "이슈를 맡아 자율 코딩하는 에이전트에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "clova-note",
@@ -16698,7 +16751,8 @@
       "blurb": "네이버의 회의 녹음→텍스트·요약 — 한국어 인식에 강점.",
       "new": true,
       "enter_text": "네이버 계정 가입 후 바로 사용",
-      "strength": "한국어 회의 녹음→텍스트·요약에 강점"
+      "strength": "한국어 회의 녹음→텍스트·요약에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "daglo",
@@ -16709,7 +16763,8 @@
       "blurb": "회의록·인터뷰 전사에 쓰는 국내 음성 기록 서비스.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧·구독형)",
-      "strength": "국내 한국어 음성 전사·회의록 정리에 강점"
+      "strength": "국내 한국어 음성 전사·회의록 정리에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "otter",
@@ -16720,7 +16775,8 @@
       "blurb": "영어 회의 실시간 전사·요약의 대표 서비스.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜·구독형)",
-      "strength": "영어 회의 실시간 전사·요약에 강점"
+      "strength": "영어 회의 실시간 전사·요약에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "fireflies",
@@ -16731,7 +16787,8 @@
       "blurb": "줌·미트 회의에 참여해 회의록을 자동 작성.",
       "new": true,
       "enter_text": "가입 후 회의 도구 연동(무료 플랜 제공)",
-      "strength": "줌·미트 자동 참여 회의록 작성에 강점"
+      "strength": "줌·미트 자동 참여 회의록 작성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "fathom",
@@ -16742,7 +16799,8 @@
       "blurb": "무료 사용 폭이 넓은 회의 요약 — 하이라이트 클립 생성.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 폭 넓음)",
-      "strength": "무료 요약·하이라이트 클립 생성에 강점"
+      "strength": "무료 요약·하이라이트 클립 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "tldv",
@@ -16753,7 +16811,8 @@
       "blurb": "회의 녹화·타임스탬프 요약 — 여러 회의 도구 지원.",
       "new": true,
       "enter_text": "가입 후 회의 도구 연동(무료 플랜 제공)",
-      "strength": "녹화·타임스탬프 요약, 다수 회의 도구 지원"
+      "strength": "녹화·타임스탬프 요약, 다수 회의 도구 지원",
+      "ai_pricing": "freemium"
     },
     {
       "id": "channeltalk",
@@ -16764,7 +16823,8 @@
       "blurb": "국내 대표 채팅상담 — AI 상담봇으로 응대를 자동화.",
       "new": true,
       "enter_text": "가입 후 사이트에 위젯 설치(구독형)",
-      "strength": "채팅상담·AI 상담봇 응대 자동화에 강점"
+      "strength": "채팅상담·AI 상담봇 응대 자동화에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "intercom",
@@ -16775,7 +16835,8 @@
       "blurb": "고객 문의를 스스로 해결하는 AI 상담 에이전트.",
       "new": true,
       "enter_text": "가입·연동 후 사용(구독형)",
-      "strength": "AI 에이전트가 고객 문의 자체 해결에 강점"
+      "strength": "AI 에이전트가 고객 문의 자체 해결에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "zendesk-ai",
@@ -16786,7 +16847,8 @@
       "blurb": "헬프데스크에 내장된 AI 응대·문의 분류.",
       "new": true,
       "enter_text": "헬프데스크 구독 후 AI 기능 활성화",
-      "strength": "헬프데스크 내장 AI 응대·문의 분류에 강점"
+      "strength": "헬프데스크 내장 AI 응대·문의 분류에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "tidio",
@@ -16797,7 +16859,8 @@
       "blurb": "소규모 쇼핑몰용 챗봇·라이브챗 — 간단하게 도입.",
       "new": true,
       "enter_text": "가입 후 쇼핑몰에 위젯 설치(무료 플랜)",
-      "strength": "소규모 쇼핑몰 챗봇·라이브챗 간편 도입에 강점"
+      "strength": "소규모 쇼핑몰 챗봇·라이브챗 간편 도입에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "adcreative",
@@ -16808,7 +16871,8 @@
       "blurb": "광고 배너·소재를 대량 생성하는 퍼포먼스 마케팅 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(구독형)",
-      "strength": "광고 배너·소재 대량 생성에 강점"
+      "strength": "광고 배너·소재 대량 생성에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "predis",
@@ -16819,7 +16883,8 @@
       "blurb": "SNS 게시물(이미지+카피)을 자동 생성·예약하는 도구.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜·구독형)",
-      "strength": "SNS 게시물 자동 생성·예약에 강점"
+      "strength": "SNS 게시물 자동 생성·예약에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "surfer",
@@ -16830,7 +16895,8 @@
       "blurb": "SEO 점수를 기준으로 글을 최적화하는 콘텐츠 도구.",
       "new": true,
       "enter_text": "가입 후 바로 사용(구독형)",
-      "strength": "SEO 점수 기반 콘텐츠 최적화에 강점"
+      "strength": "SEO 점수 기반 콘텐츠 최적화에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "zapier",
@@ -16841,7 +16907,8 @@
       "blurb": "수천 개 앱을 연결하는 업무 자동화 — AI 액션 내장.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜·구독형)",
-      "strength": "다수 앱 연결 업무 자동화에 강점"
+      "strength": "다수 앱 연결 업무 자동화에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "make-com",
@@ -16852,7 +16919,8 @@
       "blurb": "시각적 시나리오로 짜는 자동화 — 복잡한 흐름에 강점.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜·구독형)",
-      "strength": "시각적 시나리오로 복잡한 자동화 구성에 강점"
+      "strength": "시각적 시나리오로 복잡한 자동화 구성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "n8n",
@@ -16863,7 +16931,8 @@
       "blurb": "오픈소스 자동화 — AI 에이전트 워크플로 구축·자체 호스팅 가능.",
       "new": true,
       "enter_text": "가입 또는 자체 호스팅(오픈소스)",
-      "strength": "자체 호스팅·AI 에이전트 워크플로 구축에 강점"
+      "strength": "자체 호스팅·AI 에이전트 워크플로 구축에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "lindy",
@@ -16874,7 +16943,8 @@
       "blurb": "이메일·일정 등 업무를 맡기는 노코드 AI 비서 빌더.",
       "new": true,
       "enter_text": "가입 후 바로 사용(구독형)",
-      "strength": "노코드 AI 비서로 업무 위임에 강점"
+      "strength": "노코드 AI 비서로 업무 위임에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "relevance-ai",
@@ -16885,7 +16955,8 @@
       "blurb": "영업·리서치용 AI 에이전트 팀을 만드는 플랫폼.",
       "new": true,
       "enter_text": "가입 후 바로 사용(구독형)",
-      "strength": "영업·리서치용 AI 에이전트 구성에 강점"
+      "strength": "영업·리서치용 AI 에이전트 구성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "manus",
@@ -16896,7 +16967,8 @@
       "blurb": "조사·작업을 자율 수행하는 범용 AI 에이전트.",
       "new": true,
       "enter_text": "가입 후 사용(구독형)",
-      "strength": "자율 조사·작업 수행 범용 에이전트에 강점"
+      "strength": "자율 조사·작업 수행 범용 에이전트에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "dify",
@@ -16907,7 +16979,8 @@
       "blurb": "오픈소스 LLM 앱·에이전트 빌더 — 사내 챗봇 구축에 활용.",
       "new": true,
       "enter_text": "가입 또는 자체 호스팅(오픈소스)",
-      "strength": "사내 LLM 앱·챗봇 구축에 강점"
+      "strength": "사내 LLM 앱·챗봇 구축에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "perplexity",
@@ -16918,7 +16991,8 @@
       "blurb": "출처 링크와 함께 답하는 AI 검색 — 최신 정보 조사에 특화.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜·구독형)",
-      "strength": "출처 기반 최신 정보 조사에 강점"
+      "strength": "출처 기반 최신 정보 조사에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "notebooklm",
@@ -16929,7 +17003,8 @@
       "blurb": "내 자료를 올려 근거 기반으로 질문하는 구글의 리서치 도구.",
       "new": true,
       "enter_text": "구글 계정으로 바로 사용(무료)",
-      "strength": "업로드 자료 근거 기반 질의·정리에 강점"
+      "strength": "업로드 자료 근거 기반 질의·정리에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "liner",
@@ -16940,7 +17015,8 @@
       "blurb": "출처 신뢰도를 강조하는 국내 AI 검색·하이라이트 서비스.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜·구독형)",
-      "strength": "출처 신뢰도 강조 AI 검색·하이라이트에 강점"
+      "strength": "출처 신뢰도 강조 AI 검색·하이라이트에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "deepl",
@@ -16951,7 +17027,8 @@
       "blurb": "자연스러운 번역 품질로 유명한 번역기.",
       "new": true,
       "enter_text": "가입 후 사용(무료 플랜·구독형)",
-      "strength": "자연스러운 번역 품질에 강점"
+      "strength": "자연스러운 번역 품질에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "papago",
@@ -16962,7 +17039,8 @@
       "blurb": "네이버 번역 — 한국어 번역 쌍에 강점.",
       "new": true,
       "enter_text": "가입 없이 바로 사용(무료)",
-      "strength": "한국어 번역 쌍 품질에 강점"
+      "strength": "한국어 번역 쌍 품질에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "flitto-ai",
@@ -16973,7 +17051,8 @@
       "blurb": "전문 번역과 AI 번역 데이터를 함께 다루는 번역 플랫폼.",
       "new": true,
       "enter_text": "가입 후 사용(전문·AI 번역)",
-      "strength": "전문 번역과 AI 번역 데이터 결합에 강점"
+      "strength": "전문 번역과 AI 번역 데이터 결합에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "elicit",
@@ -16984,7 +17063,8 @@
       "blurb": "논문을 찾아 표로 정리해 주는 연구 특화 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜·구독형)",
-      "strength": "논문 검색·표 정리 등 연구 작업에 강점"
+      "strength": "논문 검색·표 정리 등 연구 작업에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "consensus",
@@ -16995,7 +17075,8 @@
       "blurb": "논문 근거로 질문에 답하는 학술 검색 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜·구독형)",
-      "strength": "논문 근거 기반 학술 질의응답에 강점"
+      "strength": "논문 근거 기반 학술 질의응답에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "deepseek",
@@ -17006,7 +17087,8 @@
       "blurb": "추론 특화 오픈 모델 기반의 무료 범용 AI 챗봇.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료)",
-      "strength": "수학·코딩 등 추론 답변을 무료로 쓰는 데 강점"
+      "strength": "수학·코딩 등 추론 답변을 무료로 쓰는 데 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "qwen-chat",
@@ -17017,7 +17099,8 @@
       "blurb": "알리바바 Qwen 모델 기반의 다국어 AI 챗봇.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료)",
-      "strength": "다국어·이미지 이해를 무료로 쓰는 데 강점"
+      "strength": "다국어·이미지 이해를 무료로 쓰는 데 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "poe",
@@ -17028,7 +17111,8 @@
       "blurb": "GPT·Claude 등 여러 AI 모델을 한 곳에서 골라 쓰는 허브.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧·구독형)",
-      "strength": "여러 모델을 한 구독으로 비교해 쓰는 데 강점"
+      "strength": "여러 모델을 한 구독으로 비교해 쓰는 데 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "meta-ai",
@@ -17039,7 +17123,8 @@
       "blurb": "메타 Llama 모델 기반의 무료 AI 어시스턴트.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료)",
-      "strength": "이미지 생성 포함 무료 범용 어시스턴트로 강점"
+      "strength": "이미지 생성 포함 무료 범용 어시스턴트로 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "kimi",
@@ -17050,7 +17135,8 @@
       "blurb": "긴 문서 이해에 강한 문샷AI의 AI 챗봇.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료)",
-      "strength": "긴 문서·파일을 통째로 읽히는 데 강점"
+      "strength": "긴 문서·파일을 통째로 읽히는 데 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "pi-ai",
@@ -17061,7 +17147,8 @@
       "blurb": "대화 감성에 특화된 개인 비서형 AI 챗봇.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료)",
-      "strength": "부드러운 대화형 상담·아이디어 정리에 강점"
+      "strength": "부드러운 대화형 상담·아이디어 정리에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "adot",
@@ -17072,7 +17159,8 @@
       "blurb": "SK텔레콤의 한국어 AI 개인 비서(통화 요약·일정 관리).",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료)",
-      "strength": "한국어 일상 비서·통화 요약 연동에 강점"
+      "strength": "한국어 일상 비서·통화 요약 연동에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "quillbot",
@@ -17083,7 +17171,8 @@
       "blurb": "문장 바꿔쓰기·요약·문법 교정을 한 번에 하는 영어 글쓰기 도구.",
       "new": true,
       "enter_text": "가입 없이 일부 사용(무료 플랜·구독형)",
-      "strength": "영문 패러프레이즈·요약 품질에 강점"
+      "strength": "영문 패러프레이즈·요약 품질에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "wordtune",
@@ -17094,7 +17183,8 @@
       "blurb": "문장의 톤·길이를 다듬어 주는 영어 리라이팅 도구.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "이메일·비즈니스 문장 톤 조절에 강점"
+      "strength": "이메일·비즈니스 문장 톤 조절에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "rytr",
@@ -17105,7 +17195,8 @@
       "blurb": "템플릿 기반으로 카피·블로그 초안을 빠르게 뽑는 저가형 글쓰기 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "저렴한 요금으로 다량 초안 생성에 강점"
+      "strength": "저렴한 요금으로 다량 초안 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "languagetool",
@@ -17116,7 +17207,8 @@
       "blurb": "30여 개 언어를 지원하는 문법·맞춤법 교정기.",
       "new": true,
       "enter_text": "가입 없이 일부 사용(무료 플랜·구독형)",
-      "strength": "다국어 문법 교정과 브라우저 연동에 강점"
+      "strength": "다국어 문법 교정과 브라우저 연동에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "beautiful-ai",
@@ -17127,7 +17219,8 @@
       "blurb": "슬라이드 레이아웃을 자동 정돈해 주는 AI 발표자료 도구.",
       "new": true,
       "enter_text": "가입 후 사용(체험 후 구독형)",
-      "strength": "디자인 감각 없이도 정돈된 슬라이드 제작에 강점"
+      "strength": "디자인 감각 없이도 정돈된 슬라이드 제작에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "pitch",
@@ -17138,7 +17231,8 @@
       "blurb": "팀 협업형 발표자료 제작 도구(AI 초안 생성 지원).",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "팀 단위 발표자료 협업·AI 초안에 강점"
+      "strength": "팀 단위 발표자료 협업·AI 초안에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "napkin-ai",
@@ -17149,7 +17243,8 @@
       "blurb": "글을 붙여넣으면 도식·다이어그램을 자동 생성하는 도구.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "텍스트를 발표용 도식으로 바꾸는 데 강점"
+      "strength": "텍스트를 발표용 도식으로 바꾸는 데 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "imagefx",
@@ -17160,7 +17255,8 @@
       "blurb": "구글 Imagen 모델 기반의 무료 이미지 생성 실험 도구.",
       "new": true,
       "enter_text": "구글 계정으로 바로 사용(무료)",
-      "strength": "무료로 고품질 이미지 생성을 시험하는 데 강점"
+      "strength": "무료로 고품질 이미지 생성을 시험하는 데 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "krea",
@@ -17171,7 +17267,8 @@
       "blurb": "실시간 캔버스·업스케일을 갖춘 이미지·영상 생성 스튜디오.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "실시간 생성 캔버스와 업스케일에 강점"
+      "strength": "실시간 생성 캔버스와 업스케일에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "playground-ai",
@@ -17182,7 +17279,8 @@
       "blurb": "로고·포스터 등 그래픽 디자인 특화 이미지 생성 도구.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "상업용 그래픽·목업 제작에 강점"
+      "strength": "상업용 그래픽·목업 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "freepik-ai",
@@ -17193,7 +17291,8 @@
       "blurb": "스톡 이미지 서비스 프리픽의 생성·편집 AI 모음.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧·구독형)",
-      "strength": "스톡 소스와 생성 AI를 한 구독으로 쓰는 데 강점"
+      "strength": "스톡 소스와 생성 AI를 한 구독으로 쓰는 데 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "clipdrop",
@@ -17204,7 +17303,8 @@
       "blurb": "배경 제거·조명 보정·업스케일 등 이미지 편집 AI 모음.",
       "new": true,
       "enter_text": "가입 없이 일부 사용(무료 플랜·구독형)",
-      "strength": "상품 사진 배경·조명 보정에 강점"
+      "strength": "상품 사진 배경·조명 보정에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "magnific",
@@ -17215,7 +17315,8 @@
       "blurb": "디테일을 되살리는 고품질 AI 업스케일러.",
       "new": true,
       "enter_text": "가입 후 사용(구독형)",
-      "strength": "저해상 이미지를 인쇄급으로 키우는 데 강점"
+      "strength": "저해상 이미지를 인쇄급으로 키우는 데 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "ms-designer",
@@ -17226,7 +17327,8 @@
       "blurb": "MS의 무료 AI 디자인·이미지 생성 도구.",
       "new": true,
       "enter_text": "MS 계정으로 바로 사용(무료)",
-      "strength": "SNS 카드·초대장 등 생활 디자인 무료 제작에 강점"
+      "strength": "SNS 카드·초대장 등 생활 디자인 무료 제작에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "looka",
@@ -17237,7 +17339,8 @@
       "blurb": "브랜드명만 넣으면 로고·브랜드 킷을 만들어 주는 AI.",
       "new": true,
       "enter_text": "미리보기 무료(구매 시 결제)",
-      "strength": "창업 초기 로고·브랜드 킷 제작에 강점"
+      "strength": "창업 초기 로고·브랜드 킷 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "kittl",
@@ -17248,7 +17351,8 @@
       "blurb": "티셔츠·라벨 등 상업 디자인 특화 AI 디자인 툴.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "굿즈·패키지용 그래픽 제작에 강점"
+      "strength": "굿즈·패키지용 그래픽 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "pixlr",
@@ -17259,7 +17363,8 @@
       "blurb": "브라우저에서 쓰는 포토샵 대체형 AI 사진 편집기.",
       "new": true,
       "enter_text": "가입 없이 일부 사용(무료 플랜·구독형)",
-      "strength": "설치 없이 브라우저 사진 보정에 강점"
+      "strength": "설치 없이 브라우저 사진 보정에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "lasco",
@@ -17270,7 +17375,8 @@
       "blurb": "한국어 UI로 쓰는 국내 이미지 생성 AI 스튜디오.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧 제공)",
-      "strength": "한국어 환경의 이미지 생성 워크플로에 강점"
+      "strength": "한국어 환경의 이미지 생성 워크플로에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "google-flow",
@@ -17281,7 +17387,8 @@
       "blurb": "구글 Veo 모델로 장면을 이어 붙이는 AI 영상 제작 도구.",
       "new": true,
       "enter_text": "구글 계정으로 사용(구독 연동)",
-      "strength": "고품질 텍스트→영상 생성(Veo)에 강점"
+      "strength": "고품질 텍스트→영상 생성(Veo)에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "hailuo",
@@ -17292,7 +17399,8 @@
       "blurb": "미니맥스의 텍스트·이미지 기반 영상 생성 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧 제공)",
-      "strength": "인물 동작 표현의 영상 생성에 강점"
+      "strength": "인물 동작 표현의 영상 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "vidu",
@@ -17303,7 +17411,8 @@
       "blurb": "캐릭터 일관성을 유지하는 텍스트→영상 생성 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧 제공)",
-      "strength": "캐릭터 일관성 있는 짧은 영상 생성에 강점"
+      "strength": "캐릭터 일관성 있는 짧은 영상 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "opusclip",
@@ -17314,7 +17423,8 @@
       "blurb": "긴 영상을 쇼츠·릴스용 클립으로 잘라 주는 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 체험 제공)",
-      "strength": "롱폼→쇼츠 자동 클립·자막에 강점"
+      "strength": "롱폼→쇼츠 자동 클립·자막에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "invideo",
@@ -17325,7 +17435,8 @@
       "blurb": "프롬프트로 내레이션 포함 영상을 만드는 AI 영상 제작기.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "프롬프트 한 줄로 완성형 홍보 영상 제작에 강점"
+      "strength": "프롬프트 한 줄로 완성형 홍보 영상 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "fliki",
@@ -17336,7 +17447,8 @@
       "blurb": "글을 AI 음성 내레이션 영상으로 바꿔 주는 도구.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "블로그 글→내레이션 영상 변환에 강점"
+      "strength": "블로그 글→내레이션 영상 변환에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "veed",
@@ -17347,7 +17459,8 @@
       "blurb": "자막·번역·녹화까지 되는 브라우저 영상 편집기.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "브라우저에서 자막·번역 편집에 강점"
+      "strength": "브라우저에서 자막·번역 편집에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "d-id",
@@ -17358,7 +17471,8 @@
       "blurb": "사진 한 장으로 말하는 아바타 영상을 만드는 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 체험 제공)",
-      "strength": "사진 기반 말하는 아바타 생성에 강점"
+      "strength": "사진 기반 말하는 아바타 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "colossyan",
@@ -17369,7 +17483,8 @@
       "blurb": "교육·사내 영상용 AI 아바타 프레젠터 제작 도구.",
       "new": true,
       "enter_text": "가입 후 사용(체험 후 구독형)",
-      "strength": "교육·온보딩 영상 아바타 제작에 강점"
+      "strength": "교육·온보딩 영상 아바타 제작에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "playht",
@@ -17380,7 +17495,8 @@
       "blurb": "다국어 AI 음성 합성·클로닝 서비스.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "다국어 TTS·음성 클로닝 API에 강점"
+      "strength": "다국어 TTS·음성 클로닝 API에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "speechify",
@@ -17391,7 +17507,8 @@
       "blurb": "문서·웹페이지를 자연스러운 음성으로 읽어 주는 TTS.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "긴 글을 듣기로 소비하는 데 강점"
+      "strength": "긴 글을 듣기로 소비하는 데 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "lalal-ai",
@@ -17402,7 +17519,8 @@
       "blurb": "음원에서 보컬·악기를 분리하는 스템 분리 AI.",
       "new": true,
       "enter_text": "가입 없이 일부 사용(종량제)",
-      "strength": "보컬·MR 분리 품질에 강점"
+      "strength": "보컬·MR 분리 품질에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "krisp",
@@ -17413,7 +17531,8 @@
       "blurb": "통화·회의 소음을 실시간 제거하는 AI 오디오 필터.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "실시간 통화 소음·에코 제거에 강점"
+      "strength": "실시간 통화 소음·에코 제거에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "aiva",
@@ -17424,7 +17543,8 @@
       "blurb": "영상·게임용 배경음악을 작곡하는 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "분위기 지정 배경음악 작곡에 강점"
+      "strength": "분위기 지정 배경음악 작곡에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "mubert",
@@ -17435,7 +17555,8 @@
       "blurb": "로열티 걱정 없는 스트리밍형 AI 음악 생성 서비스.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "콘텐츠용 로열티프리 BGM 생성에 강점"
+      "strength": "콘텐츠용 로열티프리 BGM 생성에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "soundraw",
@@ -17446,7 +17567,8 @@
       "blurb": "길이·분위기를 지정해 BGM을 만드는 AI 작곡 도구.",
       "new": true,
       "enter_text": "가입 후 사용(체험 후 구독형)",
-      "strength": "영상 길이에 맞춘 BGM 제작에 강점"
+      "strength": "영상 길이에 맞춘 BGM 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "resemble",
@@ -17457,7 +17579,8 @@
       "blurb": "기업용 음성 클로닝·더빙 AI 플랫폼.",
       "new": true,
       "enter_text": "가입 후 사용(체험 후 구독형)",
-      "strength": "브랜드 보이스 클로닝·현지화 더빙에 강점"
+      "strength": "브랜드 보이스 클로닝·현지화 더빙에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "jetbrains-ai",
@@ -17468,7 +17591,8 @@
       "blurb": "IntelliJ 등 JetBrains IDE에 내장된 AI 코딩 어시스턴트.",
       "new": true,
       "enter_text": "IDE에서 활성화(구독형)",
-      "strength": "JetBrains IDE 사용자라면 자연스러운 통합에 강점"
+      "strength": "JetBrains IDE 사용자라면 자연스러운 통합에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "amazon-q",
@@ -17479,7 +17603,8 @@
       "blurb": "AWS 특화 AI 코딩·운영 어시스턴트.",
       "new": true,
       "enter_text": "AWS 계정으로 사용(무료 티어 제공)",
-      "strength": "AWS 인프라 코드·운영 자동화에 강점"
+      "strength": "AWS 인프라 코드·운영 자동화에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "tabnine",
@@ -17490,7 +17615,8 @@
       "blurb": "프라이버시 중심의 온프레미스 지원 AI 코드 자동완성.",
       "new": true,
       "enter_text": "IDE 플러그인 설치 후 사용(무료 플랜 제공)",
-      "strength": "코드 유출 걱정 없는 사내 배포에 강점"
+      "strength": "코드 유출 걱정 없는 사내 배포에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "cody",
@@ -17501,7 +17627,8 @@
       "blurb": "대형 코드베이스 검색과 결합한 AI 코딩 어시스턴트.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "대규모 저장소 맥락 이해에 강점"
+      "strength": "대규모 저장소 맥락 이해에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "openai-codex",
@@ -17512,7 +17639,8 @@
       "blurb": "작업을 맡기면 코드를 짜서 PR로 돌려주는 OpenAI의 코딩 에이전트.",
       "new": true,
       "enter_text": "ChatGPT 구독으로 사용",
-      "strength": "장시간 자율 코딩 작업 위임에 강점"
+      "strength": "장시간 자율 코딩 작업 위임에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "gemini-code",
@@ -17523,7 +17651,8 @@
       "blurb": "구글 Gemini 기반의 무료 개인용 AI 코딩 도구.",
       "new": true,
       "enter_text": "구글 계정으로 사용(개인 무료)",
-      "strength": "무료 개인 플랜의 넉넉한 사용량에 강점"
+      "strength": "무료 개인 플랜의 넉넉한 사용량에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "base44",
@@ -17534,7 +17663,8 @@
       "blurb": "말로 설명하면 DB 포함 앱을 만들어 주는 노코드 AI 빌더.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧 제공)",
-      "strength": "비개발자의 사내 도구·앱 제작에 강점"
+      "strength": "비개발자의 사내 도구·앱 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "firebase-studio",
@@ -17545,7 +17675,8 @@
       "blurb": "구글의 브라우저 기반 AI 풀스택 앱 개발 환경.",
       "new": true,
       "enter_text": "구글 계정으로 바로 사용(무료)",
-      "strength": "프로토타입→배포까지 브라우저 완결에 강점"
+      "strength": "프로토타입→배포까지 브라우저 완결에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "trae",
@@ -17556,7 +17687,8 @@
       "blurb": "바이트댄스의 무료 지향 AI 코드 에디터.",
       "new": true,
       "enter_text": "설치 후 바로 사용(무료 중심)",
-      "strength": "무료로 쓰는 AI IDE로 강점"
+      "strength": "무료로 쓰는 AI IDE로 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "warp",
@@ -17567,7 +17699,8 @@
       "blurb": "AI 에이전트를 내장한 차세대 터미널.",
       "new": true,
       "enter_text": "설치 후 바로 사용(무료 플랜 제공)",
-      "strength": "터미널 작업의 AI 자동화에 강점"
+      "strength": "터미널 작업의 AI 자동화에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "granola-ai",
@@ -17578,7 +17711,8 @@
       "blurb": "내 메모와 녹음을 합쳐 회의록을 완성하는 AI 노트패드.",
       "new": true,
       "enter_text": "설치 후 바로 사용(무료 체험 제공)",
-      "strength": "봇 없이 조용히 기록되는 회의 노트에 강점"
+      "strength": "봇 없이 조용히 기록되는 회의 노트에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "notta",
@@ -17589,7 +17723,8 @@
       "blurb": "다국어 회의 녹음·전사·요약 서비스(한국어 지원).",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "한국어 포함 다국어 전사 품질에 강점"
+      "strength": "한국어 포함 다국어 전사 품질에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "read-ai",
@@ -17600,7 +17735,8 @@
       "blurb": "회의·메일·메신저를 아우르는 업무 요약 코파일럿.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "회의+메일 통합 요약·검색에 강점"
+      "strength": "회의+메일 통합 요약·검색에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "circleback",
@@ -17611,7 +17747,8 @@
       "blurb": "회의에서 할 일·결정사항을 자동 추출하는 AI 회의록.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 체험 제공)",
-      "strength": "액션 아이템 자동 정리·후속 연동에 강점"
+      "strength": "액션 아이템 자동 정리·후속 연동에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "sovoro",
@@ -17622,7 +17759,8 @@
       "blurb": "실시간 한국어 음성 자막 서비스(회의·강의·방송).",
       "new": true,
       "enter_text": "가입 후 사용(체험 후 구독형)",
-      "strength": "실시간 한국어 자막·속기 대체에 강점"
+      "strength": "실시간 한국어 자막·속기 대체에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "plaud",
@@ -17633,7 +17771,8 @@
       "blurb": "녹음 하드웨어와 연동되는 AI 회의·통화 요약 서비스.",
       "new": true,
       "enter_text": "기기 구매 후 앱 연동(구독형)",
-      "strength": "오프라인 대화·통화 기록의 자동 요약에 강점"
+      "strength": "오프라인 대화·통화 기록의 자동 요약에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "chatbase",
@@ -17644,7 +17783,8 @@
       "blurb": "내 문서·사이트를 학습시켜 만드는 고객상담 AI 챗봇 빌더.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "자사 데이터 기반 상담봇을 코드 없이 만드는 데 강점"
+      "strength": "자사 데이터 기반 상담봇을 코드 없이 만드는 데 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "creatify",
@@ -17655,7 +17795,8 @@
       "blurb": "상품 URL만 넣으면 광고 영상을 만들어 주는 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧 제공)",
-      "strength": "커머스 상품 광고 영상 자동 제작에 강점"
+      "strength": "커머스 상품 광고 영상 자동 제작에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "arcads",
@@ -17666,7 +17807,8 @@
       "blurb": "AI 배우로 UGC 스타일 광고 영상을 만드는 도구.",
       "new": true,
       "enter_text": "가입 후 사용(구독형)",
-      "strength": "실사형 UGC 광고 소재 대량 제작에 강점"
+      "strength": "실사형 UGC 광고 소재 대량 제작에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "ocoya",
@@ -17677,7 +17819,8 @@
       "blurb": "SNS 콘텐츠 생성·예약 발행을 한 번에 하는 마케팅 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 체험 제공)",
-      "strength": "SNS 카피+이미지+예약 발행 일원화에 강점"
+      "strength": "SNS 카피+이미지+예약 발행 일원화에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "vcat",
@@ -17688,7 +17831,8 @@
       "blurb": "상품 URL로 광고 영상·배너를 자동 생성하는 국내 서비스.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 체험 제공)",
-      "strength": "한국 커머스 광고 소재 자동화에 강점"
+      "strength": "한국 커머스 광고 소재 자동화에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "gorgias",
@@ -17699,7 +17843,8 @@
       "blurb": "이커머스 특화 AI 고객응대 헬프데스크.",
       "new": true,
       "enter_text": "가입 후 사용(체험 후 구독형)",
-      "strength": "쇼핑몰 CS 자동 응답·주문 연동에 강점"
+      "strength": "쇼핑몰 CS 자동 응답·주문 연동에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "crisp",
@@ -17710,7 +17855,8 @@
       "blurb": "채팅 위젯·챗봇·공유 인박스를 갖춘 고객 메시징 플랫폼.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "소규모 팀의 올인원 고객 채팅에 강점"
+      "strength": "소규모 팀의 올인원 고객 채팅에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "gumloop",
@@ -17721,7 +17867,8 @@
       "blurb": "드래그앤드롭으로 AI 업무 자동화를 만드는 노코드 툴.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "AI 단계가 들어간 업무 플로 구축에 강점"
+      "strength": "AI 단계가 들어간 업무 플로 구축에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "bardeen",
@@ -17732,7 +17879,8 @@
       "blurb": "브라우저 반복 작업을 자동화하는 AI 확장 프로그램.",
       "new": true,
       "enter_text": "확장 설치 후 바로 사용(무료 플랜 제공)",
-      "strength": "웹 스크랩·영업 리서치 자동화에 강점"
+      "strength": "웹 스크랩·영업 리서치 자동화에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "activepieces",
@@ -17743,7 +17891,8 @@
       "blurb": "오픈소스 노코드 자동화 플랫폼(셀프호스팅 가능).",
       "new": true,
       "enter_text": "클라우드 가입 또는 셀프호스팅(오픈소스)",
-      "strength": "오픈소스라 비용·데이터 통제에 강점"
+      "strength": "오픈소스라 비용·데이터 통제에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "flowise",
@@ -17754,7 +17903,8 @@
       "blurb": "LLM 에이전트·챗봇을 시각적으로 조립하는 오픈소스 빌더.",
       "new": true,
       "enter_text": "클라우드 가입 또는 셀프호스팅(오픈소스)",
-      "strength": "시각적 LLM 워크플로 조립에 강점"
+      "strength": "시각적 LLM 워크플로 조립에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "crewai",
@@ -17765,7 +17915,8 @@
       "blurb": "여러 AI 에이전트를 팀처럼 굴리는 멀티에이전트 프레임워크.",
       "new": true,
       "enter_text": "가입 후 사용(오픈소스+클라우드)",
-      "strength": "역할 분담형 멀티에이전트 구축에 강점"
+      "strength": "역할 분담형 멀티에이전트 구축에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "genspark",
@@ -17776,7 +17927,8 @@
       "blurb": "조사·제작·전화까지 대신하는 범용 AI 에이전트.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 크레딧 제공)",
-      "strength": "슬라이드·리서치 등 결과물 완성형 위임에 강점"
+      "strength": "슬라이드·리서치 등 결과물 완성형 위임에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "dalpha",
@@ -17787,7 +17939,8 @@
       "blurb": "기업 업무에 맞춘 AI 에이전트를 구축해 주는 국내 서비스.",
       "new": true,
       "enter_text": "도입 상담 후 구축(B2B)",
-      "strength": "한국 기업 맞춤 AI 도입·구축에 강점"
+      "strength": "한국 기업 맞춤 AI 도입·구축에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "browse-ai",
@@ -17798,7 +17951,8 @@
       "blurb": "코딩 없이 웹사이트 데이터를 추출·모니터링하는 도구.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "경쟁사 가격·재고 모니터링 자동화에 강점"
+      "strength": "경쟁사 가격·재고 모니터링 자동화에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "scispace",
@@ -17809,7 +17963,8 @@
       "blurb": "논문 검색·요약·질의응답을 돕는 연구 AI.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "논문 읽기·문헌 정리 속도에 강점"
+      "strength": "논문 읽기·문헌 정리 속도에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "semantic-scholar",
@@ -17820,7 +17975,8 @@
       "blurb": "앨런AI연구소의 무료 AI 학술 검색 엔진.",
       "new": true,
       "enter_text": "가입 없이 바로 사용(무료)",
-      "strength": "무료 학술 검색·인용 그래프에 강점"
+      "strength": "무료 학술 검색·인용 그래프에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "researchrabbit",
@@ -17831,7 +17987,8 @@
       "blurb": "논문 연결망을 시각화해 관련 연구를 찾아 주는 도구.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료)",
-      "strength": "인용 관계 기반 문헌 탐색에 강점"
+      "strength": "인용 관계 기반 문헌 탐색에 강점",
+      "ai_pricing": "free"
     },
     {
       "id": "scite",
@@ -17842,7 +17999,8 @@
       "blurb": "인용이 지지인지 반박인지 분류해 주는 근거 검증 AI.",
       "new": true,
       "enter_text": "가입 후 사용(체험 후 구독형)",
-      "strength": "주장별 지지·반박 인용 검증에 강점"
+      "strength": "주장별 지지·반박 인용 검증에 강점",
+      "ai_pricing": "paid"
     },
     {
       "id": "felo",
@@ -17853,7 +18011,8 @@
       "blurb": "출처를 보여 주는 다국어 AI 검색 엔진.",
       "new": true,
       "enter_text": "가입 없이 일부 사용(무료 플랜 제공)",
-      "strength": "아시아권 언어 출처 검색에 강점"
+      "strength": "아시아권 언어 출처 검색에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "goover",
@@ -17864,7 +18023,8 @@
       "blurb": "주제를 등록하면 매일 브리핑을 만들어 주는 국내 AI 리서치 서비스.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "한국어 심층 리서치 리포트 자동화에 강점"
+      "strength": "한국어 심층 리서치 리포트 자동화에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "wordvice-ai",
@@ -17875,7 +18035,8 @@
       "blurb": "논문·에세이 영문 교정에 특화된 국내 AI 교정기.",
       "new": true,
       "enter_text": "가입 후 바로 사용(무료 플랜 제공)",
-      "strength": "학술 영문 교정·표절 검사에 강점"
+      "strength": "학술 영문 교정·표절 검사에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "immersive-translate",
@@ -17886,7 +18047,8 @@
       "blurb": "웹·PDF를 원문 대조로 번역하는 브라우저 확장.",
       "new": true,
       "enter_text": "확장 설치 후 바로 사용(무료 플랜 제공)",
-      "strength": "원문-번역 대조 읽기에 강점"
+      "strength": "원문-번역 대조 읽기에 강점",
+      "ai_pricing": "freemium"
     },
     {
       "id": "chatpdf",
@@ -17897,7 +18059,8 @@
       "blurb": "PDF를 업로드해 대화로 내용을 묻는 문서 AI.",
       "new": true,
       "enter_text": "가입 없이 일부 사용(무료 플랜 제공)",
-      "strength": "계약서·논문 PDF 질의응답에 강점"
+      "strength": "계약서·논문 PDF 질의응답에 강점",
+      "ai_pricing": "freemium"
     }
   ]
 }

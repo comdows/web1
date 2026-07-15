@@ -10,6 +10,7 @@ export interface Platform {
   verified?: boolean; fee_band?: "low" | "mid" | "high" | null; fee_text?: string | null;
   settle_text?: string | null; enter_text?: string | null; strength?: string | null;
   link_status?: "ok" | "warn" | "dead" | null; link_checked_at?: string | null; // 링크 신선도(healthcheck)
+  ai_pricing?: "free" | "freemium" | "paid" | null; // AI 도구 요금형태(무료/부분무료/유료 — 형태만, 금액 게재 안 함)
 }
 export interface Partnership { id: string; type: string; from: string; want: string[]; title: string; detail: string; give: string; get: string; size: string; posted: string; status: string; verified?: boolean; demo?: boolean }
 export interface Deal { id: string; category: string; region: string; revenue: string; mode: string; summary: string; posted: string; status: string; demo?: boolean }

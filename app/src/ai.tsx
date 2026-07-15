@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { platforms as staticPlatforms, categoryById } from "./data";
 import type { Platform } from "./data";
-import { Badge, PlatformCard, ShareButton } from "./components";
+import { Badge, PlatformCard, ShareButton, AI_PRICING } from "./components";
 import { useNav } from "./nav";
 import { usePlatforms } from "./lib/platforms";
 
@@ -68,12 +68,14 @@ export function AiFinder() {
   const sp0 = new URLSearchParams(location.search);
   const [goalId, setGoalId] = useState<string | null>(sp0.get("goal"));
   const [sits, setSits] = useState<Set<string>>(new Set((sp0.get("sit") ?? "").split(",").filter(Boolean)));
+  const [prices, setPrices] = useState<Set<string>>(new Set((sp0.get("price") ?? "").split(",").filter(Boolean)));
   useEffect(() => {
     const p = new URLSearchParams(location.search);
     if (goalId) p.set("goal", goalId); else p.delete("goal");
     if (sits.size) p.set("sit", [...sits].join(",")); else p.delete("sit");
+    if (prices.size) p.set("price", [...prices].join(",")); else p.delete("price");
     history.replaceState(null, "", `?${p}`);
-  }, [goalId, sits]);
+  }, [goalId, sits, prices]);
   const goal = GOALS.find((g) => g.id === goalId) ?? null;
 
   // 원격 데이터에 AI 분야가 아직 없으면(시드 전) 정적 데이터로 폴백
@@ -83,9 +85,11 @@ export function AiFinder() {
   }, [remote]);
 
   const toggleSit = (id: string) => setSits((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const togglePrice = (id: string) => setPrices((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
 
   const byCat = (cat: string): Platform[] => {
-    const list = source.filter((p) => p.category === cat);
+    let list = source.filter((p) => p.category === cat);
+    if (prices.size) list = list.filter((p) => p.ai_pricing && prices.has(p.ai_pricing)); // 요금형태 필터(무료/부분무료/유료)
     if (sits.size === 0) return list;
     // 선택한 상황에 맞는 도구를 앞으로(안정 정렬 — 나머지 순서는 유지)
     return [...list].sort((a, b) => (fitLabel(b, sits) ? 1 : 0) - (fitLabel(a, sits) ? 1 : 0));
@@ -119,11 +123,21 @@ export function AiFinder() {
       </div>
 
       <div className="sec-title">② 내 상황 (선택)</div>
-      <div className="chips-row" style={{ marginBottom: 18 }}>
+      <div className="chips-row" style={{ marginBottom: 14 }}>
         {SITUATIONS.map((s) => (
           <button key={s.id} className={`fchip ${sits.has(s.id) ? "on" : ""}`} onClick={() => toggleSit(s.id)}>{s.label}</button>
         ))}
       </div>
+
+      <div className="sec-title">③ 요금 형태 (선택)</div>
+      <div className="chips-row" style={{ marginBottom: 6 }}>
+        {(["free", "freemium", "paid"] as const).map((k) => (
+          <button key={k} className={`fchip ${prices.has(k) ? "on" : ""}`} onClick={() => togglePrice(k)} title={AI_PRICING[k].hint}>
+            {AI_PRICING[k].label}
+          </button>
+        ))}
+      </div>
+      <p className="sub faint" style={{ fontSize: 12, marginBottom: 16 }}>요금 형태는 참고용 추정이에요 — 정확한 조건·가격은 각 도구 공식 사이트에서 확인하세요.</p>
 
       {!goal ? (
         <div className="empty">위에서 해결하고 싶은 일을 고르면 추천이 나타나요.</div>

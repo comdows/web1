@@ -36,6 +36,8 @@ for (const chunk of chunks) {
     `${feeBand(p.fee_band)}, ${q(p.fee_text)}, ${q(p.settle_text)}, ${q(p.enter_text)}, ${q(p.strength)})`
   ).join(",\n") + "\non conflict (id) do nothing;\n");
 }
+/* ai_pricing(AI 요금형태)은 platforms 컬럼 추가(0032) 이후에 채워야 하므로 0003 시드엔 넣지 않는다.
+ * 0032가 컬럼 추가 + id별 UPDATE로 멱등 시드(판단필드 0014와 동일 패턴). */
 
 // 제휴 방식 카탈로그(app/src/data/partnerTypes.json — 21종·6그룹)
 push(`insert into public.partner_type_groups (id, label, descr, sort) values`);

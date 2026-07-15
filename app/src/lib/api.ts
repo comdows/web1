@@ -58,8 +58,9 @@ interface DbPlatform {
   verified?: boolean; fee_band?: "low" | "mid" | "high" | null; fee_text?: string | null;
   settle_text?: string | null; enter_text?: string | null; strength?: string | null;
   link_status?: "ok" | "warn" | "dead" | null; link_checked_at?: string | null;
+  ai_pricing?: "free" | "freemium" | "paid" | null;
 }
-const PLATFORM_COLS = "id,name,category_id,region,url,blurb,is_new,verified,fee_band,fee_text,settle_text,enter_text,strength,link_status,link_checked_at";
+const PLATFORM_COLS = "id,name,category_id,region,url,blurb,is_new,verified,fee_band,fee_text,settle_text,enter_text,strength,link_status,link_checked_at,ai_pricing";
 const fromDb = (r: DbPlatform): Platform => ({
   id: r.id, name: r.name, category: r.category_id,
   region: r.region === "overseas" ? "해외" : "국내",
@@ -67,6 +68,7 @@ const fromDb = (r: DbPlatform): Platform => ({
   verified: r.verified || undefined, fee_band: r.fee_band ?? undefined, fee_text: r.fee_text ?? undefined,
   settle_text: r.settle_text ?? undefined, enter_text: r.enter_text ?? undefined, strength: r.strength ?? undefined,
   link_status: r.link_status ?? undefined, link_checked_at: r.link_checked_at ?? undefined,
+  ai_pricing: r.ai_pricing ?? undefined,
 });
 
 export interface SearchParams {
