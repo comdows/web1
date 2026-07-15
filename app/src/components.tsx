@@ -124,6 +124,7 @@ export function Footer() {
           <button className="foot-link" onClick={() => go("ai-finder")}>AI 도구 찾기</button>
           <button className="foot-link" onClick={() => go("packs")}>업종별 시작 조합</button>
           <button className="foot-link" onClick={() => go("weekly")}>새로 나온 플랫폼·AI</button>
+          <button className="foot-link" onClick={() => go("news")}>소식·트렌드</button>
           <button className="foot-link" onClick={() => go("partners")}>제휴 매칭</button>
           <button className="foot-link" onClick={() => go("exchange")}>플랫폼 거래소</button>
           <button className="foot-link" onClick={() => go("value-check")}>가치 자가 진단</button>
