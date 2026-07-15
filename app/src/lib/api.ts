@@ -355,7 +355,7 @@ export async function createDealSubmission(payload: DealSubPayload): Promise<voi
   });
 }
 export async function createBuyerBrief(input: {
-  categories: string[]; budget_band: string; mode: string; entity: string; note: string;
+  categories: string[]; budget_band: string; mode: string; entity: string; note: string; region_pref?: string;
 }): Promise<void> {
   const uid = getSession()?.user.id;
   if (!uid) throw new Error("로그인이 필요합니다");
@@ -827,7 +827,7 @@ export async function listMyDealInterests(): Promise<MyInterestRow[]> {
 export async function listMyBriefs(): Promise<BuyerBriefRow[]> {
   const uid = getSession()?.user.id;
   if (!uid) return [];
-  return rest<BuyerBriefRow[]>(`buyer_briefs?user_id=eq.${uid}&select=id,categories,budget_band,mode,entity,note,active,created_at&order=created_at.desc&limit=50`);
+  return rest<BuyerBriefRow[]>(`buyer_briefs?user_id=eq.${uid}&select=id,categories,budget_band,mode,entity,note,region_pref,active,created_at&order=created_at.desc&limit=50`);
 }
 
 /* 최신 코드명(D-###) — 매물 게시 기본값 제안용(세션 인덱스 대신 DB 기준).
@@ -852,18 +852,20 @@ export async function updateDealStatus(id: string, status: "open" | "in_progress
     method: "PATCH", headers: { Prefer: "return=minimal" }, body: JSON.stringify({ status }),
   });
 }
-export async function listDealsAdmin(): Promise<{ id: string; status: string; summary: string; is_demo: boolean; category_id: string; mode: string; owner_verified?: boolean }[]> {
-  return rest("deals?select=id,status,summary,is_demo,category_id,mode,owner_verified&order=posted.desc&limit=100");
+export async function listDealsAdmin(): Promise<{ id: string; status: string; summary: string; is_demo: boolean; category_id: string; mode: string; region?: "domestic" | "overseas"; owner_verified?: boolean }[]> {
+  return rest("deals?select=id,status,summary,is_demo,category_id,mode,region,owner_verified&order=posted.desc&limit=100");
 }
 
-/* 브리프 ↔ 매물 조건 대조(클라이언트 매칭 — 분야 + 형태) */
+/* 브리프 ↔ 매물 조건 대조(클라이언트 매칭 — 분야 + 형태 + 지역).
+ * 지역 게이트: 브리프 지역 선호가 없거나 매물 지역 정보가 없으면 통과(하위호환). */
 export function briefMatchesDeal(
-  b: { categories: string[]; mode: string },
-  d: { category_id: string; mode: string }
+  b: { categories: string[]; mode: string; region_pref?: string },
+  d: { category_id: string; mode: string; region?: string }
 ): boolean {
   const catOk = b.categories.length === 0 || b.categories.includes(d.category_id);
   const modeOk = /무관/.test(b.mode) || b.mode === d.mode || (/자산/.test(b.mode) && /자산/.test(d.mode));
-  return catOk && modeOk;
+  const regOk = !b.region_pref || !d.region || b.region_pref === d.region;
+  return catOk && modeOk && regOk;
 }
 /* 브리프 안내 완료 처리(active=false — 0005 admin update 정책 필요) */
 export async function deactivateBrief(id: string): Promise<void> {
@@ -873,10 +875,10 @@ export async function deactivateBrief(id: string): Promise<void> {
 }
 
 export interface BuyerBriefRow {
-  id: string; categories: string[]; budget_band: string; mode: string; entity: string; note: string; active: boolean; created_at: string;
+  id: string; categories: string[]; budget_band: string; mode: string; entity: string; note: string; region_pref?: string; active: boolean; created_at: string;
 }
 export async function listBuyerBriefs(): Promise<BuyerBriefRow[]> {
-  return rest<BuyerBriefRow[]>("buyer_briefs?active=is.true&select=id,categories,budget_band,mode,entity,note,active,created_at&order=created_at.desc&limit=100");
+  return rest<BuyerBriefRow[]>("buyer_briefs?active=is.true&select=id,categories,budget_band,mode,entity,note,region_pref,active,created_at&order=created_at.desc&limit=100");
 }
 
 /* ── 관리자: 운영 지표(개수만 — count=exact 헤더, 본문 미전송) ── */
