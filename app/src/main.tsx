@@ -5,12 +5,14 @@ import './styles/tokens.css'
 import './styles/global.css'
 import App from './App.tsx'
 import { startFavSync } from './lib/favsync'
+import { startInterestSync } from './lib/interestsync'
 import { initPlatforms } from './lib/platforms'
 import { initPopularity } from './lib/popularity'
 import { initReviewStats } from './lib/reviews'
 import { FLAGS } from './config'
 
 startFavSync()     // 로그인 시 즐겨찾기 서버 동기화(원격 모드에서만 동작)
+startInterestSync() // 로그인 시 관심 프로필 서버 동기화(0031 — 기기 간 개인화)
 initPlatforms()    // 원격에서 전체 플랫폼 로드(정적 시드 위에 교체 — 승인된 새 플랫폼 반영)
 initPopularity()   // 공개 인기 집계 1회 로드(검색·추천 2차 신호 — 실패 시 빈 맵)
 initReviewStats()  // 공개 평점 집계 1회 로드(카드·상세 ★ 표시 전용 — 실패 시 빈 맵)

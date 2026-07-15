@@ -31,7 +31,8 @@ const Optout     = lazy(() => import("./account").then((m) => ({ default: m.Opto
 const DealView   = lazy(() => import("./pages").then((m) => ({ default: m.DealDetailPage })));
 const Support    = lazy(() => import("./support").then((m) => ({ default: m.Support })));
 import { useSession } from "./lib/auth";
-import { fetchRecentPlatforms, remoteEnabled, rest, trackEvent, unreadNotifCount } from "./lib/api";
+import { fetchRecentPlatforms, listSavedSearches, remoteEnabled, rest, trackEvent, unreadNotifCount } from "./lib/api";
+import type { SavedSearch } from "./lib/api";
 
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
 /* 인기 데이터가 비어 있을 때 "이번 주 많이 찾은"의 대표 폴백(잘 알려진 국내외 대표군) */
@@ -106,6 +107,14 @@ export default function App() {
     if (!session) { setUnreadNotif(0); return; }
     unreadNotifCount().then(setUnreadNotif).catch(() => setUnreadNotif(0));
   }, [session, view]);
+  // 로그인 개인화(H-2) — 홈 상단 "내 맞춤"에 저장 검색 바로가기(비로그인은 미로드)
+  const [mySaved, setMySaved] = useState<SavedSearch[]>([]);
+  useEffect(() => {
+    if (!session) { setMySaved([]); return; }
+    let alive = true;
+    listSavedSearches().then((r) => { if (alive) setMySaved(r); }).catch(() => { /* noop */ });
+    return () => { alive = false; };
+  }, [session]);
   const platforms = usePlatforms();
   const pop = usePopularity();
   const stats = usePlatformStats();
@@ -323,6 +332,26 @@ export default function App() {
             </div></section>
           ) : (
             <>
+              {/* ── 로그인 개인화(H-2): 내 저장 검색 바로가기 ── */}
+              {session && mySaved.length > 0 && (
+                <section className="home-sec"><div className="container">
+                  <div className="sec-title" style={{ marginTop: 0 }}>🔔 내 저장 검색
+                    <button className="sec-link" onClick={() => go("account")}>관리 →</button></div>
+                  <div className="chips-row">
+                    {mySaved.slice(0, 8).map((s) => {
+                      const c = s.criteria;
+                      const p = new URLSearchParams({ view: "search" });
+                      if (c.q) p.set("q", c.q);
+                      if (c.cats?.length) p.set("cats", c.cats.join(","));
+                      if (c.region && c.region !== "all") p.set("region", c.region);
+                      if (c.onlyNew) p.set("new", "1");
+                      if (c.fees?.length) p.set("fee", c.fees.join(","));
+                      return <a key={s.id} className="fchip" href={`${import.meta.env.BASE_URL}?${p}`}>{s.label}</a>;
+                    })}
+                  </div>
+                  <p className="sec-sub" style={{ margin: "6px 0 0", fontSize: 12.5 }}>조건에 맞는 새 플랫폼이 등재되면 알림으로 알려드려요.</p>
+                </div></section>
+              )}
               {/* ── 1a 이번 주 많이 찾은 플랫폼 ── */}
               <section className="home-sec"><div className="container">
                 <div className="sec-title" style={{ marginTop: 0 }}>이번 주 많이 찾은 플랫폼
