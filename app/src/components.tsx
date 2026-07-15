@@ -31,6 +31,18 @@ export function Badge({ kind, children }: { kind: "new" | "good" | "soon" | "mut
   return <span className={`badge ${kind}`}>{children}</span>;
 }
 
+/* AI 요금형태(0032) — 형태만 표기(금액 게재 안 함, 편집 추정). 라벨·배지색 매핑을 한 곳에서. */
+export const AI_PRICING: Record<"free" | "freemium" | "paid", { label: string; kind: "good" | "soon" | "muted"; hint: string }> = {
+  free:     { label: "무료",   kind: "good",  hint: "무료로 핵심 기능 사용(오픈소스·완전무료 등)" },
+  freemium: { label: "부분무료", kind: "soon",  hint: "무료 플랜/체험 있고 유료 업그레이드 존재" },
+  paid:     { label: "유료",   kind: "muted", hint: "무료 사용 제한(무료체험만 또는 유료 전용)" },
+};
+export function AiPricingBadge({ v }: { v?: "free" | "freemium" | "paid" | null }) {
+  if (!v || !AI_PRICING[v]) return null;
+  const m = AI_PRICING[v];
+  return <span title={`요금형태: ${m.hint} · 참고용(공식 사이트 확인)`}><Badge kind={m.kind}>{m.label}</Badge></span>;
+}
+
 /* 1a 아바타 — 연한 브랜드색 배경 + 진한 이니셜(파비콘 로드되면 실제 로고) */
 export function Avatar({ name, url, size }: { name: string; url: string; size?: "lg" }) {
   const [imgOk, setImgOk] = useState(true);
@@ -74,6 +86,7 @@ export function PlatformCard({ p, showCat = true, fit }: { p: Platform; showCat?
         <div style={{ minWidth: 0 }}>
           <h4><span className="pname">{p.name}</span>
             {p.new && <Badge kind="new">NEW</Badge>}{p.verified && <Badge kind="verify">✓ 검증</Badge>}{fit && <Badge kind="good">{fit}</Badge>}
+            <AiPricingBadge v={p.ai_pricing} />
             {p.link_status === "dead" && <span title="최근 점검에서 접속 불가 — 확인 필요"><Badge kind="muted">⚠ 링크 확인</Badge></span>}</h4>
           {showCat && cat && <div className="cat">{cat.name}{rstat && <span title={`이용 후기 ${rstat.review_count}건 평균`}> · ★{rstat.avg_rating} ({rstat.review_count})</span>}</div>}
         </div>

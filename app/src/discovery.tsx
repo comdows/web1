@@ -4,7 +4,7 @@ import { categories, groups, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import hubIntros from "./data/hub-intros.ko.json"; // 분야 허브 편집 인트로(검색 랜딩 안내)
 const HUB: Record<string, { intro: string; pickBy: string[] }> = hubIntros as never;
-import { Avatar, Badge, PlatformCard, ReportButton, ShareButton, SuggestInput } from "./components";
+import { Avatar, Badge, PlatformCard, ReportButton, ShareButton, SuggestInput, AiPricingBadge, AI_PRICING } from "./components";
 import { RecentQ, fuzzyCorrect } from "./lib/suggest";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
 import { amOperatorOf, createCorrection, createOperatorClaim, createSavedSearch, deleteMyReview, fetchPlatformNews, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent } from "./lib/api";
@@ -394,6 +394,12 @@ export function PlatformDetail({ id }: { id?: string }) {
           </div></div>
         )}
         {p.settle_text && <div className="fact"><div className="k">정산 주기 <span className="est">추정</span></div><div className="v">{p.settle_text} <a className="src" href={p.url} target="_blank" rel="noopener noreferrer">공식 확인 ↗</a></div></div>}
+        {p.ai_pricing && (
+          <div className="fact"><div className="k">요금 형태 <span className="est">참고</span></div><div className="v">
+            <AiPricingBadge v={p.ai_pricing} /> <span className="faint" style={{ fontSize: 12 }}>{AI_PRICING[p.ai_pricing].hint}</span>
+            {" "}<a className="src" href={p.url} target="_blank" rel="noopener noreferrer">공식 확인 ↗</a>
+          </div></div>
+        )}
         {p.enter_text && <div className="fact"><div className="k">입점 조건</div><div className="v">{p.enter_text}</div></div>}
         {p.strength && <div className="fact"><div className="k">강점</div><div className="v">{p.strength}</div></div>}
       </div>
@@ -713,6 +719,7 @@ export function Compare() {
     { k: "설명", render: (p) => <span style={{ fontSize: 13 }}>{p.blurb}</span> },
   ];
   // 리치 필드: 비교 대상 중 하나라도 값이 있으면 행 생성(전원 null 행은 숨김)
+  if (items.some((p) => p.ai_pricing)) rows.push({ k: "요금 형태 (참고)", render: (p) => p.ai_pricing ? AI_PRICING[p.ai_pricing].label : "—" });
   if (items.some((p) => p.fee_band)) rows.push({ k: "수수료대 (추정)", render: (p) => p.fee_band ? `${FEE_LABEL[p.fee_band].l}${p.fee_text ? ` (${p.fee_text})` : ""}` : "—" });
   if (items.some((p) => p.settle_text)) rows.push({ k: "정산 주기 (추정)", render: (p) => p.settle_text ?? "—" });
   if (items.some((p) => p.enter_text)) rows.push({ k: "입점 조건", render: (p) => p.enter_text ?? "—" });
