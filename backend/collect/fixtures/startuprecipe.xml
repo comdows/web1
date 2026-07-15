@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>스타트업레시피</title>
+  <item>
+    <title>크라우드펀딩 플랫폼 '펀딩모아' 베타 오픈</title>
+    <link>https://fundingmoa.example.kr</link>
+    <description>창작자 후원형 크라우드펀딩 서비스가 베타 오픈했다.</description>
+    <pubDate>Sat, 12 Jul 2026 10:00:00 +0900</pubDate>
+  </item>
+  <item>
+    <title>부동산 상업공간 중개 '샵스페이스' 출시</title>
+    <link>https://shopspace.example.kr</link>
+    <description>상가·점포 임대 매물을 중개하는 부동산 플랫폼이 출시됐다.</description>
+    <pubDate>Sat, 12 Jul 2026 09:00:00 +0900</pubDate>
+  </item>
+</channel></rss>

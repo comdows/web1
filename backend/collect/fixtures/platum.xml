@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>플래텀</title>
+  <item>
+    <title>동네배달, 소상공인 주문중개 앱 '바로콜' 정식 출시</title>
+    <link>https://barocall.example.kr</link>
+    <description>퀵커머스 기반 동네 배달 주문중개 서비스가 정식 출시됐다.</description>
+    <pubDate>Mon, 14 Jul 2026 09:00:00 +0900</pubDate>
+  </item>
+  <item>
+    <title>프리랜서 재능마켓 '디자인핏' 론칭… 외주 매칭 강화</title>
+    <link>https://designfit.example.kr</link>
+    <description>디자이너 프리랜서와 기업을 잇는 재능마켓 플랫폼이 론칭했다.</description>
+    <pubDate>Mon, 14 Jul 2026 08:00:00 +0900</pubDate>
+  </item>
+  <item>
+    <title>플래텀, 이번 주 스타트업 투자 동향 정리</title>
+    <link>https://platum.kr/archives/12345</link>
+    <description>일반 소식 기사 — 이 항목은 koLaunch 필터에서 걸러져야 정상.</description>
+    <pubDate>Sun, 13 Jul 2026 08:00:00 +0900</pubDate>
+  </item>
+</channel></rss>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Product Hunt — E-commerce</title>
+  <entry>
+    <title>ShopNest — build your online store in minutes</title>
+    <link href="https://www.producthunt.com/posts/shopnest"/>
+    <content>A storefront builder and marketplace toolkit for online sellers.</content>
+  </entry>
+  <entry>
+    <title>ReturnEase — returns management for ecommerce brands</title>
+    <link href="https://www.producthunt.com/posts/returnease"/>
+    <content>Handle marketplace returns and refunds in one dashboard.</content>
+  </entry>
+</feed>

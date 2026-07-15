@@ -1,0 +1,8 @@
+{
+  "hits": [
+    { "title": "Show HN: Loomly – an ecommerce storefront builder for indie sellers", "url": "https://loomly-store.example.com" },
+    { "title": "Show HN: PayLoopy – a fintech API for cross-border payments", "url": "https://payloopy.example.com" },
+    { "title": "Show HN: DeskFox – AI chatbot for customer support", "url": "https://deskfox.example.io" },
+    { "title": "Show HN: my personal blog about gardening", "url": "https://someblog.tistory.com" }
+  ]
+}

@@ -20,6 +20,7 @@ import {
   listReports, resolveReport, listPublishedReviews, listRecentPlatformNews, deletePlatformNews,
   searchAdminMembers, setMemberSuspended, listAppSettings, updateAppSetting, listRecentProcessed,
   listOpenInquiries, replyInquiry,
+  getAutolistConfig, setAutolistConfig, detectCollectorId,
 } from "./lib/api";
 import type {
   AdminChargeRow, BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin,
@@ -280,6 +281,63 @@ function AutoListedQueue() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+/* ── 자동 수집 설정 — app_settings 'autolist' 스위치를 콘솔에서 켜고/끈다(수기 SQL 불필요). ──
+ * 켜면 수집기가 directUrl·고신뢰(≥min) 후보를 자동 등재하고 위 "사후 검수"에 노출. collector_id는
+ * 수집 봇 uid여야 서버 RPC가 통과 — 최근 자동 제보에서 감지해 한 번 지정한다. */
+function AutolistConfigPanel() {
+  const [cfg, setCfg] = useState<Awaited<ReturnType<typeof getAutolistConfig>> | null>(null);
+  const [detected, setDetected] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState("");
+  useEffect(() => {
+    getAutolistConfig().then(setCfg).catch(() => setCfg({ enabled: false, min_confidence: 80, collector_id: null }));
+    detectCollectorId().then(setDetected).catch(() => setDetected(null));
+  }, []);
+  if (!cfg) return <div className="empty">불러오는 중…</div>;
+  const save = async (next: typeof cfg) => {
+    setBusy(true); setMsg("");
+    try { await setAutolistConfig(next); setCfg(next); setMsg("저장됨 ✓"); }
+    catch (ex) { setMsg(`저장 실패: ${ex instanceof Error ? ex.message : String(ex)}`); }
+    finally { setBusy(false); }
+  };
+  const ready = !!cfg.collector_id;
+  return (
+    <div className="admin-card" style={{ display: "grid", gap: 10 }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <b>자동 등재</b>
+        <Badge kind={cfg.enabled ? "soon" : "muted"}>{cfg.enabled ? "켜짐" : "꺼짐"}</Badge>
+        {!ready && <span className="err" style={{ fontSize: 12 }}>수집 봇 미지정 — 켜도 자동 등재 안 됨(아래에서 지정)</span>}
+        <label className="facet-opt" style={{ marginLeft: "auto", display: "flex", gap: 6, alignItems: "center" }}>
+          <input type="checkbox" checked={cfg.enabled} disabled={busy || !ready}
+            onChange={(e) => save({ ...cfg, enabled: e.target.checked })} /> 자동 등재 켜기
+        </label>
+      </div>
+      <div className="frm-note">
+        켜면 수집기가 <b>제품 실사이트(directUrl)</b>이고 신뢰도 <b>{cfg.min_confidence} 이상</b>인 후보만 자동 등재합니다
+        (lifecycle=review·비검증). 나머지·국내 뉴스·집계 링크는 그대로 검수 큐로. 위 "자동 등재 사후 검수"에서 확정/내리기로 스팟체크하세요.
+      </div>
+      <label style={{ fontSize: 13 }}>최소 신뢰도(min_confidence)
+        <input type="number" min={50} max={100} value={cfg.min_confidence} disabled={busy}
+          style={{ width: 80, marginLeft: 8 }}
+          onChange={(e) => setCfg({ ...cfg, min_confidence: Number(e.target.value) })}
+          onBlur={() => save(cfg)} />
+        <span className="faint" style={{ fontSize: 12, marginLeft: 6 }}>낮출수록 자동 등재↑·오등재 위험↑ (권장 80)</span>
+      </label>
+      <div style={{ fontSize: 13 }}>
+        수집 봇: {cfg.collector_id
+          ? <span className="mono">{cfg.collector_id.slice(0, 8)}…</span>
+          : <span className="faint">미지정</span>}
+        {detected && detected !== cfg.collector_id && (
+          <button className="btn ghost sm" disabled={busy} style={{ marginLeft: 8 }}
+            onClick={() => save({ ...cfg, collector_id: detected })}>감지된 봇({detected.slice(0, 8)}…)을 수집기로 지정</button>
+        )}
+        {!detected && <span className="faint" style={{ fontSize: 12, marginLeft: 8 }}>— 자동 수집 이력이 아직 없어 감지 불가(수집 1회 실행 후 지정)</span>}
+      </div>
+      {msg && <div className={msg.startsWith("저장됨") ? "ok" : "err"} style={{ fontSize: 13 }}>{msg}</div>}
     </div>
   );
 }
@@ -1724,6 +1782,9 @@ export function Admin() {
 
       <div className="sec-title" id="q-autolist">🤖 자동 등재 사후 검수</div>
       <AutoListedQueue />
+
+      <div className="sec-title" id="q-autolist-cfg">📥 자동 수집 설정</div>
+      <AutolistConfigPanel />
 
 
       <div className="sec-title" id="q-partner">🤝 제휴 제안 검수{counts?.partner ? ` · ${counts.partner}건` : ""}</div>

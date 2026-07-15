@@ -21,7 +21,8 @@ import path from "node:path";
 const DRY = process.argv.includes("--dry");
 const fixIdx = process.argv.indexOf("--fixture");
 const FIXTURE_DIR = fixIdx > -1 ? process.argv[fixIdx + 1] : null;
-const MAX_PER_RUN = 15; // 검수 부담 상한(1인 운영)
+const MAX_PER_RUN = 30; // 수집 상한(자동등재가 고신뢰분 흡수 + 일괄 승인으로 나머지 처리)
+const BOT_PENDING_CAP = 10; // 봇 미처리 제보 RLS 상한(0028 my_pending_count<10)과 동일 — 검수 큐 투입은 이 한도 준수
 
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_ANON_KEY;
@@ -79,6 +80,58 @@ const SOURCES = [
     koLaunch: true,
     directUrl: false,
   },
+  // ── 국내 매체 확대(커머스·서비스·핀테크 발굴) — 기사 URL이라 directUrl:false·koLaunch ──
+  {
+    id: "outstanding",
+    label: "아웃스탠딩 (국내 IT/스타트업)",
+    url: "https://outstanding.kr/feed",
+    fixture: "outstanding.xml",
+    region: "domestic",
+    parse: parseRss,
+    koLaunch: true,
+    directUrl: false,
+  },
+  {
+    id: "yozm",
+    label: "요즘IT (국내 IT 제품)",
+    url: "https://yozm.wishket.com/magazine/feed/",
+    fixture: "yozm.xml",
+    region: "domestic",
+    parse: parseRss,
+    koLaunch: true,
+    directUrl: false,
+  },
+  {
+    id: "byline",
+    label: "바이라인네트워크 (국내 IT)",
+    url: "https://byline.network/feed/",
+    fixture: "byline.xml",
+    region: "domestic",
+    parse: parseRss,
+    koLaunch: true,
+    directUrl: false,
+  },
+  // ── 글로벌 제품 디렉토리 확대(AI 외 커머스·핀테크) — PH 링크는 게시물 페이지라 directUrl:false ──
+  {
+    id: "ph-ecommerce",
+    label: "Product Hunt (E-commerce)",
+    url: "https://www.producthunt.com/feed?category=e-commerce",
+    fixture: "producthunt-ecommerce.xml",
+    region: "overseas",
+    parse: parseAtom,
+    directUrl: false,
+    catHint: "openmarket",
+  },
+  {
+    id: "ph-fintech",
+    label: "Product Hunt (Fintech)",
+    url: "https://www.producthunt.com/feed?category=fintech",
+    fixture: "producthunt-fintech.xml",
+    region: "overseas",
+    parse: parseAtom,
+    directUrl: false,
+    catHint: "finance",
+  },
 ];
 
 /* ── 파서(외부 의존성 없이 단순 정규식 — 실패 항목은 건너뜀) ── */
@@ -111,18 +164,65 @@ function parseRss(xml) {
 }
 function parseHN(json) {
   const d = typeof json === "string" ? JSON.parse(json) : json;
-  return (d.hits || []).filter((h) => h.url).map((h) => ({
-    name: decode(h.title).replace(/^Show HN:\s*/i, ""), url: h.url, desc: "",
-  }));
+  return (d.hits || []).filter((h) => h.url).map((h) => {
+    // "Show HN: 이름 – 설명" → 이름/설명 분리(설명은 분류·신뢰도에 활용). 구분자 없으면 전체가 이름.
+    const full = decode(h.title).replace(/^Show HN:\s*/i, "");
+    const m = full.match(/^(.+?)\s*(?:[—–|]|\s-|:)\s+(.+)$/);
+    return m ? { name: m[1], url: h.url, desc: m[2].slice(0, 160) } : { name: full, url: h.url, desc: "" };
+  });
 }
 
-/* 제목·설명 키워드 → 분야 추정(검수 셀렉트 초기값 제안 — 오분류여도 관리자가 교정) */
+/* 제목·설명 키워드 → 분야 추정(검수 셀렉트 초기값 제안 — 오분류여도 관리자가 교정).
+ * 45개 분야 전체. 첫 매치 우선이므로 "구체적 버티컬 → AI → 커머스 일반" 순서로 배치해
+ * 광범위 키워드(마켓·플랫폼)가 버티컬을 삼키지 않게 한다. 키워드는 보수적으로(오탐 최소) —
+ * 미매치 시 소스 catHint가 폴백(단, 자동등재 +20 가점은 여기 키워드 매치에만 부여 → hint만으론 자동등재 불가).*/
 const CAT_RULES = [
-  [/video|영상|film|clip/i, "ai_video"], [/image|이미지|design|디자인|photo|logo/i, "ai_image"],
-  [/voice|audio|music|음성|음악|tts|speech/i, "ai_audio"], [/code|coding|developer|개발|ide|api/i, "ai_code"],
-  [/meeting|회의|transcri|note/i, "ai_meeting"], [/marketing|seo|광고|ads|customer|support|cs/i, "ai_marketing"],
-  [/agent|automat|workflow|자동화/i, "ai_auto"], [/search|research|리서치|번역|translat|paper/i, "ai_research"],
-  [/write|writing|copy|글쓰기|document|문서/i, "ai_writing"], [/\bai\b|gpt|llm|chat/i, "ai_chat"],
+  // ── life(생활·여가·예약) — 버티컬이 뚜렷해 먼저 ──
+  [/반려동물|반려견|반려묘|펫\b|강아지|고양이|\bpet\b/i, "pet"],
+  [/웨딩|결혼|예식|신혼|\bwedding\b/i, "wedding"],
+  [/육아|키즈|유아|아기|영유아|\bkids?\b|\bbaby\b/i, "kids"],
+  [/중고차|자동차|정비|카센터|\bauto(motive)?\b|\bcar\b/i, "auto"],
+  [/부동산|상업공간|점포|매물|임대|\breal\s?estate\b|\bproperty\b/i, "realestate"],
+  [/피트니스|헬스장|요가|필라테스|스포츠|운동|\bfitness\b|\bgym\b/i, "fitness"],
+  [/티켓|공연|예매|콘서트|뮤지컬|\bticket\b/i, "ticket"],
+  [/웨딩촬영|스냅|사진 촬영|영상 촬영|초대장|\bphoto(graphy)?\b/i, "photo"],
+  [/케이터링|플라워|꽃집|행사 대행|파티 대행|\bcatering\b/i, "event"],
+  [/미용실|헤어|피부과|성형|병원 예약|헬스케어 예약|\bclinic\b|\bsalon\b/i, "beautyhealth"],
+  [/숙박|공간대여|파티룸|스터디룸|게스트하우스|투어 예약|\bbooking\b(?!.*flight)/i, "space"],
+  [/렌탈|대여|정기 렌탈|\brental\b/i, "rental"],
+  // ── service(서비스·전문가·일자리) ──
+  [/프리랜서|재능마켓|재능|외주|\bfreelance\b|\bgig\b/i, "freelance"],
+  [/구인구직|채용|일자리|긴급 인력|긱워크|\brecruit(ing)?\b|\bjobs?\b/i, "jobs"],
+  [/법률|세무|변호사|세무사|노무사|법무|\blegal\b|\btax\b/i, "legaltax"],
+  [/홈서비스|이사|청소|집수리|인테리어 시공|생활 o2o/i, "homeservice"],
+  // ── money(자금·콘텐츠·창작) ──
+  [/크라우드펀딩|펀딩|후원|\bcrowdfund/i, "funding"],
+  [/인쇄|굿즈 제작|굿즈|\bprint(ing|-on-demand)?\b|\bpod\b/i, "print"],
+  [/대출|보험|금융 비교|카드 비교|\bfintech\b|\bloan\b|\binsurance\b/i, "finance"],
+  [/창작자 수익|크리에이터|팬 후원|뉴스레터|멤버십 콘텐츠|\bcreator\b/i, "content"],
+  [/스톡|폰트|템플릿 판매|디지털 에셋|\bstock\b(?!.*market)|디자인 소스/i, "assets"],
+  // ── trade(해외·B2B·유통) ──
+  [/물류|풀필먼트|배송대행|3pl|\bfulfillment\b|\blogistics\b/i, "fulfillment"],
+  [/수출|수입|역직구|해외 판매|크로스보더|\bcross-?border\b|\bexport\b|\bimport\b/i, "global"],
+  [/도매|소싱|사입|\bwholesale\b|\bsourcing\b/i, "wholesale"],
+  [/\bmro\b|산업재|사무용품|기업 구매|\boffice supply\b|b2b 구매/i, "office"],
+  // ── ai(AI 도구) — 키워드가 뚜렷 ──
+  [/video|영상|film|clip/i, "ai_video"], [/image|이미지|일러스트|logo|로고/i, "ai_image"],
+  [/voice|audio|music|음성|음악|tts|speech/i, "ai_audio"], [/coding|developer|개발자|ide|copilot/i, "ai_code"],
+  [/meeting|회의록|transcri|녹취/i, "ai_meeting"], [/마케팅 ai|seo ai|광고 ai|챗봇|customer support ai/i, "ai_marketing"],
+  [/\bagent\b|automat|workflow|자동화 ai/i, "ai_auto"], [/리서치 ai|번역 ai|translat|논문|paper/i, "ai_research"],
+  [/글쓰기 ai|copywrit|문서 작성 ai/i, "ai_writing"], [/\bai\b|gpt|llm|generative|생성형/i, "ai_chat"],
+  // ── commerce(커머스·판매채널) — 일반 키워드라 마지막 ──
+  [/홈쇼핑|t커머스|티커머스/i, "homeshopping"],
+  [/라이브커머스|라이브 쇼핑|라방|\blive commerce\b/i, "live"],
+  [/공동구매|공구|소셜커머스|특가딜/i, "social"],
+  [/배달|음식 주문|퀵커머스|주문중개/i, "delivery"],
+  [/중고거래|리커머스|리셀|\bresale\b|\bused\b/i, "resale"],
+  [/핸드메이드|수공예|작가마켓|\bhandmade\b|\bcraft\b/i, "handmade"],
+  [/식품|신선|밀키트|정기배송|\bgrocery\b|\bfresh\b/i, "food"],
+  [/패션|의류|뷰티 커머스|\bfashion\b|\bapparel\b/i, "fashion"],
+  [/자사몰|쇼핑몰 구축|쇼핑몰 솔루션|쇼핑몰 제작|스토어 구축|\bstorefront\b/i, "mallbuilder"],
+  [/오픈마켓|종합몰|마켓플레이스|셀러|입점|\becommerce\b|\bmarketplace\b/i, "openmarket"],
 ];
 function guessCategory(name, desc) {
   const hay = `${name} ${desc}`;
@@ -188,7 +288,7 @@ function normalize(items, src) {
     .map((it) => ({
       name: it.name, url: it.url, desc: it.desc,
       region: src.region, source: src.id, sourceLabel: src.label,
-      directUrl: !!src.directUrl,
+      directUrl: !!src.directUrl, catHint: src.catHint || "",
     }));
 }
 
@@ -197,13 +297,17 @@ function normalize(items, src) {
  * 절대 자동 등재되지 않는다(국내 뉴스는 기사 URL이라 사람이 실 URL 확인 필요 → 검수/일괄승인으로).*/
 function confidence(c) {
   let score = 30;
-  if (c.directUrl) score += 25; else return Math.min(score + 5, 55); // 비직접 URL은 55 상한
-  if (guessCategory(c.name, c.desc)) score += 20;
+  if (c.directUrl) score += 25;
+  if (guessCategory(c.name, c.desc)) score += 20;                       // 키워드 분야 매치(catHint 제외 — 자동등재 안전장치)
   if ((c.desc || "").trim().length >= 20) score += 10;
   const n = c.name.trim();
   if (n.length >= 2 && n.length <= 40 && !/^[A-Z ]+$/.test(n)) score += 10;
   if (AGGREGATOR_HOSTS.test(host(c.url))) score -= 25;
-  return Math.max(0, Math.min(100, score));
+  score = Math.max(0, Math.min(100, score));
+  // 비직접 URL(기사·게시물 링크)은 실사이트가 아니라 자동등재 임계(min_confidence≥80) 아래로 고정.
+  // 단 분야·설명 가점은 반영돼 검수 트리아지·일괄 선택에 쓸모 있는 점수(≤55)를 준다.
+  if (!c.directUrl) score = Math.min(score, 55);
+  return score;
 }
 
 /* ── 수집 ─────────────────────────────────────────────────── */
@@ -333,36 +437,52 @@ const collected = (await Promise.all(SOURCES.map(fetchSource))).flat();
 console.log(`수집 ${collected.length}건 (${SOURCES.map((s) => s.id).join(", ")})`);
 if (!FIXTURE_DIR && sourceFails >= SOURCES.length) throw new Error(`전 소스(${SOURCES.length}개) 수집 실패 — 수집기 점검 필요`);
 
-// 1차: 수집분 내부 dedup(호스트 기준)
+// dedup 키: 제품 실사이트(directUrl)는 호스트로, 집계/기사 링크(비directUrl — PH 게시물·뉴스 기사는
+// 모두 같은 호스트라 호스트로 묶으면 소스당 1건으로 붕괴)는 전체 URL로 구분한다.
+const dedupKey = (c) => (c.directUrl ? host(c.url) : (c.url || "").replace(/[?#].*$/, "").replace(/\/+$/, ""));
+
+// 1차: 수집분 내부 dedup
 const seen = new Set();
-let candidates = collected.filter((c) => { const h = host(c.url); if (seen.has(h)) return false; seen.add(h); return true; });
+let candidates = collected.filter((c) => { const k = dedupKey(c); if (!k || seen.has(k)) return false; seen.add(k); return true; });
 
 if (DRY && !SB_URL) {
   console.log(`\n[dry] DB 미접속 — 후보 ${candidates.length}건 · 뉴스 원문 ${newsRaw.length}건(플랫폼 매칭은 DB 필요):`);
   for (const c of candidates.slice(0, 40)) {
-    const sc = confidence(c), cat = guessCategory(c.name, c.desc);
+    const sc = confidence(c), cat = guessCategory(c.name, c.desc) || c.catHint || "";
     const auto = c.directUrl && cat && sc >= 80 ? "★자동" : "검수";
-    console.log(`  - [${c.source}] (${sc} ${auto}) ${c.name} | ${c.url}`);
+    console.log(`  - [${c.source}] (${sc} ${auto} ${cat || "미분류"}) ${c.name} | ${c.url}`);
   }
   process.exit(0);
 }
 
-// 2차: 기존 등재 플랫폼 + 봇의 과거 제보와 dedup (호스트 정규화 + 이름 퍼지 매칭)
+// 2차: 기존 등재 플랫폼 + 봇의 과거 제보와 dedup.
+//  · knownHosts: 등재 플랫폼의 실사이트 호스트(directUrl 후보의 호스트 중복 차단용).
+//  · knownUrls: 봇 과거 제보의 전체 URL(같은 기사·게시물 재투입 방지). 집계 호스트를 knownHosts에
+//    넣으면(예전 버그) 그 소스의 모든 후보가 영구 차단되므로 넣지 않는다.
+//  · knownKeys: 이름 정규화 키(퍼지 매칭) — 등재 + 과거 제보 양쪽.
 const platforms = await rest("platforms?select=id,url,name");
 const knownHosts = new Set(platforms.map((p) => host(p.url)).filter(Boolean));
 const knownKeys = new Set(platforms.map((p) => nameKey(p.name)).filter(Boolean));
+const knownUrls = new Set();
 
 const { token, uid } = DRY ? { token: null, uid: null } : await botLogin();
 const mySubs = token ? await rest("submissions?select=payload&limit=1000", {}, token) : [];
 for (const s of mySubs) {
-  const h = host(s.payload?.url ?? ""); if (h) knownHosts.add(h);
+  const u = (s.payload?.url ?? "").replace(/[?#].*$/, "").replace(/\/+$/, ""); if (u) knownUrls.add(u);
   const k = nameKey(s.payload?.name ?? ""); if (k) knownKeys.add(k);
 }
 
 candidates = candidates
-  .filter((c) => !knownHosts.has(host(c.url)) && !fuzzyNameHit(c.name, knownKeys))
+  .filter((c) => {
+    if (fuzzyNameHit(c.name, knownKeys)) return false;                 // 이름 중복(등재·과거 제보)
+    if (knownUrls.has(dedupKey(c))) return false;                      // 같은 기사·게시물 재투입 방지
+    if (c.directUrl && knownHosts.has(host(c.url))) return false;      // 제품 실사이트 호스트 중복
+    return true;
+  })
   .slice(0, MAX_PER_RUN)
-  .map((c) => ({ ...c, confidence: confidence(c), category_id: guessCategory(c.name, c.desc) }));
+  // category_id: 키워드 추정 우선, 없으면 소스 catHint 폴백(검수·일괄승인 자격 부여).
+  // confidence()의 +20 가점은 키워드 매치에만 → catHint만으론 자동등재 임계(80)에 못 미침(안전).
+  .map((c) => ({ ...c, confidence: confidence(c), category_id: guessCategory(c.name, c.desc) || c.catHint || "" }));
 
 console.log(`중복 제거 후 신규 후보 ${candidates.length}건 (상한 ${MAX_PER_RUN})`);
 for (const c of candidates) console.log(`  + [${c.source}] (${c.confidence}) ${c.name} | ${c.url}`);
@@ -376,7 +496,7 @@ if (DRY) { console.log("[dry] 투입 생략"); process.exit(0); }
 
 // 자동 등재(D) 스위치 — app_settings 'autolist'.enabled + collector_id 일치할 때만.
 // 기본 off → 전부 검수 큐로(오늘 동작 그대로). 켜져 있어도 confidence≥min & directUrl만 자동 등재.
-let listed = 0, queued = 0;
+let listed = 0, queued = 0, skipped = 0;
 if (candidates.length > 0) {
   let auto = { enabled: false, min_confidence: 80, collector_id: null };
   try {
@@ -384,6 +504,11 @@ if (candidates.length > 0) {
     if (rows?.[0]?.value) auto = { ...auto, ...rows[0].value };
   } catch { /* 설정 없으면 off로 간주 */ }
   const autoOn = !!auto.enabled && auto.collector_id === uid;
+
+  // 검수 큐 투입은 봇 pending 상한(0028 RLS: status=pending < 10)을 넘으면 insert가 거부된다.
+  // 미리 현재 pending 수를 세어 남은 슬롯만큼만 넣고, 초과분은 건너뛴다(다음 런에 다시 후보로 올라옴) — 런 실패 방지.
+  const curPending = (await rest(`submissions?submitter_id=eq.${uid}&status=eq.pending&select=id`, {}, token))?.length ?? 0;
+  let slotsLeft = Math.max(0, BOT_PENDING_CAP - curPending);
 
   for (const c of candidates) {
     const payload = {
@@ -403,15 +528,17 @@ if (candidates.length > 0) {
         console.warn(`[auto-list 실패→검수 큐로] ${c.name}: ${e.message}`);
       }
     }
+    if (slotsLeft <= 0) { skipped++; continue; } // 검수 큐 상한 도달 — 이번 런은 건너뜀
     await rest("submissions", {
       method: "POST", headers: { Prefer: "return=minimal" },
       body: JSON.stringify({ submitter_id: uid, payload }),
     });
-    queued++;
+    queued++; slotsLeft--;
   }
+  if (skipped) console.log(`검수 큐 상한(${BOT_PENDING_CAP}) 도달 — ${skipped}건은 다음 런으로 이월(큐를 비우면 투입됨)`);
 } else {
   console.log("신규 후보 없음");
 }
 
 const newsPushed = newsRows.length ? await pushNews(newsRows) : 0;
-console.log(`✓ 자동 등재 ${listed}건(사후 검수 대기) · 검수 큐 투입 ${queued}건 · 소식 연결 ${newsPushed}건(중복 무시) — 관리 콘솔에서 확인하세요.`);
+console.log(`✓ 자동 등재 ${listed}건(사후 검수 대기) · 검수 큐 투입 ${queued}건${skipped ? ` · 이월 ${skipped}건` : ""} · 소식 연결 ${newsPushed}건(중복 무시) — 관리 콘솔에서 확인하세요.`);

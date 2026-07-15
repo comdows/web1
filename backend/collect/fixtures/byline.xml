@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>바이라인네트워크</title>
+  <item>
+    <title>법률·세무 전문가 상담 매칭 '로택스' 정식 오픈</title>
+    <link>https://lawtax.example.kr</link>
+    <description>변호사·세무사 상담을 연결하는 전문가 매칭 플랫폼이 오픈했다.</description>
+    <pubDate>Wed, 09 Jul 2026 10:00:00 +0900</pubDate>
+  </item>
+  <item>
+    <title>물류 풀필먼트 스타트업 '박스플로우' 서비스 출시</title>
+    <link>https://boxflow.example.kr</link>
+    <description>이커머스 셀러를 위한 풀필먼트·배송대행 서비스가 출시됐다.</description>
+    <pubDate>Wed, 09 Jul 2026 09:00:00 +0900</pubDate>
+  </item>
+</channel></rss>

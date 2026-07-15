@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>벤처스퀘어</title>
+  <item>
+    <title>중고 명품 리커머스 '리셀박스' 오픈</title>
+    <link>https://resellbox.example.kr</link>
+    <description>중고거래 기반 명품 리셀 플랫폼이 오픈했다.</description>
+    <pubDate>Sun, 13 Jul 2026 10:00:00 +0900</pubDate>
+  </item>
+  <item>
+    <title>반려동물 헬스케어 예약 앱 '펫케어나우' 정식 공개</title>
+    <link>https://petcarenow.example.kr</link>
+    <description>반려동물 병원 예약과 건강관리를 제공하는 앱이 공개됐다.</description>
+    <pubDate>Sun, 13 Jul 2026 09:00:00 +0900</pubDate>
+  </item>
+</channel></rss>

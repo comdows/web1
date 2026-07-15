@@ -941,6 +941,30 @@ export async function updateAppSetting(key: string, value: Record<string, unknow
   });
 }
 
+/* ── 자동 수집(autolist) 스위치 콘솔 관리(0016 app_settings — admin write RLS) ──
+ * 켜면 수집기가 directUrl·고신뢰(≥min) 후보를 자동 등재(lifecycle=review, 사후 검수 큐로). collector_id는
+ * 수집 봇 uid(최근 auto 제보에서 감지)여야 서버 RPC(auto_list_candidate)가 통과시킨다. 기본 off. */
+export interface AutolistConfig { enabled: boolean; min_confidence: number; collector_id: string | null }
+const AUTOLIST_DEFAULT: AutolistConfig = { enabled: false, min_confidence: 80, collector_id: null };
+export async function getAutolistConfig(): Promise<AutolistConfig> {
+  try {
+    const rows = await rest<{ value: Partial<AutolistConfig> }[]>("app_settings?key=eq.autolist&select=value");
+    return { ...AUTOLIST_DEFAULT, ...(rows[0]?.value ?? {}) };
+  } catch { return AUTOLIST_DEFAULT; }
+}
+export async function setAutolistConfig(cfg: AutolistConfig): Promise<void> {
+  const min = Math.max(50, Math.min(100, Math.round(cfg.min_confidence || 80)));
+  await updateAppSetting("autolist", { enabled: !!cfg.enabled, min_confidence: min, collector_id: cfg.collector_id });
+}
+/* 수집 봇 uid 감지 — 최근 자동 수집 제보(payload.note가 'auto:'로 시작)의 submitter_id(admin RLS로 열람). */
+export async function detectCollectorId(): Promise<string | null> {
+  try {
+    const rows = await rest<{ submitter_id: string | null }[]>(
+      "submissions?payload->>note=ilike.auto:*&select=submitter_id&order=created_at.desc&limit=1");
+    return rows[0]?.submitter_id ?? null;
+  } catch { return null; }
+}
+
 /* ── 관리자: 최근 처리 내역 — 별도 테이블 없이 각 큐의 처리분을 모아 보여준다(분쟁·문의 대응 근거) ── */
 export interface ProcessedItem { kind: string; id: string; label: string; status: string; reason: string | null; at: string }
 export async function listRecentProcessed(): Promise<ProcessedItem[]> {

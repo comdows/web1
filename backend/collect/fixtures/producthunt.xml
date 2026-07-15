@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Product Hunt — AI</title>
+  <entry>
+    <title>Fluxel — AI image generator for product photos</title>
+    <link href="https://www.producthunt.com/posts/fluxel"/>
+    <content>Generate studio-quality product images with AI. Great for ecommerce sellers.</content>
+  </entry>
+  <entry>
+    <title>MeetScribe: AI meeting notes and transcription</title>
+    <link href="https://www.producthunt.com/posts/meetscribe"/>
+    <content>Automatic meeting transcription and summaries for remote teams.</content>
+  </entry>
+  <entry>
+    <title>CodePilotX — AI coding agent in your IDE</title>
+    <link href="https://www.producthunt.com/posts/codepilotx"/>
+    <content>An AI developer copilot that writes and reviews code inside your editor.</content>
+  </entry>
+</feed>
