@@ -1008,6 +1008,23 @@ export async function deleteSavedSearch(id: string): Promise<void> {
   await rest(`saved_searches?id=eq.${id}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
 }
 
+/* ── 관심 프로필 서버화(0031) — 온보딩 관심을 기기 간 동기화(즐겨찾기와 동형) ── */
+export interface ServerInterests { groups: string[]; cats: string[]; new_pref: boolean }
+export async function fetchMyInterests(): Promise<ServerInterests | null> {
+  const uid = getSession()?.user.id;
+  if (!remoteEnabled || !uid) return null;
+  const rows = await rest<ServerInterests[]>(`user_interests?user_id=eq.${uid}&select=groups,cats,new_pref`).catch(() => []);
+  return rows[0] ?? null;
+}
+export async function saveMyInterests(i: { groups: string[]; cats: string[]; newPref: boolean }): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!remoteEnabled || !uid) return;
+  await rest("user_interests?on_conflict=user_id", {
+    method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({ user_id: uid, groups: i.groups, cats: i.cats, new_pref: i.newPref, updated_at: new Date().toISOString() }),
+  }).catch(() => { /* 동기화 실패해도 로컬 관심은 동작 */ });
+}
+
 /* ── 소개 후 성사·후기(0021) — 본인 응답 기록/조회(재응답=갱신) ── */
 export type IntroOutcomeKind = "progressing" | "success" | "no";
 export async function listMyIntroOutcomes(): Promise<Map<string, IntroOutcomeKind>> {

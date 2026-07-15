@@ -76,8 +76,13 @@ export const Interests = {
       return { groups: Array.isArray(o.groups) ? o.groups : [], cats: Array.isArray(o.cats) ? o.cats : [], newPref: Boolean(o.newPref) };
     } catch { return null; }
   },
-  set(s: InterestsState) { lsSet(INTERESTS_KEY, JSON.stringify(s)); emit(); },
+  set(s: InterestsState) { lsSet(INTERESTS_KEY, JSON.stringify(s)); if (interestSync) interestSync(s); emit(); },
+  /* 서버 동기화 유입 — 로컬만 갱신(재푸시 없음, 무한루프 방지) */
+  setLocal(s: InterestsState) { lsSet(INTERESTS_KEY, JSON.stringify(s)); emit(); },
 };
+/* 로그인 시 관심 프로필 서버 동기화 콜백(lib/interestsync.ts가 주입 — 0031) */
+let interestSync: ((s: InterestsState) => void) | null = null;
+export function setInterestSync(fn: ((s: InterestsState) => void) | null) { interestSync = fn; }
 
 /* 폼 초안 — 긴 폼(매각 접수·제휴 제안) 작성 중 세션 만료·이탈 시 입력 유실 방지.
  * 제출 성공 시 clear. 연락처류는 애초에 입력 금지 필드라 민감 정보 저장 없음. */
