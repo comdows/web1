@@ -21,13 +21,28 @@ const FIXTURE = fixIdx > -1 ? process.argv[fixIdx + 1] : null;
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_ANON_KEY;
 
-/* 브리프 ↔ 매물 매칭(분야 + 형태) — app/src/lib/api.ts briefMatchesDeal과 동일 규칙.
- * (예산·지역 반영 점수화는 Track B에서 별도 도입) */
+/* 밴드 텍스트에서 대표 규모(억 단위) 추출 — app/src/lib/match.ts bandMax와 동일 규칙. */
+function bandMax(t) {
+  if (!t) return null;
+  const eok = [...String(t).matchAll(/(\d+(?:\.\d+)?)\s*억/g)].map((m) => parseFloat(m[1]));
+  if (eok.length) return Math.max(...eok);
+  const cheon = [...String(t).matchAll(/(\d+(?:\.\d+)?)\s*천/g)].map((m) => parseFloat(m[1]) * 0.1);
+  if (cheon.length) return Math.max(...cheon);
+  if (/만/.test(t)) return 0.3;
+  const bare = [...String(t).matchAll(/(\d+(?:\.\d+)?)/g)].map((m) => parseFloat(m[1]));
+  return bare.length ? Math.max(...bare) : null;
+}
+/* 브리프 ↔ 매물 매칭(분야 + 형태 + 지역 + 예산 하한) — app/src/lib/api.ts briefMatchesDeal
+ * + match.ts regionOk/budgetFloorOk와 동일 규칙(Track B: 지역·예산 게이트 연결).
+ * region_pref 미설정·deal.region 미상이면 지역 게이트 통과, 밴드 파싱 불가면 예산 게이트 통과. */
 function matches(brief, deal) {
   const catOk = !brief.categories?.length || brief.categories.includes(deal.category_id);
   const modeOk = /무관/.test(brief.mode || "") || brief.mode === deal.mode
     || (/자산/.test(brief.mode || "") && /자산/.test(deal.mode || ""));
-  return catOk && modeOk;
+  const regionOk = !brief.region_pref || !deal.region || brief.region_pref === deal.region;
+  const bm = bandMax(brief.budget_band), rm = bandMax(deal.revenue_band);
+  const budgetOk = bm == null || rm == null || bm >= rm * 0.5; // 예산이 매출 절반 이상이면 통과
+  return catOk && modeOk && regionOk && budgetOk;
 }
 
 async function login() {
@@ -71,7 +86,7 @@ if (FIXTURE) {
 } else {
   token = await login();
   await assertAdmin(token);
-  briefs = await rest(token, "buyer_briefs?active=is.true&select=id,user_id,categories,budget_band,mode");
+  briefs = await rest(token, "buyer_briefs?active=is.true&select=id,user_id,categories,budget_band,mode,region_pref");
   deals = await rest(token, "deals?status=eq.open&is_demo=is.false&select=id,category_id,mode,revenue_band,region,summary");
   favorites = await rest(token, "favorites?select=user_id,platform_id&limit=10000");
   // region·fee_band·blurb는 저장 검색(0030) 조건 매칭에 필요

@@ -835,7 +835,7 @@ export function Account() {
           ))}
           {acts.br.map((b) => (
             <div className="sub-item" key={b.id}>
-              <div style={{ minWidth: 0 }}>📮 <b>인수 브리프</b> — {b.budget_band} · {b.mode}</div>
+              <div style={{ minWidth: 0 }}>📮 <b>인수 브리프</b> — {b.budget_band} · {b.mode}{b.region_pref ? ` · ${b.region_pref === "overseas" ? "해외" : "국내"}` : ""}</div>
               <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
                 {b.active && (
                   <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === b.id}

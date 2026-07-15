@@ -1394,7 +1394,7 @@ function RefundPanel({ tick, bump }: { tick: number; bump: () => void }) {
 function IntroQueue() {
   const [rows, setRows] = useState<IntroQueueRow[] | null>(null);
   const [briefs, setBriefs] = useState<BuyerBriefRow[]>([]);
-  const [deals, setDeals] = useState<{ id: string; status: string; is_demo: boolean; category_id: string; mode: string }[]>([]);
+  const [deals, setDeals] = useState<{ id: string; status: string; is_demo: boolean; category_id: string; mode: string; region?: "domestic" | "overseas" }[]>([]);
   const [mailed, setMailed] = useState<Set<string>>(new Set()); // 소개 초안을 연 건 표시(참고용)
   const [evid, setEvid] = useState<Record<string, string>>({}); // 발송 증빙 인라인 입력(실패해도 값 유지)
   const [loadErr, setLoadErr] = useState(false);
@@ -1496,7 +1496,7 @@ function IntroQueue() {
         return (
           <div className="sub-item" key={b.id}>
             <div style={{ minWidth: 0 }}>
-              <b>📮 인수 브리프</b> — {b.entity} · {b.budget_band} · {b.mode}
+              <b>📮 인수 브리프</b> — {b.entity} · {b.budget_band} · {b.mode}{b.region_pref ? ` · ${b.region_pref === "overseas" ? "해외" : "국내"}` : ""}
               <div className="frm-note">{b.categories.length ? b.categories.join(", ") : "분야 무관"}{b.note ? ` — ${b.note}` : ""}</div>
               <div className="mono" style={{ fontSize: 11, color: matches.length ? "var(--teal)" : "var(--faint)" }}>
                 {matches.length ? `맞는 매물(적합도순): ${matches.map((m) => `${m.d.id}(${m.s})`).join(", ")}` : "맞는 매물 없음(게시 중 기준)"}

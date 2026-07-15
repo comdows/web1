@@ -752,6 +752,7 @@ function BriefForm({ onDone }: { onDone: () => void }) {
   const [budget, setBudget] = useState(BUDGET_BANDS[1]);
   const [mode, setMode] = useState(BRIEF_MODES[0]);
   const [entity, setEntity] = useState("개인");
+  const [regionPref, setRegionPref] = useState(""); // ''=지역 무관, domestic, overseas
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
@@ -760,7 +761,7 @@ function BriefForm({ onDone }: { onDone: () => void }) {
     if (hasContact(note)) { setErr(CONTACT_MSG); return; }
     setErr(""); setBusy(true);
     try {
-      await createBuyerBrief({ categories: cat ? [cat] : [], budget_band: budget, mode, entity, note: note.trim() });
+      await createBuyerBrief({ categories: cat ? [cat] : [], budget_band: budget, mode, entity, region_pref: regionPref, note: note.trim() });
       onDone();
     } catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
     finally { setBusy(false); }
@@ -786,6 +787,11 @@ function BriefForm({ onDone }: { onDone: () => void }) {
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <label style={{ flex: 1, minWidth: 180 }}>희망 형태
               <select value={mode} onChange={(e) => setMode(e.target.value)}>{BRIEF_MODES.map((m) => <option key={m} value={m}>{m}</option>)}</select>
+            </label>
+            <label style={{ minWidth: 130 }}>지역
+              <select value={regionPref} onChange={(e) => setRegionPref(e.target.value)}>
+                <option value="">전체(무관)</option><option value="domestic">국내</option><option value="overseas">해외</option>
+              </select>
             </label>
             <label style={{ minWidth: 130 }}>주체
               <select value={entity} onChange={(e) => setEntity(e.target.value)}><option>개인</option><option>법인</option></select>

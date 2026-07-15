@@ -23,18 +23,23 @@ function budgetFit(budget: string, revenue: string): number {
   return 5;
 }
 
-export interface BriefLike { categories: string[]; budget_band: string; mode: string }
-export interface DealLike { category_id: string; mode: string; revenue_band?: string }
+export interface BriefLike { categories: string[]; budget_band: string; mode: string; region_pref?: string }
+export interface DealLike { category_id: string; mode: string; revenue_band?: string; region?: string }
 
-/* 브리프 ↔ 매물 적합도(0~100). 분야 불일치는 0(비매칭). 분야·형태·예산으로 가중.
+/* 지역·예산 하한 게이트의 불리언 규칙은 briefMatchesDeal(api.ts)·matches(notify.mjs)에 있다.
+ * 아래 점수 함수는 매칭된 쌍의 랭킹용이라 지역을 등급(일치>무관>불일치)으로 반영. */
+
+/* 브리프 ↔ 매물 적합도(0~100). 분야 불일치는 0(비매칭). 분야·형태·예산·지역으로 가중.
  * (briefMatchesDeal의 불리언 게이트는 유지하고, 이 점수는 매칭된 것들의 랭킹·표시에 쓴다) */
 export function scoreBriefDeal(b: BriefLike, d: DealLike): number {
   const catHit = !b.categories?.length || b.categories.includes(d.category_id);
   if (!catHit) return 0;
-  let s = b.categories?.length ? 45 : 25; // 지정 분야 일치 > 분야 무관
+  let s = b.categories?.length ? 40 : 22; // 지정 분야 일치 > 분야 무관
   const modeOk = /무관/.test(b.mode || "") || b.mode === d.mode || (/자산/.test(b.mode || "") && /자산/.test(d.mode || ""));
-  s += modeOk ? 25 : 0;
+  s += modeOk ? 20 : 0;
   s += budgetFit(b.budget_band, d.revenue_band ?? "");
+  // 지역: 선호 일치 +15, 선호 없음(무관) +8(중립), 매물 지역 미상 +8, 불일치 0
+  s += !b.region_pref || !d.region ? 8 : b.region_pref === d.region ? 15 : 0;
   return Math.min(100, s);
 }
 
