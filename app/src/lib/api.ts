@@ -982,6 +982,32 @@ export async function markAllNotifsRead(): Promise<void> {
     body: JSON.stringify({ read_at: new Date().toISOString() }) });
 }
 
+/* ── 저장된 검색(0030) — 검색 조건 저장·구독. 신규 매칭 시 notify.mjs가 search_match 알림 ── */
+export interface SearchCriteria { q?: string; cats?: string[]; region?: string; onlyNew?: boolean; fees?: string[] }
+export interface SavedSearch { id: string; label: string; criteria: SearchCriteria; created_at: string }
+export async function listSavedSearches(): Promise<SavedSearch[]> {
+  if (!remoteEnabled || !getSession()) return [];
+  return rest<SavedSearch[]>("saved_searches?select=id,label,criteria,created_at&order=created_at.desc&limit=20").catch(() => []);
+}
+export async function createSavedSearch(label: string, criteria: SearchCriteria): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요합니다");
+  try {
+    await rest("saved_searches", {
+      method: "POST", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ user_id: uid, label: label.slice(0, 80), criteria }),
+    });
+  } catch (ex) {
+    const s = (ex as { status?: number }).status;
+    if (s === 409) throw new Error("같은 이름의 저장 검색이 이미 있어요.");
+    if (s === 403) throw new Error("저장 검색은 20개까지예요 — 오래된 것을 지우고 다시 저장해 주세요.");
+    throw ex;
+  }
+}
+export async function deleteSavedSearch(id: string): Promise<void> {
+  await rest(`saved_searches?id=eq.${id}`, { method: "DELETE", headers: { Prefer: "return=minimal" } });
+}
+
 /* ── 소개 후 성사·후기(0021) — 본인 응답 기록/조회(재응답=갱신) ── */
 export type IntroOutcomeKind = "progressing" | "success" | "no";
 export async function listMyIntroOutcomes(): Promise<Map<string, IntroOutcomeKind>> {

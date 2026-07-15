@@ -15,7 +15,9 @@ import {
   deactivateBrief, deleteMyAccount, fetchDeals, fetchOperatorStats, listInterestsOnMyPosts, listMyBriefs, listMyCharges, listMyDealInterests,
   listMyDealSubmissions, listMyIntroOutcomes, listMyOperatedPlatforms, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions, listMySubscriptions, fetchMyCreditBalance, listReceivedProposals,
   partnerRefCode, placeOrder, recordIntroOutcome, registerOptout, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
+  listSavedSearches, deleteSavedSearch,
 } from "./lib/api";
+import type { SavedSearch } from "./lib/api";
 import { bankTransferProvider, fetchBillingSettings } from "./lib/billing";
 import { scoreBriefDeal } from "./lib/match";
 import { usePlatformIndex } from "./lib/platforms";
@@ -359,6 +361,45 @@ function OperatorDash() {
   );
 }
 
+/* 내 저장 검색(0030) — 저장한 조건 목록·삭제·검색 열기. 신규 매칭은 인앱 알림(search_match)으로. */
+function savedSearchUrl(c: SavedSearch["criteria"]): string {
+  const p = new URLSearchParams({ view: "search" });
+  if (c.q) p.set("q", c.q);
+  if (c.cats?.length) p.set("cats", c.cats.join(","));
+  if (c.region && c.region !== "all") p.set("region", c.region);
+  if (c.onlyNew) p.set("new", "1");
+  if (c.fees?.length) p.set("fee", c.fees.join(","));
+  return `${import.meta.env.BASE_URL}?${p}`;
+}
+function SavedSearchesPanel() {
+  const { session } = useSession();
+  const [rows, setRows] = useState<SavedSearch[] | null>(null);
+  const reload = () => { listSavedSearches().then(setRows).catch(() => setRows([])); };
+  useEffect(() => { if (session) reload(); else setRows(null); }, [session]);
+  if (!session || rows === null) return null;
+  return (
+    <>
+      <div className="sec-title" style={{ marginTop: 28 }}>내 저장 검색 <span className="faint" style={{ fontWeight: 400, fontSize: 13 }}>· 조건에 맞는 새 플랫폼이 등재되면 알림</span></div>
+      {rows.length === 0 ? (
+        <div className="empty">저장한 검색이 없어요 — 검색 결과 화면에서 <b>🔔 이 조건 저장</b>을 누르면 조건에 맞는 신규 등재를 알림으로 받아요.</div>
+      ) : (
+        <div className="sub-list">
+          {rows.map((s) => (
+            <div className="sub-item" key={s.id}>
+              <div style={{ minWidth: 0 }}>
+                <a href={savedSearchUrl(s.criteria)} style={{ fontWeight: 600 }}>{s.label}</a>
+                <div className="frm-note">저장 {s.created_at.slice(0, 10)}</div>
+              </div>
+              <button className="btn ghost sm" style={{ flexShrink: 0 }}
+                onClick={async () => { if (!confirm(`저장 검색 "${s.label}"을(를) 삭제할까요?`)) return; await deleteSavedSearch(s.id); reload(); }}>삭제</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
 export function Account() {
   const go = useNav();
   const { session, profile, isAdmin } = useSession();
@@ -546,6 +587,8 @@ export function Account() {
       </div>
 
       <OperatorDash />
+
+      <SavedSearchesPanel />
 
       <div className="sec-title" style={{ marginTop: 28 }}>내 제보</div>
       {subsError ? (

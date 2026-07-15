@@ -79,6 +79,7 @@ const TABLES = [
   ["platform_news", "created_at"],
   ["reports", "created_at", true],
   ["inquiries", "created_at", true],
+  ["saved_searches", "created_at", true],
 ];
 
 const token = await login();
