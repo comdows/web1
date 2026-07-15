@@ -2,6 +2,7 @@
  *   1) deal_match: 활성 인수 브리프(buyer_briefs.active) × 공개 매물(deals.open) 조건 매칭 → 브리프 소유자.
  *   2) cat_new:    즐겨찾기에서 유도한 "관심 분야"에 신규(is_new) 플랫폼 등재 → 즐겨찾기 소유자(사용자당 상한).
  *   2.5) fav_news: 즐겨찾기한 플랫폼의 최근 7일 소식(platform_news, 0027) → 즐겨찾기 소유자(사용자당 상한).
+ *   2.7) search_match: 저장된 검색(saved_searches, 0030) 조건에 맞는 신규(is_new) 플랫폼 → 저장자(사용자당 상한).
  *   3) sub_expiry: 구독 만료 임박(D-7) 갱신 안내(0026).
  * "접속해야만 확인" 문제를 오프사이트 인프라 없이 해소. (이메일 발송은 게이트 뒤 별도 — README 참고)
  *
@@ -60,27 +61,31 @@ async function rest(token, pathQ, init = {}) {
 const CAT_NEW_CAP = 5; // 사용자당 1회 실행에서 "관심 분야 신규" 알림 상한(플러딩 방지 — 나머지는 다음 실행에 dedup으로 이어짐)
 
 /* ── 데이터 로드 ── */
-let briefs, deals, favorites, platforms, expiring, news, token;
+let briefs, deals, favorites, platforms, expiring, news, saved, categories, token;
 if (FIXTURE) {
   const fs = await import("node:fs");
   const fx = JSON.parse(fs.readFileSync(FIXTURE, "utf8"));
   briefs = fx.briefs || []; deals = fx.deals || [];
   favorites = fx.favorites || []; platforms = fx.platforms || []; expiring = fx.expiring || [];
-  news = fx.news || [];
+  news = fx.news || []; saved = fx.saved || []; categories = fx.categories || [];
 } else {
   token = await login();
   await assertAdmin(token);
   briefs = await rest(token, "buyer_briefs?active=is.true&select=id,user_id,categories,budget_band,mode");
   deals = await rest(token, "deals?status=eq.open&is_demo=is.false&select=id,category_id,mode,revenue_band,region,summary");
   favorites = await rest(token, "favorites?select=user_id,platform_id&limit=10000");
-  platforms = await rest(token, "platforms?select=id,name,category_id,is_new&limit=5000");
+  // region·fee_band·blurb는 저장 검색(0030) 조건 매칭에 필요
+  platforms = await rest(token, "platforms?select=id,name,category_id,is_new,region,fee_band,blurb&limit=5000");
   // 만료 임박 구독(0026 v_expiring_subs — admin 뷰). 뷰 미적용(마이그레이션 전) DB에서도 잡이 죽지 않게 폴백.
   expiring = await rest(token, "v_expiring_subs?select=user_id,plan_id,current_period_end").catch(() => []);
   // 최근 7일 수집된 플랫폼 소식(0027) — 미적용 DB 폴백. published_at은 결측 가능해 created_at(수집 시각) 기준.
   const since = new Date(Date.now() - 7 * 86400e3).toISOString();
   news = await rest(token, `platform_news?created_at=gte.${since}&select=id,platform_id,title&order=created_at.desc&limit=1000`).catch(() => []);
+  // 저장된 검색(0030) — admin 봇이 전 조건 조회(RLS 'own saved read'의 is_admin 분기). 미적용 DB 폴백.
+  saved = await rest(token, "saved_searches?select=id,user_id,label,criteria&limit=5000").catch(() => []);
+  categories = await rest(token, "categories?select=id,name").catch(() => []);
 }
-console.log(`활성 브리프 ${briefs.length} · 공개 매물 ${deals.length} · 즐겨찾기 ${favorites.length} · 플랫폼 ${platforms.length} · 만료 임박 구독 ${(expiring || []).length} · 최근 소식 ${(news || []).length}`);
+console.log(`활성 브리프 ${briefs.length} · 공개 매물 ${deals.length} · 즐겨찾기 ${favorites.length} · 플랫폼 ${platforms.length} · 만료 임박 구독 ${(expiring || []).length} · 최근 소식 ${(news || []).length} · 저장 검색 ${(saved || []).length}`);
 
 const notifs = [];
 
@@ -145,6 +150,45 @@ for (const [uid, favSet] of favByUser) {
   }
 }
 
+/* 2.7) 저장된 검색(0030) ↔ 신규 플랫폼 매칭 → search_match 알림.
+ *      후보 풀 = is_new 플랫폼(알림은 본질적으로 "새 등재"만). 프론트 검색 필터를 복제해 매칭.
+ *      region: DB(domestic/overseas)를 프론트 어휘(국내/해외)로 정규화. sort/onlyNew는 매칭 무관(후보가 이미 신규).
+ *      ref_id=검색id:플랫폼id → 같은 조합은 재실행해도 1회만(멱등). 사용자당 상한. */
+const SEARCH_MATCH_CAP = 5;
+const catNameById = new Map((categories || []).map((c) => [c.id, c.name]));
+const newPlatforms = platforms.filter((p) => p.is_new);
+function platformMatchesCriteria(p, c) {
+  if (c.cats?.length && !c.cats.includes(p.category_id)) return false;
+  if (c.region && c.region !== "all") {
+    const ko = p.region === "overseas" ? "해외" : "국내";
+    if (ko !== c.region) return false;
+  }
+  if (c.fees?.length && (!p.fee_band || !c.fees.includes(p.fee_band))) return false;
+  if (c.q) {
+    const hay = `${p.name} ${p.blurb ?? ""} ${catNameById.get(p.category_id) ?? ""}`.toLowerCase();
+    if (!c.q.toLowerCase().split(/\s+/).filter(Boolean).every((t) => hay.includes(t))) return false;
+  }
+  return true;
+}
+const savedByUser = new Map(); // user_id → count(상한)
+for (const s of saved || []) {
+  const c = s.criteria || {};
+  let added = savedByUser.get(s.user_id) || 0;
+  if (added >= SEARCH_MATCH_CAP) continue;
+  for (const p of newPlatforms) {
+    if (added >= SEARCH_MATCH_CAP) break;
+    if (!platformMatchesCriteria(p, c)) continue;
+    notifs.push({
+      user_id: s.user_id, kind: "search_match", ref_type: "platform", ref_id: `${s.id}:${p.id}`,
+      title: `저장한 검색 "${s.label}"에 새 플랫폼이 있어요`,
+      body: `${p.name} — 조건에 맞는 신규 등재입니다. 상세에서 확인해보세요.`,
+      url: `?view=detail&id=${p.id}`,
+    });
+    added++;
+  }
+  savedByUser.set(s.user_id, added);
+}
+
 /* 3) 구독 만료 임박(D-7) — 자동결제가 없는 구조라 갱신 주문을 인앱으로 안내(수익화 v2).
  *    ref_id에 만료일을 넣어 "같은 주기엔 1회만" 알림(주기 갱신되면 만료일이 바뀌어 새 알림). */
 const PLAN_KO = { pro: "Pro 멤버십", buyer: "인수자 멤버십" };
@@ -158,7 +202,7 @@ for (const e of expiring || []) {
     url: "?view=account",
   });
 }
-console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new + fav_news + sub_expiry)`);
+console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new + fav_news + search_match + sub_expiry)`);
 
 if (DRY) {
   for (const n of notifs.slice(0, 30)) console.log(`  + ${n.user_id.slice(0, 8)}… ← ${n.ref_id}: ${n.title}`);

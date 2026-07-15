@@ -7,8 +7,8 @@ const HUB: Record<string, { intro: string; pickBy: string[] }> = hubIntros as ne
 import { Avatar, Badge, PlatformCard, ReportButton, ShareButton, SuggestInput } from "./components";
 import { RecentQ, fuzzyCorrect } from "./lib/suggest";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
-import { amOperatorOf, createCorrection, createOperatorClaim, deleteMyReview, fetchPlatformNews, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent } from "./lib/api";
-import type { OperatorClaim, PlatformNews, PublicReview } from "./lib/api";
+import { amOperatorOf, createCorrection, createOperatorClaim, createSavedSearch, deleteMyReview, fetchPlatformNews, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent } from "./lib/api";
+import type { OperatorClaim, PlatformNews, PublicReview, SearchCriteria } from "./lib/api";
 import { useReviewStats } from "./lib/reviews";
 import { hasContact } from "./lib/anonymity";
 import { pickRecommended, sortByRelevance, sortByPopularity } from "./lib/search";
@@ -468,6 +468,34 @@ export function PlatformDetail({ id }: { id?: string }) {
 
 /* ─────────────── Search Results ─────────────── */
 type Sort = "relevance" | "popular" | "new" | "name";
+
+/* 저장된 검색(0030) — 현재 조건을 저장·구독. 조건에 맞는 신규 플랫폼 등재 시 인앱 알림.
+ * 정렬(sort)은 매칭과 무관하므로 조건에서 제외. */
+function SaveSearchButton({ criteria, label }: { criteria: SearchCriteria; label: string }) {
+  const go = useNav();
+  const { session } = useSession();
+  const [state, setState] = useState<"idle" | "busy" | "done">("idle");
+  const [err, setErr] = useState("");
+  const empty = !criteria.q && !(criteria.cats?.length) && !criteria.region && !criteria.onlyNew && !(criteria.fees?.length);
+  if (!remoteEnabled || empty) return null;
+  if (state === "done") return <span className="frm-note" style={{ marginLeft: 8 }}>🔔 저장됨 — 새 등록 시 알려드려요</span>;
+  const save = async () => {
+    if (!session) { go("account"); return; }
+    setState("busy"); setErr("");
+    try { await createSavedSearch(label, criteria); setState("done"); }
+    catch (ex) { setErr(ex instanceof Error ? ex.message : "저장 실패"); setState("idle"); }
+  };
+  return (
+    <span style={{ marginLeft: 8, display: "inline-flex", gap: 6, alignItems: "center" }}>
+      <button className="btn ghost sm" disabled={state === "busy"} onClick={save}
+        title="이 검색 조건을 저장하면 조건에 맞는 새 플랫폼이 등재될 때 알림을 받아요">
+        {state === "busy" ? "저장 중…" : "🔔 이 조건 저장"}
+      </button>
+      {err && <span className="frm-note" style={{ color: "#c0392b" }}>{err}</span>}
+    </span>
+  );
+}
+
 export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
   const go = useNav();
   // URL에서 필터 복원(새로고침·공유·뒤로가기에 필터 유지)
@@ -607,6 +635,24 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
           })()}
           <div className="search-toolbar">
             <div className="result-meta" style={{ margin: 0 }}>{results.length.toLocaleString()}개 결과</div>
+            {(() => {
+              // 매칭 조건(sort 제외) + 자동 라벨 — 활성 필터·검색어로 이름 생성
+              const criteria: SearchCriteria = {};
+              if (q.trim()) criteria.q = q.trim();
+              if (cats.size) criteria.cats = [...cats];
+              if (region !== "all") criteria.region = region;
+              if (onlyNew) criteria.onlyNew = true;
+              if (fees.size) criteria.fees = [...fees];
+              const parts = [
+                ...[...cats].map((c) => categoryById(c)?.name ?? c),
+                q.trim() ? `"${q.trim()}"` : "",
+                region !== "all" ? region : "",
+                onlyNew ? "신규" : "",
+                ...[...fees].map((f) => `수수료 ${FEE_LABEL[f]?.l ?? f}`),
+              ].filter(Boolean);
+              const label = (parts.slice(0, 3).join(" · ") || "전체 플랫폼").slice(0, 80);
+              return <SaveSearchButton criteria={criteria} label={label} />;
+            })()}
             <select className="select" aria-label="정렬" value={sort} onChange={(e) => setSort(e.target.value as Sort)} style={{ marginLeft: "auto" }}>
               <option value="relevance">관련도</option>
               <option value="popular">인기순</option>
