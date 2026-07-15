@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>요즘IT</title>
+  <item>
+    <title>웨딩 준비 올인원 앱 '웨딩노트' 출시</title>
+    <link>https://weddingnote.example.kr</link>
+    <description>예식장 예약과 결혼 준비를 돕는 웨딩 플랫폼이 출시됐다.</description>
+    <pubDate>Thu, 10 Jul 2026 10:00:00 +0900</pubDate>
+  </item>
+  <item>
+    <title>육아 키즈 용품 정기배송 '아이박스' 론칭</title>
+    <link>https://aeibox.example.kr</link>
+    <description>유아·육아 용품을 정기배송하는 키즈 커머스가 론칭했다.</description>
+    <pubDate>Thu, 10 Jul 2026 09:00:00 +0900</pubDate>
+  </item>
+</channel></rss>

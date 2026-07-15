@@ -13,7 +13,9 @@ app/                 프론트엔드 (Vite + React + TS)
 backend/
   migrations/        0001 스키마 → 0002 RLS → 0003 시드 → 0004 오픈 → 0005 소개·동의 → 0006 AI (ALL.sql = 전체)
   seed/build-seed.mjs     platforms.json → 0003 재생성 (데이터 변경 시 실행)
-  collect/collect.mjs     주간 신규 수집기(5소스·스마트 중복제거) → 제보 검수 큐(기본) / 고신뢰 자동 등재(스위치 on 시)
+  collect/collect.mjs     주간 신규 수집기(10소스·전 분야 분류·스마트 중복제거) → 제보 검수 큐(기본) / 고신뢰 자동 등재(스위치 on 시)
+                          소스: PH(AI·커머스·핀테크)·HN + 국내 매체(플래텀·벤처스퀘어·스타트업레시피·아웃스탠딩·요즘IT·바이라인)
+  collect/fixtures/       수집기 테스트 픽스처(프록시 제한 환경용 — node collect.mjs --dry --fixture ...)
   collect/healthcheck.mjs 월간 URL 생존 점검 → GitHub 이슈 리포트
 .github/workflows/   pages(배포) · collect-candidates(주간) · healthcheck(월간)
 ```
@@ -57,10 +59,10 @@ backend/
 - [x] **`0014_judgment_seed.sql` 실행 완료**(판단 필드 시드 — 수수료대·정산·입점조건·강점 1,637행 UPDATE. 정적 빌드엔 이미 반영, 원격 DB 반영용)
 - [x] **`0015_outreach.sql` 실행 완료**(제휴 제안 아웃리치 — 발송 기록·수신거부·게이트. 실행 후에도 서버 발송은 off, 회원 본인 메일로 발송)
 - [x] **`0016_autolist.sql` 실행 완료**(자동 수집 고신뢰 자동 등재 + 사후 검수 — `auto_listed` 컬럼·`auto_list_candidate`/`review_auto_listed` RPC·`app_settings 'autolist'`. **스위치 기본 off** → 실행해도 수집기는 전부 검수 큐로. 자동 수집 소스 확장(벤처스퀘어·스타트업레시피)과 스마트 중복제거(호스트 정규화·이름 퍼지)는 이 마이그레이션 없이도 동작)
-- [ ] (선택) **자동 등재 켜기**(수집 신뢰도를 몇 주 지켜본 뒤에만 — "자동 등재 없음" 원칙을 부분 개방):
+- [ ] (선택) **자동 등재 켜기**(수집 신뢰도를 몇 주 지켜본 뒤에만 — "자동 등재 없음" 원칙을 부분 개방). **관리 콘솔에서 스위치로 처리**(수기 SQL 불필요):
   ① 검수 큐의 🤖 자동 수집 카드 신뢰도 배지를 관찰(고신뢰=80↑가 실제로 정확한지 확인)
-  ② `app_settings 'autolist'` → `{"enabled": true, "min_confidence": 80, "collector_id": "<봇 계정 uid>"}` (uid는 `select id from profiles where display_name...` 또는 auth.users에서 확인)
-  ③ 이후 수집기는 directUrl 소스(HN 등) + 분야추정 + 신뢰도≥80만 lifecycle=review로 자동 등재 → 관리 콘솔 "🤖 자동 등재 사후 검수"에서 확정/내리기 스팟체크(국내 뉴스는 기사 URL이라 자동 등재 대상 아님 → 일괄 승인으로)
+  ② 관리 콘솔 → **"📥 자동 수집 설정"** → "감지된 봇을 수집기로 지정" → "자동 등재 켜기" 체크(min_confidence 조정 가능). 끄기·되돌리기도 같은 패널에서 즉시.
+  ③ 이후 수집기는 directUrl 소스(HN 등) + 분야추정 + 신뢰도≥80만 lifecycle=review로 자동 등재 → 관리 콘솔 "🤖 자동 등재 사후 검수"에서 확정/내리기 스팟체크(국내 뉴스·PH 게시물은 실사이트 링크가 아니라 자동 등재 대상 아님 → 일괄 승인으로)
 - [x] **`0017_measurement.sql` 실행 완료**(계측 보강 — `events.ref`(유입경로) 컬럼 + 퍼널·유입 admin 뷰 `v_funnel_7d`/`v_referrers_7d`. 멱등. 실행 후 방문이 쌓이면 관리 콘솔 "퍼널·유입" 패널에 노출→클릭→외부방문 전환율·유입경로가 채워짐)
 - [x] **`0018_notifications.sql` 실행 완료**(인앱 알림 — `notifications` 테이블 + RLS(본인만 열람·읽음, 생성은 admin 봇). 멱등. 실행 후 `match-notify` 워크플로가 ①인수 브리프↔신규 매물 ②관심 분야(즐겨찾기 유도) 신규 플랫폼 알림을 넣고, 헬스체크는 관심 플랫폼 죽은 링크를 알림 → 회원 헤더 🔔에 표시. 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요)
 - [x] **`backend/migrations/0030_saved_searches.sql` 실행 완료(2026-07-15)**(저장된 검색 + 조건 알림 — `saved_searches` 테이블(본인 CRUD·admin 조회, 사용자당 20). 멱등. 실행 후 검색 결과 화면 "🔔 이 조건 저장" → 계정 "내 저장 검색" 관리, 주간 `match-notify`가 조건에 맞는 신규 플랫폼을 `search_match` 인앱 알림으로 발송. 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요. 실행 전에도 사이트 정상(저장 버튼만 접수 실패 안내))

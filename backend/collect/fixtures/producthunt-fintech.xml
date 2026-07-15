@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Product Hunt — Fintech</title>
+  <entry>
+    <title>LedgerLite — accounting and loan tracking for small business</title>
+    <link href="https://www.producthunt.com/posts/ledgerlite"/>
+    <content>Fintech dashboard for loans, insurance comparison and cashflow.</content>
+  </entry>
+  <entry>
+    <title>SpendMap — expense cards for startups</title>
+    <link href="https://www.producthunt.com/posts/spendmap"/>
+    <content>Corporate cards and finance analytics for growing teams.</content>
+  </entry>
+</feed>
