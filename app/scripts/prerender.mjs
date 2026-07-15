@@ -233,6 +233,39 @@ fs.writeFileSync(path.join(DIST, "404.html"), template
   .replace("</head>", `  <meta name="robots" content="noindex">\n  </head>`)
   .replace(/(<div id="root">)(<\/div>)/, `$1${nfBody}$2`));
 
+/* 소식·트렌드 랜딩 /news/ — platform_news(0027) 피드의 SEO 진입점.
+ * 소식 자체는 서버(동적)라 빌드 시점엔 없으므로, 랜딩은 상록(evergreen) 셸:
+ * 피드 설명 + 분야 허브 링크 + SPA 피드(?view=news) 링크. 실제 항목은 클라이언트가 하이드레이션. */
+{
+  const title = "플랫폼·AI 도구 소식·트렌드 — 최근 업데이트 | 세모플";
+  const desc = "세모플에 등재된 한국 비즈니스 플랫폼·AI 도구의 최근 소식·업데이트를 분야별로 모았습니다. 관심 분야의 변화를 한곳에서 확인하세요.";
+  const canonical = `${SITE}/news/`;
+  const ld = JSON.stringify({
+    "@context": "https://schema.org", "@type": "CollectionPage", name: title, url: canonical,
+    description: desc, isPartOf: { "@type": "WebSite", name: "세모플", url: `${SITE}/` },
+  });
+  const body = `
+<main style="max-width:720px;margin:32px auto;padding:0 20px">
+  <p><a href="${BASE}">세모플 — 세상의 모든 플랫폼</a></p>
+  <h1>📰 플랫폼·AI 도구 소식·트렌드</h1>
+  <p>세모플에 등재된 한국 비즈니스 플랫폼·AI 도구의 최근 소식을 한곳에 모았습니다. 등재 플랫폼 관련 외부 매체 기사를 최신순으로 정리해, 관심 분야의 변화를 놓치지 않도록 돕습니다.</p>
+  <p><a href="${BASE}?view=news">→ 최신 소식 피드 보기</a></p>
+  <h2>분야별로 살펴보기</h2>
+  <ul>${data.categories.map((c) => `<li><a href="${BASE}c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a> — ${esc(c.desc)}</li>`).join("")}</ul>
+  <p class="foot-desc">각 소식은 외부 매체 기사 링크이며, 내용은 각 매체 책임이자 세모플의 평가·추천이 아닙니다.</p>
+</main>`;
+  const dir = path.join(DIST, "news");
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "index.html"), template
+    .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
+    .replace(/(<meta name="description" content=")[^"]*(")/, `$1${esc(desc)}$2`)
+    .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${esc(title)}$2`)
+    .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${esc(desc)}$2`)
+    .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonical}$2`)
+    .replace("</head>", `  <link rel="canonical" href="${canonical}">\n  <script type="application/ld+json">${ld}</script>\n  </head>`)
+    .replace(/(<div id="root">)(<\/div>)/, `$1${body}$2`));
+}
+
 /* 사이트맵 + robots.
  * lastmod: 정적 데이터엔 플랫폼별 갱신시각이 없다 → 매 빌드 전 URL을 today로 찍으면 "전체가 바뀐 것"처럼
  * 보여 크롤 신뢰도가 떨어진다. 목록이 실제로 커지는 홈·허브·동적 뷰와 신규(new) 상세만 today, 안정 상세는 lastmod 생략. */
@@ -240,6 +273,7 @@ const today = new Date().toISOString().slice(0, 10);
 const staticUrls = ["", "?view=partners", "?view=exchange", "?view=ai-finder", "?view=packs", "?view=weekly", "?view=onboarding", "?view=deal-guide", "?view=value-check"];
 const urls = [
   ...staticUrls.map((u) => ({ loc: `${SITE}/${u}`, lastmod: today })),
+  { loc: `${SITE}/news/`, lastmod: today }, // 소식 랜딩(자주 갱신 — today)
   ...data.categories.map((c) => ({ loc: `${SITE}/c/${c.id}/`, lastmod: today })),
   ...[...cmpIds].map((id) => ({ loc: `${SITE}/c/${id}/compare/`, lastmod: today })),
   ...data.platforms.map((p) => ({ loc: `${SITE}/p/${p.id}/`, lastmod: p.new ? today : null })),
