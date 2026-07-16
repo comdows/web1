@@ -3239,6 +3239,634 @@
     "thebldgs": {
       "name": "The BLDGS (더빌딩)",
       "blurb": "AI-based integrated building and lease management platform."
+    },
+    "encar": {
+      "name": "Encar (엔카)",
+      "blurb": "Korea's leading used-car marketplace where dealers and individuals list vehicles nationwide."
+    },
+    "heydealer": {
+      "name": "Heydealer (헤이딜러)",
+      "blurb": "Car-selling app where dealers bid on your vehicle through a reverse-auction process."
+    },
+    "kcar": {
+      "name": "K Car (케이카)",
+      "blurb": "Directly operated used-car retailer buying and selling inspected vehicles online and at branches."
+    },
+    "kbchachacha": {
+      "name": "KB Chachacha (KB차차차)",
+      "blurb": "Used-car trading platform operated within the KB Financial Group."
+    },
+    "cardoc": {
+      "name": "Cardoc (카닥)",
+      "blurb": "Car repair and maintenance matching platform connecting drivers with repair shops via quotes."
+    },
+    "carnoon": {
+      "name": "Carnoon (카눈)",
+      "blurb": "New-car purchase information platform aggregating quotes and buying guides."
+    },
+    "web": {
+      "name": "Getcha (겟차)",
+      "blurb": "New-car quote comparison app covering purchase, installment, lease, and long-term rental options."
+    },
+    "web2": {
+      "name": "Cheotcha (첫차)",
+      "blurb": "Korean used-car trading platform aimed at first-time buyers."
+    },
+    "reborncar": {
+      "name": "Reborncar (리본카)",
+      "blurb": "Directly operated used-car platform selling inspected vehicles with test-drive options."
+    },
+    "autoplus": {
+      "name": "Autoplus (오토플러스)",
+      "blurb": "Directly managed used-car retail, purchasing, and auction operator."
+    },
+    "autobell": {
+      "name": "Autobell (오토벨)",
+      "blurb": "Used-car auction, trading, and valuation service run by Hyundai Glovis."
+    },
+    "carisyou": {
+      "name": "Carisyou (카이즈유)",
+      "blurb": "Automotive data portal with registration statistics, new-car quotes, and reviews."
+    },
+    "auto": {
+      "name": "Danawa Auto (다나와 자동차)",
+      "blurb": "Car comparison service covering new-car quotes, rental and lease options, and used cars."
+    },
+    "kcarauction": {
+      "name": "K Car Auction (K Car 옥션)",
+      "blurb": "Used-car auction platform operated by K Car for trade buyers."
+    },
+    "mycle": {
+      "name": "Mycle (마이클)",
+      "blurb": "Car management app with repair-shop booking and maintenance reminders."
+    },
+    "carsuri": {
+      "name": "Carsuri (카수리)",
+      "blurb": "On-site car maintenance service for engine oil and battery replacement."
+    },
+    "carpos": {
+      "name": "Carpos (카포스)",
+      "blurb": "Repair and parts information network run by Korea's auto maintenance business cooperative."
+    },
+    "partzone": {
+      "name": "Partzone (파트존)",
+      "blurb": "Platform matching compatible parts by license plate and booking repair shops."
+    },
+    "cartem": {
+      "name": "Cartem (카템)",
+      "blurb": "Online store for car accessories and tuning parts."
+    },
+    "autohub": {
+      "name": "Autohub (오토허브)",
+      "blurb": "Large used-car trading complex operator that also runs vehicle auctions."
+    },
+    "greencar": {
+      "name": "GreenCar (그린카)",
+      "blurb": "Car-sharing and vehicle subscription mobility platform in Korea."
+    },
+    "kakaomobility": {
+      "name": "Kakao T Daeri (카카오T 대리)",
+      "blurb": "Designated-driver hailing service within the Kakao T mobility app."
+    },
+    "camtayo": {
+      "name": "Camtayo (캠타요)",
+      "blurb": "Peer-to-peer marketplace for used campervans with quality assurance."
+    },
+    "campingncar": {
+      "name": "Camping N Car (캠핑엔카)",
+      "blurb": "Site for buying, selling, and renting new and used campervans and caravans."
+    },
+    "wonderfulcar": {
+      "name": "Wonderful Campingcar (원더풀캠핑카)",
+      "blurb": "Dealer store selling motorhomes and car-camping vehicles with after-sales care."
+    },
+    "zaekook": {
+      "name": "Camping Empire (캠핑제국)",
+      "blurb": "Site for comparing campervans and caravans and finding used direct-trade listings."
+    },
+    "bikeweb": {
+      "name": "Bikemart (바이크마트)",
+      "blurb": "Marketplace for used and imported motorcycles with market-value search."
+    },
+    "revolt": {
+      "name": "Revolt (리볼트)",
+      "blurb": "Used electric-vehicle marketplace where listings pass certified battery diagnostics."
+    },
+    "charzing": {
+      "name": "Charzing (차징)",
+      "blurb": "On-site diagnostic service measuring electric-vehicle battery health (SOH)."
+    },
+    "tirepick": {
+      "name": "Tirepick (타이어픽)",
+      "blurb": "Tire comparison platform connecting purchases with installation-shop bookings."
+    },
+    "isnara": {
+      "name": "Jangchak Nara (장착나라)",
+      "blurb": "Service brokering nationwide installation appointments for tires bought online."
+    },
+    "otire": {
+      "name": "O-Tire (오타이어)",
+      "blurb": "Service connecting same-day tire installation at local shops for online orders."
+    },
+    "automango": {
+      "name": "Automango (오토망고)",
+      "blurb": "Car accessory and tuning parts store operated by Inje Speedium."
+    },
+    "cazamall": {
+      "name": "Cazamall (카자몰)",
+      "blurb": "Store for tuning parts and car accessories organized by domestic and imported models."
+    },
+    "liuparts": {
+      "name": "Liuparts (리우파츠)",
+      "blurb": "Store specializing in tuning parts for imported cars such as Mercedes-Benz, BMW, and Audi."
+    },
+    "happyscrapcar": {
+      "name": "Happy Scrap Car (해피폐차)",
+      "blurb": "Scrap-car quote platform connecting owners with licensed scrapyards via auction."
+    },
+    "carbridge": {
+      "name": "Carbridge (카브릿지)",
+      "blurb": "Service that quotes and buys accident-damaged or broken cars without repair."
+    },
+    "joinsauto": {
+      "name": "Joins Auto (조인스오토)",
+      "blurb": "Scrap-car quote comparison platform operating under a regulatory sandbox permit."
+    },
+    "goodbrother": {
+      "name": "Chakhan Hyung Motorcycle (착한형오토바이)",
+      "blurb": "Service specializing in on-site purchases of used motorcycles."
+    },
+    "evmodu": {
+      "name": "Moduui Chungjeon (모두의충전)",
+      "blurb": "EV charging app by Scala Data aggregating nationwide charger locations with integrated payment."
+    },
+    "pluglink": {
+      "name": "PlugLink (플러그링크)",
+      "blurb": "EV charging startup installing and operating slow chargers in apartment complexes, managed through its app."
+    },
+    "octoev": {
+      "name": "Octo EV (옥토브)",
+      "blurb": "Startup developing SkyCharger, an unmanned EV charging system where chargers move along rails to serve multiple cars."
+    },
+    "autostay": {
+      "name": "Autostay (오토스테이)",
+      "blurb": "Subscription car-wash service offering unlimited automatic washes at member locations nationwide."
+    },
+    "carvazo": {
+      "name": "Carvazo (카바조)",
+      "blurb": "O2O service where professional mechanics accompany used-car buyers to inspect vehicles before purchase."
+    },
+    "igotcha": {
+      "name": "Gotcha (갓차)",
+      "blurb": "Subscription-based visiting car-wash booking service."
+    },
+    "chaevi": {
+      "name": "Chaevi (채비)",
+      "blurb": "One-stop EV charging solution with reservation and payment features."
+    },
+    "moduparking": {
+      "name": "Moduui Jucha (모두의주차장)",
+      "blurb": "Parking app for finding lots, discounts, and shared parking spaces."
+    },
+    "autopartsner": {
+      "name": "Partsner (파츠너)",
+      "blurb": "Online store for domestic, imported, and commercial vehicle parts."
+    },
+    "myungcha": {
+      "name": "Myungcha.com (명차닷컴)",
+      "blurb": "Parts store specializing in imported cars such as Mercedes-Benz, BMW, and Audi."
+    },
+    "hellowcar": {
+      "name": "Hellowcar (헬로우카)",
+      "blurb": "Official online dealer store for Hyundai Mobis genuine parts."
+    },
+    "partsro": {
+      "name": "Partsro (파츠로)",
+      "blurb": "Store selling Hyundai and Kia genuine parts searchable by part number and VIN."
+    },
+    "tstation": {
+      "name": "T'Station (티스테이션)",
+      "blurb": "Hankook Tire's tire reservation and car-care platform."
+    },
+    "bluetire": {
+      "name": "Bluetire (블루타이어)",
+      "blurb": "Nexen Tire's official store with delivery to installation shops and booking."
+    },
+    "parts114": {
+      "name": "Parts114 (파츠114)",
+      "blurb": "Store specializing in imported-car parts."
+    },
+    "pcarmall": {
+      "name": "Pcarmall (피카몰)",
+      "blurb": "General store for car supplies such as engine oil and DEF."
+    },
+    "nebaqui": {
+      "name": "Nebaqui.com (네바퀴닷컴)",
+      "blurb": "Store specializing in car accessories such as seats and mats."
+    },
+    "reitwagen": {
+      "name": "Reitwagen (라이트바겐)",
+      "blurb": "Used-motorcycle trading platform with installment purchase options."
+    },
+    "bstore": {
+      "name": "Black Store (블랙스토어)",
+      "blurb": "Store specializing in car dashboard cameras."
+    },
+    "gongim": {
+      "name": "Gongim Nara (공임나라)",
+      "blurb": "Platform for maintenance, engine oil, and on-site tire installation services."
+    },
+    "intrax": {
+      "name": "Intrax Mall (인트락스몰)",
+      "blurb": "General store for car and motorcycle tuning and motorsport gear."
+    },
+    "pechanara": {
+      "name": "Pecha Nara (폐차나라)",
+      "blurb": "Store specializing in used and salvaged auto parts."
+    },
+    "carlandasia": {
+      "name": "Carland (카랜드)",
+      "blurb": "Store for used auto parts such as engines and transmissions."
+    },
+    "momq": {
+      "name": "MomQ (맘큐)",
+      "blurb": "Yuhan-Kimberly's direct commerce and membership mall for parenting and baby products."
+    },
+    "kizmom": {
+      "name": "Kizmom Shopping (키즈맘쇼핑)",
+      "blurb": "Online store specializing in imported baby products and toys."
+    },
+    "inuri": {
+      "name": "Inuri (아이누리)",
+      "blurb": "Commerce site for childcare and early-education supplies."
+    },
+    "mamigo": {
+      "name": "Mamigo (마미고)",
+      "blurb": "Online parenting mall for premium baby products."
+    },
+    "agabang": {
+      "name": "Agabang Mall (아가방몰)",
+      "blurb": "Official commerce mall of Agabang baby clothing and childcare products."
+    },
+    "momnuri": {
+      "name": "Momnuri (맘누리)",
+      "blurb": "Pregnancy and childbirth commerce site for maternity wear and newborn essentials."
+    },
+    "ibaby": {
+      "name": "iBaby (아이베이비)",
+      "blurb": "Secondhand marketplace for baby products with safe-trade features."
+    },
+    "homelearn": {
+      "name": "i-Scream Home Learn (아이스크림 홈런)",
+      "blurb": "AI-powered online learning platform for elementary students."
+    },
+    "smartall": {
+      "name": "Woongjin Smart All (웅진스마트올)",
+      "blurb": "Woongjin ThinkBig's AI smart-learning service spanning preschool through middle school."
+    },
+    "nurinori": {
+      "name": "Nurinori (누리놀이)",
+      "blurb": "Platform for early-childhood education and play content and teaching materials."
+    },
+    "sssd": {
+      "name": "Somssidang (솜씨당)",
+      "blurb": "Hobby platform for booking one-day classes and hands-on experiences, including kids programs."
+    },
+    "umclass": {
+      "name": "Umclass (움클래스)",
+      "blurb": "Booking platform brokering experience passes and one-day classes."
+    },
+    "kidsday": {
+      "name": "Kidsday (키즈데이)",
+      "blurb": "Booking service for kids classes and field-trip experiences for preschool and elementary children."
+    },
+    "nolbal": {
+      "name": "Nolyiui Balgyeon (놀이의발견)",
+      "blurb": "Search and booking platform for family and kids leisure venues."
+    },
+    "ipoomgo": {
+      "name": "Aipoomgo (아이품고)",
+      "blurb": "Online tour, comparison, and booking service for postpartum care centers."
+    },
+    "momsmanager": {
+      "name": "Moms Manager (맘스매니저)",
+      "blurb": "Matching service for postpartum caregivers and massage specialists."
+    },
+    "doctormam": {
+      "name": "Doctor Mam (닥터맘)",
+      "blurb": "Care platform matching postpartum helpers and maternity caregivers."
+    },
+    "imilkbook": {
+      "name": "Milkbook (밀크북)",
+      "blurb": "Children's book retailer selling full sets with subscription options."
+    },
+    "saybooks": {
+      "name": "Saybooks (세이북)",
+      "blurb": "Subscription service delivering children's and family books."
+    },
+    "gilbutkid": {
+      "name": "Gilbut Kid (길벗어린이)",
+      "blurb": "Children's book publisher selling picture books through its own channel."
+    },
+    "littlebaby": {
+      "name": "Little Baby (리틀베이비)",
+      "blurb": "Rental commerce service for imported baby gear, also sold outright."
+    },
+    "babynoriter": {
+      "name": "Baby Noriter (베이비노리터)",
+      "blurb": "Rental platform specializing in baby products and toys."
+    },
+    "toyuncle": {
+      "name": "Toy Uncle (장난감아저씨)",
+      "blurb": "Home-visit rental service for baby products and toys."
+    },
+    "ozkiz": {
+      "name": "Ozkiz (오즈키즈)",
+      "blurb": "Brand mall for kids clothing and shoes for ages 3 to 10."
+    },
+    "nonikids": {
+      "name": "Noni Kids (노니키즈)",
+      "blurb": "General children's clothing store covering newborns through elementary schoolers."
+    },
+    "bebezone": {
+      "name": "Bebezone (베베존)",
+      "blurb": "Commerce mall specializing in maternity and newborn products."
+    },
+    "kidsnote": {
+      "name": "Kidsnote (키즈노트)",
+      "blurb": "Daycare and kindergarten communication platform for daily reports and tuition payments."
+    },
+    "pinkids": {
+      "name": "Pinkids (핀키즈)",
+      "blurb": "Map service for finding kid-friendly places, showing nursing rooms and no-kids-zone status."
+    },
+    "dorbom": {
+      "name": "Dolbom Plus (돌봄플러스)",
+      "blurb": "Care platform matching babysitters and childcare helpers with families."
+    },
+    "yummimeal": {
+      "name": "Yummi Meal (얌이밀)",
+      "blurb": "Subscription service delivering stage-based baby food and side dishes."
+    },
+    "planacampus": {
+      "name": "Plan A Campus (플랜에이캠퍼스)",
+      "blurb": "Early-childhood art education service with vetted visiting teachers."
+    },
+    "gguge": {
+      "name": "Gguge (꾸그)",
+      "blurb": "Platform brokering live online classes for children."
+    },
+    "raraclass": {
+      "name": "Rara Class (라라클래스)",
+      "blurb": "Operator of hands-on and docent programs for preschool and elementary children."
+    },
+    "kidsning": {
+      "name": "Kidsning (키즈닝)",
+      "blurb": "Parenting lifestyle shopping app by Milk Corporation combining mom-celebrity markets, kids fashion, and childcare goods."
+    },
+    "wjthinkbig": {
+      "name": "Woongjin ThinkBig (웅진씽크빅)",
+      "blurb": "AI-personalized smart-learning platform for elementary students."
+    },
+    "milkt": {
+      "name": "Milk T (밀크티)",
+      "blurb": "Chunjae Education's elementary smart-learning platform with video-call coaching."
+    },
+    "symentor": {
+      "name": "Symentor (시멘토)",
+      "blurb": "Game-style early-learning app for Korean, English, and creativity."
+    },
+    "villagebaby": {
+      "name": "Babybilly (베이비빌리)",
+      "blurb": "Pregnancy and parenting app combining content and commerce for expecting and new moms."
+    },
+    "mmtalk": {
+      "name": "Mamitalk (마미톡)",
+      "blurb": "Parenting app with ultrasound video storage and pregnancy information."
+    },
+    "zzimkong": {
+      "name": "Zzimkong (찜콩)",
+      "blurb": "Shopping app for kids fashion and furniture."
+    },
+    "kidikidi": {
+      "name": "Kidikidi (키디키디)",
+      "blurb": "Kids fashion select shop operated by E-Land."
+    },
+    "yugacrew": {
+      "name": "Yuga Crew (육아크루)",
+      "blurb": "Neighborhood community app for finding local parenting friends."
+    },
+    "momsdiary": {
+      "name": "Moms Diary (맘스다이어리)",
+      "blurb": "App for keeping pregnancy and parenting journals with photobook publishing support."
+    },
+    "lab": {
+      "name": "Eatall Lab (잇올 랩)",
+      "blurb": "College-admissions strategy consulting platform built on AI acceptance prediction."
+    },
+    "apple2": {
+      "name": "Egoda (이고다)",
+      "blurb": "Matching platform for college-admissions consulting."
+    },
+    "mcc": {
+      "name": "Megastudy Admissions Consulting (메가스터디 대입컨설팅)",
+      "blurb": "Personalized college-admissions consulting for early and regular rounds."
+    },
+    "hakwonsin": {
+      "name": "Hakwonui Sin (학원의신)",
+      "blurb": "Nationwide platform for comparing private academy information and reviews."
+    },
+    "hakwonmap": {
+      "name": "Hakwon Map (학원맵)",
+      "blurb": "Integrated platform for searching, comparing, and enrolling in private academies."
+    },
+    "jinhak": {
+      "name": "Jinhak (진학사)",
+      "blurb": "College-admissions platform with acceptance prediction and mock application tools."
+    },
+    "adiga": {
+      "name": "Adiga (어디가)",
+      "blurb": "Official college-admissions information portal run by the Korean Council for University Education."
+    },
+    "coway": {
+      "name": "Coway (코웨이)",
+      "blurb": "Korea's leading home-appliance rental company for water purifiers, air purifiers, and mattresses."
+    },
+    "skmagic": {
+      "name": "SK Magic (SK매직)",
+      "blurb": "Kitchen and home-appliance rental and subscription service under SK."
+    },
+    "lge": {
+      "name": "LG Subscribe (LG전자 구독)",
+      "blurb": "LG Electronics' appliance subscription with visiting care service."
+    },
+    "myomee": {
+      "name": "Lotte Rental Myomee (롯데렌탈 묘미)",
+      "blurb": "Lifestyle rental service for appliances, furniture, and fashion, from short to long term."
+    },
+    "hyundairentalcare": {
+      "name": "Hyundai Rental Care Cuming (현대렌탈케어 큐밍)",
+      "blurb": "Home-care appliance rental brand of the Hyundai Department Store Group."
+    },
+    "chungho": {
+      "name": "Chungho Nais (청호나이스)",
+      "blurb": "Rental company for water purifiers, air purifiers, and massage chairs."
+    },
+    "hellorental": {
+      "name": "LG Hello Rental (LG헬로렌탈)",
+      "blurb": "Rental and subscription service for home appliances, massage chairs, and mattresses."
+    },
+    "xn299ar6vqrd": {
+      "name": "Billigo (빌리고)",
+      "blurb": "Monthly rental platform for home appliances, furniture, and mattresses."
+    },
+    "rentre": {
+      "name": "Rentre (렌트리)",
+      "blurb": "Quote platform comparing appliance rental plans and conditions."
+    },
+    "closetshare": {
+      "name": "Closet Share (클로젯셰어)",
+      "blurb": "Fashion sharing platform renting designer bags and clothing on subscription."
+    },
+    "reebonz": {
+      "name": "Reebonz Rent It (리본즈 렌트잇)",
+      "blurb": "Short-term and subscription rental service for luxury bags and watches."
+    },
+    "opengallery": {
+      "name": "Open Gallery (오픈갤러리)",
+      "blurb": "Art rental subscription rotating original works by Korean artists every three months."
+    },
+    "plan": {
+      "name": "Socar Plan (쏘카플랜)",
+      "blurb": "Monthly subscription and mid-to-long-term car rental by Socar."
+    },
+    "thetrive": {
+      "name": "The Trive (더트라이브)",
+      "blurb": "Car subscription platform for imported vehicles with managed maintenance."
+    },
+    "hyundai": {
+      "name": "Hyundai Selection (현대 셀렉션)",
+      "blurb": "Hyundai's car subscription program with monthly vehicle swaps."
+    },
+    "slrrent": {
+      "name": "SLR Rent (SLR렌트)",
+      "blurb": "Short-term rental specialist for cameras, lenses, and filming equipment."
+    },
+    "playslr": {
+      "name": "Play SLR (플레이에스엘알)",
+      "blurb": "Camera rental service for DSLRs, mirrorless bodies, and lenses."
+    },
+    "youtuberental": {
+      "name": "Kong Rental (콩렌탈)",
+      "blurb": "Rental service for YouTube gear such as cameras and GoPros."
+    },
+    "hanent": {
+      "name": "Han Rental (한렌탈)",
+      "blurb": "Rental shop for cameras, lenses, and filming equipment."
+    },
+    "rrental": {
+      "name": "R Rental (알렌탈)",
+      "blurb": "Rental service for cameras and lighting equipment."
+    },
+    "pacey": {
+      "name": "Pacey (페이시)",
+      "blurb": "Subscription and rental service for laptops, MacBooks, and monitors."
+    },
+    "arthurrental": {
+      "name": "Arthur Rental (아서렌탈)",
+      "blurb": "Laptop and PC rental service for businesses and individuals."
+    },
+    "korearental": {
+      "name": "Korea Rental (한국렌탈)",
+      "blurb": "General rental company for PCs, measuring instruments, and industrial equipment."
+    },
+    "hilti": {
+      "name": "Hilti Tool Fleet (힐티 공구임대)",
+      "blurb": "Managed monthly rental program for power tools by Hilti."
+    },
+    "jsrental": {
+      "name": "JS Rental (JS렌탈)",
+      "blurb": "Rental specialist for event and exhibition supplies."
+    },
+    "rentalevent": {
+      "name": "Event Rental (이벤트렌탈)",
+      "blurb": "Event-supply rental covering tents, heating and cooling, and exhibition gear."
+    },
+    "campal": {
+      "name": "Campal (캠팔)",
+      "blurb": "Rental platform for camping gear such as tents and tarps."
+    },
+    "camproad": {
+      "name": "Camp Road (캠프로드)",
+      "blurb": "Rental service for tents and camping equipment."
+    },
+    "info": {
+      "name": "The Open Closet (열린옷장)",
+      "blurb": "Suit-sharing service renting interview and event attire by delivery or visit."
+    },
+    "jjinsuit": {
+      "name": "J Jin Suit (제이진슈트)",
+      "blurb": "Rental service for premium tailored suits."
+    },
+    "greant": {
+      "name": "Greant (그린트)",
+      "blurb": "Next-day delivery rental service for interview and ceremony suits."
+    },
+    "eshare": {
+      "name": "Gongyu Nuri (공유누리)",
+      "blurb": "Government platform for sharing and borrowing public-sector tools and equipment."
+    },
+    "socar": {
+      "name": "Socar (쏘카)",
+      "blurb": "Korea's leading car-sharing mobility service."
+    },
+    "carmoa": {
+      "name": "Carmoa (카모아)",
+      "blurb": "Comparison and booking platform for rental cars in Korea and abroad."
+    },
+    "zzimcar": {
+      "name": "Zzimcar (찜카)",
+      "blurb": "Real-time comparison service for rental cars, flights, and accommodations."
+    },
+    "skdirect": {
+      "name": "SK Rent-a-Car (SK렌터카)",
+      "blurb": "Directly operated rental-car service for long and short terms."
+    },
+    "rtplanner": {
+      "name": "Rent Planner (렌트플래너)",
+      "blurb": "Quote comparison platform for long-term car rental and leasing."
+    },
+    "gcoo": {
+      "name": "Gcoo (지쿠)",
+      "blurb": "Shared mobility service for e-scooters and e-bikes."
+    },
+    "smartowl": {
+      "name": "Ddokddokhan Bueongi (똑똑한부엉이)",
+      "blurb": "Unlimited rental service for children's book sets and English books."
+    },
+    "buggyfriend": {
+      "name": "Buggy Friend (유모차친구)",
+      "blurb": "Stroller and car-seat rental with pickup service on Jeju Island."
+    },
+    "rentalfriend": {
+      "name": "Rental Friend (렌탈프렌드)",
+      "blurb": "Comparison platform for rental products such as water purifiers and furniture."
+    },
+    "alphabox": {
+      "name": "Alphabox (알파박스)",
+      "blurb": "24-hour unmanned self-storage service."
+    },
+    "dalock": {
+      "name": "Dalock (미니창고 다락)",
+      "blurb": "Personal self-storage service with temperature and humidity control."
+    },
+    "myzzym": {
+      "name": "Myzzym (마이짐)",
+      "blurb": "O2O platform brokering storage space for personal belongings."
+    },
+    "select": {
+      "name": "Ridi Select (리디셀렉트)",
+      "blurb": "Unlimited e-book subscription service by Ridi."
     }
   }
 }
