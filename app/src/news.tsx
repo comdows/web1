@@ -47,6 +47,10 @@ export function News() {
         세모플에 등재된 플랫폼·AI 도구의 최근 소식을 한곳에 모았어요. 관심 분야의 변화를 놓치지 마세요 —
         각 항목은 외부 매체 기사 링크이며, 도구 상세로 이동하면 더 많은 소식과 정보를 볼 수 있습니다.
       </p>
+      <p className="sub" style={{ marginBottom: 14 }}>
+        📖 깊이 있는 안내가 필요하면 <a href={`${import.meta.env.BASE_URL}guide/openmarket-entry-checklist/`}>세모플 가이드</a>를 보세요 —
+        분야별 비교 축과 실무 순서를 정리한 편집 콘텐츠입니다.
+      </p>
 
       {catsWithNews.length > 1 && (
         <div className="chips-row" style={{ marginBottom: 14 }}>
