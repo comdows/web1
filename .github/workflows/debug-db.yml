@@ -1,0 +1,26 @@
+# 일회용 DB 진단(workflow_dispatch 전용) — collect-candidates의 is_suspended 권한 거부가
+# "어느 프로젝트의 DB에서" 일어나는지 봇 시점에서 판별한다. 해결 후 이 파일과 debug-db.mjs는 삭제.
+name: debug-db
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  debug:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: 봇 시점 DB 진단(프로젝트 ref·카나리 insert)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          BOT_EMAIL: ${{ secrets.BOT_EMAIL }}
+          BOT_PASSWORD: ${{ secrets.BOT_PASSWORD }}
+        run: node backend/collect/debug-db.mjs
