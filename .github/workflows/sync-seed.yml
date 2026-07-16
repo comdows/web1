@@ -1,0 +1,57 @@
+# DB → 정적 시드 역동기화 — 검수 승인분을 platforms.json(+EN 번역)에 반영해 SEO·EN 페이지까지 연결.
+# 수동 실행(workflow_dispatch) 전용: 검수 승인을 몰아서 한 뒤 1회 돌리는 운영 리듬을 전제.
+# 변경이 있으면 seed-sync/<run> 브랜치 + PR을 만든다(직접 push 없음 — 사람이 diff 리뷰 후 머지).
+# 필요 Secrets: SUPABASE_URL, SUPABASE_ANON_KEY(공개 anon), ANTHROPIC_API_KEY(EN 번역 — 신규분 있으면 필수)
+name: sync-seed
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: DB 차집합 → 시드 반영(KO+EN 번역+0003·ALL.sql 재생성)
+        id: sync
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          node backend/collect/sync-seed.mjs
+          if git diff --quiet; then echo "changed=" >> $GITHUB_OUTPUT; else echo "changed=1" >> $GITHUB_OUTPUT; fi
+      - name: 빌드 검증(EN 완역 어서션·방화벽 그렙 포함)
+        if: steps.sync.outputs.changed == '1'
+        run: cd app && npm ci && npx tsc -b && npm run build
+      - name: 브랜치 push + PR 생성
+        if: steps.sync.outputs.changed == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          BR="seed-sync/${{ github.run_number }}"
+          git config user.name "semopl-bot"
+          git config user.email "noreply@users.noreply.github.com"
+          git checkout -b "$BR"
+          git add app/src/data/platforms.json app/src/data/platforms.en.json backend/migrations/0003_seed.sql backend/migrations/ALL.sql
+          git commit -m "seed-sync: DB 승인분 정적 시드 반영 (run ${{ github.run_number }})"
+          git push origin "$BR"
+          curl -sf -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/pulls" \
+            -d "{\"title\":\"seed-sync: DB 승인분 정적 시드 반영 (run ${{ github.run_number }})\",\"head\":\"$BR\",\"base\":\"master\",\"body\":\"자동 생성 PR — DB에만 있던 검수 승인 플랫폼을 platforms.json(+EN 번역)에 반영해 SEO 프리렌더·/en/ 페이지·llms.txt에 연결합니다.\\n\\n- 빌드 검증(EN 완역 어서션·방화벽 그렙)은 이 워크플로에서 이미 통과했습니다. GITHUB_TOKEN 특성상 PR CI가 자동 실행되지 않으면 diff 확인 후 머지하세요.\\n- 실행 로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\"}"
+      - name: 실패 알림(ops-alert 이슈)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sf -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues" \
+            -d "{\"title\":\"[운영] sync-seed 실패 — 확인 필요\",\"body\":\"실행 로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"labels\":[\"ops-alert\"]}"

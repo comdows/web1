@@ -13,13 +13,16 @@ app/                 프론트엔드 (Vite + React + TS)
 backend/
   migrations/        0001 스키마 → 0002 RLS → 0003 시드 → 0004 오픈 → 0005 소개·동의 → 0006 AI (ALL.sql = 전체)
   seed/build-seed.mjs     platforms.json → 0003 재생성 (데이터 변경 시 실행)
-  collect/collect.mjs     주간 신규 수집기(19소스·전 분야 분류·스마트 중복제거) → 제보 검수 큐(기본) / 고신뢰 자동 등재(스위치 on 시)
+  collect/collect.mjs     주 3회 신규 수집기(21소스·전 분야 분류·스마트 중복제거) → 제보 검수 큐(기본) / 고신뢰 자동 등재(스위치 on 시)
                           소스: PH 6토픽(PH_TOKEN 있으면 API로 실사이트 URL → 자동등재 자격)·HN 3쿼리·BetaList
-                          + 국내 매체 6(플래텀·벤처스퀘어·스타트업레시피·아웃스탠딩·요즘IT·바이라인) + 구글뉴스 검색 3
+                          + 국내 매체 6(플래텀·벤처스퀘어·스타트업레시피·아웃스탠딩·요즘IT·바이라인)
+                          + 국내 커뮤니티 2(GeekNews·디스콰이엇) + 구글뉴스 검색 3
   collect/enrich.mjs      AI 보강(선택) — ANTHROPIC_API_KEY 있으면 Claude Haiku로 후보 분류·한국어 소개문·제품 판정(없으면 정규식 폴백)
+  collect/sync-seed.mjs   DB→정적 시드 역동기화 — 검수 승인분을 platforms.json(+EN 번역)에 반영해 SEO·/en/까지 연결
+                          (Actions sync-seed 수동 실행 → 변경 시 PR 자동 생성 — 검수 승인 몰아서 한 뒤 1회 돌리는 리듬)
   collect/fixtures/       수집기 테스트 픽스처(프록시 제한 환경용 — node collect.mjs --dry --fixture ...)
   collect/healthcheck.mjs 월간 URL 생존 점검 → GitHub 이슈 리포트
-.github/workflows/   pages(배포) · collect-candidates(주간) · metrics-weekly(주간 성장 스냅샷) · healthcheck(월간)
+.github/workflows/   pages(배포) · collect-candidates(주3회) · sync-seed(수동 — 승인분 시드 반영 PR) · metrics-weekly(주간 성장 스냅샷) · healthcheck(월간)
 ```
 
 **영문 레이어(/en/)**: 외국 사업자용 한국 진출 디렉토리 — 전 분야 1,719건 완역+분야 허브 45(인트로 포함)+가이드, 완전 정적(SPA 미부팅 = 제휴·거래소 법적 방화벽). 신규 플랫폼·분야 추가 시 `platforms.en.json`/`hub-intros.en.json`에 영문 항목을 **같이** 추가해야 함(커버리지 어서션이 빌드를 실패시킴 — 현황: `node app/scripts/en-coverage.mjs`).
@@ -32,7 +35,8 @@ backend/
 
 | 주기 | 할 일 | 어디서 |
 |---|---|---|
-| 주 1회(월) | 자동 수집 후보 검수 — 🤖 배지 확인, 이름·분야 다듬고 승인/반려 | 관리 콘솔 → 제보 검수 큐 |
+| 주 1회(월) | 자동 수집 후보 검수 — 🤖 배지 확인, 이름·분야 다듬고 승인/반려 (수집은 월·수·금 주3회 적재) | 관리 콘솔 → 제보 검수 큐 |
+| 승인 몰아서 한 뒤 | Actions → sync-seed 실행 — 승인분을 정적 시드(SEO·EN)에 반영하는 PR 생성 → diff 확인 후 머지 | GitHub Actions |
 | 수시 | 제휴 제안·매물 검수(익명성 점검 하이라이트 참고), 운영자 인증 승인 | 관리 콘솔 |
 | 수시 | 소개 이행 — 거래소는 ①매도자 확인 → ②소개 초안 → 소개 완료 순서 | 관리 콘솔 → 소개 대기 |
 | 월 1회 | 헬스체크 이슈 확인 — 접속 불가 링크 정정/보관 | GitHub Issues (`healthcheck` 라벨) |
