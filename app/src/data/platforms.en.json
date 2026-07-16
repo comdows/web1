@@ -4707,6 +4707,650 @@
     "snapsta": {
       "name": "Snapsta (스냅스타)",
       "blurb": "Booking specialist for wedding and first-birthday snap photography."
+    },
+    "miso": {
+      "name": "Miso (미소)",
+      "blurb": "Korea's leading home-service matching platform for cleaning, housekeeping, and moving."
+    },
+    "cleanlab": {
+      "name": "Cleaning Lab (청소연구소)",
+      "blurb": "Matching platform for housekeepers and home cleaning."
+    },
+    "daerijubu": {
+      "name": "Daeri Jubu (대리주부)",
+      "blurb": "Brokerage for housekeeping and care helpers."
+    },
+    "jjakkak": {
+      "name": "Tictoc Croc (째깍악어)",
+      "blurb": "Matching service for childcare and play teachers."
+    },
+    "homemaster": {
+      "name": "Home Master (홈마스터)",
+      "blurb": "Booking and matching service for housekeeping and cleaning helpers."
+    },
+    "getwashswat": {
+      "name": "Wash Swat (세탁특공대)",
+      "blurb": "Mobile O2O laundry service with pickup and delivery."
+    },
+    "laundrygo": {
+      "name": "Laundrygo (런드리고)",
+      "blurb": "Door-to-door laundry and mending service with overnight pickup."
+    },
+    "apps2": {
+      "name": "Anyman (애니맨)",
+      "blurb": "Real-time errand matching app for deliveries, cleaning, and odd jobs."
+    },
+    "apps3": {
+      "name": "Haejuseyo (해주세요)",
+      "blurb": "Errand matching app covering delivery, cleaning, moving, and pet care."
+    },
+    "zipdoc": {
+      "name": "Zipdoc (집닥)",
+      "blurb": "O2O interior remodeling brokerage with comparative quotes and supervision."
+    },
+    "houstep": {
+      "name": "Houstep (하우스텝)",
+      "blurb": "Standardized-quote platform for wallpaper, flooring, and window installation."
+    },
+    "apps4": {
+      "name": "Instawash (인스타워시)",
+      "blurb": "Premium visiting car-wash O2O service."
+    },
+    "wayopet": {
+      "name": "Wayo (와요)",
+      "blurb": "Booking platform for visiting pet sitters and dog walking."
+    },
+    "dogmate": {
+      "name": "Dogmate (도그메이트)",
+      "blurb": "Matching for visiting pet care and dog walking."
+    },
+    "mogwai": {
+      "name": "Mogwai (모그와이)",
+      "blurb": "Booking platform for visiting pet sitters."
+    },
+    "petplanet": {
+      "name": "Pet Planet (펫플래닛)",
+      "blurb": "Platform connecting boarding and visiting pet sitters."
+    },
+    "jaranda": {
+      "name": "Jaranda (자란다)",
+      "blurb": "Care service matching play and learning teachers for children."
+    },
+    "momsitter": {
+      "name": "Momsitter (맘시터)",
+      "blurb": "Korea's leading matching platform for babysitters and childcare helpers."
+    },
+    "zimssa": {
+      "name": "Zimssa (짐싸)",
+      "blurb": "App for comparing and booking packing-moving and move-in cleaning quotes."
+    },
+    "24mall": {
+      "name": "24Mall (이사몰)",
+      "blurb": "Real-time comparison of packing-moving quotes from moving companies."
+    },
+    "modoo24": {
+      "name": "Modoo Isa (모두이사)",
+      "blurb": "Review-based matching for licensed movers and move-in cleaning."
+    },
+    "hcmaster": {
+      "name": "Homecare Master (홈케어마스터)",
+      "blurb": "Home-care service for disinfection, quarantine, and pest control."
+    },
+    "hscare": {
+      "name": "HS Homecare (HS홈케어)",
+      "blurb": "Home-care service deep-cleaning mattresses, air conditioners, and washing machines."
+    },
+    "yper": {
+      "name": "Yper (와이퍼)",
+      "blurb": "One-stop visiting car wash with pickup, hand wash, and return delivery."
+    },
+    "kimzipsa": {
+      "name": "Kim Zipsa (김집사)",
+      "blurb": "Apartment-based O2O concierge for deliveries and errands."
+    },
+    "bosalpim": {
+      "name": "Bosalpim (보살핌)",
+      "blurb": "Senior-care startup matching care workers with elders and institutions."
+    },
+    "forparents": {
+      "name": "Forparents (포페런츠)",
+      "blurb": "Concierge service where trained companions accompany seniors on outings and daily care."
+    },
+    "sinor": {
+      "name": "Sinol 79 Call (시놀 79전화)",
+      "blurb": "Remote senior-care service offering AI companionship calls and friend matching for people in their 50s to 70s."
+    },
+    "petbom": {
+      "name": "Petbom (펫봄)",
+      "blurb": "Hyperlocal pet-sitter app for entrusting dog and cat visits and walks to neighbors."
+    },
+    "hisitter": {
+      "name": "Hi Sitter (하이시터)",
+      "blurb": "Membership childcare service connecting full-time visiting babysitters for infants and toddlers."
+    },
+    "woowarhanclean": {
+      "name": "Wooahan Jeongni (우아한정리)",
+      "blurb": "Visiting service for home organizing and storage consulting with quotes."
+    },
+    "aftermoving": {
+      "name": "Isa Hoo Ae (이사후애)",
+      "blurb": "Visiting service for post-move unpacking and home organizing specialists."
+    },
+    "verygoodlife": {
+      "name": "Very Good Organizing (베리굿정리컨설팅)",
+      "blurb": "Company providing organizing consulting and training for homes and businesses."
+    },
+    "covering": {
+      "name": "Covering (커버링)",
+      "blurb": "App-based pickup service for household trash and bulk waste."
+    },
+    "sgin": {
+      "name": "Sigongin (시공인)",
+      "blurb": "Matching interior construction sites with skilled workers by region and time."
+    },
+    "cleanbell": {
+      "name": "Cleanbell (클린벨)",
+      "blurb": "Platform comparing and connecting move-in cleaning companies."
+    },
+    "archisketch": {
+      "name": "Archisketch (아키스케치)",
+      "blurb": "3D interior design and furniture placement simulation tool."
+    },
+    "caring": {
+      "name": "Caring (케어링)",
+      "blurb": "Care service for home-visit nursing, family caregiving, and day care."
+    },
+    "neofect": {
+      "name": "Neofect (네오펙트)",
+      "blurb": "AI rehabilitation and home rehab training healthcare platform."
+    },
+    "thehelper": {
+      "name": "The Helper (헬퍼)",
+      "blurb": "Matching platform where families choose their own caregiver."
+    },
+    "carenation": {
+      "name": "Carenation (케어네이션)",
+      "blurb": "App matching patients with caregivers and care services."
+    },
+    "interiorbay": {
+      "name": "Interior Bay (인테리어베이)",
+      "blurb": "Brokerage for comparative interior remodeling quotes."
+    },
+    "apartmentary": {
+      "name": "Apartmentary (아파트멘터리)",
+      "blurb": "Standardized apartment interior remodeling service."
+    },
+    "drbuild": {
+      "name": "Dr. Build (닥터빌드)",
+      "blurb": "Construction platform matching architects and builders with AI recommendations."
+    },
+    "howbuild": {
+      "name": "Howbuild (하우빌드)",
+      "blurb": "Construction platform supporting builder selection and project management."
+    },
+    "airdny": {
+      "name": "Airdny (에어댕냥이)",
+      "blurb": "Matching platform for pet care, walking, and pet sitters."
+    },
+    "gooodcare": {
+      "name": "Good Care (좋은케어)",
+      "blurb": "Matching service for trained caregivers and care managers."
+    },
+    "modohan": {
+      "name": "Modohan (모두한)",
+      "blurb": "Korean-medicine platform for finding and booking clinics by symptom and region."
+    },
+    "saramin": {
+      "name": "Saramin (사람인)",
+      "blurb": "Major Korean recruitment platform for full-time and experienced hires."
+    },
+    "jobkorea": {
+      "name": "JobKorea (잡코리아)",
+      "blurb": "One of Korea's largest general job-posting platforms."
+    },
+    "albamon": {
+      "name": "Albamon (알바몬)",
+      "blurb": "Leading marketplace for part-time and short-term jobs."
+    },
+    "alba": {
+      "name": "Alba Heaven (알바천국)",
+      "blurb": "Major part-time job board in Korea."
+    },
+    "coupangflex": {
+      "name": "Coupang Flex (쿠팡플렉스)",
+      "blurb": "Gig-work program where individuals deliver Coupang parcels with their own cars."
+    },
+    "baeminconnect": {
+      "name": "Baemin Connect (배민커넥트)",
+      "blurb": "Gig-work rider program of the Baemin delivery app."
+    },
+    "wanted2": {
+      "name": "Wanted (원티드)",
+      "blurb": "Tech-focused hiring platform built on referral-based applications."
+    },
+    "incruit": {
+      "name": "Incruit (인크루트)",
+      "blurb": "General recruitment and job-posting platform."
+    },
+    "rocketpunch": {
+      "name": "Rocketpunch (로켓펀치)",
+      "blurb": "Startup hiring and business networking platform."
+    },
+    "career": {
+      "name": "Remember Career (리멤버 커리어)",
+      "blurb": "Scout-based hiring for experienced professionals built on the Remember business-card app."
+    },
+    "catch": {
+      "name": "Catch (캐치)",
+      "blurb": "Hiring information and schedules for large and mid-sized companies."
+    },
+    "jobplanet": {
+      "name": "Jobplanet (잡플래닛)",
+      "blurb": "Company reviews and salary insights alongside job postings."
+    },
+    "peoplenjob": {
+      "name": "People & Job (피플앤잡)",
+      "blurb": "Job site specializing in foreign companies and headhunting."
+    },
+    "gubgoo": {
+      "name": "Gubgoo (급구)",
+      "blurb": "Real-time gig app matching same-day and short-term part-time work."
+    },
+    "barogo": {
+      "name": "Barogo (바로고)",
+      "blurb": "Delivery agency network connecting riders with stores."
+    },
+    "work": {
+      "name": "Goyong24 (고용24)",
+      "blurb": "Public employment portal of the Ministry of Employment and Labor."
+    },
+    "findjob": {
+      "name": "Byeoruksijang (벼룩시장)",
+      "blurb": "Local classifieds platform for neighborhood jobs and part-time work."
+    },
+    "newworker": {
+      "name": "Newworker (뉴워커)",
+      "blurb": "Incruit's gig-worker matching and payment-management platform."
+    },
+    "specter": {
+      "name": "Specter (스펙터)",
+      "blurb": "Reference-check platform verifying candidates through peer reviews."
+    },
+    "attalework": {
+      "name": "Attale Work (어테일워크)",
+      "blurb": "Hiring match for experts in their 40s to 60s and seniors."
+    },
+    "senior": {
+      "name": "Wonderful Senior (원더풀시니어)",
+      "blurb": "Saramin's job-search diagnosis, placement, and training support for older workers."
+    },
+    "woodel": {
+      "name": "Woodel (우리동네딜리버리)",
+      "blurb": "GS Retail's walking-delivery gig platform."
+    },
+    "codingvalley": {
+      "name": "AI Coding Valley (AI 코딩밸리)",
+      "blurb": "Mobile edtech by Ulift teaching working professionals AI tools like ChatGPT and Claude plus coding."
+    },
+    "epop": {
+      "name": "Malhaeboca (말해보카)",
+      "blurb": "AI-based English vocabulary and conversation app by Epop Soft with gamified learning."
+    },
+    "argong": {
+      "name": "Argong (알공)",
+      "blurb": "Elementary-focused AI courseware by DNSoft personalizing English and math learning."
+    },
+    "tiokorea": {
+      "name": "TIO (티오)",
+      "blurb": "AI assistant for job seekers covering cover letters and interview preparation."
+    },
+    "haijob": {
+      "name": "Haijob (하이잡)",
+      "blurb": "AI job-prep platform spanning aptitude diagnosis, cover-letter editing, and interviews."
+    },
+    "naim": {
+      "name": "Naim (나임)",
+      "blurb": "AI job-support service that remembers personal experience data to draft and verify cover letters."
+    },
+    "groupby": {
+      "name": "Groupby (그룹바이)",
+      "blurb": "Startup-focused hiring platform curating job postings and career insights."
+    },
+    "dio": {
+      "name": "Dio (디오)",
+      "blurb": "HR-tech platform matching verified experienced talent on a subscription model."
+    },
+    "1gada": {
+      "name": "Gada (가다)",
+      "blurb": "Labor brokerage platform connecting construction day workers with sites in real time."
+    },
+    "kowork": {
+      "name": "Kowork (코워크)",
+      "blurb": "Platform connecting foreign job seekers with Korean companies, including visa information."
+    },
+    "workwiz": {
+      "name": "Workwiz (워크위즈)",
+      "blurb": "Career matching platform for re-employment of workers in their 40s and 50s with consultant coaching."
+    },
+    "rallit": {
+      "name": "Rallit (랠릿)",
+      "blurb": "IT talent hiring platform operated by Programmers."
+    },
+    "jobda": {
+      "name": "Jobda (잡다)",
+      "blurb": "Job platform matching candidates through competency assessments."
+    },
+    "sherlockn": {
+      "name": "Sherlock N (셜록N)",
+      "blurb": "Headhunting platform where recruiters recommend talent."
+    },
+    "hiddenscout": {
+      "name": "Hidden Scout (히든스카우트)",
+      "blurb": "Platform where multiple headhunters recommend candidates."
+    },
+    "bzpp": {
+      "name": "Business People (비즈니스피플)",
+      "blurb": "Hiring platform for executives and key experienced talent."
+    },
+    "dongnealba": {
+      "name": "Dongne Alba (동네알바)",
+      "blurb": "Neighborhood part-time job app where owners reach out to candidates first."
+    },
+    "connectin": {
+      "name": "Connectin (커넥틴)",
+      "blurb": "Labor brokerage connecting construction workers with sites."
+    },
+    "workmeet": {
+      "name": "Workmeet (워크밋)",
+      "blurb": "Matching platform for day-labor jobs."
+    },
+    "jobploy": {
+      "name": "Jobploy (잡플로이)",
+      "blurb": "Job matching platform tailored to foreign workers in Korea."
+    },
+    "itdaa": {
+      "name": "Itdaa (잇다)",
+      "blurb": "Career mentoring platform connecting job seekers with industry professionals."
+    },
+    "kmong": {
+      "name": "Kmong (크몽)",
+      "blurb": "Korea's largest freelance services marketplace for design, marketing, and IT gigs."
+    },
+    "soomgo": {
+      "name": "Soomgo (숨고)",
+      "blurb": "Local expert matching platform for lessons, moving, repairs, and more."
+    },
+    "wishket": {
+      "name": "Wishket (위시켓)",
+      "blurb": "Outsourcing marketplace matching IT development and design projects with freelancers."
+    },
+    "taling": {
+      "name": "Taling (탈잉)",
+      "blurb": "Marketplace matching tutors and one-day classes for hobbies and job skills."
+    },
+    "loud": {
+      "name": "Loud Sourcing (라우드소싱)",
+      "blurb": "Design outsourcing through contests and competitions."
+    },
+    "otwojob": {
+      "name": "Otwojob (오투잡)",
+      "blurb": "Marketplace for trading skills and services."
+    },
+    "elancer": {
+      "name": "Elancer (이랜서)",
+      "blurb": "Outsourcing platform matching companies with IT freelancers by project."
+    },
+    "freemoa": {
+      "name": "Freemoa (프리모아)",
+      "blurb": "Brokerage for IT development and design outsourcing projects."
+    },
+    "wanted": {
+      "name": "Wanted Gigs (원티드긱스)",
+      "blurb": "IT freelancer outsourcing match operated by Wanted."
+    },
+    "jaenung": {
+      "name": "Jaenung.net (재능넷)",
+      "blurb": "Marketplace for trading skills like design, translation, and video."
+    },
+    "imjob": {
+      "name": "Imjob (아임잡)",
+      "blurb": "Freelancer matching connecting IT talent with corporate projects."
+    },
+    "notefolio": {
+      "name": "Notefolio (노트폴리오)",
+      "blurb": "Creator platform for designer portfolios and design outsourcing."
+    },
+    "datalab": {
+      "name": "Flitto DataLab (플리토 데이터랩)",
+      "blurb": "Crowdsourced multilingual translation and language-data processing platform."
+    },
+    "crowdworks": {
+      "name": "Crowdworks (크라우드웍스)",
+      "blurb": "Crowdsourcing platform for AI training-data labeling."
+    },
+    "selectstar": {
+      "name": "Select Star (셀렉트스타)",
+      "blurb": "Crowdsourcing for collecting and processing AI training and evaluation data."
+    },
+    "codenary": {
+      "name": "Codenary (코드너리)",
+      "blurb": "Curation platform for tech stacks, developer hiring, and outsourcing."
+    },
+    "provoice": {
+      "name": "Provoice (프로보이스)",
+      "blurb": "Brokerage for voice actors, dubbing, and localization work."
+    },
+    "skillagit": {
+      "name": "Jaenung Agit (재능아지트)",
+      "blurb": "Marketplace for design, translation, voice, and video skills."
+    },
+    "talentbank": {
+      "name": "Talent Bank (탤런트뱅크)",
+      "blurb": "Gig platform spun off from Hunet connecting vetted senior experts with companies for advisory and projects."
+    },
+    "gigtalk": {
+      "name": "Gigtalk (긱톡)",
+      "blurb": "Expert-network talent market brokering project matching, advisory, and referrals."
+    },
+    "sooooon": {
+      "name": "Soon (쑨)",
+      "blurb": "Ultra-short-term gig platform connecting small business owners with same-day workers."
+    },
+    "apps9": {
+      "name": "Dolpagu (돌파구)",
+      "blurb": "New talent-market app connecting side-job freelancers with corporate outsourcing."
+    },
+    "gigtalker": {
+      "name": "Gigtalker (긱톡커)",
+      "blurb": "New talent market supporting knowledge-product sales and expert matching with a global focus."
+    },
+    "1point": {
+      "name": "One Point (원포인트)",
+      "blurb": "Expert matching platform connecting companies with AI-vetted top marketers and designers."
+    },
+    "ssosing": {
+      "name": "Ssosing (쏘싱)",
+      "blurb": "IT outsourcing platform recommending freelancers and agencies to startups with dedicated project managers."
+    },
+    "heybeagle": {
+      "name": "Hey Beagle (헤이비글)",
+      "blurb": "Booking platform comparing quotes for MCs, hosts, and performers."
+    },
+    "myoncast": {
+      "name": "Oncast (온캐스트)",
+      "blurb": "Booking service matching announcers, MCs, and event hosts."
+    },
+    "ieumcompany": {
+      "name": "Ieum Company (이음컴퍼니)",
+      "blurb": "Platform brokering performer and host bookings."
+    },
+    "lessoneasy": {
+      "name": "Lesson Easy (레슨이지)",
+      "blurb": "Platform connecting music, art, and dance lesson instructors."
+    },
+    "lessoninfo": {
+      "name": "Lesson Info (레슨인포)",
+      "blurb": "Job-matching platform for music instructors and academies."
+    },
+    "zimcarry": {
+      "name": "Zim Carry (짐캐리)",
+      "blurb": "Travel luggage delivery and storage service platform."
+    },
+    "lifeistravel": {
+      "name": "Life is Travel (라이프이즈트래블)",
+      "blurb": "Travel luggage storage service through cafe and convenience-store partnerships."
+    },
+    "goodlugg": {
+      "name": "Goodlugg (굿러그)",
+      "blurb": "Global platform for travel luggage delivery and storage."
+    },
+    "ontrip": {
+      "name": "Ontrip (온트립)",
+      "blurb": "Platform directly connecting travelers with local guides, tours, and agencies."
+    },
+    "kimstudy": {
+      "name": "Kim Gwaoe (김과외)",
+      "blurb": "Korea's leading private tutoring matching platform."
+    },
+    "qanda": {
+      "name": "Qanda Tutoring (콴다과외)",
+      "blurb": "App matching verified teachers for one-on-one online tutoring."
+    },
+    "gawebada": {
+      "name": "Gwaoe Bada (과외바다)",
+      "blurb": "Tutoring matching platform connecting students directly with tutors."
+    },
+    "kr5": {
+      "name": "Tutor Hive (튜터하이브)",
+      "blurb": "App matching tutoring mentors from top universities, including students abroad."
+    },
+    "sscoaching": {
+      "name": "Sangsang Coaching (상상코칭)",
+      "blurb": "One-on-one tutoring match personalized by grades and learning style."
+    },
+    "lawtalk": {
+      "name": "Lawtalk (로톡)",
+      "blurb": "Korea's leading lawyer-matching platform for phone, video, and in-person consultations."
+    },
+    "lawandgood": {
+      "name": "Law&Good (로앤굿)",
+      "blurb": "Legal matching platform where lawyers submit proposals based on questionnaires."
+    },
+    "lawsee": {
+      "name": "Lawsee (로시컴)",
+      "blurb": "Consultation matching for lawyers, labor attorneys, and tax accountants."
+    },
+    "helpme": {
+      "name": "Helpme (헬프미)",
+      "blurb": "Legal-tech for online payment orders, corporate registration, and inheritance."
+    },
+    "albup": {
+      "name": "Albup (알법)",
+      "blurb": "Legal consultation app quickly connecting users with lawyers."
+    },
+    "connects": {
+      "name": "Aha Connects (아하커넥츠)",
+      "blurb": "One-on-one paid consultation platform with lawyers and other experts."
+    },
+    "lawmaster": {
+      "name": "Lawmaster (로마스터)",
+      "blurb": "AI legal service platform for demand letters and payment orders."
+    },
+    "lawform": {
+      "name": "Lawform (로폼)",
+      "blurb": "Automated drafting, e-signature, and storage for contracts and demand letters."
+    },
+    "3o3": {
+      "name": "3o3 (삼쩜삼)",
+      "blurb": "Mobile tax platform for income-tax filing and refunds."
+    },
+    "taxmon": {
+      "name": "Taxmon (택스몬)",
+      "blurb": "Tax service simulating and consulting on capital gains, inheritance, and gift taxes."
+    },
+    "semutong": {
+      "name": "Semutong (세무통)",
+      "blurb": "Matching platform comparing tax accountants by reviews and quotes."
+    },
+    "findsemusa": {
+      "name": "Chajajwo Semusa (찾아줘세무사)",
+      "blurb": "Real-time consultation matching with tax accountants."
+    },
+    "jobis": {
+      "name": "Jobis (자비스)",
+      "blurb": "Bookkeeping and tax-filing platform run with tax accountants and CPAs."
+    },
+    "findsemusa2": {
+      "name": "Chajajwo Nomusa (찾아줘노무사)",
+      "blurb": "Real-time chat and phone consultation matching with labor attorneys."
+    },
+    "markinfo": {
+      "name": "Markinfo (마크인포)",
+      "blurb": "Online platform for trademark search and registration filing."
+    },
+    "markinfoglobal": {
+      "name": "Markinfo Global (마크인포 글로벌)",
+      "blurb": "Platform supporting overseas trademark registration procedures."
+    },
+    "modusign": {
+      "name": "Modusign (모두싸인)",
+      "blurb": "E-contract SaaS for requesting, signing, and managing electronic signatures."
+    },
+    "eformsign": {
+      "name": "eformsign (이폼사인)",
+      "blurb": "Cloud e-document service for drafting, signing, and storing contracts."
+    },
+    "glosign": {
+      "name": "Glosign (글로싸인)",
+      "blurb": "E-contract and e-signature platform for closing deals online."
+    },
+    "trost": {
+      "name": "Trost (트로스트)",
+      "blurb": "Mental-health counseling match by text, phone, or in person."
+    },
+    "mindcafe": {
+      "name": "Mindcafe (마인드카페)",
+      "blurb": "Anonymous community and remote counseling platform with licensed professionals."
+    },
+    "hellomindcare": {
+      "name": "Hello Mindcare (헬로마인드케어)",
+      "blurb": "App for counselor matching, video counseling, and psychological tests."
+    },
+    "zuzu": {
+      "name": "ZUZU (주주)",
+      "blurb": "Platform managing incorporation, registration, shareholders, and stock options."
+    },
+    "scil": {
+      "name": "Seoul Credit Rating & Information (서울신용평가정보)",
+      "blurb": "Online support service for debt collection and recovery."
+    },
+    "lbox": {
+      "name": "LBox (엘박스)",
+      "blurb": "Legal-tech service for case-law search with AI summaries built on a vast court-ruling database."
+    },
+    "bhsn": {
+      "name": "Allibee (앨리비)",
+      "blurb": "All-in-one legal AI by BHSN supporting contract review and corporate legal work."
+    },
+    "seteuk": {
+      "name": "Semu Teokgongdae (세무특공대)",
+      "blurb": "AI bookkeeping service by iBizOn automating transaction classification using Hometax, bank, and card data."
+    },
+    "pluscompany": {
+      "name": "Deotsem (덧셈)",
+      "blurb": "Tax service automating income-tax filing and refund claims for freelancers, employees, and business owners."
+    },
+    "heumtax": {
+      "name": "Deonaen Segeum (더낸세금)",
+      "blurb": "Tax-refund service by Heum helping reclaim missed deductions through amended returns."
+    },
+    "mobiletax": {
+      "name": "Mobile Tax (모바일택스)",
+      "blurb": "Mobile tax-agent app assigning a dedicated tax accountant one-on-one."
+    },
+    "gommark": {
+      "name": "Gommark (곰마크)",
+      "blurb": "Agency service for online trademark and patent registration."
     }
   }
 }
