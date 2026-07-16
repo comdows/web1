@@ -9,7 +9,7 @@ import { useSession } from "./lib/auth";
 import {
   applyToPartnerPost, askDealQuestion, createBuyerBrief, createDealSubmission, createPartnerPost,
   fetchDeal, fetchDealQuestions, fetchDeals, fetchPartnerPosts, fetchSponsorSlots, founderOptIn, listMyDealInterests, listMyPartnerInterests, listMyPartnerPosts,
-  partnerRefCode, placeOrder, registerDealInterest, remoteEnabled,
+  partnerRefCode, placeOrder, registerDealInterest, remoteEnabled, trackEvent,
 } from "./lib/api";
 import type { DealQA, SponsorSlotPublic } from "./lib/api";
 import { bankTransferProvider } from "./lib/billing";
@@ -910,6 +910,10 @@ export function DealDetailPage({ id }: { id?: string }) {
     if (deal) document.title = `매물 ${deal.id} — 세모플 거래소`;
     return () => { document.title = "세모플 — 세상의 모든 플랫폼"; };
   }, [deal]);
+  useEffect(() => {
+    // 머니패스 계측(0034): 매물 상세 조회 — entity 차원으로 기록(플랫폼 퍼널과 분리)
+    if (deal?.id) trackEvent("impression", undefined, undefined, { type: "deal", id: deal.id });
+  }, [deal?.id]);
 
   if (deal === undefined) return <div className="page container"><div className="empty">불러오는 중…</div></div>;
   if (deal === null) return (

@@ -1,6 +1,6 @@
 # 세모플 (SEMOPL) — 세상의 모든 플랫폼
 
-> 사업자용 B2B 인프라: **발견**(플랫폼·AI 도구 디렉토리 1,637개) → **제휴**(매칭 보드) → **거래**(자산·사업 양수도 익명 리스팅).
+> 사업자용 B2B 인프라: **발견**(플랫폼·AI 도구 디렉토리 1,719개) → **제휴**(매칭 보드) → **거래**(자산·사업 양수도 익명 리스팅).
 > 라이브: https://comdows.github.io/web1/ · 스택: React(Vite+TS) SPA + Supabase(PostgREST/RLS) + GitHub Pages/Actions
 > 커스텀 도메인 전환: 주소는 `app/site.config.mjs` 단일 설정 — 구매 후 `node scripts/switch-domain.mjs <도메인>` 1회 + [domain-setup.md](domain-setup.md) 절차
 
@@ -8,8 +8,8 @@
 
 ```
 app/                 프론트엔드 (Vite + React + TS)
-  src/data/          단일 데이터 소스(platforms.json — 6그룹·45분야·1,637개)
-  scripts/prerender.mjs   빌드 시 상세 1,637p 정적 생성 + sitemap + robots (SEO)
+  src/data/          단일 데이터 소스(platforms.json — 6그룹·45분야·1,719개)
+  scripts/prerender.mjs   빌드 시 상세 1,719p 정적 생성 + sitemap + robots (SEO)
 backend/
   migrations/        0001 스키마 → 0002 RLS → 0003 시드 → 0004 오픈 → 0005 소개·동의 → 0006 AI (ALL.sql = 전체)
   seed/build-seed.mjs     platforms.json → 0003 재생성 (데이터 변경 시 실행)
@@ -17,7 +17,7 @@ backend/
                           소스: PH(AI·커머스·핀테크)·HN + 국내 매체(플래텀·벤처스퀘어·스타트업레시피·아웃스탠딩·요즘IT·바이라인)
   collect/fixtures/       수집기 테스트 픽스처(프록시 제한 환경용 — node collect.mjs --dry --fixture ...)
   collect/healthcheck.mjs 월간 URL 생존 점검 → GitHub 이슈 리포트
-.github/workflows/   pages(배포) · collect-candidates(주간) · healthcheck(월간)
+.github/workflows/   pages(배포) · collect-candidates(주간) · metrics-weekly(주간 성장 스냅샷) · healthcheck(월간)
 ```
 
 **영문 레이어(/en/)**: 외국 사업자용 한국 진출 디렉토리 — commerce·trade 604건+분야 허브 14+가이드 3, 완전 정적(SPA 미부팅 = 제휴·거래소 법적 방화벽). 신규 플랫폼 승인 시 `app/src/data/platforms.en.json`에 영문 항목 추가(미번역분은 EN 미노출·빌드는 통과).
@@ -68,6 +68,7 @@ backend/
 - [x] **`backend/migrations/0030_saved_searches.sql` 실행 완료(2026-07-15)**(저장된 검색 + 조건 알림 — `saved_searches` 테이블(본인 CRUD·admin 조회, 사용자당 20). 멱등. 실행 후 검색 결과 화면 "🔔 이 조건 저장" → 계정 "내 저장 검색" 관리, 주간 `match-notify`가 조건에 맞는 신규 플랫폼을 `search_match` 인앱 알림으로 발송. 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요. 실행 전에도 사이트 정상(저장 버튼만 접수 실패 안내))
 - [x] **`backend/migrations/0031_user_interests.sql` 실행 완료(2026-07-15)**(로그인 개인화 — `user_interests` 테이블(본인 upsert·admin 조회). 멱등. 실행 후 온보딩·관심 선택이 서버에 저장돼 기기 간 동기화, 로그인 홈에 "🔔 내 저장 검색" 개인화 블록 노출. 실행 전에도 사이트 정상(관심은 로컬에만 저장))
 - [x] **`backend/migrations/0032_ai_pricing.sql` 실행 완료(2026-07-15)**(AI 도구 요금형태 — `platforms.ai_pricing` 컬럼(free/freemium/paid) + AI 163개 시드. 멱등(컬럼 add if not exists + id별 UPDATE). 실행 후 AI 파인더 "요금 형태" 필터·카드/상세/비교 배지 노출. 요금 "형태"만(금액 게재 안 함) — 편집 추정. 실행 전에도 사이트 정상(정적 데이터로 표시))
+- [ ] **`backend/migrations/0034_growth.sql` 실행**(성장 계측 — `events.entity_type/entity_id` 컬럼 + `metrics_weekly` 주간 스냅샷 + `admin_snapshot_weekly` RPC + 성장/코호트/머니패스 admin 뷰. 멱등. 실행 후 관리 콘솔 "성장" 패널이 채워지고 `metrics-weekly` 워크플로(매주 월, 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요)가 주간 확정치를 적재. 실행 전에도 사이트 정상 — 매물 조회 이벤트만 기록 생략)
 - [x] **`backend/migrations/0033_brief_region.sql` 실행 완료(2026-07-15)**(매칭 지능화 — `buyer_briefs.region_pref` 컬럼(''=무관/domestic/해외). 멱등(컬럼 add if not exists + 조건부 check). 실행 후 인수 브리프에 지역 선호 저장 → 브리프↔매물 매칭이 지역·예산 하한까지 반영(내 활동·관리 소개큐·주간 `match-notify`). 실행 전에도 사이트 정상(지역 필드는 빈값=무관 처리))
 - [x] **`backend/migrations/0029_ai_expand.sql` 실행 완료(2026-07-11)**(AI 도구 확장 — 82종 추가로 80→163개, AI스튜디오스 분야 이동(assets→영상 AI). 멱등. 라이브 반영됨 — URL은 월간 헬스체크가 검증)
 - [x] **`backend/migrations/0028_ops_moderation.sql` 실행 완료(2026-07-11)**(실운용 준비 — ①신고 `reports`(회원 신고→콘솔 🚩 신고 큐) ②인앱 문의 `inquiries`(문의·도움말 페이지→📬 문의 큐) ③회원 정지 `suspended_at`+`admin_set_suspended`(쓰기만 차단) ④리뷰 본인 삭제 정책 ⑤리뷰·질문·관심 사용자당 상한 ⑥알림 보존 정리 `purge_old_notifications`. 멱등. 실행됨 — 신고·문의 접수가 동작하고 주간 백업·다이제스트에 신설 테이블이 포함됩니다)
@@ -119,7 +120,7 @@ backend/
 ```bash
 cd app && npm install
 npm run dev        # 개발 서버
-npm run build      # tsc + vite + 프리렌더(1,637p) — Pages가 master 푸시마다 자동 배포
+npm run build      # tsc + vite + 프리렌더(1,719p) — Pages가 master 푸시마다 자동 배포
 ```
 
 데이터 추가/수정: `app/src/data/platforms.json` 수정 → `node backend/seed/build-seed.mjs`로 0003 재생성 →

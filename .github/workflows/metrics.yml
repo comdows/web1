@@ -1,0 +1,38 @@
+# 주간 성장 스냅샷 — 매주 월 01:15 UTC(월 10:15 KST): 지난 완결 UTC 주를 metrics_weekly에 멱등 upsert.
+# 관리 콘솔 성장 패널(시계열·리텐션)의 히스토리 원천. 실패 시 ops-alert 이슈.
+# 필요 Secrets: SUPABASE_URL, SUPABASE_ANON_KEY, ADMIN_BOT_EMAIL, ADMIN_BOT_PASSWORD (digest와 동일 — 추가 설정 불필요)
+name: metrics-weekly
+
+on:
+  schedule:
+    - cron: "15 1 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write   # 실패 알림(ops-alert 이슈)
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Weekly growth snapshot
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          ADMIN_BOT_EMAIL: ${{ secrets.ADMIN_BOT_EMAIL }}
+          ADMIN_BOT_PASSWORD: ${{ secrets.ADMIN_BOT_PASSWORD }}
+        run: node backend/collect/metrics.mjs
+      - name: 실패 알림(ops-alert 이슈)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sf -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues" \
+            -d "{\"title\":\"[운영] ${{ github.workflow }} 실패 — 확인 필요\",\"body\":\"실행 로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"labels\":[\"ops-alert\"]}"
