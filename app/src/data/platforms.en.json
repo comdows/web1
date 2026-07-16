@@ -3867,6 +3867,846 @@
     "select": {
       "name": "Ridi Select (리디셀렉트)",
       "blurb": "Unlimited e-book subscription service by Ridi."
+    },
+    "petfriends": {
+      "name": "Pet Friends (펫프렌즈)",
+      "blurb": "Korea's leading pet commerce app for food, treats, and supplies with fast delivery."
+    },
+    "aboutpet": {
+      "name": "About Pet (어바웃펫)",
+      "blurb": "General pet shopping commerce under GS Retail."
+    },
+    "biteme": {
+      "name": "Bite Me (바잇미)",
+      "blurb": "Brand mall for in-house designed dog toys, treats, and apparel."
+    },
+    "dogpre": {
+      "name": "Dog President (강아지대통령)",
+      "blurb": "Commerce site specializing in dog food, treats, and supplies."
+    },
+    "dogpang": {
+      "name": "Dogpang (도그팡)",
+      "blurb": "Online store specializing in dog supplies and food."
+    },
+    "catpang": {
+      "name": "Catpang (캣팡)",
+      "blurb": "Cat commerce store specializing in feline supplies and food."
+    },
+    "catskingdom": {
+      "name": "Cats Kingdom (고양이왕국)",
+      "blurb": "Online store specializing in cat supplies."
+    },
+    "maxcat": {
+      "name": "Maxcat (맥스캣)",
+      "blurb": "Online store specializing in cat supplies."
+    },
+    "drfelis": {
+      "name": "Dr. Felis (닥터펠리스)",
+      "blurb": "Veterinarian-designed D2C brand mall for cat products."
+    },
+    "petbazaar": {
+      "name": "Pet Bazaar (펫바자)",
+      "blurb": "Outlet-style commerce for pet supplies."
+    },
+    "petmily": {
+      "name": "Petmily (펫밀리)",
+      "blurb": "Store for pet supplements and health products."
+    },
+    "petmart": {
+      "name": "Petmart (펫마트)",
+      "blurb": "General pet mall for food, treats, and supplies."
+    },
+    "harimpetfood": {
+      "name": "Harim Pet Food (하림펫푸드)",
+      "blurb": "D2C mall of the human-grade pet food maker under Harim."
+    },
+    "petfresh": {
+      "name": "Petfresh (펫프레시)",
+      "blurb": "Pet food subscription service with AI nutrition consulting."
+    },
+    "dogmalion": {
+      "name": "Dogmalion (도그말리온)",
+      "blurb": "D2C brand for additive-free handmade dog treats."
+    },
+    "petoi": {
+      "name": "Petoi (페토이)",
+      "blurb": "Pet-tech brand mall selling IoT auto feeders and smart devices."
+    },
+    "petrasyu": {
+      "name": "Petrasyu (펫트라슈)",
+      "blurb": "App for checking veterinary costs, reviews, and booking animal hospitals."
+    },
+    "intopet": {
+      "name": "Intopet (인투펫)",
+      "blurb": "App for managing pet vaccinations and medication with mobile vet booking."
+    },
+    "todaypaw": {
+      "name": "Today Paw (오늘댕냥)",
+      "blurb": "Platform for comparing veterinary clinics with reviews and reservations."
+    },
+    "petdoc": {
+      "name": "Petdoc (펫닥)",
+      "blurb": "App for real-time veterinarian consultations and pet care records."
+    },
+    "ipet": {
+      "name": "iPet (아이펫)",
+      "blurb": "Platform for comparing pet insurance plans and managing claims."
+    },
+    "petforest": {
+      "name": "Pet Forest (펫포레스트)",
+      "blurb": "Booking service for pet funerals and memorial spaces."
+    },
+    "petnight": {
+      "name": "Petnight (펫나잇)",
+      "blurb": "Nationwide comparison and booking service for pet funeral homes."
+    },
+    "banjjakpet": {
+      "name": "Banjjak (반짝)",
+      "blurb": "Pet grooming salon search with portfolios and reservations."
+    },
+    "enterdog": {
+      "name": "Enterdog (엔터독)",
+      "blurb": "Booking service for dog-friendly stays, hotels, and shops."
+    },
+    "hoteldogs": {
+      "name": "Hotel Dogs (호텔독스)",
+      "blurb": "24-hour dog hotel and daycare with CCTV monitoring."
+    },
+    "banlife": {
+      "name": "Banryeo Saenghwal (반려생활)",
+      "blurb": "App for booking pet-friendly stays, travel spots, and restaurants."
+    },
+    "pawinhand": {
+      "name": "Paw in Hand (포인핸드)",
+      "blurb": "App connecting shelter animals with adopters and helping find lost pets."
+    },
+    "petner": {
+      "name": "Petner (펫트너)",
+      "blurb": "Booking platform for visiting pet sitters and groomers."
+    },
+    "woofoo": {
+      "name": "Woofoo (우푸)",
+      "blurb": "Matching service for dog walkers and visiting pet and cat sitters."
+    },
+    "beforpet": {
+      "name": "Beforpet (비포펫)",
+      "blurb": "Dog-walking service on demand."
+    },
+    "9dogcat": {
+      "name": "Gudokcat (구독캣)",
+      "blurb": "Subscription store delivering cat litter and supplies on a regular schedule."
+    },
+    "dogmeal": {
+      "name": "Dogmeal (도그밀)",
+      "blurb": "Subscription service delivering personalized dog meal plans."
+    },
+    "petbox": {
+      "name": "Petbox (펫박스)",
+      "blurb": "Store selling pet supplies including food and handmade treats."
+    },
+    "breeeeeding": {
+      "name": "Breeding (브리딩)",
+      "blurb": "Service providing dog training and education content and programs."
+    },
+    "petfins": {
+      "name": "Petfins (펫핀스)",
+      "blurb": "Platform for comparing and signing up for pet insurance across insurers."
+    },
+    "petme": {
+      "name": "Petme (펫미)",
+      "blurb": "Platform connecting pet owners with grooming, hotel, and other pet-service professionals."
+    },
+    "goodbyeangel": {
+      "name": "Goodbye Angel (굿바이엔젤)",
+      "blurb": "Pet funeral and cremation booking with 24-hour consultation."
+    },
+    "21gram": {
+      "name": "21gram (21그램)",
+      "blurb": "Pet funeral home supporting everything from preparations to cremation."
+    },
+    "petvip": {
+      "name": "Pet VIP (펫VIP)",
+      "blurb": "Visiting pet grooming, bathing, and care service."
+    },
+    "charactergrooming": {
+      "name": "Character Grooming (캐릭터그루밍)",
+      "blurb": "Niche grooming shop for character-style creative dog grooming, bookable online."
+    },
+    "othermars": {
+      "name": "Othermars (아더마스)",
+      "blurb": "D2C pet food brand by Allday Organic selling organic, additive-free natural meals through its own mall."
+    },
+    "barfdog": {
+      "name": "Barfdog (바프독)",
+      "blurb": "Subscription service delivering personalized raw diets for dogs."
+    },
+    "comestay": {
+      "name": "Comestay (컴스테이)",
+      "blurb": "Booking platform for dog-friendly accommodations."
+    },
+    "partypang": {
+      "name": "Partypang (파티팡)",
+      "blurb": "Store specializing in party supplies, decorations, and helium balloon delivery."
+    },
+    "partyhae": {
+      "name": "Partyhae (파티해)",
+      "blurb": "Discount store for party decorations, balloons, and event props."
+    },
+    "joyparty": {
+      "name": "Joyparty (조이파티)",
+      "blurb": "Birthday party supply shop with balloon delivery by vehicle."
+    },
+    "rentalfr": {
+      "name": "Rental Free (렌탈프리)",
+      "blurb": "Event-supply rental covering photo walls, bar tables, and more."
+    },
+    "rentalmonkey": {
+      "name": "Rental Monkey (렌탈몽키)",
+      "blurb": "Rental specialist for event supplies such as tables."
+    },
+    "whitebooth": {
+      "name": "White Booth (하얀부스)",
+      "blurb": "Event-supply rental, installation, and event planning company."
+    },
+    "partykorea": {
+      "name": "Party Korea (파티코리아)",
+      "blurb": "Catering service for store openings and corporate events."
+    },
+    "koreabuffet": {
+      "name": "Korea Buffet (코리아출장부페)",
+      "blurb": "On-site buffet and catering service in the Seoul metropolitan area."
+    },
+    "awesomeparty": {
+      "name": "Awesome Party (어썸파티)",
+      "blurb": "Packaged delivery catering and party box service."
+    },
+    "roomservicehomeparty": {
+      "name": "Room Service Home Party (룸서비스 홈파티)",
+      "blurb": "Catering service for housewarmings and home gatherings."
+    },
+    "justincatering": {
+      "name": "Justin Catering (저스틴케이터링)",
+      "blurb": "Hotel-style lunch boxes and premium catering orders."
+    },
+    "damsoban": {
+      "name": "Damsoban (담소반)",
+      "blurb": "Chef and florist catering and lunch box orders."
+    },
+    "foodsupporters": {
+      "name": "Food Supporters (푸드서포터즈)",
+      "blurb": "Platform for ordering group lunch boxes and catering with delivery."
+    },
+    "fooding": {
+      "name": "Office Fooding (오피스푸딩)",
+      "blurb": "Platform for ordering office group meals, snacks, and catering."
+    },
+    "kukka": {
+      "name": "Kukka (꾸까)",
+      "blurb": "Online flower brand known for its flower subscription service."
+    },
+    "flipflower": {
+      "name": "Flip Flower (플립플라워)",
+      "blurb": "Flower subscription service."
+    },
+    "florano": {
+      "name": "Florano (플로라노)",
+      "blurb": "Premium flower subscription and flower cafe brand."
+    },
+    "snowfoxflowers": {
+      "name": "Snowfox Flowers (스노우폭스 플라워)",
+      "blurb": "Flower brand selling everyday bouquets at accessible positioning."
+    },
+    "honestflower": {
+      "name": "Honest Flower (어니스트플라워)",
+      "blurb": "Flower brand selling and delivering everyday flowers."
+    },
+    "fleurue": {
+      "name": "Fleurue (플레루)",
+      "blurb": "Flower subscription service for everyday arrangements."
+    },
+    "flowerrepublic": {
+      "name": "Flower Republic (플라워리퍼블릭)",
+      "blurb": "Same-day delivery for funeral and celebration wreaths and opening gifts."
+    },
+    "cultwoflower": {
+      "name": "Cultwo Flower (컬투플라워)",
+      "blurb": "Nationwide same-day flower delivery for bouquets and wreaths."
+    },
+    "flower119": {
+      "name": "Flower119 (플라워119)",
+      "blurb": "Nationwide florist network for same-day wreath and flower delivery."
+    },
+    "flowerplus": {
+      "name": "Flower Plus (플라워플러스)",
+      "blurb": "One-stop flower delivery for corporate wreaths and plants."
+    },
+    "biz": {
+      "name": "Giftishow Biz (기프티쇼 비즈)",
+      "blurb": "Bulk sender for corporate mobile coupons and promotional gifts."
+    },
+    "barunsonthegift": {
+      "name": "Barunson The Gift (바른손 더기프트)",
+      "blurb": "Store specializing in return gifts and presents."
+    },
+    "giftinfo": {
+      "name": "Sejong Gift (세종기프트)",
+      "blurb": "Maker and seller of promotional items, souvenirs, and return gifts."
+    },
+    "showgle": {
+      "name": "Showgle (쇼글)",
+      "blurb": "Matching platform for booking performers and celebrities."
+    },
+    "eventnet": {
+      "name": "Eventnet (이벤트넷)",
+      "blurb": "Community matching professionals for events, exhibitions, and conventions."
+    },
+    "eventplus": {
+      "name": "Event Plus (이벤트플러스)",
+      "blurb": "Event agency matching for equipment rental and staffing."
+    },
+    "myfair": {
+      "name": "Myfair (마이페어)",
+      "blurb": "Platform for booking overseas trade-fair booths and matching partners."
+    },
+    "iex": {
+      "name": "IEX (아이전시)",
+      "blurb": "Agency for exhibition and fair booth and photo-zone installation."
+    },
+    "gopropose": {
+      "name": "Gopropose (고프로포즈)",
+      "blurb": "Agency for proposal and anniversary surprise events."
+    },
+    "luvhunter": {
+      "name": "Luvhunter (러브헌터)",
+      "blurb": "Agency running proposal and anniversary events."
+    },
+    "haruclass": {
+      "name": "Haru Class (하루클래스)",
+      "blurb": "Platform for booking hobby and one-day classes."
+    },
+    "deardayclass": {
+      "name": "Dearday Class (디어데이클래스)",
+      "blurb": "Booking and discovery service for one-day classes."
+    },
+    "annaandparty": {
+      "name": "Anna & Party (안나앤파티)",
+      "blurb": "Rental service for self-serve first-birthday and 100th-day table settings."
+    },
+    "pookoodol": {
+      "name": "Pookoo Dolsang (뿌꾸돌상)",
+      "blurb": "Rental specialist for first-birthday table settings and hanbok."
+    },
+    "dollsdream": {
+      "name": "Dolls Dream (돌스드림)",
+      "blurb": "Rental service for at-home self-serve first-birthday tables."
+    },
+    "ssople": {
+      "name": "Ssople (쏘플)",
+      "blurb": "Nationwide booking service for private party rooms."
+    },
+    "amuse": {
+      "name": "Amuse Company (어뮤즈컴퍼니)",
+      "blurb": "One-stop agency planning festivals and MICE events."
+    },
+    "dailoz": {
+      "name": "Dailoz (데일로즈)",
+      "blurb": "Flower subscription delivery on flexible schedules."
+    },
+    "obud": {
+      "name": "Obud (오붓)",
+      "blurb": "Unified pass for wellness studios covering yoga, Pilates, and barre."
+    },
+    "healthboypass": {
+      "name": "Healthboy All Pass (헬보올패스)",
+      "blurb": "Unified gym pass across Healthboy Gym locations nationwide."
+    },
+    "likefit": {
+      "name": "Likefit (라이크핏)",
+      "blurb": "AI home-training app coaching posture through camera motion recognition."
+    },
+    "quat": {
+      "name": "Quat (콰트)",
+      "blurb": "Online workout coaching app for Pilates, yoga, and home training."
+    },
+    "planfit": {
+      "name": "Planfit (플랜핏)",
+      "blurb": "App recommending AI workout routines with logging and voice coaching."
+    },
+    "dagym": {
+      "name": "Dagym (다짐)",
+      "blurb": "App for comparing and booking nearby gyms, personal training, and Pilates."
+    },
+    "ngym": {
+      "name": "Nigym Naegym (니짐내짐)",
+      "blurb": "App for discounted monthly access to nearby gyms."
+    },
+    "helssg": {
+      "name": "Helssg (헬쓱)",
+      "blurb": "Marketplace for transferring gym, yoga, and PT memberships."
+    },
+    "kimcaddie": {
+      "name": "Kim Caddie (김캐디)",
+      "blurb": "Comparison and booking app for screen golf, driving ranges, and lessons."
+    },
+    "kakao": {
+      "name": "Kakao Golf Booking (카카오골프예약)",
+      "blurb": "Tee-time search and online booking service by Kakao VX."
+    },
+    "golfzon": {
+      "name": "Golfzon (골프존)",
+      "blurb": "Screen golf brand with venue booking and simulator services."
+    },
+    "golfzonmarket": {
+      "name": "Golfzon Market (골프존마켓)",
+      "blurb": "O2O market selling and renting golf clubs and gear."
+    },
+    "plabfootball": {
+      "name": "Plab Football (플랩풋볼)",
+      "blurb": "Social soccer and futsal matching platform with pitch booking."
+    },
+    "iamground": {
+      "name": "I Am Ground (아이엠그라운드)",
+      "blurb": "App for real-time futsal court booking and team matching."
+    },
+    "smaxh": {
+      "name": "Smash (스매시)",
+      "blurb": "Platform for tennis court booking, lessons, and club matching."
+    },
+    "pleisure": {
+      "name": "Pleisure (플레져)",
+      "blurb": "Tennis court reservation service."
+    },
+    "theclimb": {
+      "name": "The Climb (더클라임)",
+      "blurb": "Indoor bouldering gym chain with unified membership."
+    },
+    "watercleanse": {
+      "name": "Watercleanse (워터클랜즈)",
+      "blurb": "Booking platform for small-group swimming clinics by region."
+    },
+    "ddakple": {
+      "name": "Ddakple (딱플)",
+      "blurb": "Real-time search, booking, and payment for community sports facilities."
+    },
+    "runday": {
+      "name": "Runday (런데이)",
+      "blurb": "Running and walking training app with voice coaching."
+    },
+    "mochaclass": {
+      "name": "Mocha Class (모카클래스)",
+      "blurb": "Booking service for yoga, Pilates, and leisure one-day classes."
+    },
+    "play4": {
+      "name": "Weight Buddy (웨잇버디)",
+      "blurb": "Fitness app matching workout partners and gym mates by preference using AI."
+    },
+    "woondoc": {
+      "name": "Woondong Doctor (운동닥터)",
+      "blurb": "Service for checking and matching nearby PT and Pilates trainers by reviews and credentials."
+    },
+    "mobile": {
+      "name": "Running Life (러닝라이프)",
+      "blurb": "Running app grown from a community, combining races, running crews, and record tracking."
+    },
+    "runable": {
+      "name": "Runable (러너블)",
+      "blurb": "Running platform combining marathon registration with AI-personalized coaching."
+    },
+    "play5": {
+      "name": "Datoki (다톡이)",
+      "blurb": "Agentic AI diet coach app that analyzes calories and meals from photos and chat."
+    },
+    "studiomate": {
+      "name": "Studiomate (스튜디오메이트)",
+      "blurb": "Class booking and member management app for Pilates and yoga studios."
+    },
+    "classworks": {
+      "name": "Classworks (클래스웍스)",
+      "blurb": "Service supporting class booking and member management for fitness studios."
+    },
+    "percentup": {
+      "name": "Percent Up (퍼센트업)",
+      "blurb": "Platform for comparing and matching gym and PT trainers."
+    },
+    "golfspot": {
+      "name": "Golf Spot (골프스팟)",
+      "blurb": "Platform matching golf instructors with students by criteria."
+    },
+    "semos": {
+      "name": "Semos (세모스)",
+      "blurb": "Search and booking for leisure sports programs like swimming, diving, and surfing."
+    },
+    "marathongo": {
+      "name": "Marathon GO (마라톤GO)",
+      "blurb": "Unified search for domestic and international marathons and running crews."
+    },
+    "plsr": {
+      "name": "Baseline (베이스라인)",
+      "blurb": "App for tennis court booking, tournaments, and skill assessment."
+    },
+    "athlit": {
+      "name": "Athlit (애슬릿)",
+      "blurb": "Drop-in class booking for gyms, yoga, and CrossFit."
+    },
+    "hellin": {
+      "name": "Hellin Camp (헬린캠프)",
+      "blurb": "PT logging, booking, and member management tool for trainers."
+    },
+    "weddingbook": {
+      "name": "Wedding Book (웨딩북)",
+      "blurb": "Wedding-prep platform for booking venues, studio-dress-makeup packages, and honeymoons with reviews."
+    },
+    "iwedding": {
+      "name": "iWedding (아이웨딩)",
+      "blurb": "Comprehensive wedding platform for venue booking and studio-dress-makeup packages."
+    },
+    "directwedding": {
+      "name": "Direct Wedding Prep (다이렉트 결혼준비)",
+      "blurb": "Wedding-prep platform covering venues, packages, honeymoons, and household goods."
+    },
+    "itwed": {
+      "name": "IT Wedding (아이티웨딩)",
+      "blurb": "Wedding-prep platform with venue search and reverse-auction matching."
+    },
+    "sinbuya": {
+      "name": "Sinbuya (신부야)",
+      "blurb": "Wedding-prep platform publishing venue and package quotes transparently."
+    },
+    "wedqueen": {
+      "name": "Wedding Goddess (웨딩의 여신)",
+      "blurb": "Wedding-prep app for sharing schedules and quotes."
+    },
+    "apps5": {
+      "name": "Yojeum Wedding (요즘웨딩)",
+      "blurb": "All-in-one app with personalized planning checklists and vendor recommendations."
+    },
+    "oding": {
+      "name": "Oding (오딩)",
+      "blurb": "Comparison and booking for wedding packages, ceremony snaps, and small weddings."
+    },
+    "kingswed": {
+      "name": "Wedding King (웨딩킹)",
+      "blurb": "Wedding-prep platform with partner bookings and self-service quotes."
+    },
+    "wedytor": {
+      "name": "Wedytor (웨디터)",
+      "blurb": "All-in-one platform for mobile invitations, ceremony programs, and budget books."
+    },
+    "kgwed": {
+      "name": "Gyeoljik Wedding (결직웨딩)",
+      "blurb": "Platform connecting couples directly with studio-dress-makeup and ceremony photographers."
+    },
+    "smartweddingpro": {
+      "name": "Smart Wedding (스마트웨딩)",
+      "blurb": "Wedding platform for venue recommendations and packages."
+    },
+    "houseweddinglink": {
+      "name": "House Wedding Link (하우스웨딩링크)",
+      "blurb": "Platform connecting small and house wedding venues with vendors."
+    },
+    "haileyhouse": {
+      "name": "Hailey House (헤일리하우스)",
+      "blurb": "Small-wedding venue and directing service using houses and villas."
+    },
+    "barunsoncard": {
+      "name": "Barunson Card (바른손카드)",
+      "blurb": "Paper and mobile wedding invitation brand."
+    },
+    "itscard": {
+      "name": "It's Card (잇츠카드)",
+      "blurb": "Mobile wedding invitation builder with easy editing."
+    },
+    "bojagicard": {
+      "name": "Bojagi Card (보자기카드)",
+      "blurb": "Paper and mobile invitations plus pre-ceremony video service."
+    },
+    "salondeletter": {
+      "name": "Salon de Letter (살롱드레터)",
+      "blurb": "Custom mobile invitations with themes and music."
+    },
+    "toourguest": {
+      "name": "To Our Guest (투아워게스트)",
+      "blurb": "Template-based mobile wedding invitation maker."
+    },
+    "theirmood": {
+      "name": "Their Mood (데어무드)",
+      "blurb": "Template-style mobile wedding invitation service."
+    },
+    "pastelmovie": {
+      "name": "Pastel Movie (파스텔무비)",
+      "blurb": "Maker of mobile invitations and pre-ceremony videos."
+    },
+    "maad": {
+      "name": "Maad Studio (메드스튜디오)",
+      "blurb": "Wedding jewelry brand for rings and ceremonial pieces."
+    },
+    "nouv": {
+      "name": "Nouv (누브)",
+      "blurb": "Cheongdam-based diamond and wedding jewelry brand."
+    },
+    "ringplate": {
+      "name": "Ringplate (링플레이트)",
+      "blurb": "Jewelry brand making custom wedding bands and couple rings."
+    },
+    "ehoneymoon": {
+      "name": "eHoneymoon (이허니문)",
+      "blurb": "Travel agency specializing in honeymoon destination packages."
+    },
+    "palmtour": {
+      "name": "Palm Tour (팜투어)",
+      "blurb": "Honeymoon travel agency for destinations like the Maldives and Hawaii."
+    },
+    "hihoneymoon": {
+      "name": "Hi Honeymoon (하이허니문)",
+      "blurb": "Travel agency specializing in honeymoon bookings."
+    },
+    "monoscale": {
+      "name": "Monoscale (모노스케일)",
+      "blurb": "Booking platform for ceremony snaps and wedding videography."
+    },
+    "wooawedding": {
+      "name": "Wooahan Wedding (우아한웨딩)",
+      "blurb": "Wedding directing platform booking florists, photographers, and hair-makeup artists."
+    },
+    "hanboknam": {
+      "name": "Hanboknam (한복남)",
+      "blurb": "Hanbok rental service at palaces like Gyeongbokgung and Jeonju, plus delivery rental."
+    },
+    "jaengyi": {
+      "name": "Hanbok Jaengyi (한복쟁이)",
+      "blurb": "Online and offline hanbok rental service."
+    },
+    "onedayhanbok": {
+      "name": "Oneday Hanbok (원데이한복)",
+      "blurb": "Hanbok rental booking for tours and experiences."
+    },
+    "dolbokhouse": {
+      "name": "Cheotnal Hanbok (첫날한복)",
+      "blurb": "Hanbok rental for first birthdays and anniversaries."
+    },
+    "myweddingdiary": {
+      "name": "Maweda (마웨다)",
+      "blurb": "Platform for comparing original wedding-venue quote documents."
+    },
+    "interparkticket": {
+      "name": "Interpark Ticket (인터파크 티켓)",
+      "blurb": "Korea's biggest ticketing service for concerts, musicals, and sports."
+    },
+    "yes24ticket": {
+      "name": "YES24 Ticket (예스24 공연)",
+      "blurb": "Ticketing service centered on musicals and theater."
+    },
+    "ticketlink": {
+      "name": "Ticketlink (티켓링크)",
+      "blurb": "Ticketing service for performances and sports."
+    },
+    "melonticket": {
+      "name": "Melon Ticket (멜론티켓)",
+      "blurb": "Music-focused ticketing service for concerts and shows."
+    },
+    "nol": {
+      "name": "NOL Ticket (NOL 티켓)",
+      "blurb": "Ticketing for concerts, musicals, and exhibitions, formerly Interpark Ticket."
+    },
+    "ticketbay": {
+      "name": "Ticketbay (티켓베이)",
+      "blurb": "Secondary marketplace for transferring and trading performance and sports tickets."
+    },
+    "ticket": {
+      "name": "Hana Ticket (하나티켓)",
+      "blurb": "Hanatour's ticketing for performances, exhibitions, and leisure."
+    },
+    "ticket2": {
+      "name": "Wemakeprice Ticket (위메프 공연티켓)",
+      "blurb": "Discount ticketing service for musicals and concerts."
+    },
+    "clipservice": {
+      "name": "Clip Service (클립서비스)",
+      "blurb": "Performance production and ticket distribution platform."
+    },
+    "playticket": {
+      "name": "Play Ticket (플레이티켓)",
+      "blurb": "Ticketing site for small and mid-sized theater performances."
+    },
+    "nanumticket": {
+      "name": "Nanum Ticket (나눔티켓)",
+      "blurb": "Platform sharing donated and remaining performance seats for accessibility."
+    },
+    "eventus": {
+      "name": "Event-us (이벤터스)",
+      "blurb": "Registration and ticket management for performances, exhibitions, and seminars."
+    },
+    "kopis": {
+      "name": "KOPIS (공연예술통합전산망)",
+      "blurb": "Official portal aggregating performing-arts information, ticket outlets, and statistics."
+    },
+    "sac": {
+      "name": "Seoul Arts Center (예술의전당)",
+      "blurb": "Online ticketing for performances and exhibitions at Korea's flagship arts complex."
+    },
+    "sejongpac": {
+      "name": "Sejong Center (세종문화회관)",
+      "blurb": "Ticketing for performances and exhibitions at Seoul's major arts center."
+    },
+    "festivallife": {
+      "name": "Festival Life (페스티벌라이프)",
+      "blurb": "Guide to festival lineups and ticket schedules at home and abroad."
+    },
+    "timeticket": {
+      "name": "Time Ticket (타임티켓)",
+      "blurb": "Ticketing platform for plays and cultural performances."
+    },
+    "dongnemudae": {
+      "name": "Dongne Mudae (동네무대)",
+      "blurb": "Search and ticketing for small-theater plays, musicals, and concerts nationwide."
+    },
+    "enticket": {
+      "name": "En Ticket (엔티켓)",
+      "blurb": "Ticketing and box-office service for performances in the Incheon area."
+    },
+    "finestage": {
+      "name": "Fine Stage (파인스테이지)",
+      "blurb": "Ticketing site specializing in classical music performances."
+    },
+    "ticketguide": {
+      "name": "Ticket Guide (티켓가이드)",
+      "blurb": "Ticketing service for overseas sports like European football matches."
+    },
+    "thebestplay": {
+      "name": "Yeongeuk Yeoljeon (연극열전)",
+      "blurb": "Site providing theater performance information and ticketing."
+    },
+    "tamnao": {
+      "name": "Tamnao (탐나오)",
+      "blurb": "Jeju platform for rental cars, stays, and attraction deals."
+    },
+    "discoverjeju": {
+      "name": "Discover Jeju (디스커버제주)",
+      "blurb": "Booking platform for local activities and experiences on Jeju Island."
+    },
+    "sunsang24": {
+      "name": "Sunsang24 (선상24)",
+      "blurb": "Real-time nationwide booking for boat fishing trips."
+    },
+    "usin": {
+      "name": "Usin (어신)",
+      "blurb": "Fishing platform for unified boat and fishing-spot reservations."
+    },
+    "xgolf": {
+      "name": "XGolf (엑스골프)",
+      "blurb": "Real-time golf course booking in Korea and Japan with join-round matching."
+    },
+    "golfmon": {
+      "name": "Golfmon (골프몬)",
+      "blurb": "App for golf bookings, join rounds, and overseas golf trips."
+    },
+    "moolban": {
+      "name": "Moolban Gogiban (물반고기반)",
+      "blurb": "Real-time booking app covering both sea and freshwater fishing."
+    },
+    "filmconnect": {
+      "name": "Film Connect (필름커넥트)",
+      "blurb": "Booking and matching for wedding, first-birthday, and profile photographers and studios."
+    },
+    "snaaaper": {
+      "name": "Snaaaper (스냅퍼)",
+      "blurb": "Search and booking service for wedding, first-birthday, and date snap photographers."
+    },
+    "graphus": {
+      "name": "Graphus (그래퍼스)",
+      "blurb": "Portfolio search and brokering platform for photographers and videographers."
+    },
+    "apps6": {
+      "name": "Snapfit (스냅핏)",
+      "blurb": "App comparing profile and snap photographers by portfolio for booking."
+    },
+    "snappi": {
+      "name": "Snappi (스내피)",
+      "blurb": "Matching service for everyday and profile photo shoots."
+    },
+    "snapcap": {
+      "name": "Snapcap (스냅캡)",
+      "blurb": "On-location shoot matching by place, concept, and photographer."
+    },
+    "honeypic": {
+      "name": "Honeypic (허니픽)",
+      "blurb": "Matching and booking local snap photographers at overseas travel destinations."
+    },
+    "stafpic": {
+      "name": "Stafpic (스텝픽)",
+      "blurb": "Outsourcing match connecting clients with video production companies."
+    },
+    "videocon": {
+      "name": "Videocon (비디오콘)",
+      "blurb": "Platform matching video production companies with comparative quotes."
+    },
+    "vidfolio": {
+      "name": "Vidfolio (비드폴리오)",
+      "blurb": "Portfolio-based matching service for video production companies."
+    },
+    "match": {
+      "name": "Dropshot Match (드롭샷매치)",
+      "blurb": "B2B matching with comparative quotes between companies and video producers."
+    },
+    "vcrewcorp": {
+      "name": "Vcrew (브이크루)",
+      "blurb": "Matching service for video production, editing, and filming."
+    },
+    "studiopeople": {
+      "name": "Studio People (스튜디오피플)",
+      "blurb": "Booking service for profile, ID, and body-profile photo shoots."
+    },
+    "successstudio": {
+      "name": "Seonggong Sajingwan (성공사진관)",
+      "blurb": "Management solution for photo studios covering bookings, customers, and sales."
+    },
+    "mcard": {
+      "name": "Barunson M Card (바른손M카드)",
+      "blurb": "Barunson's mobile wedding invitation and event card maker."
+    },
+    "feelmaker": {
+      "name": "Feelmaker (필메이커)",
+      "blurb": "Mobile wedding invitation maker with selectable skins."
+    },
+    "directwedcard": {
+      "name": "Feelcard (필카드)",
+      "blurb": "Mobile wedding invitation maker."
+    },
+    "moiitee": {
+      "name": "Moiitee (모이티)",
+      "blurb": "Self-service maker for mobile invitations, wedding posters, and meal coupons."
+    },
+    "dalpeng": {
+      "name": "Dalpeng (달팽)",
+      "blurb": "Mobile invitation maker for weddings, first birthdays, and events."
+    },
+    "deardeer": {
+      "name": "Dear Deer (디얼디어)",
+      "blurb": "Paper and mobile wedding invitation maker."
+    },
+    "ofy": {
+      "name": "Only For You (온니포유)",
+      "blurb": "Mobile invitation maker for first birthdays and weddings."
+    },
+    "life4cut": {
+      "name": "Life4Cut (인생네컷)",
+      "blurb": "Self-shot photo booth brand with instant four-cut prints."
+    },
+    "photogray": {
+      "name": "Photogray (포토그레이)",
+      "blurb": "Self-shot four-cut photo booth brand."
+    },
+    "photoair": {
+      "name": "Photoair (포토에어)",
+      "blurb": "Mobile rental photo booth service for events."
+    },
+    "snaplink": {
+      "name": "Snaplink (스냅링크)",
+      "blurb": "AI-recommended matching for travel, couple, and wedding snap photographers."
+    },
+    "snapsta": {
+      "name": "Snapsta (스냅스타)",
+      "blurb": "Booking specialist for wedding and first-birthday snap photography."
     }
   }
 }
