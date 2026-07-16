@@ -20,7 +20,7 @@ backend/
 .github/workflows/   pages(배포) · collect-candidates(주간) · metrics-weekly(주간 성장 스냅샷) · healthcheck(월간)
 ```
 
-**영문 레이어(/en/)**: 외국 사업자용 한국 진출 디렉토리 — commerce·trade 604건+분야 허브 14+가이드 3, 완전 정적(SPA 미부팅 = 제휴·거래소 법적 방화벽). 신규 플랫폼 승인 시 `app/src/data/platforms.en.json`에 영문 항목 추가(미번역분은 EN 미노출·빌드는 통과).
+**영문 레이어(/en/)**: 외국 사업자용 한국 진출 디렉토리 — 전 분야 1,719건 완역+분야 허브 45(인트로 포함)+가이드, 완전 정적(SPA 미부팅 = 제휴·거래소 법적 방화벽). 신규 플랫폼·분야 추가 시 `platforms.en.json`/`hub-intros.en.json`에 영문 항목을 **같이** 추가해야 함(커버리지 어서션이 빌드를 실패시킴 — 현황: `node app/scripts/en-coverage.mjs`).
 
 주요 화면: 분야별 홈 · 검색 · 비교 · 맞춤 추천 · AI 도구 찾기(`?view=ai-finder`) · 업종별 시작 조합(`?view=packs`) ·
 새로 나온 것(`?view=weekly`) · 제휴(`?view=partners`) · 거래소(`?view=exchange`) · 가치 자가 진단(`?view=value-check`) ·
