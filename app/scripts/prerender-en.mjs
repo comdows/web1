@@ -484,8 +484,13 @@ if (bannedHit) process.exit(1);
 fs.rmSync(path.join(DIST, "_template.html")); // 전달용 원본 템플릿 — 배포 산출물에서 제거
 
 console.log(`EN 프리렌더 — 랜딩 1 + 허브 ${enCats.length} + 상세 ${enPlats.length} + 가이드 ${Object.keys(GUIDES).length + AI.guides.length} + AI(${AI.tools.length}도구·프로필 ${Object.keys(AI.profiles).length}) · sitemap +${enUrls.length} · 금지 링크 0`);
-/* EN 커버리지 경고(Phase 3 진행 지표 — 완역 후 실패 어서션으로 전환 예정). 상세: node app/scripts/en-coverage.mjs */
+/* EN 커버리지 어서션(Phase 3 완역 후 강제 — 회귀 방지). 상세: node app/scripts/en-coverage.mjs
+ * 신규 KO 플랫폼·분야 추가 시 platforms.en.json / hub-intros.en.json에 EN 항목을 같이 추가해야 빌드가 통과한다. */
 {
   const gap = data.platforms.length - enPlats.length;
-  if (gap > 0) console.log(`EN 커버리지 경고 — 미번역 ${gap}건(${enPlats.length}/${data.platforms.length}, ${(enPlats.length / data.platforms.length * 100).toFixed(1)}%) · 허브 인트로 ${Object.keys(INTROS).length}/${data.categories.length}`);
+  const hubGap = data.categories.filter((c) => !INTROS[c.id]).map((c) => c.id);
+  if (gap > 0 || hubGap.length) {
+    console.error(`EN 커버리지 회귀 — 미번역 ${gap}건(${enPlats.length}/${data.platforms.length}) · 허브 인트로 누락 ${hubGap.length}(${hubGap.join(", ")})`);
+    process.exit(1);
+  }
 }
