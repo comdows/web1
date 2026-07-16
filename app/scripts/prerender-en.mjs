@@ -131,6 +131,11 @@ write("en", shell({
   <h2>AI tools for the Korean market</h2>
   <p><a href="/web1/en/ai/" style="color:#7C97FF;font-weight:700">${AI.tools.length} AI tools verified for Korean →</a> —
   Korean-made B2B tools and global tools with documented Korean support: English docs, evidence links, and payment-from-abroad status for each.</p>
+  ${(() => { // Recently added — ko 신규 플래그 중 EN 번역 존재분(빌드 시 자동 재생성 — 한계비용 0)
+    const recent = data.platforms.filter((p) => p.new && EN.platforms[p.id]).slice(0, 8);
+    return recent.length ? `<h2>Recently added</h2>
+  <ul>${recent.map((p) => `<li style="margin-bottom:8px"><a href="/web1/en/p/${p.id}/" style="color:#7C97FF;font-weight:700">${esc(en(p.id).name)}</a> — ${esc(en(p.id).blurb)}</li>`).join("")}</ul>` : "";
+  })()}
   <h2>Browse by category</h2>
   <ul>${enCats.map((c) => `<li style="margin-bottom:8px"><a href="/web1/en/c/${c.id}/" style="color:#7C97FF;font-weight:700">${esc(catEn(c.id).name)}</a> (${byCat.get(c.id).length}) — ${esc(catEn(c.id).desc)}</li>`).join("")}</ul>
   <p><a href="/web1/en/all/" style="color:#7C97FF;font-weight:700">All platforms A–Z →</a> — find a platform by name.</p>
@@ -479,3 +484,8 @@ if (bannedHit) process.exit(1);
 fs.rmSync(path.join(DIST, "_template.html")); // 전달용 원본 템플릿 — 배포 산출물에서 제거
 
 console.log(`EN 프리렌더 — 랜딩 1 + 허브 ${enCats.length} + 상세 ${enPlats.length} + 가이드 ${Object.keys(GUIDES).length + AI.guides.length} + AI(${AI.tools.length}도구·프로필 ${Object.keys(AI.profiles).length}) · sitemap +${enUrls.length} · 금지 링크 0`);
+/* EN 커버리지 경고(Phase 3 진행 지표 — 완역 후 실패 어서션으로 전환 예정). 상세: node app/scripts/en-coverage.mjs */
+{
+  const gap = data.platforms.length - enPlats.length;
+  if (gap > 0) console.log(`EN 커버리지 경고 — 미번역 ${gap}건(${enPlats.length}/${data.platforms.length}, ${(enPlats.length / data.platforms.length * 100).toFixed(1)}%) · 허브 인트로 ${Object.keys(INTROS).length}/${data.categories.length}`);
+}
