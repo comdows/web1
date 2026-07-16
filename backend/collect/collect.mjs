@@ -718,7 +718,7 @@ let listed = 0, queued = 0, skipped = 0, insertFails = 0;
 if (candidates.length > 0) {
   let auto = { enabled: false, min_confidence: 80, collector_id: null };
   try {
-    const rows = await rest("app_settings?key=eq.autolist&select=value");
+    const rows = await rest("app_settings?key=eq.autolist&select=value", {}, token);
     if (rows?.[0]?.value) auto = { ...auto, ...rows[0].value };
   } catch { /* 설정 없으면 off로 간주 */ }
   const autoOn = !!auto.enabled && auto.collector_id === uid;
@@ -753,10 +753,12 @@ if (candidates.length > 0) {
     // 개별 insert 실패(RLS 거부 등)는 흡수 — 한 건 때문에 전체 런과 소식 매핑까지 죽이지 않는다.
     // 단 전건 실패면 계정·정책 문제이므로 런을 실패시켜 ops-alert가 뜨게 한다.
     try {
+      // 봇 토큰 필수 — 누락 시 rest()가 anon 키로 요청해 RLS 정책의 is_suspended() 호출이
+      // "permission denied"로 거부된다(run 29518453932에서 확인된 원인 — anon은 의도적으로 차단됨).
       await rest("submissions", {
         method: "POST", headers: { Prefer: "return=minimal" },
         body: JSON.stringify({ submitter_id: uid, payload }),
-      });
+      }, token);
       queued++; slotsLeft--;
     } catch (e) {
       insertFails++;
