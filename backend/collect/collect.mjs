@@ -316,14 +316,21 @@ function parsePHApi(json) {
     };
   }).filter((it) => it.name && it.url);
 }
-/* PH /r/ 리다이렉트 → 실사이트 해석(항목당 1회·실패는 비직접 유지). */
+/* PH /r/ 리다이렉트 → 실사이트 해석(항목당 1회·실패는 비직접 유지).
+ * 실측(run 29514189332): PH가 HEAD를 거부해 해석이 전부 실패 → GET으로 요청(응답 본문은 읽지 않음 —
+ * fetch는 헤더 수신 시점에 resolve되고 res.url이 최종 리다이렉트 목적지). */
 async function resolvePHRedirects(items) {
   for (const it of items) {
     if (!it._resolve) continue;
     try {
-      const res = await fetch(it.url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(6000) });
+      const res = await fetch(it.url, {
+        redirect: "follow",
+        signal: AbortSignal.timeout(8000),
+        headers: { "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36" },
+      });
       const finalUrl = res.url || "";
-      if (finalUrl && !/producthunt\.com/i.test(finalUrl)) { it.url = finalUrl; it._direct = true; }
+      res.body?.cancel?.().catch?.(() => {});   // 본문 미사용 — 스트림 정리
+      if (finalUrl && !/producthunt\.com/i.test(finalUrl)) { it.url = finalUrl.replace(/[?#].*$/, ""); it._direct = true; }
     } catch { /* 해석 실패 — PH 링크 그대로(비직접) */ }
   }
   return items;
@@ -510,8 +517,15 @@ async function fetchSource(src) {
     if (src.ph && process.env.PH_TOKEN) return takeItems(await fetchPH(src), src);
     let res = await fetch(src.url, { headers: { "User-Agent": `semopl-collector/1.0 (+${process.env.SITE_URL ?? "https://comdows.github.io/web1"}/)` } });
     if (res.status === 403 || res.status === 405) {
-      // 일부 피드(요즘IT 405 등)가 비브라우저 UA를 차단 — 일반 RSS 리더 헤더로 1회 재시도
-      res = await fetch(src.url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; RSSReader/1.0)", Accept: "application/rss+xml, application/atom+xml, application/xml, */*" } });
+      // 일부 피드(요즘IT 405 등)가 비브라우저 UA를 차단 — 브라우저 헤더로 1회 재시도
+      // (compatible; RSSReader/1.0 재시도는 여전히 405 — run 29514189332)
+      res = await fetch(src.url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
+          Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
+          "Accept-Language": "ko,en;q=0.8",
+        },
+      });
     }
     if (!res.ok) { console.warn(`[skip] ${src.id}: HTTP ${res.status}`); sourceFails++; failedSources.push(src.id); return []; }
     return takeItems(src.parse(await res.text()), src);
