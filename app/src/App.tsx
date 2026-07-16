@@ -113,6 +113,7 @@ export default function App() {
   }, [session, view]);
   // 로그인 개인화(H-2) — 홈 상단 "내 맞춤"에 저장 검색 바로가기(비로그인은 미로드)
   const [mySaved, setMySaved] = useState<SavedSearch[]>([]);
+  const [myGuides, setMyGuides] = useState<{ slug: string; title: string }[]>([]);
   useEffect(() => {
     if (!session) { setMySaved([]); return; }
     let alive = true;
@@ -222,6 +223,23 @@ export default function App() {
     if (!last || !remoteEnabled) return;
     fetchRecentPlatforms(60).then((rows) => setSinceCount(rows.filter((r) => r.created && r.created > last).length)).catch(() => { /* noop */ });
   }, []);
+  // 내 분야 가이드(Phase 4②) — 관심 분야/그룹과 맞는 편집 가이드를 홈에 노출.
+  // articles는 부트 번들 밖(guide 청크)이라 동적 import — 로그인+관심 있을 때만 로드.
+  useEffect(() => {
+    if (!session || (!interests?.cats?.length && !interests?.groups?.length)) { setMyGuides([]); return; }
+    let alive = true;
+    import("./data/articles.ko.json").then((m) => {
+      if (!alive) return;
+      const arts = m.default as Record<string, { title: string; category: string }>;
+      setMyGuides(Object.entries(arts)
+        .filter(([, a]) => {
+          const g = categoryById(a.category)?.group;
+          return interests.cats.includes(a.category) || (!!g && interests.groups.includes(g));
+        })
+        .map(([slug, a]) => ({ slug, title: a.title })).slice(0, 4));
+    }).catch(() => { /* 가이드 없어도 홈 정상 */ });
+    return () => { alive = false; };
+  }, [session, interests]);
 
   /* 의도 칩 → 그룹 섹션 스크롤 / AI 파인더 */
   const scrollToGroup = (gid: string) => {
@@ -356,6 +374,17 @@ export default function App() {
                     })}
                   </div>
                   <p className="sec-sub" style={{ margin: "6px 0 0", fontSize: 12.5 }}>조건에 맞는 새 플랫폼이 등재되면 알림으로 알려드려요.</p>
+                </div></section>
+              )}
+              {/* ── 로그인 개인화(Phase 4②): 관심 분야 가이드 ── */}
+              {session && myGuides.length > 0 && (
+                <section className="home-sec"><div className="container">
+                  <div className="sec-title" style={{ marginTop: 0 }}>📖 내 분야 가이드</div>
+                  <div className="chips-row">
+                    {myGuides.map((g) => (
+                      <a key={g.slug} className="fchip" href={`${import.meta.env.BASE_URL}guide/${g.slug}/`}>{g.title}</a>
+                    ))}
+                  </div>
                 </div></section>
               )}
               {/* ── 1a 이번 주 많이 찾은 플랫폼 ── */}

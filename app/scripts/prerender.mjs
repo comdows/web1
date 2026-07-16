@@ -345,6 +345,31 @@ fs.writeFileSync(path.join(DIST, "sitemap.xml"),
   `\n</urlset>\n`);
 fs.writeFileSync(path.join(DIST, "robots.txt"), `User-agent: *\nAllow: /\nSitemap: ${SITE}/sitemap.xml\n`);
 
+/* KO llms.txt — AI 인용 채널의 한국어 스코프(로드맵 v2 Phase 4②). EN 생성기(prerender-en.mjs)가
+ * 이 파일을 읽어 뒤에 EN 섹션을 이어 붙인다(순서: KO 본체 → EN 디렉토리). 플랫폼 1,719개 전목록은
+ * 파일 비대(~140KB)로 생략 — 각 분야 허브가 목록을 담으므로 허브·비교·가이드 단위로 안내. */
+fs.writeFileSync(path.join(DIST, "llms.txt"), [
+  `# 세모플 (SEMOPL) — 세상의 모든 플랫폼 (한국어 디렉토리)`,
+  ``,
+  `> 한국 비즈니스 플랫폼·AI 도구 ${data.platforms.length.toLocaleString()}개를 ${data.categories.length}개 분야, 같은 기준으로 정리한 중립 B2B 디렉토리.`,
+  `> 검색·비교·순위에 유료 개입 없음. 수수료·정산 표기는 공개 정보 기반 추정이며 공식 수치는 각 플랫폼 공식 사이트가 기준. Built ${today}.`,
+  ``,
+  `## 주요 페이지`,
+  `- ${SITE}/ : 홈·분야 인덱스`,
+  `- ${SITE}/news/ : 플랫폼·AI 도구 소식·트렌드`,
+  ...Object.entries(ARTICLES).map(([slug, a]) => `- ${SITE}/guide/${slug}/ : 가이드 — ${a.title}`),
+  ``,
+  `## 분야 허브 (${data.categories.length}개)`,
+  ...data.categories.map((c) => {
+    const n = data.platforms.filter((p) => p.category === c.id).length;
+    return `- ${SITE}/c/${c.id}/ : ${c.name} (${n}곳)${cmpIds.has(c.id) ? ` · 비교표 ${SITE}/c/${c.id}/compare/` : ""}`;
+  }),
+  ``,
+  `## 데이터셋 (기계 판독용 · CC BY 4.0)`,
+  `- ${SITE}/en/data/platforms.json : 플랫폼 데이터셋(영문 필드)`,
+  `- ${SITE}/en/data/ai-stack.json : 한국 시장 검증 AI 도구 데이터셋`,
+].join("\n") + "\n");
+
 /* 커스텀 도메인이 설정된 경우에만 CNAME 생성(GitHub Pages 커스텀 도메인 바인딩) —
  * 미설정 빌드에 CNAME이 섞이면 Pages 설정이 깨지므로 반드시 조건부. */
 if (CUSTOM_DOMAIN) fs.writeFileSync(path.join(DIST, "CNAME"), CUSTOM_DOMAIN + "\n");

@@ -400,9 +400,11 @@ write("en/all", shell({
   <ul>${list.map((p) => `<li><a href="/web1/en/p/${p.id}/" style="color:#7C97FF">${esc(en(p.id).name)}</a> — ${esc(catEn(p.category).name)}</li>`).join("")}</ul>`).join("")}
 </main>` }));
 
-/* ── AI 인용 레이어: llms.txt + 공개 데이터셋(JSON) — DA 0에서 가장 유리한 전장 ── */
+/* ── AI 인용 레이어: llms.txt + 공개 데이터셋(JSON) — DA 0에서 가장 유리한 전장 ──
+ * KO 프리렌더가 먼저 쓴 한국어 섹션을 보존하고 뒤에 EN 디렉토리 섹션을 잇는다(overwrite 금지). */
 const today0 = new Date().toISOString().slice(0, 10);
-fs.writeFileSync(path.join(DIST, "llms.txt"), [
+const koLlms = (() => { try { return fs.readFileSync(path.join(DIST, "llms.txt"), "utf8").trimEnd() + "\n\n---\n\n"; } catch { return ""; } })();
+fs.writeFileSync(path.join(DIST, "llms.txt"), koLlms + [
   `# SEMOPL — Korean Business Platforms (English directory)`,
   ``,
   `> Neutral English directory of ${enPlats.length} Korean commerce & trade platforms in ${enCats.length} categories,`,
