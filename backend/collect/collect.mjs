@@ -84,7 +84,7 @@ const SOURCES = [
   {
     id: "betalist",
     label: "BetaList (신규 스타트업)",
-    url: "https://betalist.com/feed",
+    url: "https://feeds.feedburner.com/BetaList", // betalist.com/feed는 404(run 29513012891) — 공식 피드버너로
     fixture: "betalist.xml",
     region: "overseas",
     parse: parseRss,
@@ -162,15 +162,7 @@ const SOURCES = [
     koLaunch: true, // 출시·공개성 항목만(비제품 뉴스는 AI 보강 is_platform 판정·검수에서 걸러짐)
     directUrl: false, // 링크가 토픽 페이지
   },
-  {
-    id: "disquiet",
-    label: "디스콰이엇 (국내 프로덕트 커뮤니티)",
-    url: "https://disquiet.io/rss",
-    fixture: "disquiet.xml",
-    region: "domestic",
-    parse: parseRss,
-    directUrl: false, // 피드 실존 미확인(프록시 제한) — 첫 실행에서 죽어 있으면 제거 예정, 개별 실패는 런에 무해
-  },
+  // (디스콰이엇은 공개 RSS 부재 확인 — run 29513012891에서 404 → 제거. API 공개 시 재추가 검토)
   // ── 국내 비언론 보강: 구글뉴스 검색 RSS — 특정 매체에 안 실린 출시 소식도 포착(기사 URL이라 directUrl:false) ──
   {
     id: "gnews-service",
@@ -298,32 +290,55 @@ function parseHN(json) {
     return m ? { name: m[1], url: h.url, desc: m[2].slice(0, 160) } : { name: full, url: h.url, desc: "" };
   });
 }
-/* PH GraphQL API 응답 → 항목. website(제품 실사이트)가 있으면 그 항목만 directUrl 자격(_direct).
- * website가 없거나 PH 자체 링크(리다이렉트·게시물)면 게시물 url로 폴백 + 비직접 취급. */
+/* PH GraphQL API 응답 → 항목. 실측(run 29513012891): website 필드가 PH 상품페이지를 돌려주는 경우가
+ * 많아 productLinks에서 비-PH 링크를 우선 채택하고, PH 링크(/r/ 리다이렉트 포함)면 리다이렉트를
+ * 1회 해석해 실사이트를 얻는다. 끝내 PH 호스트면 비직접(검수 큐 전용)으로 강등. */
+function pickPHUrl(node) {
+  const links = (node.productLinks ?? []).map((l) => l?.url).filter(Boolean);
+  const nonPH = links.find((u) => !/producthunt\.com/i.test(u));
+  if (nonPH) return { url: nonPH, direct: true };
+  const site = node.website || "";
+  if (site && !/producthunt\.com/i.test(site)) return { url: site, direct: true };
+  const redirect = [site, ...links].find((u) => u && /producthunt\.com\/r\//i.test(u));
+  if (redirect) return { url: redirect, direct: false, resolve: true }; // 리다이렉트 해석 대상
+  return { url: node.url || site, direct: false };
+}
 function parsePHApi(json) {
   const d = typeof json === "string" ? JSON.parse(json) : json;
   return (d.data?.posts?.edges ?? []).map(({ node }) => {
-    const site = node.website || "";
-    const direct = !!site && !/producthunt\.com/i.test(site);
+    const pick = pickPHUrl(node);
     return {
       name: decode(node.name || ""),
-      url: direct ? site : (node.url || site),
+      url: pick.url,
       desc: decode(node.tagline || "").slice(0, 160),
-      _direct: direct,
+      _direct: pick.direct,
+      _resolve: !!pick.resolve,
     };
   }).filter((it) => it.name && it.url);
+}
+/* PH /r/ 리다이렉트 → 실사이트 해석(항목당 1회·실패는 비직접 유지). */
+async function resolvePHRedirects(items) {
+  for (const it of items) {
+    if (!it._resolve) continue;
+    try {
+      const res = await fetch(it.url, { method: "HEAD", redirect: "follow", signal: AbortSignal.timeout(6000) });
+      const finalUrl = res.url || "";
+      if (finalUrl && !/producthunt\.com/i.test(finalUrl)) { it.url = finalUrl; it._direct = true; }
+    } catch { /* 해석 실패 — PH 링크 그대로(비직접) */ }
+  }
+  return items;
 }
 async function fetchPH(src) {
   const res = await fetch("https://api.producthunt.com/v2/api/graphql", {
     method: "POST",
     headers: { Authorization: `Bearer ${process.env.PH_TOKEN}`, "Content-Type": "application/json" },
     body: JSON.stringify({
-      query: "query($topic:String!){posts(first:20,order:NEWEST,topic:$topic){edges{node{name tagline website url}}}}",
+      query: "query($topic:String!){posts(first:20,order:NEWEST,topic:$topic){edges{node{name tagline website url productLinks{type url}}}}}",
       variables: { topic: src.ph },
     }),
   });
   if (!res.ok) throw new Error(`PH API HTTP ${res.status}`);
-  return parsePHApi(await res.text());
+  return resolvePHRedirects(parsePHApi(await res.text()));
 }
 
 /* 제목·설명 키워드 → 분야 추정(검수 셀렉트 초기값 제안 — 오분류여도 관리자가 교정).
@@ -493,7 +508,11 @@ async function fetchSource(src) {
   try {
     // PH 토픽 소스: 토큰이 있으면 API(제품 실사이트 URL → 자동등재 자격), 없으면 RSS 폴백
     if (src.ph && process.env.PH_TOKEN) return takeItems(await fetchPH(src), src);
-    const res = await fetch(src.url, { headers: { "User-Agent": `semopl-collector/1.0 (+${process.env.SITE_URL ?? "https://comdows.github.io/web1"}/)` } });
+    let res = await fetch(src.url, { headers: { "User-Agent": `semopl-collector/1.0 (+${process.env.SITE_URL ?? "https://comdows.github.io/web1"}/)` } });
+    if (res.status === 403 || res.status === 405) {
+      // 일부 피드(요즘IT 405 등)가 비브라우저 UA를 차단 — 일반 RSS 리더 헤더로 1회 재시도
+      res = await fetch(src.url, { headers: { "User-Agent": "Mozilla/5.0 (compatible; RSSReader/1.0)", Accept: "application/rss+xml, application/atom+xml, application/xml, */*" } });
+    }
     if (!res.ok) { console.warn(`[skip] ${src.id}: HTTP ${res.status}`); sourceFails++; failedSources.push(src.id); return []; }
     return takeItems(src.parse(await res.text()), src);
   } catch (e) {
@@ -681,7 +700,7 @@ if (DRY) { console.log("[dry] 투입 생략"); process.exit(0); }
 
 // 자동 등재(D) 스위치 — app_settings 'autolist'.enabled + collector_id 일치할 때만.
 // 기본 off → 전부 검수 큐로(오늘 동작 그대로). 켜져 있어도 confidence≥min & directUrl만 자동 등재.
-let listed = 0, queued = 0, skipped = 0;
+let listed = 0, queued = 0, skipped = 0, insertFails = 0;
 if (candidates.length > 0) {
   let auto = { enabled: false, min_confidence: 80, collector_id: null };
   try {
@@ -717,11 +736,21 @@ if (candidates.length > 0) {
       }
     }
     if (slotsLeft <= 0) { skipped++; continue; } // 검수 큐 상한 도달 — 이번 런은 건너뜀
-    await rest("submissions", {
-      method: "POST", headers: { Prefer: "return=minimal" },
-      body: JSON.stringify({ submitter_id: uid, payload }),
-    });
-    queued++; slotsLeft--;
+    // 개별 insert 실패(RLS 거부 등)는 흡수 — 한 건 때문에 전체 런과 소식 매핑까지 죽이지 않는다.
+    // 단 전건 실패면 계정·정책 문제이므로 런을 실패시켜 ops-alert가 뜨게 한다.
+    try {
+      await rest("submissions", {
+        method: "POST", headers: { Prefer: "return=minimal" },
+        body: JSON.stringify({ submitter_id: uid, payload }),
+      });
+      queued++; slotsLeft--;
+    } catch (e) {
+      insertFails++;
+      console.warn(`[검수 큐 투입 실패] ${c.name}: ${e.message}`);
+    }
+  }
+  if (insertFails && queued === 0 && listed === 0) {
+    throw new Error(`검수 큐 투입 전건 실패(${insertFails}건) — 봇 계정 권한·RLS 점검 필요(0036_grants_fix.sql 실행 여부 확인)`);
   }
   if (skipped) console.log(`검수 큐 상한(${BOT_PENDING_CAP}) 도달 — ${skipped}건은 다음 런으로 이월(큐를 비우면 투입됨)`);
 } else {
