@@ -6431,6 +6431,658 @@
     "ozjejakso": {
       "name": "Oz Jejakso (오즈의제작소)",
       "blurb": "One-stop platform for goods design, production, and delivery."
+    },
+    "midjourney": {
+      "name": "Midjourney",
+      "blurb": "Image generation AI renowned for its artistic quality."
+    },
+    "adobe-firefly": {
+      "name": "Adobe Firefly",
+      "blurb": "Adobe's image generation designed with commercial use in mind, integrated with Photoshop."
+    },
+    "canva": {
+      "name": "Canva AI",
+      "blurb": "Image generation and magic editing built into the Canva design tool."
+    },
+    "ideogram": {
+      "name": "Ideogram",
+      "blurb": "Generative AI strong at rendering text and typography inside images."
+    },
+    "leonardo-ai": {
+      "name": "Leonardo.Ai",
+      "blurb": "Image generation studio strong in game and product concept art."
+    },
+    "stability-ai": {
+      "name": "Stable Diffusion",
+      "blurb": "Open-source image generation model you can self-host and customize."
+    },
+    "flux-bfl": {
+      "name": "FLUX",
+      "blurb": "High-quality open-weight image generation model series."
+    },
+    "recraft": {
+      "name": "Recraft",
+      "blurb": "Generative AI for designers, strong at vectors and consistent brand styles."
+    },
+    "remove-bg": {
+      "name": "remove.bg",
+      "blurb": "One-click tool that automatically removes photo backgrounds."
+    },
+    "photoroom": {
+      "name": "PhotoRoom",
+      "blurb": "Specialized in product-photo background removal and staging — useful for store listing shots."
+    },
+    "imagefx": {
+      "name": "Google ImageFX",
+      "blurb": "Free image generation experiment built on Google's Imagen model."
+    },
+    "krea": {
+      "name": "Krea",
+      "blurb": "Image and video generation studio with a real-time canvas and upscaling."
+    },
+    "playground-ai": {
+      "name": "Playground",
+      "blurb": "Image generation tool specialized in graphic design like logos and posters."
+    },
+    "freepik-ai": {
+      "name": "Freepik AI",
+      "blurb": "Suite of generation and editing AI from the stock image service Freepik."
+    },
+    "clipdrop": {
+      "name": "Clipdrop",
+      "blurb": "Set of image editing AI tools for background removal, relighting, and upscaling."
+    },
+    "magnific": {
+      "name": "Magnific",
+      "blurb": "High-quality AI upscaler that restores fine detail."
+    },
+    "ms-designer": {
+      "name": "Microsoft Designer",
+      "blurb": "Microsoft's free AI design and image generation tool."
+    },
+    "looka": {
+      "name": "Looka",
+      "blurb": "AI that builds a logo and brand kit from just a brand name."
+    },
+    "kittl": {
+      "name": "Kittl",
+      "blurb": "AI design tool specialized in commercial designs like T-shirts and labels."
+    },
+    "pixlr": {
+      "name": "Pixlr",
+      "blurb": "Browser-based AI photo editor positioned as a Photoshop alternative."
+    },
+    "lasco": {
+      "name": "Lasco AI (라스코 AI)",
+      "blurb": "Korean image generation AI studio with a Korean-language UI."
+    },
+    "vrew": {
+      "name": "Vrew (브루)",
+      "blurb": "Video editing tool built on AI auto-subtitles and speech recognition."
+    },
+    "aistudios": {
+      "name": "AI Studios (AI스튜디오스)",
+      "blurb": "SaaS for AI avatar and text-to-video production by DeepBrain AI."
+    },
+    "sora": {
+      "name": "Sora",
+      "blurb": "OpenAI's text-to-video generation service."
+    },
+    "runway": {
+      "name": "Runway",
+      "blurb": "Leader in video generation and editing tools like removal and expansion."
+    },
+    "kling": {
+      "name": "Kling AI",
+      "blurb": "High-quality video generation AI strong at human motion."
+    },
+    "pika": {
+      "name": "Pika",
+      "blurb": "Tool strong at generating short meme and effect videos."
+    },
+    "luma": {
+      "name": "Luma Dream Machine",
+      "blurb": "Realistic text-to-video generation model."
+    },
+    "heygen": {
+      "name": "HeyGen",
+      "blurb": "Videos where AI avatars read your script — for lectures and promos."
+    },
+    "synthesia": {
+      "name": "Synthesia",
+      "blurb": "AI avatar video platform for corporate training."
+    },
+    "descript": {
+      "name": "Descript",
+      "blurb": "Edit video and podcasts the way you edit a document."
+    },
+    "capcut": {
+      "name": "CapCut",
+      "blurb": "Editing app for fast short-form videos with auto-captions and templates."
+    },
+    "google-flow": {
+      "name": "Google Flow (Veo)",
+      "blurb": "AI filmmaking tool stitching scenes with Google's Veo model."
+    },
+    "hailuo": {
+      "name": "Hailuo AI",
+      "blurb": "MiniMax's text- and image-based video generation AI."
+    },
+    "vidu": {
+      "name": "Vidu",
+      "blurb": "Text-to-video AI that maintains character consistency."
+    },
+    "opusclip": {
+      "name": "OpusClip",
+      "blurb": "AI that cuts long videos into clips for Shorts and Reels."
+    },
+    "invideo": {
+      "name": "InVideo",
+      "blurb": "AI video maker generating narrated videos from prompts."
+    },
+    "fliki": {
+      "name": "Fliki",
+      "blurb": "Tool that turns text into videos with AI voice narration."
+    },
+    "veed": {
+      "name": "VEED",
+      "blurb": "Browser video editor with subtitles, translation, and recording."
+    },
+    "d-id": {
+      "name": "D-ID",
+      "blurb": "AI creating talking-avatar videos from a single photo."
+    },
+    "colossyan": {
+      "name": "Colossyan",
+      "blurb": "AI avatar presenter tool for training and internal videos."
+    },
+    "github-copilot": {
+      "name": "GitHub Copilot",
+      "blurb": "The standard for code autocomplete, suggesting code inside your IDE."
+    },
+    "cursor": {
+      "name": "Cursor",
+      "blurb": "AI-first code editor — edit by conversing with your codebase."
+    },
+    "claude-code": {
+      "name": "Claude Code",
+      "blurb": "Anthropic's coding agent that takes on whole tasks in the terminal and IDE."
+    },
+    "windsurf": {
+      "name": "Windsurf",
+      "blurb": "Agentic AI IDE automating multi-file work."
+    },
+    "replit": {
+      "name": "Replit",
+      "blurb": "Build and deploy apps in the browser with a built-in AI agent."
+    },
+    "v0": {
+      "name": "v0",
+      "blurb": "Vercel's tool generating web UI (React) from prompts."
+    },
+    "lovable": {
+      "name": "Lovable",
+      "blurb": "AI app builder creating web services through conversation alone."
+    },
+    "bolt-new": {
+      "name": "Bolt.new",
+      "blurb": "AI builder generating and running full-stack apps in the browser."
+    },
+    "devin": {
+      "name": "Devin",
+      "blurb": "AI software engineer that codes autonomously when assigned issues."
+    },
+    "jetbrains-ai": {
+      "name": "JetBrains AI",
+      "blurb": "AI coding assistant built into JetBrains IDEs like IntelliJ."
+    },
+    "amazon-q": {
+      "name": "Amazon Q Developer",
+      "blurb": "AWS-specialized AI coding and operations assistant."
+    },
+    "tabnine": {
+      "name": "Tabnine",
+      "blurb": "Privacy-focused AI code completion with on-premises support."
+    },
+    "cody": {
+      "name": "Sourcegraph Cody",
+      "blurb": "AI coding assistant combined with large-codebase search."
+    },
+    "openai-codex": {
+      "name": "OpenAI Codex",
+      "blurb": "OpenAI's coding agent that writes code and returns pull requests for assigned tasks."
+    },
+    "gemini-code": {
+      "name": "Gemini Code Assist",
+      "blurb": "Google's Gemini-based AI coding tool free for individuals."
+    },
+    "base44": {
+      "name": "Base44",
+      "blurb": "No-code AI builder creating apps with databases from plain descriptions."
+    },
+    "firebase-studio": {
+      "name": "Firebase Studio",
+      "blurb": "Google's browser-based AI full-stack app development environment."
+    },
+    "trae": {
+      "name": "Trae",
+      "blurb": "ByteDance's AI code editor with a generous free tier."
+    },
+    "warp": {
+      "name": "Warp",
+      "blurb": "Next-generation terminal with built-in AI agents."
+    },
+    "perplexity": {
+      "name": "Perplexity",
+      "blurb": "AI search that answers with source links — specialized in current information research."
+    },
+    "notebooklm": {
+      "name": "NotebookLM",
+      "blurb": "Google's research tool for grounded Q&A over your own uploaded materials."
+    },
+    "liner": {
+      "name": "Liner (라이너)",
+      "blurb": "Korean AI search and highlighting service emphasizing source credibility."
+    },
+    "deepl": {
+      "name": "DeepL",
+      "blurb": "Translator famous for natural translation quality."
+    },
+    "papago": {
+      "name": "Papago (파파고)",
+      "blurb": "Naver's translator, strong on Korean language pairs."
+    },
+    "flitto-ai": {
+      "name": "Flitto (플리토)",
+      "blurb": "Translation platform handling both professional translation and AI translation data."
+    },
+    "elicit": {
+      "name": "Elicit",
+      "blurb": "Research-focused AI that finds papers and organizes them into tables."
+    },
+    "consensus": {
+      "name": "Consensus",
+      "blurb": "Academic search AI answering questions with evidence from papers."
+    },
+    "scispace": {
+      "name": "SciSpace",
+      "blurb": "Research AI helping with paper search, summaries, and Q&A."
+    },
+    "semantic-scholar": {
+      "name": "Semantic Scholar",
+      "blurb": "Free AI academic search engine by the Allen Institute for AI."
+    },
+    "researchrabbit": {
+      "name": "ResearchRabbit",
+      "blurb": "Tool visualizing citation networks to surface related research."
+    },
+    "scite": {
+      "name": "Scite",
+      "blurb": "Evidence-verification AI classifying citations as supporting or contrasting."
+    },
+    "felo": {
+      "name": "Felo",
+      "blurb": "Multilingual AI search engine that shows its sources."
+    },
+    "goover": {
+      "name": "Goover (구버)",
+      "blurb": "Korean AI research service producing daily briefings on registered topics."
+    },
+    "wordvice-ai": {
+      "name": "Wordvice AI (워드바이스 AI)",
+      "blurb": "Korean AI proofreader specialized in English editing for papers and essays."
+    },
+    "immersive-translate": {
+      "name": "Immersive Translate",
+      "blurb": "Browser extension translating web pages and PDFs with side-by-side originals."
+    },
+    "chatpdf": {
+      "name": "ChatPDF",
+      "blurb": "Document AI for uploading PDFs and asking questions in chat."
+    },
+    "chatgpt": {
+      "name": "ChatGPT",
+      "blurb": "OpenAI's general-purpose AI chatbot — the most widely used for writing, analysis, and image generation."
+    },
+    "claude-ai": {
+      "name": "Claude",
+      "blurb": "Anthropic's AI assistant — strong at long-document understanding and careful writing and coding."
+    },
+    "gemini": {
+      "name": "Gemini",
+      "blurb": "Google's AI chatbot integrated with Search, Gmail, and YouTube."
+    },
+    "ms-copilot": {
+      "name": "Microsoft Copilot",
+      "blurb": "Microsoft's AI assistant built into Windows, Edge, and Office."
+    },
+    "wrtn": {
+      "name": "Wrtn (뤼튼)",
+      "blurb": "Korea's leading AI portal offering chatbot, image, and study tools in Korean."
+    },
+    "clova-x": {
+      "name": "CLOVA X (클로바X)",
+      "blurb": "Naver's Korean-specialized AI chatbot with local information and shopping context."
+    },
+    "grok": {
+      "name": "Grok",
+      "blurb": "xAI's chatbot known for reflecting real-time information from X (Twitter)."
+    },
+    "lechat": {
+      "name": "Le Chat",
+      "blurb": "Mistral's chatbot from Europe with fast responses and a generous free tier."
+    },
+    "deepseek": {
+      "name": "DeepSeek",
+      "blurb": "Free general-purpose AI chatbot built on reasoning-focused open models."
+    },
+    "qwen-chat": {
+      "name": "Qwen Chat",
+      "blurb": "Multilingual AI chatbot built on Alibaba's Qwen models."
+    },
+    "poe": {
+      "name": "Poe",
+      "blurb": "Hub for choosing among multiple AI models like GPT and Claude in one place."
+    },
+    "meta-ai": {
+      "name": "Meta AI",
+      "blurb": "Free AI assistant built on Meta's Llama models."
+    },
+    "kimi": {
+      "name": "Kimi",
+      "blurb": "Moonshot AI's chatbot strong at long-document understanding."
+    },
+    "pi-ai": {
+      "name": "Pi",
+      "blurb": "Personal-companion AI chatbot specialized in conversational warmth."
+    },
+    "adot": {
+      "name": "A. (에이닷)",
+      "blurb": "SK Telecom's Korean AI personal assistant with call summaries and schedule management."
+    },
+    "notion-ai": {
+      "name": "Notion AI",
+      "blurb": "Workplace writing AI handling summaries, drafts, and translation inside Notion docs."
+    },
+    "gamma-app": {
+      "name": "Gamma",
+      "blurb": "Generator creating presentations, documents, and web pages from a one-line prompt."
+    },
+    "jasper": {
+      "name": "Jasper",
+      "blurb": "Enterprise writing AI that learns brand tone for marketing copy and blogs."
+    },
+    "copy-ai": {
+      "name": "Copy.ai",
+      "blurb": "Copywriting AI rich in ad-copy and sales-copy templates."
+    },
+    "writesonic": {
+      "name": "Writesonic",
+      "blurb": "Content generation AI for quickly producing SEO blogs and ad copy."
+    },
+    "grammarly": {
+      "name": "Grammarly",
+      "blurb": "English grammar and tone correction improving emails and documents."
+    },
+    "deepl-write": {
+      "name": "DeepL Write",
+      "blurb": "Editing AI polishing English and German sentences naturally."
+    },
+    "sudowrite": {
+      "name": "Sudowrite",
+      "blurb": "Storytelling AI specialized in fiction and creative writing."
+    },
+    "quillbot": {
+      "name": "QuillBot",
+      "blurb": "English writing tool combining paraphrasing, summarizing, and grammar checking."
+    },
+    "wordtune": {
+      "name": "Wordtune",
+      "blurb": "English rewriting tool adjusting sentence tone and length."
+    },
+    "rytr": {
+      "name": "Rytr",
+      "blurb": "Budget-friendly writing AI producing copy and blog drafts from templates."
+    },
+    "languagetool": {
+      "name": "LanguageTool",
+      "blurb": "Grammar and spelling checker supporting over 30 languages."
+    },
+    "beautiful-ai": {
+      "name": "Beautiful.ai",
+      "blurb": "AI presentation tool that auto-arranges slide layouts."
+    },
+    "pitch": {
+      "name": "Pitch",
+      "blurb": "Collaborative presentation tool with AI draft generation."
+    },
+    "napkin-ai": {
+      "name": "Napkin AI",
+      "blurb": "Tool auto-generating charts and diagrams from pasted text."
+    },
+    "typecast": {
+      "name": "Typecast (타입캐스트)",
+      "blurb": "AI voice-actor generation service built on emotion-expressive TTS."
+    },
+    "elevenlabs": {
+      "name": "ElevenLabs",
+      "blurb": "Natural AI voice acting and dubbing for multilingual voiceovers."
+    },
+    "suno": {
+      "name": "Suno",
+      "blurb": "Music generation AI that composes songs from just lyrics."
+    },
+    "udio": {
+      "name": "Udio",
+      "blurb": "High-fidelity music generation AI with genre and vocal-style control."
+    },
+    "supertone": {
+      "name": "Supertone (수퍼톤)",
+      "blurb": "HYBE-affiliated voice synthesis and conversion technology for content voices."
+    },
+    "murf": {
+      "name": "Murf AI",
+      "blurb": "AI voice studio for business narration."
+    },
+    "adobe-podcast": {
+      "name": "Adobe Podcast",
+      "blurb": "Tool restoring noisy recordings to studio quality."
+    },
+    "playht": {
+      "name": "PlayHT",
+      "blurb": "Multilingual AI voice synthesis and cloning service."
+    },
+    "speechify": {
+      "name": "Speechify",
+      "blurb": "TTS reading documents and web pages in natural voices."
+    },
+    "lalal-ai": {
+      "name": "LALAL.AI",
+      "blurb": "Stem-separation AI splitting vocals and instruments from tracks."
+    },
+    "krisp": {
+      "name": "Krisp",
+      "blurb": "AI audio filter removing call and meeting noise in real time."
+    },
+    "aiva": {
+      "name": "AIVA",
+      "blurb": "AI composing background music for video and games."
+    },
+    "mubert": {
+      "name": "Mubert",
+      "blurb": "Streaming AI music generation service free of royalty concerns."
+    },
+    "soundraw": {
+      "name": "Soundraw",
+      "blurb": "AI composition tool creating BGM by specifying length and mood."
+    },
+    "resemble": {
+      "name": "Resemble AI",
+      "blurb": "Enterprise voice cloning and dubbing AI platform."
+    },
+    "zapier": {
+      "name": "Zapier",
+      "blurb": "Work automation connecting thousands of apps, with built-in AI actions."
+    },
+    "make-com": {
+      "name": "Make",
+      "blurb": "Automation built with visual scenarios, strong for complex flows."
+    },
+    "n8n": {
+      "name": "n8n",
+      "blurb": "Open-source automation for building AI agent workflows, self-hostable."
+    },
+    "lindy": {
+      "name": "Lindy",
+      "blurb": "No-code builder for AI assistants that handle email, scheduling, and tasks."
+    },
+    "relevance-ai": {
+      "name": "Relevance AI",
+      "blurb": "Platform for building AI agent teams for sales and research."
+    },
+    "manus": {
+      "name": "Manus",
+      "blurb": "General-purpose AI agent autonomously performing research and tasks."
+    },
+    "dify": {
+      "name": "Dify",
+      "blurb": "Open-source LLM app and agent builder used for internal chatbots."
+    },
+    "gumloop": {
+      "name": "Gumloop",
+      "blurb": "No-code tool building AI work automation with drag and drop."
+    },
+    "bardeen": {
+      "name": "Bardeen",
+      "blurb": "AI browser extension automating repetitive web tasks."
+    },
+    "activepieces": {
+      "name": "Activepieces",
+      "blurb": "Open-source no-code automation platform, self-hostable."
+    },
+    "flowise": {
+      "name": "Flowise",
+      "blurb": "Open-source builder assembling LLM agents and chatbots visually."
+    },
+    "crewai": {
+      "name": "CrewAI",
+      "blurb": "Multi-agent framework running several AI agents as a team."
+    },
+    "genspark": {
+      "name": "Genspark",
+      "blurb": "General AI agent handling research, creation, and even phone calls."
+    },
+    "dalpha": {
+      "name": "Dalpha (달파)",
+      "blurb": "Korean service building AI agents tailored to enterprise workflows."
+    },
+    "browse-ai": {
+      "name": "Browse AI",
+      "blurb": "Tool extracting and monitoring website data without coding."
+    },
+    "channeltalk": {
+      "name": "Channel Talk (채널톡)",
+      "blurb": "Korea's leading chat support tool automating replies with an AI agent."
+    },
+    "intercom": {
+      "name": "Intercom Fin",
+      "blurb": "AI support agent that resolves customer inquiries on its own."
+    },
+    "zendesk-ai": {
+      "name": "Zendesk AI",
+      "blurb": "AI responses and ticket triage built into the help desk."
+    },
+    "tidio": {
+      "name": "Tidio",
+      "blurb": "Chatbot and live chat for small online stores, easy to adopt."
+    },
+    "adcreative": {
+      "name": "AdCreative.ai",
+      "blurb": "Performance marketing AI mass-generating ad banners and creatives."
+    },
+    "predis": {
+      "name": "Predis.ai",
+      "blurb": "Tool auto-generating and scheduling social posts with image and copy."
+    },
+    "surfer": {
+      "name": "Surfer",
+      "blurb": "Content tool optimizing articles against SEO scores."
+    },
+    "chatbase": {
+      "name": "Chatbase",
+      "blurb": "Builder for customer-support AI chatbots trained on your docs and site."
+    },
+    "creatify": {
+      "name": "Creatify",
+      "blurb": "AI creating ad videos from just a product URL."
+    },
+    "arcads": {
+      "name": "Arcads",
+      "blurb": "Tool making UGC-style ad videos with AI actors."
+    },
+    "ocoya": {
+      "name": "Ocoya",
+      "blurb": "Marketing AI combining social content generation and scheduled publishing."
+    },
+    "vcat": {
+      "name": "VCAT (브이캣)",
+      "blurb": "Korean service auto-generating ad videos and banners from product URLs."
+    },
+    "gorgias": {
+      "name": "Gorgias",
+      "blurb": "AI customer-support help desk specialized for e-commerce."
+    },
+    "crisp": {
+      "name": "Crisp",
+      "blurb": "Customer messaging platform with chat widget, chatbot, and shared inbox."
+    },
+    "clova-note": {
+      "name": "CLOVA Note (클로바노트)",
+      "blurb": "Naver's meeting recording-to-text and summary tool, strong at Korean recognition."
+    },
+    "daglo": {
+      "name": "Daglo (다글로)",
+      "blurb": "Korean voice transcription service for meeting minutes and interviews."
+    },
+    "otter": {
+      "name": "Otter.ai",
+      "blurb": "The leading real-time transcription and summary service for English meetings."
+    },
+    "fireflies": {
+      "name": "Fireflies.ai",
+      "blurb": "Joins Zoom and Meet calls to write meeting notes automatically."
+    },
+    "fathom": {
+      "name": "Fathom",
+      "blurb": "Meeting summarizer with a generous free tier and highlight clips."
+    },
+    "tldv": {
+      "name": "tl;dv",
+      "blurb": "Meeting recording with timestamped summaries, supporting multiple meeting tools."
+    },
+    "granola-ai": {
+      "name": "Granola",
+      "blurb": "AI notepad merging your notes with recordings into finished meeting minutes."
+    },
+    "notta": {
+      "name": "Notta",
+      "blurb": "Multilingual meeting recording, transcription, and summary service with Korean support."
+    },
+    "read-ai": {
+      "name": "Read AI",
+      "blurb": "Work summary copilot spanning meetings, email, and messengers."
+    },
+    "circleback": {
+      "name": "Circleback",
+      "blurb": "AI meeting notes auto-extracting action items and decisions."
+    },
+    "sovoro": {
+      "name": "Sovoro (소보로)",
+      "blurb": "Real-time Korean speech captioning for meetings, lectures, and broadcasts."
+    },
+    "plaud": {
+      "name": "Plaud",
+      "blurb": "AI meeting and call summary service paired with recording hardware."
     }
   }
 }
