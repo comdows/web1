@@ -13,8 +13,10 @@ app/                 프론트엔드 (Vite + React + TS)
 backend/
   migrations/        0001 스키마 → 0002 RLS → 0003 시드 → 0004 오픈 → 0005 소개·동의 → 0006 AI (ALL.sql = 전체)
   seed/build-seed.mjs     platforms.json → 0003 재생성 (데이터 변경 시 실행)
-  collect/collect.mjs     주간 신규 수집기(10소스·전 분야 분류·스마트 중복제거) → 제보 검수 큐(기본) / 고신뢰 자동 등재(스위치 on 시)
-                          소스: PH(AI·커머스·핀테크)·HN + 국내 매체(플래텀·벤처스퀘어·스타트업레시피·아웃스탠딩·요즘IT·바이라인)
+  collect/collect.mjs     주간 신규 수집기(19소스·전 분야 분류·스마트 중복제거) → 제보 검수 큐(기본) / 고신뢰 자동 등재(스위치 on 시)
+                          소스: PH 6토픽(PH_TOKEN 있으면 API로 실사이트 URL → 자동등재 자격)·HN 3쿼리·BetaList
+                          + 국내 매체 6(플래텀·벤처스퀘어·스타트업레시피·아웃스탠딩·요즘IT·바이라인) + 구글뉴스 검색 3
+  collect/enrich.mjs      AI 보강(선택) — ANTHROPIC_API_KEY 있으면 Claude Haiku로 후보 분류·한국어 소개문·제품 판정(없으면 정규식 폴백)
   collect/fixtures/       수집기 테스트 픽스처(프록시 제한 환경용 — node collect.mjs --dry --fixture ...)
   collect/healthcheck.mjs 월간 URL 생존 점검 → GitHub 이슈 리포트
 .github/workflows/   pages(배포) · collect-candidates(주간) · metrics-weekly(주간 성장 스냅샷) · healthcheck(월간)
@@ -95,6 +97,10 @@ backend/
   ③ 정보통신망법 §50 대응: 수신거부 링크 실동작·광고성 정보 표기·대표 이메일 수집 근거, 처리방침 반영 + TERMS_VERSION 상향
   ④ `app_settings 'outreach'` → `server_send: true` + `config.ts FLAGS.outreach = true` + 재배포(**둘 다 켜야 열림**)
 - [x] 자동 수집 Secrets + 봇 계정 (2026-07-05 설정 완료)
+- [ ] (선택) **수집 보강 Secrets** — 없어도 수집은 폴백으로 정상 동작:
+  ① `PH_TOKEN`: producthunt.com/v2/oauth/applications에서 앱 생성 → Developer Token 복사 → repo Settings→Secrets→Actions 등록. PH 6토픽이 API로 제품 실사이트 URL을 받아 **자동등재 자격**을 얻음(없으면 RSS 폴백 — 검수 큐 전용)
+  ② `ANTHROPIC_API_KEY`: console.anthropic.com에서 발급 → 같은 곳 등록. 후보를 Claude Haiku가 분류·한국어 소개문 생성·제품 판정(주당 후보 ~60건 기준 소액 과금). 없으면 정규식 분류만
+  ③ 등록 후 Actions → collect-candidates → Run workflow 1회로 소스·보강 동작 확인
 - [x] 일일 다이제스트 Secrets(ADMIN_BOT — admin 롤 지정 완료)
 - [x] 주간 백업 Secret `BACKUP_PASSPHRASE` (수동 실행 1회 성공 확인 — 패스프레이즈는 비밀번호 관리자에 보관)
 - [ ] (선택) Google 로그인: Supabase 대시보드 Authentication → Providers → Google 설정 후 `app/src/config.ts`의 `googleAuth: true`

@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>"서비스 출시" 스타트업 - Google 뉴스</title>
+  <item>
+    <title>반려동물 돌봄 매칭 서비스 '펫하루' 정식 출시 - 예시경제</title>
+    <link>https://news.google.com/rss/articles/CBMiExample1</link>
+    <description>펫시터와 보호자를 연결하는 반려동물 돌봄 매칭 서비스가 출시됐다.</description>
+    <pubDate>Tue, 14 Jul 2026 01:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>스타트업 A사, 시리즈B 투자 유치 - 예시뉴스</title>
+    <link>https://news.google.com/rss/articles/CBMiExample2</link>
+    <description>투자 유치 소식이라 koLaunch 필터에 걸러져야 하는 항목.</description>
+    <pubDate>Mon, 13 Jul 2026 01:00:00 GMT</pubDate>
+  </item>
+</channel></rss>

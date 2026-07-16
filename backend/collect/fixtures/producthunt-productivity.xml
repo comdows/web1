@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Product Hunt — Productivity</title>
+  <entry>
+    <title>FlowDesk — automate your daily workflow with AI agents</title>
+    <link href="https://www.producthunt.com/posts/flowdesk"/>
+    <content>An AI agent workflow builder for repetitive business tasks.</content>
+  </entry>
+</feed>

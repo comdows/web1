@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>BetaList: Recent startups</title>
+  <item>
+    <title>Sellora — Launch your ecommerce storefront in minutes</title>
+    <link>https://betalist.com/startups/sellora</link>
+    <description>Sellora helps indie sellers open a marketplace storefront without code.</description>
+    <pubDate>Tue, 14 Jul 2026 08:00:00 +0000</pubDate>
+  </item>
+  <item>
+    <title>Fintra — Fintech API for subscription billing</title>
+    <link>https://betalist.com/startups/fintra</link>
+    <description>Billing and payments API for SaaS startups.</description>
+    <pubDate>Mon, 13 Jul 2026 08:00:00 +0000</pubDate>
+  </item>
+</channel></rss>
