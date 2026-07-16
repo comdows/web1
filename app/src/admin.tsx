@@ -109,6 +109,7 @@ function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
         <a href={s.payload.url} target="_blank" rel="noopener noreferrer" className="mono" style={{ fontSize: 12 }}>{s.payload.url} ↗</a>
         <Badge kind={s.status === "hold" ? "muted" : "soon"}>{s.status === "hold" ? "보류" : "대기"}</Badge>
         {s.payload.note?.startsWith("auto:") && <Badge kind="verify">🤖 자동 수집</Badge>}
+        {s.payload.ai && <Badge kind="soon">✨ AI 분류·소개</Badge>}
         {typeof s.payload.confidence === "number" && <Badge kind={s.payload.confidence >= 80 ? "soon" : "muted"}>신뢰도 {s.payload.confidence}</Badge>}
         <span className="mono" style={{ color: "var(--faint)", fontSize: 11, marginLeft: "auto" }}>{s.created_at.slice(0, 10)}</span>
       </div>
@@ -116,6 +117,7 @@ function ReviewCard({ s, onDone }: { s: Submission; onDone: () => void }) {
         <div className="frm-note">출처: {s.payload.note.slice(5)} — 이름·분야·소개를 다듬은 뒤 승인하세요(자동 등재 없음).</div>
       )}
       {s.payload.desc && <p style={{ margin: "6px 0", fontSize: 14, color: "var(--muted)" }}>{s.payload.desc}</p>}
+      {s.payload.src_desc && <p style={{ margin: "2px 0 6px", fontSize: 12, color: "var(--faint)" }}>원문: {s.payload.src_desc}</p>}
       {dups.length > 0 && <div className="err" style={{ fontSize: 12 }}>⚠ 중복 의심: {dups.join(", ")}</div>}
       <div className="admin-form">
         <label>id <input value={id} onChange={(e) => setId(e.target.value)} placeholder="영문 슬러그" /></label>

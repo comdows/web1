@@ -10,13 +10,18 @@
  *   BOT_EMAIL, BOT_PASSWORD          — 사이트에서 가입한 봇 계정(일반 회원 — RLS로 본인 제보만 가능)
  *   ADMIN_BOT_EMAIL, ADMIN_BOT_PASSWORD (선택) — 소식(platform_news) 투입용 admin 봇(notify·digest와 동일 계정).
  *     미설정이면 소식 매핑만 건너뛴다(후보 수집은 정상 동작).
+ *   PH_TOKEN (선택)          — Product Hunt API 토큰. 있으면 PH 소스가 GraphQL API로 제품 실사이트
+ *     URL(website)을 받아 자동등재(directUrl) 자격을 얻는다. 없으면 기존 RSS 피드로 폴백(검수 큐 전용).
+ *   ANTHROPIC_API_KEY (선택) — 있으면 후보 배치를 Claude Haiku로 분류·한국어 소개문 보강(enrich.mjs).
+ *     없으면 기존 정규식 분류만 사용.
  *
  * 로컬 검증: node collect.mjs --dry [--fixture 디렉토리]
- *   --dry: 수집·중복제거까지만 하고 출력(DB 미접속·미투입)
+ *   --dry: 수집·중복제거까지만 하고 출력(DB 미접속·미투입·AI 보강 생략)
  *   --fixture: 네트워크 대신 저장된 응답 파일 사용(producthunt.xml, hn.json, platum.xml)
  */
 import fs from "node:fs";
 import path from "node:path";
+import { enrich } from "./enrich.mjs";
 
 const DRY = process.argv.includes("--dry");
 const fixIdx = process.argv.indexOf("--fixture");
@@ -26,20 +31,28 @@ const BOT_PENDING_CAP = 10; // 봇 미처리 제보 RLS 상한(0028 my_pending_c
 
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_ANON_KEY;
+// 45개 분야 목록(정적 시드) — AI 보강(enrich)의 분류 화이트리스트로 사용
+const CATEGORIES = JSON.parse(fs.readFileSync(
+  path.join(path.dirname(new URL(import.meta.url).pathname), "../../app/src/data/platforms.json"), "utf8"
+)).categories;
 
 /* ── 소스 정의 ─────────────────────────────────────────────── */
 // directUrl: 항목 url이 "그 제품의 실제 사이트"인 소스(HN·PH는 제품 링크). 국내 뉴스 RSS는 url이
 //   "기사 주소"라 사람이 실 URL을 찾아야 함(directUrl=false) → 자동 등재(D) 대상에서 제외되고 검수/일괄승인(C)로 감.
 // koLaunch: 국내 뉴스는 "출시/론칭" 기사만 후보로(일반 소식 제외).
+// ph: Product Hunt API 토픽 슬러그 — PH_TOKEN이 있으면 GraphQL API로 제품 실사이트(website)를 받아
+//   항목 단위 directUrl:true가 된다(자동등재 자격). 토큰이 없으면 url(RSS 피드)로 폴백(현행 동작).
 const SOURCES = [
   {
     id: "producthunt",
     label: "Product Hunt (AI)",
     url: "https://www.producthunt.com/feed?category=artificial-intelligence",
     fixture: "producthunt.xml",
+    fixtureApi: "producthunt-api.json",
     region: "overseas",
     parse: parseAtom,
-    directUrl: false, // 피드 링크는 PH 게시물 페이지(제품 사이트 아님)
+    ph: "artificial-intelligence",
+    directUrl: false, // 피드 링크는 PH 게시물 페이지(제품 사이트 아님) — API 경로는 항목별 override
   },
   {
     id: "hn",
@@ -49,6 +62,33 @@ const SOURCES = [
     region: "overseas",
     parse: parseHN,
     directUrl: true, // Show HN url은 제품 실사이트
+  },
+  {
+    id: "hn-marketplace",
+    label: "Hacker News (Show HN · Marketplace)",
+    url: "https://hn.algolia.com/api/v1/search_by_date?tags=show_hn&hitsPerPage=20&query=marketplace",
+    fixture: "hn-marketplace.json",
+    region: "overseas",
+    parse: parseHN,
+    directUrl: true,
+  },
+  {
+    id: "hn-saas",
+    label: "Hacker News (Show HN · SaaS)",
+    url: "https://hn.algolia.com/api/v1/search_by_date?tags=show_hn&hitsPerPage=20&query=SaaS",
+    fixture: "hn-saas.json",
+    region: "overseas",
+    parse: parseHN,
+    directUrl: true,
+  },
+  {
+    id: "betalist",
+    label: "BetaList (신규 스타트업)",
+    url: "https://betalist.com/feed",
+    fixture: "betalist.xml",
+    region: "overseas",
+    parse: parseRss,
+    directUrl: false, // 피드 링크는 betalist 게시물 페이지
   },
   {
     id: "platum",
@@ -111,7 +151,39 @@ const SOURCES = [
     koLaunch: true,
     directUrl: false,
   },
-  // ── 글로벌 제품 디렉토리 확대(AI 외 커머스·핀테크) — PH 링크는 게시물 페이지라 directUrl:false ──
+  // ── 국내 비언론 보강: 구글뉴스 검색 RSS — 특정 매체에 안 실린 출시 소식도 포착(기사 URL이라 directUrl:false) ──
+  {
+    id: "gnews-service",
+    label: "구글뉴스 검색 (서비스 출시)",
+    url: "https://news.google.com/rss/search?q=%22%EC%84%9C%EB%B9%84%EC%8A%A4%20%EC%B6%9C%EC%8B%9C%22%20%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85&hl=ko&gl=KR&ceid=KR:ko",
+    fixture: "gnews-service.xml",
+    region: "domestic",
+    parse: parseRss,
+    koLaunch: true,
+    directUrl: false,
+  },
+  {
+    id: "gnews-platform",
+    label: "구글뉴스 검색 (플랫폼 출시)",
+    url: "https://news.google.com/rss/search?q=%22%ED%94%8C%EB%9E%AB%ED%8F%BC%20%EC%B6%9C%EC%8B%9C%22&hl=ko&gl=KR&ceid=KR:ko",
+    fixture: "gnews-platform.xml",
+    region: "domestic",
+    parse: parseRss,
+    koLaunch: true,
+    directUrl: false,
+  },
+  {
+    id: "gnews-app",
+    label: "구글뉴스 검색 (앱 출시)",
+    url: "https://news.google.com/rss/search?q=%22%EC%95%B1%20%EC%B6%9C%EC%8B%9C%22%20%EC%8A%A4%ED%83%80%ED%8A%B8%EC%97%85&hl=ko&gl=KR&ceid=KR:ko",
+    fixture: "gnews-app.xml",
+    region: "domestic",
+    parse: parseRss,
+    koLaunch: true,
+    directUrl: false,
+  },
+  // ── 글로벌 제품 디렉토리 확대(AI 외 커머스·핀테크·생산성) — PH 링크는 게시물 페이지라 directUrl:false,
+  //    PH_TOKEN 있으면 API로 실사이트 획득 ──
   {
     id: "ph-ecommerce",
     label: "Product Hunt (E-commerce)",
@@ -119,6 +191,7 @@ const SOURCES = [
     fixture: "producthunt-ecommerce.xml",
     region: "overseas",
     parse: parseAtom,
+    ph: "e-commerce",
     directUrl: false,
     catHint: "openmarket",
   },
@@ -129,8 +202,42 @@ const SOURCES = [
     fixture: "producthunt-fintech.xml",
     region: "overseas",
     parse: parseAtom,
+    ph: "fintech",
     directUrl: false,
     catHint: "finance",
+  },
+  {
+    id: "ph-devtools",
+    label: "Product Hunt (Developer Tools)",
+    url: "https://www.producthunt.com/feed?category=developer-tools",
+    fixture: "producthunt-devtools.xml",
+    region: "overseas",
+    parse: parseAtom,
+    ph: "developer-tools",
+    directUrl: false,
+    catHint: "ai_code",
+  },
+  {
+    id: "ph-marketing",
+    label: "Product Hunt (Marketing)",
+    url: "https://www.producthunt.com/feed?category=marketing",
+    fixture: "producthunt-marketing.xml",
+    region: "overseas",
+    parse: parseAtom,
+    ph: "marketing",
+    directUrl: false,
+    catHint: "ai_marketing",
+  },
+  {
+    id: "ph-productivity",
+    label: "Product Hunt (Productivity)",
+    url: "https://www.producthunt.com/feed?category=productivity",
+    fixture: "producthunt-productivity.xml",
+    region: "overseas",
+    parse: parseAtom,
+    ph: "productivity",
+    directUrl: false,
+    catHint: "ai_auto",
   },
 ];
 
@@ -171,6 +278,33 @@ function parseHN(json) {
     return m ? { name: m[1], url: h.url, desc: m[2].slice(0, 160) } : { name: full, url: h.url, desc: "" };
   });
 }
+/* PH GraphQL API 응답 → 항목. website(제품 실사이트)가 있으면 그 항목만 directUrl 자격(_direct).
+ * website가 없거나 PH 자체 링크(리다이렉트·게시물)면 게시물 url로 폴백 + 비직접 취급. */
+function parsePHApi(json) {
+  const d = typeof json === "string" ? JSON.parse(json) : json;
+  return (d.data?.posts?.edges ?? []).map(({ node }) => {
+    const site = node.website || "";
+    const direct = !!site && !/producthunt\.com/i.test(site);
+    return {
+      name: decode(node.name || ""),
+      url: direct ? site : (node.url || site),
+      desc: decode(node.tagline || "").slice(0, 160),
+      _direct: direct,
+    };
+  }).filter((it) => it.name && it.url);
+}
+async function fetchPH(src) {
+  const res = await fetch("https://api.producthunt.com/v2/api/graphql", {
+    method: "POST",
+    headers: { Authorization: `Bearer ${process.env.PH_TOKEN}`, "Content-Type": "application/json" },
+    body: JSON.stringify({
+      query: "query($topic:String!){posts(first:20,order:NEWEST,topic:$topic){edges{node{name tagline website url}}}}",
+      variables: { topic: src.ph },
+    }),
+  });
+  if (!res.ok) throw new Error(`PH API HTTP ${res.status}`);
+  return parsePHApi(await res.text());
+}
 
 /* 제목·설명 키워드 → 분야 추정(검수 셀렉트 초기값 제안 — 오분류여도 관리자가 교정).
  * 45개 분야 전체. 첫 매치 우선이므로 "구체적 버티컬 → AI → 커머스 일반" 순서로 배치해
@@ -208,7 +342,7 @@ const CAT_RULES = [
   [/\bmro\b|산업재|사무용품|기업 구매|\boffice supply\b|b2b 구매/i, "office"],
   // ── ai(AI 도구) — 키워드가 뚜렷 ──
   [/video|영상|film|clip/i, "ai_video"], [/image|이미지|일러스트|logo|로고/i, "ai_image"],
-  [/voice|audio|music|음성|음악|tts|speech/i, "ai_audio"], [/coding|developer|개발자|ide|copilot/i, "ai_code"],
+  [/\bvoice|\baudio|music|음성|음악|\btts\b|speech/i, "ai_audio"], [/coding|developer|개발자|ide|copilot/i, "ai_code"],
   [/meeting|회의록|transcri|녹취/i, "ai_meeting"], [/마케팅 ai|seo ai|광고 ai|챗봇|customer support ai/i, "ai_marketing"],
   [/\bagent\b|automat|workflow|자동화 ai/i, "ai_auto"], [/리서치 ai|번역 ai|translat|논문|paper/i, "ai_research"],
   [/글쓰기 ai|copywrit|문서 작성 ai/i, "ai_writing"], [/\bai\b|gpt|llm|generative|생성형/i, "ai_chat"],
@@ -288,7 +422,7 @@ function normalize(items, src) {
     .map((it) => ({
       name: it.name, url: it.url, desc: it.desc,
       region: src.region, source: src.id, sourceLabel: src.label,
-      directUrl: !!src.directUrl, catHint: src.catHint || "",
+      directUrl: !!(it._direct ?? src.directUrl), catHint: src.catHint || "", // _direct: PH API 항목별 override
     }));
 }
 
@@ -298,7 +432,8 @@ function normalize(items, src) {
 function confidence(c) {
   let score = 30;
   if (c.directUrl) score += 25;
-  if (guessCategory(c.name, c.desc)) score += 20;                       // 키워드 분야 매치(catHint 제외 — 자동등재 안전장치)
+  // 키워드 분야 매치 또는 AI 분류(화이트리스트 검증 통과분) — catHint 제외(자동등재 안전장치)
+  if (guessCategory(c.name, c.desc) || c.aiCat) score += 20;
   if ((c.desc || "").trim().length >= 20) score += 10;
   const n = c.name.trim();
   if (n.length >= 2 && n.length <= 40 && !/^[A-Z ]+$/.test(n)) score += 10;
@@ -314,6 +449,7 @@ function confidence(c) {
 /* 개별 소스 실패는 흡수하되(일시 장애·포맷 변경 가능성), 전 소스 동시 실패는
  * 수집기 자체의 고장(네트워크·차단·파서 붕괴)이므로 런을 실패시켜 알림을 받는다 — 조용한 수집 정체 방지 */
 let sourceFails = 0;
+const failedSources = []; // 부분 실패 알림용(3개 이상이면 ops-alert 이슈 — collect.yml)
 /* 국내 뉴스 원문 항목(제목 전체 보존 — NAME_CUT 미적용). 기존 플랫폼 소식 매핑(G-C)용. */
 const newsRaw = [];
 function takeItems(items, src) {
@@ -326,17 +462,24 @@ function takeItems(items, src) {
 }
 async function fetchSource(src) {
   if (FIXTURE_DIR) {
+    // PH API 픽스처가 있으면 API 경로 파서 검증(항목별 directUrl override 포함), 없으면 RSS 픽스처
+    if (src.fixtureApi && fs.existsSync(path.join(FIXTURE_DIR, src.fixtureApi))) {
+      return takeItems(parsePHApi(fs.readFileSync(path.join(FIXTURE_DIR, src.fixtureApi), "utf8")), src);
+    }
     const p = path.join(FIXTURE_DIR, src.fixture);
     if (!fs.existsSync(p)) return [];
     return takeItems(src.parse(fs.readFileSync(p, "utf8")), src);
   }
   try {
+    // PH 토픽 소스: 토큰이 있으면 API(제품 실사이트 URL → 자동등재 자격), 없으면 RSS 폴백
+    if (src.ph && process.env.PH_TOKEN) return takeItems(await fetchPH(src), src);
     const res = await fetch(src.url, { headers: { "User-Agent": `semopl-collector/1.0 (+${process.env.SITE_URL ?? "https://comdows.github.io/web1"}/)` } });
-    if (!res.ok) { console.warn(`[skip] ${src.id}: HTTP ${res.status}`); sourceFails++; return []; }
+    if (!res.ok) { console.warn(`[skip] ${src.id}: HTTP ${res.status}`); sourceFails++; failedSources.push(src.id); return []; }
     return takeItems(src.parse(await res.text()), src);
   } catch (e) {
     console.warn(`[skip] ${src.id}: ${e.message}`);
     sourceFails++;
+    failedSources.push(src.id);
     return [];
   }
 }
@@ -436,6 +579,10 @@ async function botLogin() {
 const collected = (await Promise.all(SOURCES.map(fetchSource))).flat();
 console.log(`수집 ${collected.length}건 (${SOURCES.map((s) => s.id).join(", ")})`);
 if (!FIXTURE_DIR && sourceFails >= SOURCES.length) throw new Error(`전 소스(${SOURCES.length}개) 수집 실패 — 수집기 점검 필요`);
+// 부분 실패(3개 이상): 런은 성공시키되 collect.yml이 ops-alert 이슈를 만들도록 output 전달 — 조용한 수집량 감소 방지
+if (!FIXTURE_DIR && sourceFails >= 3 && process.env.GITHUB_OUTPUT) {
+  fs.appendFileSync(process.env.GITHUB_OUTPUT, `srcfails=${sourceFails}\nsrcfailed=${failedSources.join(" ")}\n`);
+}
 
 // dedup 키: 제품 실사이트(directUrl)는 호스트로, 집계/기사 링크(비directUrl — PH 게시물·뉴스 기사는
 // 모두 같은 호스트라 호스트로 묶으면 소스당 1건으로 붕괴)는 전체 URL로 구분한다.
@@ -479,10 +626,28 @@ candidates = candidates
     if (c.directUrl && knownHosts.has(host(c.url))) return false;      // 제품 실사이트 호스트 중복
     return true;
   })
-  .slice(0, MAX_PER_RUN)
-  // category_id: 키워드 추정 우선, 없으면 소스 catHint 폴백(검수·일괄승인 자격 부여).
-  // confidence()의 +20 가점은 키워드 매치에만 → catHint만으론 자동등재 임계(80)에 못 미침(안전).
-  .map((c) => ({ ...c, confidence: confidence(c), category_id: guessCategory(c.name, c.desc) || c.catHint || "" }));
+  .slice(0, MAX_PER_RUN);
+
+// AI 보강(선택): ANTHROPIC_API_KEY가 있으면 배치로 분류·한국어 소개문·"제품 여부" 판정(enrich.mjs).
+// 키 부재·실패 시 null → 아래 매핑이 정규식 분류만으로 동작(현행 보존). DRY에서는 비용 방지로 생략.
+let aiMap = null;
+if (!DRY && candidates.length && process.env.ANTHROPIC_API_KEY) {
+  try {
+    aiMap = await enrich(candidates, CATEGORIES);
+    if (aiMap) console.log(`AI 보강 ${aiMap.size}건 (분류·소개문·제품 판정)`);
+  } catch (e) { console.warn(`AI 보강 실패(정규식 분류로 폴백): ${e.message}`); }
+}
+
+candidates = candidates
+  .map((c, i) => {
+    const ai = aiMap?.get(i) ?? null;
+    if (ai && !ai.is_platform) return null;                            // AI 판정: 제품 아님(일반 기사·행사 등) → 제외
+    // category_id: AI 분류(화이트리스트 검증분·문맥 이해) 우선 → 키워드 추정 → 소스 catHint 폴백.
+    // confidence()의 +20 가점은 키워드·AI 매치에만 → catHint만으론 자동등재 임계(80)에 못 미침(안전).
+    const kwCat = guessCategory(c.name, c.desc);
+    return { ...c, ai, category_id: ai?.category_id || kwCat || c.catHint || "", confidence: confidence({ ...c, aiCat: !!ai?.category_id }) };
+  })
+  .filter(Boolean);
 
 console.log(`중복 제거 후 신규 후보 ${candidates.length}건 (상한 ${MAX_PER_RUN})`);
 for (const c of candidates) console.log(`  + [${c.source}] (${c.confidence}) ${c.name} | ${c.url}`);
@@ -511,9 +676,12 @@ if (candidates.length > 0) {
   let slotsLeft = Math.max(0, BOT_PENDING_CAP - curPending);
 
   for (const c of candidates) {
+    // AI 보강분: 한국어 소개문(blurb_ko)을 desc로 — 자동등재 RPC·검수 승인 모두 payload.desc를 blurb로 쓰므로
+    // 등재 품질이 그대로 올라간다. 원문 설명은 src_desc로 보존(검수 화면 참고용).
     const payload = {
-      name: c.name, url: c.url, category_id: c.category_id, region: c.region,
-      desc: c.desc, confidence: c.confidence, note: `auto:${c.source} (${c.sourceLabel})`,
+      name: c.name, url: c.url, category_id: c.category_id, region: c.ai?.region || c.region,
+      desc: c.ai?.blurb_ko || c.desc, confidence: c.confidence, note: `auto:${c.source} (${c.sourceLabel})`,
+      ...(c.ai ? { ai: true, ...(c.ai.blurb_ko && c.desc && c.ai.blurb_ko !== c.desc ? { src_desc: c.desc } : {}) } : {}),
     };
     if (autoOn && c.directUrl && c.category_id && c.confidence >= auto.min_confidence) {
       // 서버 RPC가 재검증(스위치·collector_id·중복·id 생성)하고 lifecycle='review'+auto_listed로 등재.

@@ -181,6 +181,8 @@ export interface CorrectionFields {
 export interface SubmissionPayload {
   name: string; url: string; category_id: string; region: "domestic" | "overseas"; desc: string; note?: string;
   confidence?: number; // 자동 수집기가 매긴 신뢰도(0~100) — 일괄 승인 우선순위 참고
+  ai?: boolean;        // 수집기 AI 보강분(분야 분류·desc가 AI 생성 소개문) — 검수 화면 배지
+  src_desc?: string;   // AI 보강 전 원문 설명(검수 참고용)
   // 정정 제안(기존 항목 판단 필드 교정·보강) — payload.kind로 검수 큐가 분기
   kind?: "correction";
   target_platform_id?: string;

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Product Hunt — Marketing</title>
+  <entry>
+    <title>AdSpark — AI ad creatives for small stores</title>
+    <link href="https://www.producthunt.com/posts/adspark"/>
+    <content>Generate ad banners and copy for your online store with AI.</content>
+  </entry>
+</feed>

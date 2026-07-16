@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+  <title>Product Hunt — Developer Tools</title>
+  <entry>
+    <title>DeployBot — one-click deploys for side projects</title>
+    <link href="https://www.producthunt.com/posts/deploybot"/>
+    <content>Ship your app with a single click. CI/CD for indie developers.</content>
+  </entry>
+</feed>

@@ -1,8 +1,10 @@
 # 신규 플랫폼·AI 도구 자동 수집 — 매주 월 07:00 KST(일 22:00 UTC) + 수동 실행
-# 후보는 자동 등재되지 않고 관리 콘솔 "제보 검수 큐"에 쌓인다(사람 승인 필수).
-# 부가: 국내 뉴스가 기존 등재 플랫폼과 매칭되면 platform_news(0027)로 연결(admin 봇 — notify와 동일 계정).
+# 후보는 검수 큐에 쌓이고(사람 승인), 콘솔 autolist 스위치가 켜져 있으면 고신뢰·실사이트(directUrl)
+# 후보만 자동 등재된다(사후 검수 큐). 부가: 국내 뉴스가 기존 플랫폼과 매칭되면 platform_news(0027) 연결.
 # 필요 Secrets: SUPABASE_URL, SUPABASE_ANON_KEY, BOT_EMAIL, BOT_PASSWORD
 #   + ADMIN_BOT_EMAIL, ADMIN_BOT_PASSWORD(선택 — 없으면 소식 연결만 생략)
+#   + PH_TOKEN(선택 — Product Hunt API로 제품 실사이트 URL 획득 → PH 소스 자동등재 자격. 없으면 RSS 폴백)
+#   + ANTHROPIC_API_KEY(선택 — Claude Haiku로 후보 분류·한국어 소개문 보강. 없으면 정규식 분류만)
 name: collect-candidates
 
 on:
@@ -24,6 +26,7 @@ jobs:
         with:
           node-version: 22
       - name: Collect candidates into review queue
+        id: collect
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
@@ -32,7 +35,18 @@ jobs:
           # 소식(platform_news) 투입용 admin 봇 — notify·digest와 동일 계정(미설정 시 소식만 생략)
           ADMIN_BOT_EMAIL: ${{ secrets.ADMIN_BOT_EMAIL }}
           ADMIN_BOT_PASSWORD: ${{ secrets.ADMIN_BOT_PASSWORD }}
+          # 선택 보강 키 — 없어도 수집은 정상 동작(RSS·정규식 폴백)
+          PH_TOKEN: ${{ secrets.PH_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node backend/collect/collect.mjs
+      - name: 부분 실패 알림(소스 3개 이상 — 조용한 수집량 감소 방지)
+        if: steps.collect.outputs.srcfails != ''
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          curl -sf -X POST -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/issues" \
+            -d "{\"title\":\"[운영] collect 소스 부분 실패 ${{ steps.collect.outputs.srcfails }}개 — 피드 점검 필요\",\"body\":\"실패 소스: ${{ steps.collect.outputs.srcfailed }}\\n\\n피드 URL 변경·차단 여부를 확인하세요. 실행 로그: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\",\"labels\":[\"ops-alert\"]}"
       - name: 실패 알림(ops-alert 이슈)
         if: failure()
         env:

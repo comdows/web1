@@ -1,0 +1,12 @@
+{
+  "data": {
+    "posts": {
+      "edges": [
+        { "node": { "name": "Pixely", "tagline": "AI image generator for ecommerce product photos", "website": "https://pixely.example.com", "url": "https://www.producthunt.com/posts/pixely" } },
+        { "node": { "name": "Meetly", "tagline": "AI meeting notes and transcription for teams", "website": "https://meetly.example.io", "url": "https://www.producthunt.com/posts/meetly" } },
+        { "node": { "name": "NoSiteApp", "tagline": "A product with no website field", "website": "", "url": "https://www.producthunt.com/posts/nositeapp" } },
+        { "node": { "name": "RedirectOnly", "tagline": "Website is a PH redirect link", "website": "https://www.producthunt.com/r/abc123", "url": "https://www.producthunt.com/posts/redirectonly" } }
+      ]
+    }
+  }
+}
