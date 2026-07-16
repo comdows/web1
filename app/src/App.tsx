@@ -25,6 +25,7 @@ const AiFinder   = lazy(() => import("./ai").then((m) => ({ default: m.AiFinder 
 const Weekly     = lazy(() => import("./growth").then((m) => ({ default: m.Weekly })));
 const Packs      = lazy(() => import("./growth").then((m) => ({ default: m.Packs })));
 const News       = lazy(() => import("./news").then((m) => ({ default: m.News })));
+const Guide      = lazy(() => import("./guide").then((m) => ({ default: m.Guide })));
 const Terms      = lazy(() => import("./legal").then((m) => ({ default: m.Terms })));
 const Privacy    = lazy(() => import("./legal").then((m) => ({ default: m.Privacy })));
 const Notifications = lazy(() => import("./notifications").then((m) => ({ default: m.Notifications })));
@@ -45,9 +46,10 @@ function readParams() {
   const pre = location.pathname.match(/\/p\/([a-z0-9-]+)\/?$/);
   const cpre = location.pathname.match(/\/c\/([a-z0-9_-]+)(?:\/compare)?\/?$/); // /compare 프리렌더 랜딩도 분야 검색으로
   const npre = /\/news\/?$/.test(location.pathname); // /news/ 프리렌더 랜딩 → 소식 뷰
+  const gpre = location.pathname.match(/\/guide\/([a-z0-9-]+)\/?$/); // /guide/<slug> → 가이드 뷰
   return {
-    view: pre ? ("detail" as ViewName) : cpre ? ("search" as ViewName) : npre ? ("news" as ViewName) : (p.get("view") as ViewName) || "home",
-    id: pre ? pre[1] : p.get("id") || "",
+    view: pre ? ("detail" as ViewName) : cpre ? ("search" as ViewName) : npre ? ("news" as ViewName) : gpre ? ("guide" as ViewName) : (p.get("view") as ViewName) || "home",
+    id: pre ? pre[1] : gpre ? gpre[1] : p.get("id") || "",
     q: p.get("q") || "",
     fav: p.get("fav") === "1",
   };
@@ -73,7 +75,7 @@ const VIEW_TITLES: Partial<Record<ViewName, string>> = {
   search: "검색", partners: "제휴 매칭", exchange: "플랫폼 거래소", compare: "비교",
   onboarding: "맞춤 추천", account: "계정", submit: "플랫폼 제보", admin: "관리 콘솔",
   terms: "이용약관", privacy: "개인정보처리방침", "deal-guide": "양수도 가이드", "value-check": "가치 자가 진단",
-  "ai-finder": "AI 도구 찾기", weekly: "새로 나온 플랫폼·AI", packs: "업종별 시작 조합", news: "소식·트렌드",
+  "ai-finder": "AI 도구 찾기", weekly: "새로 나온 플랫폼·AI", packs: "업종별 시작 조합", news: "소식·트렌드", guide: "가이드",
   optout: "이메일 수신거부", deal: "매물 상세", support: "문의·도움말",
 };
 
@@ -280,6 +282,7 @@ export default function App() {
         : view === "weekly" ? <Weekly />
         : view === "packs" ? <Packs />
         : view === "news" ? <News />
+        : view === "guide" ? <Guide slug={detailId} />
         : view === "detail" ? <PlatformDetail id={detailId} />
         : view === "search" ? <SearchResults initialQ={searchQ} />
         : view === "compare" ? <Compare />

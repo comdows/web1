@@ -15,7 +15,8 @@ export default defineConfig({
         codeSplitting: {
           groups: [
             { name: "vendor", test: /node_modules/ },
-            { name: "data", test: /src[\\/]data[\\/].*\.json$/ },
+            // articles(가이드 본문)는 제외 — 부트 필수가 아니라 lazy guide 청크에 실린다(월간 증분이 부트 페이로드를 키우지 않게)
+            { name: "data", test: /src[\\/]data[\\/](?!articles).*\.json$/ },
           ],
         },
       },

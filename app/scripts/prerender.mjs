@@ -17,6 +17,21 @@ const data = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.json
 const EN = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.en.json"), "utf8")); // 영어 쌍둥이 존재 판정(hreflang)
 // 분야 허브 편집 인트로(한국어) — 검색 랜딩 본문. 없으면 목록만.
 const HUB = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/hub-intros.ko.json"), "utf8")); } catch { return {}; } })();
+// 편집 가이드(로드맵 v2 Phase 4 — /guide/<slug>/ 정적 페이지). 없으면 가이드 표면만 생략.
+const ARTICLES = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/articles.ko.json"), "utf8")); } catch { return {}; } })();
+// 가이드 참조 무결성 — 미존재 분야·플랫폼 id 참조는 빌드 실패(EN 생성기 검증 패턴)
+{
+  const pids = new Set(data.platforms.map((p) => p.id));
+  const cids = new Set(data.categories.map((c) => c.id));
+  const errs = [];
+  for (const [slug, a] of Object.entries(ARTICLES)) {
+    if (!/^[a-z0-9-]+$/.test(slug)) errs.push(`가이드 slug 형식 오류: ${slug}`);
+    if (!a.title?.trim() || !a.desc?.trim() || !a.sections?.length) errs.push(`가이드 필수 필드 누락: ${slug}`);
+    if (!cids.has(a.category)) errs.push(`가이드가 없는 분야 참조: ${slug} → ${a.category}`);
+    for (const r of a.related ?? []) if (!pids.has(r)) errs.push(`가이드의 미등재 플랫폼 참조: ${slug} → ${r}`);
+  }
+  if (errs.length) { console.error("가이드 데이터 오류:\n" + errs.map((e) => `  - ${e}`).join("\n")); process.exit(1); }
+}
 /* 템플릿 로드 시 og:url·og:image를 설정 도메인으로 일괄 정규화 —
  * index.html 원본의 절대 URL이 어떤 산출물에도 그대로 새지 않게(서브페이지 og:image 포함). */
 const template = fs.readFileSync(path.join(DIST, "index.html"), "utf8")
@@ -98,6 +113,7 @@ function catPage(c, hasCompare) {
   <p><a href="${BASE}">세모플 — 세상의 모든 플랫폼</a></p>
   <h1>${esc(c.icon)} ${esc(c.name)} 플랫폼 ${list.length}곳</h1>
   ${hasCompare ? `<p><a href="${BASE}c/${c.id}/compare/">📊 ${esc(c.name)} 비교표 — 수수료·정산·입점 조건 한눈에 →</a></p>` : ""}
+  ${Object.entries(ARTICLES).filter(([, a]) => a.category === c.id).map(([slug, a]) => `<p><a href="${BASE}guide/${slug}/">📖 가이드: ${esc(a.title)} →</a></p>`).join("")}
   ${introHtml}
   <h2>${esc(c.name)} 플랫폼 목록</h2>
   <ul>${list.map((p) => `<li><a href="${BASE}p/${p.id}/">${esc(p.name)}</a>${p.region === "해외" ? " (해외)" : ""} — ${esc(p.blurb)}</li>`).join("")}</ul>
@@ -233,6 +249,49 @@ fs.writeFileSync(path.join(DIST, "404.html"), template
   .replace("</head>", `  <meta name="robots" content="noindex">\n  </head>`)
   .replace(/(<div id="root">)(<\/div>)/, `$1${nfBody}$2`));
 
+/* 편집 가이드 /guide/<slug>/ — 분야 트렌드·비교 축 아티클(로드맵 v2 Phase 4).
+ * 크롤러는 정적 본문을, 사람은 SPA guide 뷰(App.tsx가 경로 해석)를 본다. 디렉토리 중립:
+ * 특정 플랫폼 추천이 아니라 "비교 축" 서술 — 고지문 포함. */
+let guideCount = 0;
+for (const [slug, a] of Object.entries(ARTICLES)) {
+  const cat = catById.get(a.category);
+  const title = `${a.title} | 세모플`;
+  const canonical = `${SITE}/guide/${slug}/`;
+  const relTitles = (a.related ?? []).map((id) => data.platforms.find((p) => p.id === id)).filter(Boolean);
+  const ld = JSON.stringify([
+    { "@context": "https://schema.org", "@type": "Article", headline: a.title, description: a.desc,
+      datePublished: a.date, dateModified: a.date, inLanguage: "ko",
+      author: { "@type": "Organization", name: "세모플" }, publisher: { "@type": "Organization", name: "세모플" },
+      mainEntityOfPage: canonical },
+    { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
+      { "@type": "ListItem", position: 1, name: "세모플", item: `${SITE}/` },
+      { "@type": "ListItem", position: 2, name: cat?.name ?? "분야", item: `${SITE}/c/${a.category}/` },
+      { "@type": "ListItem", position: 3, name: a.title, item: canonical }] },
+  ]);
+  const body = `
+<main style="max-width:720px;margin:32px auto;padding:0 20px">
+  <p><a href="${BASE}">세모플 — 세상의 모든 플랫폼</a> › <a href="${BASE}c/${a.category}/">${esc(cat?.icon ?? "")} ${esc(cat?.name ?? "")}</a></p>
+  <h1>${esc(a.title)}</h1>
+  <p>${esc(a.date)} · 세모플 가이드</p>
+  <p>${esc(a.desc)}</p>
+  ${a.sections.map((s) => `<h2>${esc(s.h)}</h2><p>${esc(s.b)}</p>`).join("")}
+  ${relTitles.length ? `<h2>이 글에서 함께 볼 플랫폼</h2><ul>${relTitles.map((p) => `<li><a href="${BASE}p/${p.id}/">${esc(p.name)}</a> — ${esc(p.blurb)}</li>`).join("")}</ul>` : ""}
+  <p><a href="${BASE}c/${a.category}/">${esc(cat?.name ?? "")} 플랫폼 전체 보기 →</a></p>
+  <p>이 가이드는 공개 정보를 바탕으로 한 일반적 안내이며 특정 플랫폼의 공식 조건·추천이 아닙니다. 요율·정책은 수시로 바뀌므로 실제 조건은 각 공식 사이트에서 확인하세요.</p>
+</main>`;
+  const dir = path.join(DIST, "guide", slug);
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, "index.html"), template
+    .replace(/<title>[^<]*<\/title>/, `<title>${esc(title)}</title>`)
+    .replace(/(<meta name="description" content=")[^"]*(")/, `$1${esc(a.desc.slice(0, 155))}$2`)
+    .replace(/(<meta property="og:title" content=")[^"]*(")/, `$1${esc(title)}$2`)
+    .replace(/(<meta property="og:description" content=")[^"]*(")/, `$1${esc(a.desc.slice(0, 155))}$2`)
+    .replace(/(<meta property="og:url" content=")[^"]*(")/, `$1${canonical}$2`)
+    .replace("</head>", `  <link rel="canonical" href="${canonical}">\n  <script type="application/ld+json">${ld}</script>\n  </head>`)
+    .replace(/(<div id="root">)(<\/div>)/, `$1${body}$2`));
+  guideCount++;
+}
+
 /* 소식·트렌드 랜딩 /news/ — platform_news(0027) 피드의 SEO 진입점.
  * 소식 자체는 서버(동적)라 빌드 시점엔 없으므로, 랜딩은 상록(evergreen) 셸:
  * 피드 설명 + 분야 허브 링크 + SPA 피드(?view=news) 링크. 실제 항목은 클라이언트가 하이드레이션. */
@@ -250,6 +309,7 @@ fs.writeFileSync(path.join(DIST, "404.html"), template
   <h1>📰 플랫폼·AI 도구 소식·트렌드</h1>
   <p>세모플에 등재된 한국 비즈니스 플랫폼·AI 도구의 최근 소식을 한곳에 모았습니다. 등재 플랫폼 관련 외부 매체 기사를 최신순으로 정리해, 관심 분야의 변화를 놓치지 않도록 돕습니다.</p>
   <p><a href="${BASE}?view=news">→ 최신 소식 피드 보기</a></p>
+  ${Object.keys(ARTICLES).length ? `<h2>세모플 가이드</h2><ul>${Object.entries(ARTICLES).map(([slug, a]) => `<li><a href="${BASE}guide/${slug}/">${esc(a.title)}</a> — ${esc(a.desc.slice(0, 90))}…</li>`).join("")}</ul>` : ""}
   <h2>분야별로 살펴보기</h2>
   <ul>${data.categories.map((c) => `<li><a href="${BASE}c/${c.id}/">${esc(c.icon)} ${esc(c.name)}</a> — ${esc(c.desc)}</li>`).join("")}</ul>
   <p class="foot-desc">각 소식은 외부 매체 기사 링크이며, 내용은 각 매체 책임이자 세모플의 평가·추천이 아닙니다.</p>
@@ -274,6 +334,7 @@ const staticUrls = ["", "?view=partners", "?view=exchange", "?view=ai-finder", "
 const urls = [
   ...staticUrls.map((u) => ({ loc: `${SITE}/${u}`, lastmod: today })),
   { loc: `${SITE}/news/`, lastmod: today }, // 소식 랜딩(자주 갱신 — today)
+  ...Object.entries(ARTICLES).map(([slug, a]) => ({ loc: `${SITE}/guide/${slug}/`, lastmod: a.date })),
   ...data.categories.map((c) => ({ loc: `${SITE}/c/${c.id}/`, lastmod: today })),
   ...[...cmpIds].map((id) => ({ loc: `${SITE}/c/${id}/compare/`, lastmod: today })),
   ...data.platforms.map((p) => ({ loc: `${SITE}/p/${p.id}/`, lastmod: p.new ? today : null })),
@@ -299,6 +360,14 @@ const feedXml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
   `<description>세모플에 새로 추가된 한국 비즈니스 플랫폼·AI 도구</description>\n` +
   `<language>ko</language>\n<lastBuildDate>${nowUtc}</lastBuildDate>\n` +
   `<atom:link xmlns:atom="http://www.w3.org/2005/Atom" href="${SITE}/feed.xml" rel="self" type="application/rss+xml"/>\n` +
+  // 편집 가이드 발행분(재크롤 신호 + 구독 유입) — 신규 플랫폼 항목 앞에 배치
+  Object.entries(ARTICLES).map(([slug, a]) => {
+    const d = new Date(a.date);
+    return `<item><title>${esc(`[가이드] ${a.title}`)}</title><link>${SITE}/guide/${slug}/</link>` +
+      `<guid isPermaLink="true">${SITE}/guide/${slug}/</guid>` +
+      `<description>${esc(a.desc)}</description>` +
+      `<pubDate>${isNaN(d.getTime()) ? nowUtc : d.toUTCString()}</pubDate></item>`;
+  }).join("\n") + "\n" +
   feedList.map((p) => {
     const cat = catById.get(p.category);
     return `<item><title>${esc(p.name)}</title><link>${SITE}/p/${p.id}/</link>` +
@@ -309,4 +378,4 @@ const feedXml = `<?xml version="1.0" encoding="UTF-8"?>\n` +
   `\n</channel></rss>\n`;
 fs.writeFileSync(path.join(DIST, "feed.xml"), feedXml);
 
-console.log(`프리렌더 상세 ${count}p + 분야 허브 ${catCount}p + 비교표 ${cmpCount}p + sitemap(${urls.length} URL) + feed.xml(${feedList.length}) + robots.txt 생성`);
+console.log(`프리렌더 상세 ${count}p + 분야 허브 ${catCount}p + 비교표 ${cmpCount}p + 가이드 ${guideCount}p + sitemap(${urls.length} URL) + feed.xml(${feedList.length}) + robots.txt 생성`);
