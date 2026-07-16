@@ -5351,6 +5351,554 @@
     "gommark": {
       "name": "Gommark (곰마크)",
       "blurb": "Agency service for online trademark and patent registration."
+    },
+    "npremium": {
+      "name": "Naver Premium Content (네이버 프리미엄콘텐츠)",
+      "blurb": "Naver's platform for publishing and selling paid subscription content."
+    },
+    "class101": {
+      "name": "CLASS101 (클래스101)",
+      "blurb": "Platform where creators produce and sell online classes."
+    },
+    "brunch": {
+      "name": "Brunch Story (브런치스토리)",
+      "blurb": "Kakao's writing platform for publishing essays and building an author career."
+    },
+    "youtube": {
+      "name": "YouTube (유튜브)",
+      "blurb": "Global video platform for publishing content and monetizing through ads."
+    },
+    "inflearn": {
+      "name": "Inflearn (인프런)",
+      "blurb": "Online course marketplace for development, design, and job skills."
+    },
+    "fastcampus": {
+      "name": "Fast Campus (패스트캠퍼스)",
+      "blurb": "Premium online courses and bootcamp-style programs for professionals."
+    },
+    "naverwebtoon": {
+      "name": "Naver Webtoon (네이버웹툰)",
+      "blurb": "Korea's largest webtoon serialization platform."
+    },
+    "kakaopage": {
+      "name": "Kakao Page (카카오페이지)",
+      "blurb": "Serialization platform for webtoons and web novels with paid reading."
+    },
+    "udemy": {
+      "name": "Udemy (유데미)",
+      "blurb": "Global online course marketplace where anyone can create and sell courses."
+    },
+    "edu": {
+      "name": "goorm EDU (구름EDU)",
+      "blurb": "IT and coding education platform with cloud-based hands-on practice."
+    },
+    "codeit": {
+      "name": "Codeit (코드잇)",
+      "blurb": "Subscription programming and data courses plus bootcamps."
+    },
+    "nomadcoders": {
+      "name": "Nomad Coders (노마드코더)",
+      "blurb": "Practical development courses and challenges built on clone coding."
+    },
+    "spartaclub": {
+      "name": "Sparta Coding Club (스파르타코딩클럽)",
+      "blurb": "IT education platform with bootcamps and online coding courses."
+    },
+    "coloso": {
+      "name": "Coloso (콜로소)",
+      "blurb": "VOD course platform taught by working industry professionals."
+    },
+    "liveklass": {
+      "name": "LiveKlass (라이브클래스)",
+      "blurb": "All-in-one platform for knowledge creators to open and sell VOD classes."
+    },
+    "learnit": {
+      "name": "Learnit (러닛)",
+      "blurb": "Flipped-learning online courses for programming and IT."
+    },
+    "classu": {
+      "name": "ClassU (클래스유)",
+      "blurb": "Online class marketplace for hobbies and practical skills."
+    },
+    "bearu": {
+      "name": "Bearu (베어유)",
+      "blurb": "Online class service for career and practical skills."
+    },
+    "elice": {
+      "name": "Elice (엘리스)",
+      "blurb": "Edtech for AI-powered hands-on coding education and bootcamps."
+    },
+    "postype": {
+      "name": "Postype (포스타입)",
+      "blurb": "Community platform where creators sell content, take support, and run memberships."
+    },
+    "ridibooks": {
+      "name": "Ridi (리디)",
+      "blurb": "Content platform for e-books, web novels, and webtoons."
+    },
+    "munpia": {
+      "name": "Munpia (문피아)",
+      "blurb": "Web novel platform centered on serialization and monetization."
+    },
+    "joara": {
+      "name": "Joara (조아라)",
+      "blurb": "Web novel serialization platform for amateur and professional writers."
+    },
+    "novelpia": {
+      "name": "Novelpia (노벨피아)",
+      "blurb": "Platform for serializing and monetizing web novels."
+    },
+    "emoticonstudio": {
+      "name": "Kakao Emoticon Studio (카카오 이모티콘 스튜디오)",
+      "blurb": "Creator platform for proposing, launching, and selling Kakao emoticons."
+    },
+    "toonation": {
+      "name": "Toonation (투네이션)",
+      "blurb": "Donation platform for streamers and creators."
+    },
+    "fanding": {
+      "name": "Fanding (팬딩)",
+      "blurb": "Subscription-based creator support and membership platform."
+    },
+    "twip": {
+      "name": "Twip (트윕)",
+      "blurb": "Donation tool platform for live streamers."
+    },
+    "sooplive": {
+      "name": "SOOP (숲)",
+      "blurb": "Donation-based live streaming platform, formerly AfreecaTV."
+    },
+    "chzzk": {
+      "name": "Chzzk (치지직)",
+      "blurb": "Naver's game-focused live streaming platform with viewer donations."
+    },
+    "patreon": {
+      "name": "Patreon (패트리온)",
+      "blurb": "Global platform for recurring fan subscriptions supporting creators."
+    },
+    "welaaa": {
+      "name": "Welaaa (윌라)",
+      "blurb": "Subscription audio platform for audiobooks and lectures."
+    },
+    "millie": {
+      "name": "Millie's Library (밀리의 서재)",
+      "blurb": "Unlimited subscription platform for e-books and audiobooks."
+    },
+    "podbbang": {
+      "name": "Podbbang (팟빵)",
+      "blurb": "Audio and podcast platform monetized through ads and listener support."
+    },
+    "audioclip": {
+      "name": "Naver Audioclip (네이버 오디오클립)",
+      "blurb": "Audio content platform built on subscriptions and plays."
+    },
+    "mildang": {
+      "name": "Mildang PT (밀당PT)",
+      "blurb": "One-on-one online tutoring service personalized by AI analysis."
+    },
+    "kr3": {
+      "name": "Santa (산타)",
+      "blurb": "AI adaptive TOEIC learning app."
+    },
+    "yanadoo": {
+      "name": "Yanadoo (야나두)",
+      "blurb": "Online English conversation program built around ten minutes a day."
+    },
+    "siwonschool": {
+      "name": "Siwonschool (시원스쿨)",
+      "blurb": "Online lecture platform centered on English and foreign languages."
+    },
+    "hackers": {
+      "name": "Hackers (해커스)",
+      "blurb": "Online courses for language exams like TOEIC and TOEFL."
+    },
+    "eduwill": {
+      "name": "Eduwill (에듀윌)",
+      "blurb": "Online courses for real-estate agent, civil-service, and certification exams."
+    },
+    "megastudy": {
+      "name": "Megastudy (메가스터디)",
+      "blurb": "Online lecture platform for suneung and college admissions."
+    },
+    "etoos": {
+      "name": "Etoos (이투스)",
+      "blurb": "Subscription online lecture site for high school and college admissions."
+    },
+    "classting": {
+      "name": "Classting (클래스팅)",
+      "blurb": "Education platform for class management and AI-personalized learning."
+    },
+    "tutoring": {
+      "name": "Lingora (링고라)",
+      "blurb": "One-on-one native-speaker conversation and AI language learning app."
+    },
+    "stibee": {
+      "name": "Stibee (스티비)",
+      "blurb": "Korean newsletter publishing and subscriber management platform with paid subscriptions."
+    },
+    "maily": {
+      "name": "Maily (메일리)",
+      "blurb": "Newsletter platform supporting membership-based paid content."
+    },
+    "airklass": {
+      "name": "AirKlass (에어클래스)",
+      "blurb": "Online course platform where instructors open and sell classes."
+    },
+    "pozalabs": {
+      "name": "Pozalabs (포자랩스)",
+      "blurb": "Music platform producing and distributing copyright-safe AI-generated background music."
+    },
+    "britg": {
+      "name": "BritG (브릿G)",
+      "blurb": "Platform for freely serializing and selling fiction across genres."
+    },
+    "ctee": {
+      "name": "Ctee (크티)",
+      "blurb": "Emerging creator monetization platform supporting memberships, support, and product sales."
+    },
+    "fancimm": {
+      "name": "Fancim M (팬심M)",
+      "blurb": "Fandom monetization platform brokering private creator-fan chats, support, and goods."
+    },
+    "litt": {
+      "name": "Litt.ly (리틀리)",
+      "blurb": "All-in-one profile link service with creator monetization features like support and commerce."
+    },
+    "carat": {
+      "name": "Carat (캐럿)",
+      "blurb": "AI content-creation agent by Parat generating text, images, video, and audio through chat."
+    },
+    "gazet": {
+      "name": "Gazet (가제트)",
+      "blurb": "Generative AI writing tool specialized in Korean for blogs and ad copy."
+    },
+    "musia": {
+      "name": "MUSIA (뮤지아)",
+      "blurb": "AI composition service by CreativeMind for writing and editing music without musical training."
+    },
+    "fikad": {
+      "name": "Pika Clip (피카클립)",
+      "blurb": "Service by Daejeon startup Picadi that auto-converts long videos into multiple short-form clips with AI."
+    },
+    "toonda": {
+      "name": "Toonda (툰다)",
+      "blurb": "Webtoon creation tool by Conpapa supporting script and drawing storyboards and lettering."
+    },
+    "ploonet": {
+      "name": "Ploonet (플루닛)",
+      "blurb": "AI content company providing virtual humans and video production with generative AI."
+    },
+    "lezhin": {
+      "name": "Lezhin Comics (레진코믹스)",
+      "blurb": "Webtoon platform built on a paid-content model."
+    },
+    "muzeplatform": {
+      "name": "Muze Platform (뮤즈플랫폼)",
+      "blurb": "Platform distributing music to domestic and international services."
+    },
+    "learningspoons": {
+      "name": "Learning Spoons (러닝스푼즈)",
+      "blurb": "Job-skills education platform covering data, marketing, and finance."
+    },
+    "programmers": {
+      "name": "Programmers (프로그래머스)",
+      "blurb": "Developer platform for coding tests and job-focused dev courses."
+    },
+    "wecode": {
+      "name": "Wecode (위코드)",
+      "blurb": "Coding bootcamp training software developers."
+    },
+    "supercoding": {
+      "name": "Supercoding (슈퍼코딩)",
+      "blurb": "Managed coding bootcamp platform focused on developer job placement."
+    },
+    "speak": {
+      "name": "Speak (스픽)",
+      "blurb": "English speaking practice app built on AI speech recognition."
+    },
+    "cambly": {
+      "name": "Cambly (캠블리)",
+      "blurb": "One-on-one video English conversation platform with native speakers."
+    },
+    "ringleplus": {
+      "name": "Ringle (링글)",
+      "blurb": "One-on-one video English and AI speaking platform with native tutors."
+    },
+    "ebsi": {
+      "name": "EBSi (EBSi)",
+      "blurb": "Korea's flagship online lecture platform for high school students."
+    },
+    "farmdy": {
+      "name": "Farmdy (팜디)",
+      "blurb": "All-in-one farming app with AI pest analysis and farm journals."
+    },
+    "tpirates": {
+      "name": "The Pirates (인어교주해적단)",
+      "blurb": "App with same-day market data and seafood information from fish markets nationwide."
+    },
+    "baroinfo": {
+      "name": "Baroinfo (바로정보)",
+      "blurb": "Comprehensive information on local-food direct outlets and farm-direct trade."
+    },
+    "gigs": {
+      "name": "OP.GG Gigs (OP.GG Gigs)",
+      "blurb": "Game coaching and lecture platform for titles like LoL and Valorant."
+    },
+    "lolcoach": {
+      "name": "LoL Coach Me (롤코치미)",
+      "blurb": "One-on-one coaching service for League of Legends."
+    },
+    "monthlytoy": {
+      "name": "Monthly Toy (월간토이)",
+      "blurb": "Hobby subscription delivering a new hobby kit every month."
+    },
+    "tranggle": {
+      "name": "Tranggle (트랭글)",
+      "blurb": "GPS tracking and badge community for hiking and cycling."
+    },
+    "apple": {
+      "name": "Rambler (램블러)",
+      "blurb": "Community for recording hiking and walking routes with photo markers."
+    },
+    "previewapp": {
+      "name": "Preview (프리뷰)",
+      "blurb": "Consultation app simulating semi-permanent brow and lip makeup."
+    },
+    "meemong": {
+      "name": "Meemong (미몽)",
+      "blurb": "Platform matching hair consulting and hair models."
+    },
+    "groomingjok": {
+      "name": "Groomingjok (그루밍족)",
+      "blurb": "Community app for men's cosmetic procedure information."
+    },
+    "airkorea": {
+      "name": "AirKorea (에어코리아)",
+      "blurb": "Real-time fine dust and air quality information service."
+    },
+    "pp": {
+      "name": "KEPCO Power Planner (한전 파워플래너)",
+      "blurb": "App for checking real-time electricity usage to save energy."
+    },
+    "solarplay": {
+      "name": "Solarplay (솔라플레이)",
+      "blurb": "Real-time monitoring for solar power plant generation."
+    },
+    "lasee": {
+      "name": "Lasee (라씨)",
+      "blurb": "Monitoring app for solar generation status and anomaly alerts."
+    },
+    "tving": {
+      "name": "TVING (티빙)",
+      "blurb": "Major Korean OTT under CJ ENM featuring tvN and JTBC content."
+    },
+    "wavve": {
+      "name": "Wavve (웨이브)",
+      "blurb": "OTT joint venture of Korea's terrestrial broadcasters and SK, strong in broadcast content."
+    },
+    "watcha": {
+      "name": "Watcha (왓챠)",
+      "blurb": "Recommendation-driven movie and drama OTT for film enthusiasts."
+    },
+    "coupangplay": {
+      "name": "Coupang Play (쿠팡플레이)",
+      "blurb": "Coupang's OTT with sports and original content."
+    },
+    "laftel": {
+      "name": "Laftel (라프텔)",
+      "blurb": "Streaming OTT specializing in animation."
+    },
+    "vigloo": {
+      "name": "Vigloo (비글루)",
+      "blurb": "Global short-form drama platform."
+    },
+    "dramaboxapp": {
+      "name": "DramaBox (드라마박스)",
+      "blurb": "Short-form drama streaming app."
+    },
+    "audiocomics": {
+      "name": "Audiocomics (오디오코믹스)",
+      "blurb": "Audio drama platform based on webtoons and web novels."
+    },
+    "download": {
+      "name": "SleepQ (슬립큐)",
+      "blurb": "MFDS-approved digital therapeutic app for insomnia."
+    },
+    "lasikhelp": {
+      "name": "Lasik Help (라식헬프)",
+      "blurb": "Service comparing LASIK and LASEK information and partner clinic events."
+    },
+    "kormedi": {
+      "name": "Kormedi (코메디닷컴)",
+      "blurb": "Media platform for health and medical information content."
+    },
+    "uhakplanner": {
+      "name": "Uhak Planner (유학플래너닷컴)",
+      "blurb": "Study-abroad consulting specializing in early study and overseas universities."
+    },
+    "uhakpeople": {
+      "name": "Uhak People (유학피플)",
+      "blurb": "Portal for study abroad, language training, and early study information."
+    },
+    "edmuhak": {
+      "name": "edm Uhak Center (edm유학센터)",
+      "blurb": "Comparison of language schools and programs by country with reviews."
+    },
+    "coei": {
+      "name": "Jongno Uhakwon (종로유학원)",
+      "blurb": "Full-service agency for language training, degree study, and early study abroad."
+    },
+    "megagong": {
+      "name": "Next Gongmuwon (넥스트공무원)",
+      "blurb": "Online lectures for civil-service exams with pass-based reward programs."
+    },
+    "egosi": {
+      "name": "Hackers Gongmuwon (해커스공무원)",
+      "blurb": "Online lectures and exam information for civil-service tests."
+    },
+    "edumegong": {
+      "name": "Edugong (에듀공)",
+      "blurb": "Online lectures and textbooks for civil-service, police, and firefighter exams."
+    },
+    "modoogong": {
+      "name": "Modoogong (모두공)",
+      "blurb": "Civil-service exam lectures with managed study-volume coaching."
+    },
+    "passdong": {
+      "name": "Jagyeokdong School (자격동스쿨)",
+      "blurb": "Self-study online lecture platform for certifications."
+    },
+    "llo": {
+      "name": "Korea Lifelong Education Institute (한국자격평생교육원)",
+      "blurb": "Online certification courses for counseling and instructor licenses."
+    },
+    "studylive": {
+      "name": "Study Live (스터디라이브)",
+      "blurb": "24-hour real-time webcam study rooms online."
+    },
+    "gongzakso": {
+      "name": "Gongzakso (공작소)",
+      "blurb": "App for recruiting and managing online study groups."
+    },
+    "wadiz": {
+      "name": "Wadiz (와디즈)",
+      "blurb": "Korea's largest crowdfunding platform covering both reward and investment funding."
+    },
+    "tumblbug": {
+      "name": "Tumblbug (텀블벅)",
+      "blurb": "Reward crowdfunding centered on creative and content projects."
+    },
+    "ohmycompany": {
+      "name": "Ohmycompany (오마이컴퍼니)",
+      "blurb": "Crowdfunding for social-impact projects, including securities-type campaigns."
+    },
+    "crowdy": {
+      "name": "Crowdy (크라우디)",
+      "blurb": "Crowdfunding platform specializing in securities-type investment campaigns."
+    },
+    "happybean": {
+      "name": "Happybean Funding (해피빈 펀딩)",
+      "blurb": "Naver-based donation and public-interest funding."
+    },
+    "kickstarter": {
+      "name": "Kickstarter (킥스타터)",
+      "blurb": "Global reward crowdfunding strong in hardware and games; direct Korean campaigns unsupported."
+    },
+    "funding4u": {
+      "name": "Funding4U (펀딩포유)",
+      "blurb": "Securities-type crowdfunding brokerage for unlisted companies."
+    },
+    "crowdin": {
+      "name": "Goodfunding (굿펀딩)",
+      "blurb": "Crowdfunding for youth ventures and social enterprises in donation and investment forms."
+    },
+    "benefitplus": {
+      "name": "Benefit Plus (비플러스)",
+      "blurb": "Impact-lending platform funding small businesses and social ventures."
+    },
+    "otrade": {
+      "name": "Opentrade (오픈트레이드)",
+      "blurb": "Equity crowdfunding platform for unlisted companies."
+    },
+    "indiegogo": {
+      "name": "Indiegogo (인디고고)",
+      "blurb": "Global reward crowdfunding site."
+    },
+    "kasa": {
+      "name": "Kasa (카사)",
+      "blurb": "Fractional investment platform for commercial real-estate beneficiary certificates."
+    },
+    "funble": {
+      "name": "Funble (펀블)",
+      "blurb": "Blockchain-based fractional real-estate investment service."
+    },
+    "sou": {
+      "name": "SOU (소유)",
+      "blurb": "Token-securities fractional real-estate investment platform with monthly distributions."
+    },
+    "together": {
+      "name": "Together Funding (투게더펀딩)",
+      "blurb": "P2P lending investment centered on real-estate-backed loans."
+    },
+    "musicow": {
+      "name": "Musicow (뮤직카우)",
+      "blurb": "Fractional investment platform for music royalty beneficiary certificates."
+    },
+    "weshareart": {
+      "name": "Art Together (아트투게더)",
+      "blurb": "Fractional investment platform for art investment-contract securities."
+    },
+    "tessa": {
+      "name": "Tessa (테사)",
+      "blurb": "Fractional investment platform for blue-chip artworks."
+    },
+    "8percent": {
+      "name": "8percent (8퍼센트)",
+      "blurb": "P2P lending investment brokering personal and business credit loans."
+    },
+    "funderful": {
+      "name": "Funderful (펀더풀)",
+      "blurb": "K-content investment platform for backing individual film, drama, and performance projects."
+    },
+    "fundingplay": {
+      "name": "Funding Play (펀딩플레이)",
+      "blurb": "Funding platform specializing in K-content IP projects like dramas, films, webtoons, and music."
+    },
+    "withmix": {
+      "name": "Withmix (위드믹스)",
+      "blurb": "Goods crowdfunding platform supporting streamer and creator merchandise projects."
+    },
+    "runfunding": {
+      "name": "Run Crowdfunding (런크라우드펀딩)",
+      "blurb": "General crowdfunding platform spanning reward, donation, and investment campaigns."
+    },
+    "honestfund": {
+      "name": "Honest Fund (어니스트펀드)",
+      "blurb": "P2P investment and lending platform built on AI credit analysis."
+    },
+    "thedirectdonation": {
+      "name": "Gotjang Gibu (곧장기부)",
+      "blurb": "Direct donation platform delivering contributions to recipients in full."
+    },
+    "ilovegohyang": {
+      "name": "Gohyang Sarang e-eum (고향사랑e음)",
+      "blurb": "Official online platform for hometown-love donations and thank-you gifts."
+    },
+    "socialfunch": {
+      "name": "Social Funch (소셜펀치)",
+      "blurb": "Crowdfunding for human-rights, environmental, and labor movements."
+    },
+    "crowdnet": {
+      "name": "Crowdnet (크라우드넷)",
+      "blurb": "Official portal providing information on securities-type crowdfunding."
+    },
+    "greenfund": {
+      "name": "Green Fund (환경재단 그린펀드)",
+      "blurb": "Korea Green Foundation platform collecting environmental campaign donations."
+    },
+    "sharencare": {
+      "name": "Share&Care (쉐어앤케어)",
+      "blurb": "Social platform where companies donate on behalf of users who share content."
     }
   }
 }
