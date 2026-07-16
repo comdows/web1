@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0"><channel>
+  <title>GeekNews</title>
+  <item>
+    <title>사이드프로젝트로 만든 회의실 예약 서비스 '미팅룸나우' 공개</title>
+    <link>https://news.hada.io/topic?id=99001</link>
+    <description>공유오피스·회의실을 시간 단위로 예약하는 서비스를 만들어 공개했습니다.</description>
+    <pubDate>Tue, 14 Jul 2026 04:00:00 GMT</pubDate>
+  </item>
+  <item>
+    <title>Rust 1.90 릴리스 노트 정리</title>
+    <link>https://news.hada.io/topic?id=99002</link>
+    <description>언어 릴리스 소식이라 koLaunch 필터에 걸러져야 하는 항목.</description>
+    <pubDate>Mon, 13 Jul 2026 04:00:00 GMT</pubDate>
+  </item>
+</channel></rss>

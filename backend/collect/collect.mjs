@@ -151,6 +151,26 @@ const SOURCES = [
     koLaunch: true,
     directUrl: false,
   },
+  // ── 국내 제품 커뮤니티 — 언론을 거치지 않는 메이커 런칭 포착 ──
+  {
+    id: "geeknews",
+    label: "GeekNews (국내 기술 커뮤니티)",
+    url: "https://news.hada.io/rss/news",
+    fixture: "geeknews.xml",
+    region: "domestic",
+    parse: parseRss,
+    koLaunch: true, // 출시·공개성 항목만(비제품 뉴스는 AI 보강 is_platform 판정·검수에서 걸러짐)
+    directUrl: false, // 링크가 토픽 페이지
+  },
+  {
+    id: "disquiet",
+    label: "디스콰이엇 (국내 프로덕트 커뮤니티)",
+    url: "https://disquiet.io/rss",
+    fixture: "disquiet.xml",
+    region: "domestic",
+    parse: parseRss,
+    directUrl: false, // 피드 실존 미확인(프록시 제한) — 첫 실행에서 죽어 있으면 제거 예정, 개별 실패는 런에 무해
+  },
   // ── 국내 비언론 보강: 구글뉴스 검색 RSS — 특정 매체에 안 실린 출시 소식도 포착(기사 URL이라 directUrl:false) ──
   {
     id: "gnews-service",

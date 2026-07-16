@@ -1,0 +1,5 @@
+[
+  { "id": "coupang", "name": "쿠팡", "category_id": "openmarket", "region": "domestic", "url": "https://www.coupang.com", "blurb": "이미 시드에 있는 항목(차집합에서 제외돼야 함)", "is_new": false },
+  { "id": "newpet-example", "name": "뉴펫예시", "category_id": "pet", "region": "domestic", "url": "https://newpet.example.kr", "blurb": "반려동물 돌봄 매칭 예시 서비스.", "is_new": true },
+  { "id": "newsaas-example", "name": "NewSaaS", "category_id": "ai_auto", "region": "overseas", "url": "https://newsaas.example.com", "blurb": "업무 자동화 AI 에이전트 예시 도구.", "is_new": true }
+]
