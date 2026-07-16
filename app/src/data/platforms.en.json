@@ -208,6 +208,14 @@
     }
   },
   "platforms": {
+    "1365": {
+      "name": "1365 Volunteer Portal (1365 자원봉사포털)",
+      "blurb": "Korea's official portal for searching, applying for, and tracking volunteer activities nationwide."
+    },
+    "24242424": {
+      "name": "Hwamulman (화물맨)",
+      "blurb": "Freight brokerage platform connecting shippers with truck drivers for cargo and quick-courier jobs."
+    },
     "coupang": {
       "name": "Coupang (쿠팡)",
       "blurb": "Major Korean e-commerce marketplace known for its Rocket Delivery next-day logistics network, covering nearly all product categories."
@@ -543,10 +551,6 @@
     "apps8": {
       "name": "Somunnan Shop (소문난샵)",
       "blurb": "Delivery and pickup app for local small businesses, linked with public delivery programs."
-    },
-    "24242424": {
-      "name": "Hwamulman (화물맨)",
-      "blurb": "Freight brokerage platform connecting shippers with truck drivers for cargo and quick-courier jobs."
     },
     "gogox": {
       "name": "GoGoX (고고엑스)",
@@ -2568,10 +2572,6 @@
       "name": "Donation Box (도네이션박스)",
       "blurb": "An online fundraising service for NGOs to manage donors and run donation campaigns."
     },
-    "1365": {
-      "name": "1365 Volunteer Portal (1365 자원봉사포털)",
-      "blurb": "Korea's official portal for searching, applying for, and tracking volunteer activities nationwide."
-    },
     "vms": {
       "name": "VMS Social Welfare Volunteering (VMS 사회복지자원봉사)",
       "blurb": "A system for recruiting and certifying volunteers in Korea's social welfare sector."
@@ -2623,6 +2623,622 @@
     "incheoneum2": {
       "name": "Incheon e-Eum (인천e음)",
       "blurb": "Incheon's local currency card offering cashback at participating neighborhood merchants."
+    },
+    "yanolja": {
+      "name": "Yanolja (야놀자)",
+      "blurb": "One of Korea's largest travel and leisure booking platforms, covering hotels, motels, pensions, and activity tickets."
+    },
+    "goodchoice": {
+      "name": "Yeogi Eottae (여기어때)",
+      "blurb": "Major Korean accommodation and leisure booking app for hotels, pensions, resorts, and local activities."
+    },
+    "airbnb": {
+      "name": "Airbnb (에어비앤비)",
+      "blurb": "Global home-sharing platform where hosts list private stays and experiences; widely used in Korea for guesthouses and unique stays."
+    },
+    "spacecloud": {
+      "name": "SpaceCloud (스페이스클라우드)",
+      "blurb": "Hourly space rental marketplace for meeting rooms, practice studios, party rooms, and filming locations across Korea."
+    },
+    "catchtable": {
+      "name": "CatchTable (캐치테이블)",
+      "blurb": "Korea's leading restaurant reservation and waitlist platform, connecting diners with popular restaurants."
+    },
+    "myrealtrip": {
+      "name": "MyRealTrip (마이리얼트립)",
+      "blurb": "Korean travel platform for tours, local guides, activities, flights, and accommodation bookings worldwide."
+    },
+    "klook": {
+      "name": "Klook (클룩)",
+      "blurb": "Asia-focused travel activity platform for attraction tickets, tours, transport passes, and experiences."
+    },
+    "agoda": {
+      "name": "Agoda (아고다)",
+      "blurb": "Global online travel agency for hotel and accommodation bookings, particularly strong in Asian destinations."
+    },
+    "booking": {
+      "name": "Booking.com (부킹닷컴)",
+      "blurb": "Global online travel agency listing hotels, guesthouses, and vacation rentals worldwide."
+    },
+    "hotelscombined": {
+      "name": "HotelsCombined (호텔스컴바인)",
+      "blurb": "Hotel metasearch engine that compares room availability across multiple booking sites."
+    },
+    "trivago": {
+      "name": "trivago (트리바고)",
+      "blurb": "Hotel metasearch platform comparing accommodation options across booking sites."
+    },
+    "kr2": {
+      "name": "Trip.com (트립닷컴)",
+      "blurb": "Global online travel platform covering flights, hotels, trains, and tours, operated by Trip.com Group."
+    },
+    "triple": {
+      "name": "Triple (트리플)",
+      "blurb": "Korean travel app with AI itinerary planning plus flight, hotel, and tour booking in one place."
+    },
+    "onlinetour": {
+      "name": "Onlinetour (온라인투어)",
+      "blurb": "Korean online travel agency selling flights, package tours, and hotel bookings."
+    },
+    "mtour": {
+      "name": "Wemakeprice Travel & Leisure (위메프 여행레저)",
+      "blurb": "Travel and leisure deals channel of Wemakeprice covering accommodation, tours, and activity tickets."
+    },
+    "waug": {
+      "name": "WAUG (와그)",
+      "blurb": "Korean travel platform for attraction tickets, activities, and tours at home and abroad."
+    },
+    "frip": {
+      "name": "Frip (프립)",
+      "blurb": "Korean leisure platform where hosts run hobby classes, outdoor activities, and social gatherings."
+    },
+    "stayfolio": {
+      "name": "Stayfolio (스테이폴리오)",
+      "blurb": "Curated booking platform for design-focused boutique stays and unique accommodations in Korea."
+    },
+    "livinginhotel": {
+      "name": "Living in Hotel (호텔에삶)",
+      "blurb": "Korean platform for month-long hotel and residence stays, brokering long-term room packages."
+    },
+    "wehome": {
+      "name": "Wehome (위홈)",
+      "blurb": "Korean home-sharing platform for homestays and private stays, operating under Korea's shared-lodging regulations."
+    },
+    "hourplace": {
+      "name": "hourplace (아워플레이스)",
+      "blurb": "Hourly rental marketplace for filming studios and photogenic spaces used in shoots and content production."
+    },
+    "shareit": {
+      "name": "Shareit (쉐어잇)",
+      "blurb": "Space rental marketplace for pop-ups, workshops, and gatherings across Korea."
+    },
+    "moim": {
+      "name": "TOZ (토즈)",
+      "blurb": "Korean meeting-space brand offering bookable meeting rooms, study rooms, and event spaces."
+    },
+    "camfit": {
+      "name": "Camfit (캠핏)",
+      "blurb": "Real-time booking platform for campsites, glamping, and car-camping spots across Korea."
+    },
+    "thankqcamping": {
+      "name": "ThankQ Camping (땡큐캠핑)",
+      "blurb": "Korean campsite booking service with real-time availability and camper reviews."
+    },
+    "tabling": {
+      "name": "Tabling (테이블링)",
+      "blurb": "Remote waitlist and reservation platform for popular restaurants in Korea."
+    },
+    "home2": {
+      "name": "NOW WAITING (나우웨이팅)",
+      "blurb": "Store waitlist and reservation management platform used by restaurants and retail venues in Korea."
+    },
+    "onoffmix": {
+      "name": "OnOffMix (온오프믹스)",
+      "blurb": "Korean event platform for creating and joining seminars, meetups, and conferences."
+    },
+    "camperest": {
+      "name": "Camperest (캠퍼레스트)",
+      "blurb": "All-in-one camping app launched in 2024 with campsite booking, camping diaries, and AI-based campsite recommendations."
+    },
+    "cambak": {
+      "name": "Cambak (캠박)",
+      "blurb": "Korean vertical platform connecting campervan rental companies with travelers for car-camping trips."
+    },
+    "yomo": {
+      "name": "YOMO (요모)",
+      "blurb": "Private travel concierge platform matching local travel experts with customers for custom itineraries."
+    },
+    "popply": {
+      "name": "Popply (팝플리)",
+      "blurb": "Pop-up store platform covering discovery, space rental, and venue matching for brand events in Korea."
+    },
+    "hanintel": {
+      "name": "Hanintel (하닌텔)",
+      "blurb": "Booking platform for Korean-run guesthouses and homestays around the world."
+    },
+    "campingtalk": {
+      "name": "CampingTalk (캠핑톡)",
+      "blurb": "Korean camping booking platform for auto camping, glamping, caravans, and pensions."
+    },
+    "realground": {
+      "name": "RealGround (리얼그라운드)",
+      "blurb": "Campsite and glamping booking service that lets users preview sites in VR before reserving."
+    },
+    "oneulbamn": {
+      "name": "Oneulbamen (오늘밤엔)",
+      "blurb": "Real-time booking site for pensions, pool villas, and glamping stays in Korea."
+    },
+    "wowple": {
+      "name": "Wowple (와우플)",
+      "blurb": "Korean space rental marketplace for party rooms, meeting rooms, and studios."
+    },
+    "kmeetingroom": {
+      "name": "Meetingroom.com (회의실닷컴)",
+      "blurb": "Matching service for comparing and booking business meeting rooms in Korea."
+    },
+    "flowoffice": {
+      "name": "Flow Shared Office (플로우 공유오피스)",
+      "blurb": "Brokerage platform specializing in virtual offices and coworking spaces in Korea."
+    },
+    "theowl": {
+      "name": "The Owl's Pantry (부엉이곳간)",
+      "blurb": "Coworking spaces and hourly meeting rooms in Seoul's Mapo, Hongdae, and Hapjeong districts."
+    },
+    "valuevenue": {
+      "name": "Value Venue (가치공간)",
+      "blurb": "Retail-focused space rental and matching platform specializing in pop-up store venues."
+    },
+    "modushare": {
+      "name": "Shopen (쇼픈)",
+      "blurb": "Space matching platform for pop-ups, exhibitions, and filming, organized by use case."
+    },
+    "camplink": {
+      "name": "CampLink (캠프링크)",
+      "blurb": "Campsite booking app with vacancy alerts and camper reviews."
+    },
+    "farmstay": {
+      "name": "Farmstay (팜스테이)",
+      "blurb": "Rural farm-stay booking service run by Nonghyup, offering farm experience programs and lodging."
+    },
+    "welchon": {
+      "name": "Welchon (웰촌)",
+      "blurb": "Korean rural tourism portal for farming and fishing village experience stays."
+    },
+    "studymoa": {
+      "name": "StudyMoa (스터디모아)",
+      "blurb": "Seat reservation app for study cafes and study rooms across Korea."
+    },
+    "apple3": {
+      "name": "Wise Study (와이즈스터디)",
+      "blurb": "Seat reservation service for premium reading rooms and study cafes."
+    },
+    "pickko": {
+      "name": "Pickko (픽코)",
+      "blurb": "Nationwide seat reservation app for study cafes and reading rooms in Korea."
+    },
+    "zaksim": {
+      "name": "Jaksim (작심)",
+      "blurb": "Unmanned study cafe and reading room brand with app-based seat booking and payment."
+    },
+    "gangnamunni": {
+      "name": "Gangnam Unni (강남언니)",
+      "blurb": "Korea's leading cosmetic-procedure platform with treatment information, reviews, and clinic reservations."
+    },
+    "goodoc": {
+      "name": "Goodoc (굿닥)",
+      "blurb": "Korean healthcare app for finding and booking hospitals, clinics, and pharmacies."
+    },
+    "ddocdoc": {
+      "name": "Ddocdoc (똑닥)",
+      "blurb": "Korean app for clinic reservations, check-in, and waiting management, widely used for pediatric visits."
+    },
+    "kakaohair": {
+      "name": "Kakao Hairshop (카카오헤어샵)",
+      "blurb": "Hair salon reservation platform integrated with the Kakao ecosystem."
+    },
+    "yeoshin": {
+      "name": "Yeoshin Ticket (여신티켓)",
+      "blurb": "Korean beauty-treatment platform with dermatology and cosmetic procedure information, reviews, and clinic booking."
+    },
+    "babitalk": {
+      "name": "Babitalk (바비톡)",
+      "blurb": "Cosmetic surgery and skin-treatment community with reviews and clinic reservations."
+    },
+    "modoodoc": {
+      "name": "Modoodoc (모두닥)",
+      "blurb": "Clinic comparison and booking platform built on verified-visit reviews."
+    },
+    "hidoc": {
+      "name": "Hidoc (하이닥)",
+      "blurb": "Korean health portal with doctor Q&A and hospital search."
+    },
+    "doctornow": {
+      "name": "Doctor Now (닥터나우)",
+      "blurb": "Korean telemedicine app for remote consultations, prescriptions, and pharmacy search."
+    },
+    "hospital": {
+      "name": "Fitpet (핏펫)",
+      "blurb": "Pet healthcare platform for finding animal hospitals and managing companion-animal health."
+    },
+    "heally": {
+      "name": "Heally (힐리)",
+      "blurb": "Korean platform for comparing and booking massage shops."
+    },
+    "mamap": {
+      "name": "Massage Map (마사지맵)",
+      "blurb": "Massage shop search and booking app covering shops across Korea."
+    },
+    "makangs": {
+      "name": "Makangs (마캉스)",
+      "blurb": "Booking app for massage, waxing, and aesthetic services."
+    },
+    "fingerprincess": {
+      "name": "Fingerprincess (핑프)",
+      "blurb": "Beauty platform for discovering, booking, and paying for nail-art services."
+    },
+    "pillyze": {
+      "name": "Pillyze (필라이즈)",
+      "blurb": "AI health app for tracking diet, supplements, and blood glucose."
+    },
+    "noom": {
+      "name": "Noom (눔)",
+      "blurb": "Global behavior-change health app coaching diet, exercise, and habits."
+    },
+    "pearlcare": {
+      "name": "Pearlcare (펄케어)",
+      "blurb": "Korean home beauty device brand using RF, EMS, and light therapy for scalp and skin care."
+    },
+    "pesade": {
+      "name": "Pesade (페사드)",
+      "blurb": "Korean niche fragrance and lifestyle brand offering eau de parfum and hand care lines."
+    },
+    "athebeauty": {
+      "name": "ATHE (아떼)",
+      "blurb": "Korean vegan beauty brand making certified vegan skincare and makeup."
+    },
+    "melixir": {
+      "name": "Melixir (멜릭서)",
+      "blurb": "Direct-to-consumer store of Korea's plant-based vegan skincare brand."
+    },
+    "jejuon": {
+      "name": "Jeju On (제주온)",
+      "blurb": "Natural cosmetics brand using organic ingredients from Jeju Island with a vegan focus."
+    },
+    "en": {
+      "name": "Begreen (비그린)",
+      "blurb": "Korean skincare brand positioned around vegan and eco-friendly products."
+    },
+    "nutridday": {
+      "name": "Nutri D-Day (뉴트리디데이)",
+      "blurb": "Direct-to-consumer store for inner-beauty products such as low-molecular fish collagen."
+    },
+    "foodology": {
+      "name": "Foodology (푸드올로지)",
+      "blurb": "Korean D2C brand running inner-beauty and diet food product lines."
+    },
+    "mindle": {
+      "name": "Mindling (마인들링)",
+      "blurb": "Self-guided mental care subscription app by Fortify, founded by a psychiatrist, covering assessments through personalized care programs."
+    },
+    "inside": {
+      "name": "Distancing (디스턴싱)",
+      "blurb": "CBT-based mental health self-assessment and care app operated by Orwell Health, currently serviced as Distancing."
+    },
+    "checkup": {
+      "name": "Chakhan Uisa (착한의사)",
+      "blurb": "Healthcare platform for comparing and booking health checkups and viewing results, run by Viva Innovation."
+    },
+    "checkupmoa": {
+      "name": "Checkup Moa (검진모아)",
+      "blurb": "Korean platform aggregating booking information for comprehensive and national health checkups."
+    },
+    "wellcheck": {
+      "name": "WellCheck (웰체크)",
+      "blurb": "Digital healthcare platform where chronic-disease patients manage blood pressure, glucose, and medication data with clinicians."
+    },
+    "heymama": {
+      "name": "HeyMama (헤이마마)",
+      "blurb": "Femtech service by The Family Lab helping postpartum women recover through remote home-training programs."
+    },
+    "mydoctor": {
+      "name": "My Doctor (나만의닥터)",
+      "blurb": "Korean app for telemedicine, pharmacy search, and hospital reservations."
+    },
+    "platpharm": {
+      "name": "Platpharm (플랫팜)",
+      "blurb": "B2B platform for pharmacies to trade and order pharmaceutical products."
+    },
+    "hihealth": {
+      "name": "Geomjin Hi (검진하이)",
+      "blurb": "Real-time booking platform for comprehensive health checkups in Korea."
+    },
+    "drdiary": {
+      "name": "Dr. Diary (닥터다이어리)",
+      "blurb": "Chronic-condition management app for tracking blood glucose and blood pressure."
+    },
+    "edgc": {
+      "name": "EDGC (이원다이애그노믹스)",
+      "blurb": "Korean bio-healthcare company built on genome testing and analysis."
+    },
+    "pilly": {
+      "name": "Pilly (필리)",
+      "blurb": "Personalized vitamin and supplement subscription service in Korea."
+    },
+    "iamiam": {
+      "name": "IAM (아이엠)",
+      "blurb": "AI-analyzed personalized health supplement subscription service."
+    },
+    "fitamin": {
+      "name": "Fitamin (핏타민)",
+      "blurb": "Supplement subscription service with pharmacist consultations."
+    },
+    "mypetplus": {
+      "name": "MyPetPlus (마이펫플러스)",
+      "blurb": "App for finding and comparing veterinary hospitals in Korea."
+    },
+    "petping": {
+      "name": "Petping (펫핑)",
+      "blurb": "Pet-tech service for smart companion-animal health management."
+    },
+    "mamedene": {
+      "name": "Mamedene (마메드네)",
+      "blurb": "Beauty booking app with AI hair simulation covering salons, nail, and waxing shops."
+    },
+    "gongbiz": {
+      "name": "Gongbiseo (공비서)",
+      "blurb": "Korean beauty-shop booking app comparing nail salons, hair salons, and waxing shops."
+    },
+    "mendlemendle": {
+      "name": "Mendle Mendle (맨들맨들)",
+      "blurb": "Booking platform for waxing, nail, skincare, and lash shops."
+    },
+    "msgtong": {
+      "name": "Matong (마통)",
+      "blurb": "Information and booking platform for massage, aesthetic, and waxing services."
+    },
+    "mimobio": {
+      "name": "Mimo (미모)",
+      "blurb": "Real-time booking platform for professional skincare shops."
+    },
+    "tattooshare": {
+      "name": "Tattoo Share (타투쉐어)",
+      "blurb": "Tattoo matching app with quote comparison and reviews."
+    },
+    "beauty": {
+      "name": "Brave Beauty (용감한뷰티)",
+      "blurb": "Integrated customer and reservation management service for beauty shops."
+    },
+    "dental": {
+      "name": "Dental Wagon (치과웨건)",
+      "blurb": "Site for comparing nearby dental clinics for implants and orthodontics."
+    },
+    "zigbang": {
+      "name": "Zigbang (직방)",
+      "blurb": "Major Korean proptech app for residential listings including studios, officetels, and apartments."
+    },
+    "dabang": {
+      "name": "Dabang (다방)",
+      "blurb": "Korean residential real-estate listing app for rentals and small homes."
+    },
+    "naverland": {
+      "name": "Naver Real Estate (네이버 부동산)",
+      "blurb": "Korea's largest real-estate listing portal with market prices and listings across all property types."
+    },
+    "rsquare": {
+      "name": "RSQUARE (알스퀘어)",
+      "blurb": "B2B commercial real-estate brokerage specializing in office space and corporate leasing."
+    },
+    "ziptoss": {
+      "name": "Ziptoss (집토스)",
+      "blurb": "Korean rental brokerage platform for jeonse and monthly-rent housing."
+    },
+    "nemoapp": {
+      "name": "Nemo (네모)",
+      "blurb": "Commercial real-estate app for retail spaces, offices, and building sales and leases."
+    },
+    "peterpanz": {
+      "name": "Peterpan's Good Room (피터팬의 좋은방 구하기)",
+      "blurb": "Direct peer-to-peer housing listing community for studios and small apartments."
+    },
+    "hogangnono": {
+      "name": "Hogangnono (호갱노노)",
+      "blurb": "Apartment price map built on actual transaction data, with listings and complex comparisons."
+    },
+    "asil": {
+      "name": "Asil (아실)",
+      "blurb": "Apartment analytics service with actual transaction prices, complex comparisons, and investment data."
+    },
+    "disco": {
+      "name": "Disco (디스코)",
+      "blurb": "Map service showing actual transaction prices and registry data for land, buildings, and retail properties."
+    },
+    "valueupmap": {
+      "name": "Value Map (밸류맵)",
+      "blurb": "Map platform for land, building, retail, and factory transaction prices and listings."
+    },
+    "bdsplanet": {
+      "name": "BDS Planet (부동산플래닛)",
+      "blurb": "Real-estate analytics platform covering transaction prices and building-age analysis for land and commercial properties."
+    },
+    "r114": {
+      "name": "R114 (부동산R114)",
+      "blurb": "Long-running real-estate data platform with apartment prices, presale schedules, and listings."
+    },
+    "kbland": {
+      "name": "KB Land (KB부동산)",
+      "blurb": "Real-estate platform by KB Financial Group with KB market prices, transactions, listings, and presale info."
+    },
+    "smatch": {
+      "name": "Smatch (스매치)",
+      "blurb": "Commercial brokerage platform for office, retail, and building leases and sales."
+    },
+    "officefind": {
+      "name": "OfficeFind (오피스파인드)",
+      "blurb": "Data-driven consulting service for office leasing and relocation."
+    },
+    "fastfive": {
+      "name": "FastFive (패스트파이브)",
+      "blurb": "Korea's largest coworking space brand by branch count."
+    },
+    "sparkplus": {
+      "name": "SparkPlus (스파크플러스)",
+      "blurb": "Korean coworking office brand focused on work-optimized spaces near subway stations."
+    },
+    "wework": {
+      "name": "WeWork Korea (위워크 코리아)",
+      "blurb": "Korean branches of the global shared-workspace and office leasing brand."
+    },
+    "regus": {
+      "name": "Regus (리저스)",
+      "blurb": "Global serviced-office and coworking brand operating locations in Korea."
+    },
+    "wecook": {
+      "name": "WECOOK (위쿡)",
+      "blurb": "Shared-kitchen operator leasing production and delivery-focused kitchen spaces."
+    },
+    "nanudakitchen": {
+      "name": "Nanuda Kitchen (나누다키친)",
+      "blurb": "Shared-kitchen brokerage platform built on trade-area analysis."
+    },
+    "jisanlive": {
+      "name": "Jisan Live (지산라이브)",
+      "blurb": "Listing service for knowledge industry centers, retail units, and warehouse leases and sales."
+    },
+    "jumpapp": {
+      "name": "Jump Company (점프컴퍼니)",
+      "blurb": "Brokerage for knowledge industry center and office presales, leases, and sales."
+    },
+    "myfranchise": {
+      "name": "MyFranchise (마이프차)",
+      "blurb": "Franchise comparison platform with revenue data, startup cost comparisons, and trade-area analysis."
+    },
+    "openub": {
+      "name": "OpenUB (오픈업)",
+      "blurb": "AI trade-area analysis platform built on big data for prospective store owners."
+    },
+    "auction1": {
+      "name": "Auction One (옥션원)",
+      "blurb": "Court-auction information and education platform for real-estate auctions."
+    },
+    "ggi": {
+      "name": "GG Auction (지지옥션)",
+      "blurb": "Long-running court auction and public sale information service with rights analysis."
+    },
+    "dooinauction": {
+      "name": "Dooin Auction (두인경매)",
+      "blurb": "Information platform for auctions, public sales, NPLs, and rights analysis."
+    },
+    "thecomenstay": {
+      "name": "Come&Stay (컴앤스테이)",
+      "blurb": "Search and operations platform for monthly shared housing aimed at young adults."
+    },
+    "gobang": {
+      "name": "Gobang (고방)",
+      "blurb": "Housing platform for one-room-tels, share houses, and roommate matching."
+    },
+    "gosi1": {
+      "name": "Gosiwon.net (고시원넷)",
+      "blurb": "Search site for gosiwon, gositel, and one-room-tel listings."
+    },
+    "drapt": {
+      "name": "Dr. Apt (닥터아파트)",
+      "blurb": "Apartment portal covering market prices, presales, and reconstruction news."
+    },
+    "bbric": {
+      "name": "BBRIC (비브릭)",
+      "blurb": "Commercial real-estate fractional investment platform run by Sejong Telecom under Busan's blockchain regulatory sandbox."
+    },
+    "naezipscan": {
+      "name": "Naezip Scan (내집스캔)",
+      "blurb": "AI service that analyzes property registries and landlord data to assess jeonse-fraud risk."
+    },
+    "zippoom": {
+      "name": "Zippoom (집품)",
+      "blurb": "Proptech by Next Ground offering resident-written home reviews and deposit-risk analysis reports."
+    },
+    "dizo": {
+      "name": "Dizo (디조)",
+      "blurb": "Proptech founded by a former Naver Real Estate planner, providing property data and agent profile pages."
+    },
+    "arcadegod": {
+      "name": "Sangga's God (상가의신)",
+      "blurb": "Platform aggregating and comparing commercial property listings for presale, lease, and sale."
+    },
+    "sangga114": {
+      "name": "Sangga114 (상가114)",
+      "blurb": "Retail-property site providing information on new commercial presales."
+    },
+    "imya": {
+      "name": "Imya114 (임야114)",
+      "blurb": "Site listing forest and mountain land for sale with slope and road-access details."
+    },
+    "imya4989": {
+      "name": "Korea Forest Land (한국임야매매닷컴)",
+      "blurb": "Land brokerage site specializing in forest and mountain property sales."
+    },
+    "ddangya": {
+      "name": "Ddangya (땅야)",
+      "blurb": "Service for checking nationwide land transaction prices and trading land listings."
+    },
+    "zoomansa": {
+      "name": "Zoomansa (주만사)",
+      "blurb": "Parking-sharing platform brokering monthly and daily parking in idle spaces."
+    },
+    "bunyangi": {
+      "name": "Bunyang Alrimi (분양알리미)",
+      "blurb": "Service aggregating new apartment presale and subscription schedules with location info."
+    },
+    "gfauction": {
+      "name": "GoodFriend Auction (굿프렌드경매)",
+      "blurb": "Real-estate auction platform with AI rights analysis and winning-bid statistics."
+    },
+    "seeauction": {
+      "name": "Visible Auction (보이는부동산경매)",
+      "blurb": "Auction site providing court auction and public sale listings with rights analysis."
+    },
+    "zipgoai": {
+      "name": "Zipgo Auction (땅집고옥션)",
+      "blurb": "Auction information service using AI to analyze court auction, public sale, and NPL properties."
+    },
+    "building0": {
+      "name": "Bilsanam (빌사남)",
+      "blurb": "Map service for small and mid-sized building transaction prices and listings."
+    },
+    "buildingmeme": {
+      "name": "Building Maemae (빌딩매매닷컴)",
+      "blurb": "Brokerage site for building sales and lease listings."
+    },
+    "archiproperty": {
+      "name": "Archi Property (아키부동산)",
+      "blurb": "Brokerage covering small-building sales and retail and office leasing."
+    },
+    "xnob0bj3f9wty2d24ab95b": {
+      "name": "Factory Networks (공장네트웍스)",
+      "blurb": "Nationwide brokerage platform for factory, warehouse, and logistics-center sales and leases."
+    },
+    "penggo": {
+      "name": "Penggo (펭고)",
+      "blurb": "Brokerage service for leasing and selling ambient, chilled, and frozen warehouses."
+    },
+    "33m2": {
+      "name": "33m2 (삼삼엠투)",
+      "blurb": "Short-term rental app for weekly and monthly stays in studio apartments across Korea."
+    },
+    "liveanywhere": {
+      "name": "LiveAnywhere (리브애니웨어)",
+      "blurb": "Platform brokering month-long stays and short-term rental accommodations."
+    },
+    "zaritalk": {
+      "name": "Zaritalk (자리톡)",
+      "blurb": "Rental management service for landlords and tenants in Korea."
+    },
+    "ezrems": {
+      "name": "EZREMS (이지램스)",
+      "blurb": "Cloud SaaS for rental and property asset management."
+    },
+    "thebldgs": {
+      "name": "The BLDGS (더빌딩)",
+      "blurb": "AI-based integrated building and lease management platform."
     }
   }
 }
