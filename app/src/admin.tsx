@@ -21,6 +21,7 @@ import {
   searchAdminMembers, setMemberSuspended, listAppSettings, updateAppSetting, listRecentProcessed,
   listOpenInquiries, replyInquiry,
   getAutolistConfig, setAutolistConfig, detectCollectorId,
+  fetchGrowthWeekly, fetchRetentionCohorts, fetchMoneyFunnel,
 } from "./lib/api";
 import type {
   AdminChargeRow, BuyerBriefRow, DealSubmissionRow, IntroQueueRow, Lifecycle, PartnerPostAdmin,
@@ -338,6 +339,90 @@ function AutolistConfigPanel() {
         {!detected && <span className="faint" style={{ fontSize: 12, marginLeft: 8 }}>— 자동 수집 이력이 아직 없어 감지 불가(수집 1회 실행 후 지정)</span>}
       </div>
       {msg && <div className={msg.startsWith("저장됨") ? "ok" : "err"} style={{ fontSize: 13 }}>{msg}</div>}
+    </div>
+  );
+}
+
+/* ── 성장 패널(0034) — 주간 시계열·리텐션 코호트·머니패스 퍼널. 차트 라이브러리 없이 CSS 바.
+ * 세션(sm.sid) 기준 재방문은 근사치(localStorage 초기화·다기기 미연결) — 패널에 명기. */
+function GrowthPanel() {
+  const [weeks, setWeeks] = useState<Awaited<ReturnType<typeof fetchGrowthWeekly>>>([]);
+  const [cohorts, setCohorts] = useState<Awaited<ReturnType<typeof fetchRetentionCohorts>>>([]);
+  const [money, setMoney] = useState<Awaited<ReturnType<typeof fetchMoneyFunnel>>>(null);
+  useEffect(() => {
+    fetchGrowthWeekly().then(setWeeks).catch(() => { /* noop */ });
+    fetchRetentionCohorts().then(setCohorts).catch(() => { /* noop */ });
+    fetchMoneyFunnel().then(setMoney).catch(() => { /* noop */ });
+  }, []);
+  const maxSess = Math.max(1, ...weeks.map((w) => w.sessions));
+  // 코호트 그리드: cohort_week × week_offset → 잔존율(%)
+  const cohortWeeks = [...new Set(cohorts.map((c) => c.cohort_week))].sort();
+  const cell = (cw: string, off: number) => cohorts.find((c) => c.cohort_week === cw && c.week_offset === off)?.sessions ?? 0;
+  const maxOffset = Math.min(7, Math.max(0, ...cohorts.map((c) => c.week_offset)));
+  return (
+    <div className="banner" style={{ marginBottom: 20 }}>
+      <b>성장 (주간 · 세션 기준 근사)</b>
+      {weeks.length === 0 ? (
+        <div className="frm-note" style={{ marginTop: 6 }}>
+          아직 주간 스냅샷이 없어요 — metrics 워크플로 첫 실행(매주 월) 후 채워집니다. 이번 주 라이브는 방문이 쌓이면 표시돼요.
+        </div>
+      ) : (
+        <div style={{ display: "grid", gap: 4, marginTop: 8 }}>
+          {weeks.map((w) => (
+            <div key={w.week_start} style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12 }}>
+              <span className="mono faint" style={{ width: 74, flexShrink: 0 }}>{w.week_start.slice(5)}{w.live ? "·진행" : ""}</span>
+              <div style={{ flex: 1, display: "flex", height: 14, background: "var(--line)", borderRadius: 4, overflow: "hidden" }}>
+                <div style={{ width: `${(w.returning_sessions / maxSess) * 100}%`, background: "var(--brand)" }} title={`재방문 ${w.returning_sessions}`} />
+                <div style={{ width: `${(w.new_sessions / maxSess) * 100}%`, background: "var(--accent, #7aa7ff)", opacity: 0.55 }} title={`신규 ${w.new_sessions}`} />
+              </div>
+              <span className="mono" style={{ width: 150, flexShrink: 0, textAlign: "right" }}>
+                {w.sessions}세션(재 {w.returning_sessions}) · 검색 {w.searches}
+              </span>
+              {w.note && <Badge kind="soon">{w.note}</Badge>}
+            </div>
+          ))}
+        </div>
+      )}
+      {cohortWeeks.length > 1 && (
+        <div style={{ marginTop: 12, overflowX: "auto" }}>
+          <div className="frm-note" style={{ marginBottom: 4 }}>리텐션 코호트(첫 방문 주 × 경과 주, 잔존율)</div>
+          <table style={{ fontSize: 11, borderCollapse: "collapse" }}>
+            <thead><tr><th style={{ textAlign: "left", paddingRight: 8 }}>코호트</th>
+              {Array.from({ length: maxOffset + 1 }, (_, i) => <th key={i} style={{ padding: "0 6px" }}>+{i}주</th>)}</tr></thead>
+            <tbody>
+              {cohortWeeks.map((cw) => {
+                const base = cell(cw, 0);
+                return (
+                  <tr key={cw}>
+                    <td className="mono faint" style={{ paddingRight: 8 }}>{cw.slice(5)}</td>
+                    {Array.from({ length: maxOffset + 1 }, (_, off) => {
+                      const n = cell(cw, off);
+                      const p = base > 0 ? Math.round((n / base) * 100) : 0;
+                      return (
+                        <td key={off} style={{ padding: "2px 6px", textAlign: "center", borderRadius: 3,
+                          background: n > 0 ? `color-mix(in srgb, var(--brand) ${Math.min(80, p)}%, transparent)` : "transparent" }}>
+                          {n > 0 ? (off === 0 ? n : `${p}%`) : "·"}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      {money && (
+        <div style={{ marginTop: 12 }}>
+          <div className="frm-note" style={{ marginBottom: 4 }}>머니패스 퍼널(최근 30일)</div>
+          <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <Badge kind="muted">매물 조회 세션 {money.deal_view_sessions}</Badge>
+            <Badge kind="muted">브리프 {money.briefs}</Badge>
+            <Badge kind="soon">관심(EOI) {money.interests}</Badge>
+            <Badge kind="good">소개 {money.intros}</Badge>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -1748,6 +1833,7 @@ export function Admin() {
         <StatTile n={metrics ? String(metrics.introduced) : "—"} l="누적 소개" tone="t" />
       </div>
 
+      <GrowthPanel />
       <FunnelPanel />
 
       {/* 오늘 처리 대기 — 큐별 건수 요약(제보만 보이던 문제 해소) + 클릭 시 해당 섹션으로 점프 */}

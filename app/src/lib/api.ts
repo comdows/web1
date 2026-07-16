@@ -1082,6 +1082,24 @@ export async function fetchFunnel(): Promise<Funnel7d | null> {
 export async function fetchReferrers(): Promise<{ ref: string; sessions: number; events: number }[]> {
   return rest<{ ref: string; sessions: number; events: number }[]>("v_referrers_7d?select=*").catch(() => []);
 }
+/* ── 관리자: 성장 시계열·리텐션·머니패스(0034 뷰 — is_admin 가드는 뷰 내부) ── */
+export interface GrowthWeek {
+  week_start: string; sessions: number; new_sessions: number; returning_sessions: number; wau_users: number;
+  searches: number; outbounds: number; deal_views: number; briefs_created: number; interests_created: number;
+  intros_done: number; platforms_total: number; note: string | null; live: boolean;
+}
+export async function fetchGrowthWeekly(): Promise<GrowthWeek[]> {
+  return rest<GrowthWeek[]>("v_growth_weekly?select=*&order=week_start.asc").catch(() => []);
+}
+export interface CohortCell { cohort_week: string; week_offset: number; sessions: number }
+export async function fetchRetentionCohorts(): Promise<CohortCell[]> {
+  return rest<CohortCell[]>("v_retention_cohorts?select=*&order=cohort_week.asc,week_offset.asc").catch(() => []);
+}
+export interface MoneyFunnel { deal_view_sessions: number; briefs: number; interests: number; intros: number }
+export async function fetchMoneyFunnel(): Promise<MoneyFunnel | null> {
+  const rows = await rest<MoneyFunnel[]>("v_money_funnel_30d?select=*").catch(() => [] as MoneyFunnel[]);
+  return rows[0] ?? null;
+}
 /* 소개 성사율(0021 v_intro_success — 관리 전용, 뷰 내부 is_admin 가드) */
 export async function fetchIntroSuccess(): Promise<{ responded: number; success: number; progressing: number; no_deal: number } | null> {
   const rows = await rest<{ responded: number; success: number; progressing: number; no_deal: number }[]>("v_intro_success?select=*").catch(() => []);
@@ -1278,15 +1296,19 @@ function currentRef(): string | null {
   } catch { refCache = null; }
   return refCache;
 }
-function eventRow(type: string, platformId?: string, query?: string) {
-  return { type, platform_id: platformId ?? null, query: query ?? null,
+function eventRow(type: string, platformId?: string, query?: string, entity?: { type: string; id: string }) {
+  const row: Record<string, unknown> = { type, platform_id: platformId ?? null, query: query ?? null,
     session_id: sid(), user_id: getSession()?.user.id ?? null, ref: currentRef() };
+  // entity 컬럼(0034)은 있을 때만 포함 — 마이그레이션 전 DB에서도 일반 이벤트 insert가 깨지지 않게
+  if (entity) { row.entity_type = entity.type; row.entity_id = entity.id; }
+  return row;
 }
-export function trackEvent(type: "impression" | "click" | "outbound" | "favorite" | "search", platformId?: string, query?: string): void {
+export function trackEvent(type: "impression" | "click" | "outbound" | "favorite" | "search", platformId?: string, query?: string,
+  entity?: { type: string; id: string }): void {
   if (!remoteEnabled) return;
   rest("events", {
     method: "POST", headers: { Prefer: "return=minimal" },
-    body: JSON.stringify(eventRow(type, platformId, query)),
+    body: JSON.stringify(eventRow(type, platformId, query, entity)),
   }).catch(() => { /* 분석은 UX를 막지 않는다 */ });
 }
 /* 노출(impression)은 결과당 수십~수백 건 → 세션당 플랫폼 1회 dedup + 디바운스 벌크 insert(단일 요청). */

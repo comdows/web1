@@ -1,5 +1,5 @@
 /* SEO 프리렌더 — vite build 후 실행(package.json build 스크립트에 연결).
- * 1,637개 플랫폼 상세를 /p/<id>/index.html 정적 페이지로 생성한다:
+ * 전체 플랫폼(현재 1,719개) 상세를 /p/<id>/index.html 정적 페이지로 생성한다:
  * 크롤러는 #root 안의 정적 콘텐츠(이름·설명·분야·링크)를 읽고,
  * 사람은 같은 페이지에서 SPA가 부팅되며 React가 #root를 상세 화면으로 교체한다
  * (App.tsx가 /p/<id> 경로를 detail 뷰로 해석). sitemap.xml·robots.txt도 함께 생성. */

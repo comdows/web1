@@ -37,7 +37,7 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          for wf in collect.yml digest.yml backup.yml healthcheck.yml; do
+          for wf in collect.yml digest.yml backup.yml healthcheck.yml notify.yml metrics.yml; do
             curl -sf -X PUT -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" \
               "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/$wf/enable" \
               && echo "$wf ✓" || echo "$wf 재활성화 실패(권한·파일명 확인)"
