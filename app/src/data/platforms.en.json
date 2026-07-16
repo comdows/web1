@@ -5899,6 +5899,538 @@
     "sharencare": {
       "name": "Share&Care (쉐어앤케어)",
       "blurb": "Social platform where companies donate on behalf of users who share content."
+    },
+    "poclanos": {
+      "name": "Poclanos (포크라노스)",
+      "blurb": "Distributor releasing indie musicians' tracks and albums at home and abroad."
+    },
+    "danalenter": {
+      "name": "Danal Entertainment (다날엔터테인먼트)",
+      "blurb": "Music distributor for domestic and international streaming and downloads."
+    },
+    "bugscorp": {
+      "name": "Bugs Music Distribution (벅스 뮤직유통)",
+      "blurb": "B2B music distribution business for artists and labels."
+    },
+    "spaceoddity": {
+      "name": "Space Oddity (스페이스오디티)",
+      "blurb": "Music company planning and distributing artist releases."
+    },
+    "dittomusic": {
+      "name": "Ditto Music (디토뮤직)",
+      "blurb": "Global self-distribution service delivering music to over 150 platforms."
+    },
+    "sellbuymusic": {
+      "name": "Sellbuymusic (셀바이뮤직)",
+      "blurb": "Open marketplace for licensed background music."
+    },
+    "crowdpic": {
+      "name": "Crowdpic (크라우드픽)",
+      "blurb": "Commercial stock marketplace where photographers and illustrators register works."
+    },
+    "iclickart": {
+      "name": "iClickArt (아이클릭아트)",
+      "blurb": "All-in-one stock platform for photos, illustrations, video, and fonts."
+    },
+    "utoimage": {
+      "name": "Utoimage (유토이미지)",
+      "blurb": "Stock content market for photos, illustrations, and graphics."
+    },
+    "gettyimagesbank": {
+      "name": "Getty Images Bank (게티이미지뱅크)",
+      "blurb": "Korea's largest royalty-free stock image platform."
+    },
+    "clipartkorea": {
+      "name": "Clipart Korea (클립아트코리아)",
+      "blurb": "Stock platform for photos, illustrations, fonts, and video."
+    },
+    "mbdrive": {
+      "name": "Getty Images Korea (게티이미지코리아)",
+      "blurb": "Contributor channel where photographers and videographers sell content."
+    },
+    "contributors": {
+      "name": "Getty Images Contributors (게티이미지 기여자)",
+      "blurb": "Global contributor program licensing photos and video."
+    },
+    "submit": {
+      "name": "Shutterstock Contributors (셔터스톡 기여자)",
+      "blurb": "Global stock program for uploading photos, video, and vectors for royalties."
+    },
+    "contributor": {
+      "name": "Adobe Stock Contributors (어도비 스톡 기여자)",
+      "blurb": "Adobe Stock contributor program selling photos, video, and vectors."
+    },
+    "pixta": {
+      "name": "PIXTA (픽스타)",
+      "blurb": "Japan-based stock marketplace for photos, illustrations, and video."
+    },
+    "pond5": {
+      "name": "Pond5 (폰드파이브)",
+      "blurb": "Media marketplace where contributors sell video, music, and images."
+    },
+    "sandollcloud": {
+      "name": "Sandoll Cloud (산돌구름)",
+      "blurb": "Subscription and sales platform for Sandoll fonts."
+    },
+    "noonnu": {
+      "name": "Noonnu (눈누)",
+      "blurb": "Curated distribution of free commercial-use Korean fonts."
+    },
+    "font": {
+      "name": "Fonco (폰코)",
+      "blurb": "Yoon Design's platform selling Korean and global fonts."
+    },
+    "fontclub": {
+      "name": "Font Club (폰트클럽)",
+      "blurb": "Specialty store and community selling domestic and international fonts."
+    },
+    "rixfontcloud": {
+      "name": "Rix Font Cloud (릭스폰트클라우드)",
+      "blurb": "Fontrix's cloud for subscribing to and selling Rix fonts."
+    },
+    "miricanvas": {
+      "name": "Miricanvas Contributors (미리캔버스 기여자)",
+      "blurb": "Contributor market for design templates, elements, photos, and music."
+    },
+    "bookk": {
+      "name": "Bookk (부크크)",
+      "blurb": "Print-on-demand self-publishing platform for paper books and e-books."
+    },
+    "pubple": {
+      "name": "Kyobo Pubple (교보문고 퍼플)",
+      "blurb": "Self-publishing service for e-books and POD paper books by Kyobo."
+    },
+    "upaper": {
+      "name": "Upaper (유페이퍼)",
+      "blurb": "EPUB self-publishing platform with bookstore distribution."
+    },
+    "ridibooks2": {
+      "name": "Ridi Partners (리디 파트너스)",
+      "blurb": "Submission and publishing channel for web novel, webtoon, and e-book authors."
+    },
+    "jakkawa": {
+      "name": "Jakkawa (작가와)",
+      "blurb": "Platform publishing e-books and POD titles from Word files with bookstore distribution."
+    },
+    "happycampus": {
+      "name": "Happy Campus (해피캠퍼스)",
+      "blurb": "Knowledge marketplace for selling reports, papers, and presentations."
+    },
+    "reportworld": {
+      "name": "Report World (레포트월드)",
+      "blurb": "Platform for registering and selling reports and documents."
+    },
+    "audiojungle": {
+      "name": "AudioJungle (오디오정글)",
+      "blurb": "Global stock market selling royalty-free background music."
+    },
+    "assetstore": {
+      "name": "Unity Asset Store (유니티 에셋스토어)",
+      "blurb": "Official marketplace selling 2D, 3D, and tool assets for game development."
+    },
+    "fab": {
+      "name": "Fab (팹)",
+      "blurb": "Epic Games' unified marketplace selling 3D and game assets."
+    },
+    "cgtrader": {
+      "name": "CGTrader (CG트레이더)",
+      "blurb": "Global marketplace selling 3D models and printing files."
+    },
+    "sketchfab": {
+      "name": "Sketchfab Store (스케치팹 스토어)",
+      "blurb": "Global marketplace selling real-time 3D models."
+    },
+    "artstation": {
+      "name": "ArtStation Marketplace (아트스테이션 마켓)",
+      "blurb": "Creative market selling 3D assets, brushes, and tutorials."
+    },
+    "artipio": {
+      "name": "Artipio (아티피오)",
+      "blurb": "Art investment-contract securities platform by the YES24 group for fractional art investing."
+    },
+    "treasurer": {
+      "name": "Treasurer (트레져러)",
+      "blurb": "Alternative-investment platform for fractional stakes in luxury watches, wine, and collectibles."
+    },
+    "bankcow": {
+      "name": "Bankcow (뱅카우)",
+      "blurb": "Korea's first fractional investment platform for hanwoo cattle, run by Stockeeper."
+    },
+    "twig": {
+      "name": "Twig (트위그)",
+      "blurb": "Fractional investment platform for global assets like supercars and unlisted shares."
+    },
+    "creators": {
+      "name": "OGQ Creator Studio (OGQ 크리에이터 스튜디오)",
+      "blurb": "Creator studio distributing stickers and images to multiple markets from one upload."
+    },
+    "stipop": {
+      "name": "Stipop (스티팝)",
+      "blurb": "Sticker API platform distributing artist stickers to global messengers."
+    },
+    "stock": {
+      "name": "Dropshot Stock (드롭샷스톡)",
+      "blurb": "Video stock platform selling commercial footage with Korean themes."
+    },
+    "topport": {
+      "name": "Topport (탑포트)",
+      "blurb": "NFT art marketplace centered on artist works."
+    },
+    "piece": {
+      "name": "Piece (피스)",
+      "blurb": "Fractional investment platform for physical assets like luxury watches and art."
+    },
+    "seoulexchange": {
+      "name": "Seoul Exchange (서울거래 비상장)",
+      "blurb": "Trading platform for unlisted and over-the-counter shares."
+    },
+    "ustockplus": {
+      "name": "Stockplus Unlisted (증권플러스 비상장)",
+      "blurb": "Unlisted-share trading platform operated by Dunamu."
+    },
+    "alphasquare": {
+      "name": "Alphasquare (알파스퀘어)",
+      "blurb": "Smart trading platform integrating charts and analytics."
+    },
+    "itemmania": {
+      "name": "Itemmania (아이템매니아)",
+      "blurb": "Safe-trade platform for game items, accounts, and in-game currency."
+    },
+    "itembay": {
+      "name": "Itembay (아이템베이)",
+      "blurb": "Brokerage for game currency, items, and accounts with market-price lookup."
+    },
+    "idfarm": {
+      "name": "ID Farm (아이디팜)",
+      "blurb": "Game exchange trading accounts, currency, items, and gift certificates."
+    },
+    "gamemarket": {
+      "name": "Game Market (게임마켓)",
+      "blurb": "Game account and item trading built on verified sellers."
+    },
+    "barotem": {
+      "name": "Barotem (바로템)",
+      "blurb": "Trading platform for accounts, game currency, items, and gift certificates."
+    },
+    "acon3d": {
+      "name": "ACON3D (에이콘3D)",
+      "blurb": "Digital asset store for webtoon and game 3D backgrounds."
+    },
+    "directg": {
+      "name": "Direct Games (다이렉트게임즈)",
+      "blurb": "Korean ESD selling download keys for PC and console games."
+    },
+    "videomonster": {
+      "name": "Video Monster (비디오몬스터)",
+      "blurb": "Template-based automated video production SaaS."
+    },
+    "finda": {
+      "name": "Finda (핀다)",
+      "blurb": "AI platform comparing loan rates and limits across many lenders."
+    },
+    "toss": {
+      "name": "Toss (토스)",
+      "blurb": "Financial super app for transfers, asset management, and loan comparison."
+    },
+    "kakaopay": {
+      "name": "Kakao Pay Loans (카카오페이 대출)",
+      "blurb": "Loan rate and limit comparison across multiple lenders on Kakao Pay."
+    },
+    "banksalad": {
+      "name": "Banksalad (뱅크샐러드)",
+      "blurb": "MyData app for asset management and comparing loans, cards, and insurance."
+    },
+    "dambee": {
+      "name": "Dambee (담비)",
+      "blurb": "Comparison platform for mortgage and jeonse-deposit loans."
+    },
+    "alda": {
+      "name": "Alda (알다)",
+      "blurb": "Loan-tech app for comparing, applying for, and managing loans."
+    },
+    "finnq": {
+      "name": "Finnq (핀크)",
+      "blurb": "Hana-affiliated app for everyday finance and loan, card, and insurance comparison."
+    },
+    "bankmall": {
+      "name": "Bankmall (뱅크몰)",
+      "blurb": "Comparison platform for mortgage, jeonse, and credit loans."
+    },
+    "cashnote": {
+      "name": "Cashnote (캐시노트)",
+      "blurb": "Business management for small merchants with business-loan comparison."
+    },
+    "einsmarket": {
+      "name": "Boheom Damoa (보험다모아)",
+      "blurb": "Online supermarket comparing and disclosing insurance products."
+    },
+    "goodrich": {
+      "name": "Goodrich (굿리치)",
+      "blurb": "Insurtech and GA app for checking, analyzing, comparing, and claiming insurance."
+    },
+    "bomapp": {
+      "name": "Bomapp (보맵)",
+      "blurb": "App for insurance lookup, analysis, comparison, and simplified claims."
+    },
+    "signalplanner": {
+      "name": "Signal Planner (시그널플래너)",
+      "blurb": "App for insurance lookup, diagnosis, and remote consultation."
+    },
+    "bodoc": {
+      "name": "Bodoc (보닥)",
+      "blurb": "AI insurance app for diagnosis, analysis, and management."
+    },
+    "bohumclinic": {
+      "name": "Bohum Clinic (보험클리닉)",
+      "blurb": "Store-based insurance checkup, comparison, and planning service."
+    },
+    "insvalley": {
+      "name": "Insvalley (인스밸리)",
+      "blurb": "Online insurance quote comparison including auto insurance."
+    },
+    "cardgorilla": {
+      "name": "Card Gorilla (카드고릴라)",
+      "blurb": "Platform comparing and recommending credit and debit cards by benefits."
+    },
+    "travelwallet": {
+      "name": "Travel Wallet (트래블월렛)",
+      "blurb": "Multi-currency app for top-ups, exchange, overseas payments, and transfers."
+    },
+    "wirebarley": {
+      "name": "WireBarley (와이어바알리)",
+      "blurb": "Fintech for affordable international remittance to many countries."
+    },
+    "sentbe": {
+      "name": "Sentbe (센트비)",
+      "blurb": "Low-cost international remittance for individuals and businesses."
+    },
+    "themoin": {
+      "name": "Moin (모인)",
+      "blurb": "Multi-country international remittance app."
+    },
+    "fint": {
+      "name": "Fint (핀트)",
+      "blurb": "AI robo-advisor app for remote asset management."
+    },
+    "ols": {
+      "name": "Small Business Policy Funds (소상공인정책자금)",
+      "blurb": "Government portal guiding and accepting applications for small-business policy funds."
+    },
+    "paywatch": {
+      "name": "Paywatch (페이워치)",
+      "blurb": "Earned wage access fintech letting workers draw already-earned pay before payday."
+    },
+    "canopy": {
+      "name": "Canopy (캐노피)",
+      "blurb": "Startup letting workers withdraw earned wages in real time based on work records."
+    },
+    "ezloan": {
+      "name": "Ezloan (이지론)",
+      "blurb": "Fintech platform connecting borrowers with small and emergency loan products."
+    },
+    "winkstone": {
+      "name": "Winkstone Partners (윙크스톤파트너스)",
+      "blurb": "B2B lending and BNPL financial services for small businesses."
+    },
+    "loanboss": {
+      "name": "Loanboss (로안보스)",
+      "blurb": "Business-loan comparison platform for small businesses and SMEs."
+    },
+    "barobill": {
+      "name": "Barobill (바로빌)",
+      "blurb": "Service issuing and reverse-issuing electronic tax invoices."
+    },
+    "popbill": {
+      "name": "Popbill (팝빌)",
+      "blurb": "API platform for bulk-issuing electronic tax invoices."
+    },
+    "factoring": {
+      "name": "Wehago Factoring (위하고팩토링)",
+      "blurb": "Receivables factoring service financing SMEs."
+    },
+    "sellerline": {
+      "name": "Sellerline (셀러라인)",
+      "blurb": "Advance-funding service tailored to online sellers."
+    },
+    "allra": {
+      "name": "Allra (올라)",
+      "blurb": "Cash-flow management and advance funding for online sellers."
+    },
+    "home3": {
+      "name": "Buynow (바이나우)",
+      "blurb": "Service converting online-store sales into upfront working capital."
+    },
+    "ofin": {
+      "name": "Ofin (오핀)",
+      "blurb": "B2B deferred-payment and instant-disbursement solution."
+    },
+    "fount": {
+      "name": "Fount (파운트)",
+      "blurb": "Robo-advisor AI asset management service."
+    },
+    "cpoint": {
+      "name": "Carbon Neutral Points (탄소중립포인트)",
+      "blurb": "Government program rewarding eco-friendly activities with points and incentives."
+    },
+    "gmoney": {
+      "name": "Gyeonggi Local Currency (경기지역화폐)",
+      "blurb": "Local gift-certificate app with top-up incentives in Gyeonggi Province."
+    },
+    "zeropay": {
+      "name": "Zero Pay (제로페이)",
+      "blurb": "QR simple-payment service designed to lower costs for small merchants."
+    },
+    "marpple": {
+      "name": "Marpple (마플)",
+      "blurb": "Print-on-demand platform making custom goods from a single unit."
+    },
+    "marpple2": {
+      "name": "Marpple Shop (마플샵)",
+      "blurb": "Creator commerce making and selling inventory-free goods from uploaded designs."
+    },
+    "ohprint": {
+      "name": "Ohprint.me (오프린트미)",
+      "blurb": "Printing service for small runs of business cards, stickers, banners, and custom apparel."
+    },
+    "redprinting": {
+      "name": "Red Printing (레드프린팅)",
+      "blurb": "Online print shop covering stickers, business cards, apparel, and commercial printing."
+    },
+    "snaps": {
+      "name": "Snaps (스냅스)",
+      "blurb": "Maker of photo products like photobooks, prints, frames, and calendars."
+    },
+    "zzixx": {
+      "name": "Zzixx (찍스)",
+      "blurb": "Photo printing, photobooks, and photo goods on demand."
+    },
+    "publog": {
+      "name": "Publog (퍼블로그)",
+      "blurb": "Small-run production platform for photobooks, photo cards, and acrylic goods."
+    },
+    "bizhows": {
+      "name": "Bizhows (비즈하우스)",
+      "blurb": "Online design tool producing banners, business cards, and promo items from one unit."
+    },
+    "withgoods": {
+      "name": "Withgoods (위드굿즈)",
+      "blurb": "Art-goods marketplace handling orders, inventory, and customer service for creators."
+    },
+    "shopfanpick": {
+      "name": "Shop Fanpick (샵팬픽)",
+      "blurb": "Fandom platform planning, producing, and distributing creator IP goods."
+    },
+    "designersbay": {
+      "name": "Designers Bay (디자이너스베이)",
+      "blurb": "Custom goods like T-shirts and eco bags made from a single unit."
+    },
+    "allthatprinting": {
+      "name": "All That Printing (올댓프린팅)",
+      "blurb": "Small-run and B2B production of acrylic and wood goods for creators."
+    },
+    "itension": {
+      "name": "Itension (아이텐션)",
+      "blurb": "Maker of acrylic keyrings, stands, and standees."
+    },
+    "hanalldnp": {
+      "name": "Hanall DNP (한올디앤피)",
+      "blurb": "Small-run acrylic stands and keyrings via laser cutting and UV printing."
+    },
+    "hueandgo": {
+      "name": "Hue&Go (휴앤고)",
+      "blurb": "Maker of custom goods like acrylic keyrings and mousepads."
+    },
+    "koaladesign": {
+      "name": "Koala Design (코알라디자인)",
+      "blurb": "Maker of acrylic keyrings, mobiles, and DIY kit goods."
+    },
+    "customland": {
+      "name": "Customland (커스텀랜드)",
+      "blurb": "Factory-direct custom goods from single units to bulk runs."
+    },
+    "dpl": {
+      "name": "DPL Shop (디플샵)",
+      "blurb": "B2B automation connecting sellers and makers for goods production and shipping."
+    },
+    "qrim": {
+      "name": "Qrim (큐림)",
+      "blurb": "Apparel printing for group and custom T-shirt orders."
+    },
+    "customzone": {
+      "name": "Custom Zone (커스텀존)",
+      "blurb": "Site for custom printed T-shirts."
+    },
+    "stickerz": {
+      "name": "Stickerz (스티커즈)",
+      "blurb": "Same-day production of stickers and photo cards from a single sheet."
+    },
+    "printingting": {
+      "name": "Printingting (프린팅팅)",
+      "blurb": "Small-run printing for goods, business cards, photo cards, and stickers."
+    },
+    "wowpress": {
+      "name": "Wowpress (와우프레스)",
+      "blurb": "Digital printing for business cards, stickers, and flyers with finishing and delivery."
+    },
+    "swadpia": {
+      "name": "Sungwon Adpia (성원애드피아)",
+      "blurb": "General online printer for business cards, flyers, stickers, and booklets."
+    },
+    "dtpia": {
+      "name": "DTpia (디티피아)",
+      "blurb": "Fast small-run printing for business cards, goods, and photo cards."
+    },
+    "printingkorea": {
+      "name": "Printing Korea (인쇄코리아)",
+      "blurb": "Small-run printing of business cards, stickers, flyers, banners, and labels."
+    },
+    "ecard21": {
+      "name": "Myeongham Cheonguk (명함천국)",
+      "blurb": "Printer specializing in business cards, stickers, flyers, and photo cards."
+    },
+    "inswaehada": {
+      "name": "Inswaehada (인쇄하다)",
+      "blurb": "Large-format banner output plus business card and flyer printing."
+    },
+    "nmk": {
+      "name": "New Markers (뉴마커스)",
+      "blurb": "Large-format output for banners and air signs and promotional materials."
+    },
+    "printing24": {
+      "name": "Printing24 (인쇄24)",
+      "blurb": "Large-format output for banners, mini banners, and roll screens."
+    },
+    "label": {
+      "name": "iLabel (아이라벨)",
+      "blurb": "Specialist in custom stickers and waterproof and barcode labels."
+    },
+    "labelpack": {
+      "name": "Labelpack (라벨팩)",
+      "blurb": "Store for custom labels, stickers, and packaging."
+    },
+    "juagift": {
+      "name": "Jua Gift (주아기프트)",
+      "blurb": "Custom logo printing and engraving on promotional items and souvenirs."
+    },
+    "3dprocess": {
+      "name": "3D Pro (3D프로)",
+      "blurb": "3D printing service bureau producing prototypes to order."
+    },
+    "stellamove": {
+      "name": "Stellamove (스텔라무브)",
+      "blurb": "FDM and SLA 3D printing for prototypes and models."
+    },
+    "creallo": {
+      "name": "Creallo (크렐로)",
+      "blurb": "Online manufacturing for custom parts via 3D printing, CNC, and injection molding."
+    },
+    "inupt": {
+      "name": "Inupt (이넙트)",
+      "blurb": "Custom goods platform making small-run IP and character merchandise easy."
+    },
+    "ozjejakso": {
+      "name": "Oz Jejakso (오즈의제작소)",
+      "blurb": "One-stop platform for goods design, production, and delivery."
     }
   }
 }
