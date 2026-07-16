@@ -602,7 +602,9 @@
       "url": "https://www.cafe24.com/",
       "blurb": "자사몰 구축·호스팅 이커머스 솔루션.",
       "enter_text": "회원가입 후 쇼핑몰 개설(판매 시 사업자등록)",
-      "strength": "자사몰 구축·해외판매·마케팅 연동 폭넓음"
+      "strength": "자사몰 구축·해외판매·마케팅 연동 폭넓음",
+      "fee_band": "low",
+      "fee_text": "무료 개설형(판매 수수료 없음·결제수수료 별도)"
     },
     {
       "id": "imweb",
@@ -612,7 +614,9 @@
       "url": "https://imweb.me/",
       "blurb": "노코드 드래그 방식 자사몰·웹사이트 빌더.",
       "enter_text": "회원가입 후 쇼핑몰·홈페이지 개설",
-      "strength": "노코드 드래그로 빠른 자사몰 제작"
+      "strength": "노코드 드래그로 빠른 자사몰 제작",
+      "fee_band": "low",
+      "fee_text": "월 구독형(판매 수수료 없음·결제수수료 별도)"
     },
     {
       "id": "sixshop",
@@ -622,7 +626,9 @@
       "url": "https://www.sixshop.com/",
       "blurb": "디자인 템플릿 기반 노코드 자사몰 제작.",
       "enter_text": "회원가입 후 쇼핑몰 개설(판매 시 사업자등록)",
-      "strength": "디자인 템플릿 중심 브랜드몰 제작"
+      "strength": "디자인 템플릿 중심 브랜드몰 제작",
+      "fee_band": "low",
+      "fee_text": "월 구독형(판매 수수료 없음·결제수수료 별도)"
     },
     {
       "id": "makeshop",
@@ -632,7 +638,9 @@
       "url": "https://www.makeshop.co.kr/",
       "blurb": "임대형 쇼핑몰 구축 솔루션.",
       "enter_text": "회원가입 후 임대형 쇼핑몰 구축",
-      "strength": "임대형 쇼핑몰 기능·확장 옵션 다양"
+      "strength": "임대형 쇼핑몰 기능·확장 옵션 다양",
+      "fee_band": "low",
+      "fee_text": "월 구독형(판매 수수료 없음·결제수수료 별도)"
     },
     {
       "id": "godo",
@@ -1290,7 +1298,9 @@
       "url": "https://soomgo.com",
       "blurb": "레슨·이사·수리 등 생활 전문가 매칭.",
       "enter_text": "전문가 가입·프로필 등록 후 견적 발송",
-      "strength": "레슨·이사·수리 등 생활 전문가 매칭에 강점"
+      "strength": "레슨·이사·수리 등 생활 전문가 매칭에 강점",
+      "fee_band": "low",
+      "fee_text": "판매 수수료 없음 — 견적 발송 시 크레딧 차감(리드 과금형)"
     },
     {
       "id": "wishket",
@@ -1300,7 +1310,9 @@
       "url": "https://www.wishket.com",
       "blurb": "IT 개발·디자인 프로젝트 외주 매칭.",
       "enter_text": "파트너 가입·검증 후 프로젝트 지원",
-      "strength": "IT 개발·디자인 프로젝트 외주 매칭에 강점"
+      "strength": "IT 개발·디자인 프로젝트 외주 매칭에 강점",
+      "fee_band": "mid",
+      "fee_text": "낙찰 시 파트너 측 정률 수수료"
     },
     {
       "id": "taling",
@@ -1310,7 +1322,9 @@
       "url": "https://taling.me",
       "blurb": "취미·직무 원데이 클래스·튜터 매칭.",
       "enter_text": "튜터 가입·클래스 등록 후 개설",
-      "strength": "취미·직무 원데이 클래스·튜터 매칭에 강점"
+      "strength": "취미·직무 원데이 클래스·튜터 매칭에 강점",
+      "fee_band": "high",
+      "fee_text": "클래스 판매 정률 수수료(높은 편으로 알려짐)"
     },
     {
       "id": "loud",
@@ -3179,7 +3193,9 @@
       "url": "https://www.spacecloud.kr",
       "blurb": "모임·연습·촬영 공간 시간 대여.",
       "enter_text": "공간 호스트 등록 후 게시",
-      "strength": "모임·연습·촬영 공간 시간 단위 대여"
+      "strength": "모임·연습·촬영 공간 시간 단위 대여",
+      "fee_band": "mid",
+      "fee_text": "공간 호스트 정률 수수료"
     },
     {
       "id": "catchtable",
@@ -3189,7 +3205,9 @@
       "url": "https://www.catchtable.co.kr",
       "blurb": "식당 예약·웨이팅 중개.",
       "enter_text": "식당 사업자 제휴 등록 후 이용",
-      "strength": "식당 예약·웨이팅 관리에 강점"
+      "strength": "식당 예약·웨이팅 관리에 강점",
+      "fee_band": "low",
+      "fee_text": "매장 월 구독형(예약 건당 수수료 없음으로 알려짐)"
     },
     {
       "id": "myrealtrip",
@@ -3319,7 +3337,9 @@
       "url": "https://www.frip.co.kr/",
       "blurb": "취미 클래스·액티비티·모임 예약 여가 플랫폼.",
       "enter_text": "호스트 가입·클래스 개설 후 심사",
-      "strength": "취미 클래스·여가 액티비티 모객에 강점"
+      "strength": "취미 클래스·여가 액티비티 모객에 강점",
+      "fee_band": "mid",
+      "fee_text": "호스트 판매 정률 수수료"
     },
     {
       "id": "stayfolio",
@@ -3359,7 +3379,9 @@
       "url": "https://hourplace.co.kr/",
       "blurb": "촬영 스튜디오·공간 시간제 예약 대여.",
       "enter_text": "공간 호스트 등록·심사 후 게시",
-      "strength": "촬영 스튜디오·공간 시간제 대여에 강점"
+      "strength": "촬영 스튜디오·공간 시간제 대여에 강점",
+      "fee_band": "mid",
+      "fee_text": "촬영 공간 호스트 정률 수수료"
     },
     {
       "id": "shareit",
@@ -3861,7 +3883,8 @@
       "url": "https://class101.net",
       "blurb": "온라인 클래스 제작·판매(크리에이터).",
       "enter_text": "크리에이터 지원·심사 후 클래스 개설",
-      "strength": "취미·실무 온라인 클래스 제작·판매에 강점"
+      "strength": "취미·실무 온라인 클래스 제작·판매에 강점",
+      "fee_text": "구독 수익 배분형(요율 비공개)"
     },
     {
       "id": "brunch",
@@ -4044,7 +4067,9 @@
       "url": "https://www.postype.com/",
       "blurb": "창작 콘텐츠 유료 판매·후원·멤버십 커뮤니티.",
       "enter_text": "가입 후 창작자 등록·콘텐츠 발행",
-      "strength": "웹툰·웹소설 등 창작 콘텐츠 유료 판매·후원에 강점"
+      "strength": "웹툰·웹소설 등 창작 콘텐츠 유료 판매·후원에 강점",
+      "fee_band": "mid",
+      "fee_text": "콘텐츠 판매 정률 수수료"
     },
     {
       "id": "ridibooks",
@@ -4601,7 +4626,8 @@
       "url": "https://www.oliveyoung.co.kr/",
       "blurb": "CJ올리브영의 뷰티·헬스 상품 온라인몰.",
       "enter_text": "브랜드 입점 제안·심사 후 매입/입점",
-      "strength": "뷰티·헬스 상품, 오프라인 연계 온라인몰"
+      "strength": "뷰티·헬스 상품, 오프라인 연계 온라인몰",
+      "fee_text": "입점 협의형(공개 요율 없음)"
     },
     {
       "id": "hwahae",
@@ -5109,7 +5135,8 @@
       "url": "https://www.kurly.com",
       "blurb": "신선식품 새벽배송 이커머스.",
       "enter_text": "사업자등록 후 상품 제안·입점 심사",
-      "strength": "신선식품 새벽배송·큐레이션 상품 구성"
+      "strength": "신선식품 새벽배송·큐레이션 상품 구성",
+      "fee_text": "입점 협의형(사입·위탁 — 공개 요율 없음)"
     },
     {
       "id": "oasis",
@@ -5719,7 +5746,9 @@
       "url": "https://www.saramin.co.kr",
       "blurb": "정규·경력직 채용 매칭 플랫폼.",
       "enter_text": "기업 회원가입 후 채용공고 등록",
-      "strength": "정규·경력직 채용 매칭에 강점"
+      "strength": "정규·경력직 채용 매칭에 강점",
+      "fee_band": "low",
+      "fee_text": "공고 게재·채용 상품 구매형(거래 수수료 없음)"
     },
     {
       "id": "jobkorea",
@@ -5729,7 +5758,9 @@
       "url": "https://www.jobkorea.co.kr",
       "blurb": "종합 채용 정보 플랫폼.",
       "enter_text": "기업 회원가입 후 채용공고 등록",
-      "strength": "종합 채용 정보·구인구직에 강점"
+      "strength": "종합 채용 정보·구인구직에 강점",
+      "fee_band": "low",
+      "fee_text": "공고 게재·채용 상품 구매형(거래 수수료 없음)"
     },
     {
       "id": "albamon",
@@ -5739,7 +5770,9 @@
       "url": "https://www.albamon.com",
       "blurb": "아르바이트·단기 일자리 중개.",
       "enter_text": "사업자·개인 고용주 가입 후 공고 등록",
-      "strength": "아르바이트·단기 일자리 중개에 강점"
+      "strength": "아르바이트·단기 일자리 중개에 강점",
+      "fee_band": "low",
+      "fee_text": "공고 게재 상품형(거래 수수료 없음)"
     },
     {
       "id": "alba",
@@ -6060,7 +6093,9 @@
       "url": "https://miso.kr",
       "blurb": "가사·청소·이사 등 홈서비스 매칭.",
       "enter_text": "앱 가입 후 서비스 예약·이용",
-      "strength": "가사·청소·이사 등 홈서비스 매칭에 강점"
+      "strength": "가사·청소·이사 등 홈서비스 매칭에 강점",
+      "fee_band": "mid",
+      "fee_text": "파트너 매칭 정률 수수료"
     },
     {
       "id": "cleanlab",
@@ -6070,7 +6105,9 @@
       "url": "https://www.cleaninglab.co.kr",
       "blurb": "가사도우미·홈클리닝 매칭.",
       "enter_text": "앱 가입 후 서비스 예약·이용",
-      "strength": "정기·가사 홈클리닝 매칭에 강점"
+      "strength": "정기·가사 홈클리닝 매칭에 강점",
+      "fee_band": "mid",
+      "fee_text": "매니저 매칭 정률 수수료"
     },
     {
       "id": "daerijubu",
@@ -6435,7 +6472,9 @@
       "url": "https://www.zigbang.com",
       "blurb": "원룸·오피스텔·아파트 등 주거 부동산 중개.",
       "enter_text": "중개사무소는 제휴 가입 후 매물 등록",
-      "strength": "원룸·오피스텔 등 주거 매물 탐색에 강점"
+      "strength": "원룸·오피스텔 등 주거 매물 탐색에 강점",
+      "fee_band": "low",
+      "fee_text": "중개사 광고 상품형(이용자 수수료 없음)"
     },
     {
       "id": "dabang",
@@ -6445,7 +6484,9 @@
       "url": "https://www.dabangapp.com",
       "blurb": "주거용 부동산 매물 정보.",
       "enter_text": "중개사무소는 제휴 가입 후 매물 등록",
-      "strength": "주거용 매물 정보 탐색에 강점"
+      "strength": "주거용 매물 정보 탐색에 강점",
+      "fee_band": "low",
+      "fee_text": "중개사 광고 상품형(이용자 수수료 없음)"
     },
     {
       "id": "naverland",
@@ -7265,7 +7306,9 @@
       "url": "https://www.encar.com",
       "blurb": "국내 대표 중고차 거래 플랫폼.",
       "enter_text": "딜러 등록 또는 개인 매물 등록 후 이용",
-      "strength": "중고차 매물 검색·시세 확인에 강점"
+      "strength": "중고차 매물 검색·시세 확인에 강점",
+      "fee_band": "low",
+      "fee_text": "딜러 등록·광고 상품형(개인 구매자 수수료 없음)"
     },
     {
       "id": "heydealer",
@@ -7275,7 +7318,9 @@
       "url": "https://www.heydealer.com",
       "blurb": "내 차 팔기(딜러 경매) 중개.",
       "enter_text": "앱에서 차량 등록 후 딜러 견적 수령",
-      "strength": "딜러 경매 방식 내차 팔기에 강점"
+      "strength": "딜러 경매 방식 내차 팔기에 강점",
+      "fee_band": "low",
+      "fee_text": "판매자 무료 — 낙찰 딜러 측 수수료"
     },
     {
       "id": "kcar",
@@ -10790,7 +10835,9 @@
       "url": "https://www.lawtalk.co.kr/",
       "blurb": "변호사 검색·전화/영상/방문 법률 상담 매칭.",
       "enter_text": "변호사는 자격 인증 후 프로필 등록, 이용자는 가입 후 상담",
-      "strength": "변호사 검색·전화/영상/방문 법률 상담 매칭에 강점"
+      "strength": "변호사 검색·전화/영상/방문 법률 상담 매칭에 강점",
+      "fee_band": "low",
+      "fee_text": "변호사 광고 구독형(사건 수임 수수료 없음)"
     },
     {
       "id": "lawandgood",
