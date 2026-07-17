@@ -8,7 +8,7 @@ import { useSession } from "./lib/auth";
 import {
   briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
-  fetchAdminMetrics, fetchFunnel, fetchIntroSuccess, fetchOpsHealth, fetchOutboundCounts, fetchQueueCounts, fetchReferrers, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin,
+  countFrontErrors7d, fetchAdminMetrics, fetchFunnel, fetchIntroSuccess, fetchOpsHealth, fetchOutboundCounts, fetchQueueCounts, fetchReferrers, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin, listFrontErrors,
   reviewAutoListed,
   listDealSubmissions, listOperatorClaims,
   adminDeclineInterest, adminIntroduce, cancelCharge, confirmDeposit, createSponsorSlot, declinePendingInterests,
@@ -383,6 +383,37 @@ function OpsHealthPanel() {
       </div>
       {rows.some((r) => r.state === "stale") && (
         <div className="frm-note" style={{ marginTop: 6 }}>⚠️ = 마지막 실행이 예상 주기를 넘김 — Actions에서 스케줄이 살아있는지 확인하세요.</div>
+      )}
+    </div>
+  );
+}
+
+/* 프론트 오류(0039) — 실사용자 브라우저의 미처리 예외·흰 화면을 콘솔에서 열람.
+ * 0039 미적용 DB에서는 조회가 빈 배열/실패 → 카드 자체를 숨긴다(운영 방해 없음). */
+function FrontErrorsPanel() {
+  const [errs, setErrs] = useState<Awaited<ReturnType<typeof listFrontErrors>>>([]);
+  const [cnt7d, setCnt7d] = useState(0);
+  const [open, setOpen] = useState(false);
+  useEffect(() => {
+    listFrontErrors().then(setErrs).catch(() => { /* noop */ });
+    countFrontErrors7d().then(setCnt7d).catch(() => { /* noop */ });
+  }, []);
+  if (errs.length === 0) return null;
+  return (
+    <div className="banner" style={{ marginBottom: 20 }}>
+      <b>프론트 오류</b>
+      <span style={{ marginLeft: 6, color: cnt7d > 0 ? "var(--danger)" : "var(--faint)", fontWeight: 700 }}>7일 {cnt7d}건</span>
+      <button className="linklike" style={{ marginLeft: 10 }} onClick={() => setOpen((o) => !o)}>{open ? "접기 ▴" : `최근 ${errs.length}건 보기 ▾`}</button>
+      {open && (
+        <div style={{ display: "grid", gap: 4, marginTop: 8 }}>
+          {errs.map((e, i) => (
+            <div key={i} style={{ display: "flex", gap: 8, fontSize: 12, alignItems: "baseline" }}>
+              <span className="mono faint" style={{ flexShrink: 0 }}>{e.created_at.slice(5, 16).replace("T", " ")}</span>
+              <span className="mono" style={{ flexShrink: 0, color: "var(--muted)" }}>{e.entity_type || "?"}</span>
+              <span style={{ minWidth: 0, overflowWrap: "anywhere" }}>{e.query}</span>
+            </div>
+          ))}
+        </div>
       )}
     </div>
   );
@@ -1877,6 +1908,7 @@ export function Admin() {
       </div>
 
       <OpsHealthPanel />
+      <FrontErrorsPanel />
       <GrowthPanel />
       <FunnelPanel />
 

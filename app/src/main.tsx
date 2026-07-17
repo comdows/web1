@@ -9,6 +9,7 @@ import { startInterestSync } from './lib/interestsync'
 import { initPlatforms } from './lib/platforms'
 import { initPopularity } from './lib/popularity'
 import { initReviewStats } from './lib/reviews'
+import { trackError } from './lib/api'
 import { FLAGS } from './config'
 
 startFavSync()     // 로그인 시 즐겨찾기 서버 동기화(원격 모드에서만 동작)
@@ -20,7 +21,7 @@ initReviewStats()  // 공개 평점 집계 1회 로드(카드·상세 ★ 표시
 /* 최상위 오류 방어벽 — 렌더 중 예외가 나도 백지 대신 복구 안내를 보여준다 */
 class ErrorBoundary extends Component<{ children: ReactNode }, { err: Error | null }> {
   state = { err: null as Error | null };
-  static getDerivedStateFromError(err: Error) { return { err }; }
+  static getDerivedStateFromError(err: Error) { trackError("boundary: " + String(err)); return { err }; }
   render() {
     if (!this.state.err) return this.props.children;
     return (
@@ -41,7 +42,9 @@ class ErrorBoundary extends Component<{ children: ReactNode }, { err: Error | nu
     );
   }
 }
-window.addEventListener("unhandledrejection", (e) => console.warn("[semopl] unhandled:", e.reason));
+/* 전역 오류 수집(0039) — 콘솔 경고에 더해 관리자 관측용 events(type='error') 기록 */
+window.addEventListener("error", (e) => trackError(String(e.message || e.error || "unknown error")));
+window.addEventListener("unhandledrejection", (e) => { console.warn("[semopl] unhandled:", e.reason); trackError("unhandled: " + String(e.reason)); });
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
