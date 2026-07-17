@@ -1333,6 +1333,33 @@ function eventRow(type: string, platformId?: string, query?: string, entity?: { 
   if (entity) { row.entity_type = entity.type; row.entity_id = entity.id; }
   return row;
 }
+/* 프론트 오류 수집(0039) — 미처리 예외·흰 화면을 events(type='error')로 기록, 관리자만 열람.
+ * 성장 지표 오염 방지: session_id·user_id를 싣지 않는다(주간 세션·WAU·리텐션이 session/user 기준 —
+ * null이면 집계에서 자동 제외). 폭주 방지: 동일 메시지 1회 + 페이지 수명당 최대 10건.
+ * 0039 미적용 DB에서는 enum 거부로 조용히 무시(수집만 안 될 뿐 UX 무영향). */
+const seenErrors = new Set<string>();
+let errorBudget = 10;
+export function trackError(message: string): void {
+  if (!remoteEnabled || errorBudget <= 0) return;
+  const msg = String(message).slice(0, 300);
+  if (!msg || seenErrors.has(msg)) return;
+  seenErrors.add(msg); errorBudget--;
+  const view = (new URLSearchParams(location.search).get("view") || location.pathname.slice(0, 40) || "home").slice(0, 40);
+  rest("events", {
+    method: "POST", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ type: "error", query: msg, entity_type: view }),
+  }).catch(() => { /* 수집 실패는 무시 */ });
+}
+/* 관리자: 최근 프론트 오류 — 메시지(query)·뷰(entity_type)·시각. RLS admin-only 읽기. */
+export interface FrontError { query: string | null; entity_type: string | null; created_at: string }
+export async function listFrontErrors(): Promise<FrontError[]> {
+  return rest<FrontError[]>("events?type=eq.error&select=query,entity_type,created_at&order=created_at.desc&limit=20");
+}
+export async function countFrontErrors7d(): Promise<number> {
+  const week = new Date(Date.now() - 7 * 86400000).toISOString();
+  return restCount(`events?type=eq.error&created_at=gte.${week}&select=id`);
+}
+
 export function trackEvent(type: "impression" | "click" | "outbound" | "favorite" | "search", platformId?: string, query?: string,
   entity?: { type: string; id: string }): void {
   if (!remoteEnabled) return;
