@@ -910,6 +910,35 @@ export async function fetchAdminMetrics(): Promise<AdminMetrics> {
   return { members, favs, searches7d, outbound7d, livePosts, liveDeals, introduced: introP + introD };
 }
 
+/* ── 관리자: 운영 워크플로 헬스 — 수집·백업 등 예약 잡의 최근 실행 상태 ──
+ * 리포가 public이라 무인증 GitHub API를 관리자 브라우저에서 직접 조회(DB·시크릿 불요).
+ * 배경: 수집기가 봇 토큰 누락으로 여러 런 조용히 실패한 사고(#140) — "조용한 실패"를 콘솔에서 보이게.
+ * 비인증 rate limit(60/h/IP)은 콘솔 진입당 6요청이라 여유. 실패는 null(카드에 '확인 불가'). */
+export interface OpsRun {
+  file: string; label: string; staleDays: number;
+  conclusion: string | null;   // success | failure | ... | null(실행 중 또는 조회 실패)
+  startedAt: string | null; url: string | null;
+}
+const OPS_WORKFLOWS: Pick<OpsRun, "file" | "label" | "staleDays">[] = [
+  { file: "collect.yml",     label: "수집기 (주3회)",    staleDays: 4 },
+  { file: "digest.yml",      label: "다이제스트 (매일)",  staleDays: 2 },
+  { file: "notify.yml",      label: "알림 매칭 (매일)",   staleDays: 2 },
+  { file: "backup.yml",      label: "백업 (주1회)",      staleDays: 9 },
+  { file: "metrics.yml",     label: "주간 지표 (주1회)",  staleDays: 9 },
+  { file: "healthcheck.yml", label: "링크 점검 (월1회)",  staleDays: 33 },
+];
+export async function fetchOpsHealth(): Promise<OpsRun[]> {
+  return Promise.all(OPS_WORKFLOWS.map(async (w) => {
+    try {
+      const res = await fetch(`https://api.github.com/repos/comdows/web1/actions/workflows/${w.file}/runs?per_page=1`);
+      if (!res.ok) throw new Error(String(res.status));
+      const j = await res.json() as { workflow_runs?: { conclusion: string | null; run_started_at: string; html_url: string }[] };
+      const r = j.workflow_runs?.[0];
+      return { ...w, conclusion: r?.conclusion ?? null, startedAt: r?.run_started_at ?? null, url: r?.html_url ?? null };
+    } catch { return { ...w, conclusion: null, startedAt: null, url: null }; }
+  }));
+}
+
 /* ── 관리자: 회원 조회·정지(0028 v_admin_members + admin_set_suspended RPC) ── */
 export interface AdminMember {
   id: string; email: string | null; display_name: string | null; role: string;

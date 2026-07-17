@@ -8,7 +8,7 @@ import { useSession } from "./lib/auth";
 import {
   briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
-  fetchAdminMetrics, fetchFunnel, fetchIntroSuccess, fetchOutboundCounts, fetchQueueCounts, fetchReferrers, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin,
+  fetchAdminMetrics, fetchFunnel, fetchIntroSuccess, fetchOpsHealth, fetchOutboundCounts, fetchQueueCounts, fetchReferrers, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin,
   reviewAutoListed,
   listDealSubmissions, listOperatorClaims,
   adminDeclineInterest, adminIntroduce, cancelCharge, confirmDeposit, createSponsorSlot, declinePendingInterests,
@@ -347,6 +347,47 @@ function AutolistConfigPanel() {
 
 /* ── 성장 패널(0034) — 주간 시계열·리텐션 코호트·머니패스 퍼널. 차트 라이브러리 없이 CSS 바.
  * 세션(sm.sid) 기준 재방문은 근사치(localStorage 초기화·다기기 미연결) — 패널에 명기. */
+/* 운영 잡 헬스 — 예약 워크플로(수집·백업 등)의 최근 실행을 GitHub API로 조회해
+ * "조용한 실패"(실패·장기 미실행)를 콘솔에서 보이게 한다(#140 수집기 무음 실패 재발 방지). */
+function OpsHealthPanel() {
+  const [runs, setRuns] = useState<Awaited<ReturnType<typeof fetchOpsHealth>>>([]);
+  useEffect(() => { fetchOpsHealth().then(setRuns).catch(() => { /* noop */ }); }, []);
+  if (runs.length === 0) return null;
+  const now = Date.now();
+  const rows = runs.map((r) => {
+    const days = r.startedAt ? (now - new Date(r.startedAt).getTime()) / 86400000 : Infinity;
+    const state = !r.startedAt ? "unknown"   // 조회 실패 또는 실행 이력 없음
+      : r.conclusion === null ? "running"
+      : r.conclusion !== "success" ? "failed"
+      : days > r.staleDays ? "stale" : "ok";
+    return { ...r, days, state };
+  });
+  const bad = rows.filter((r) => r.state === "failed" || r.state === "stale").length;
+  const ico = (s: string) => s === "ok" ? "✅" : s === "running" ? "⏳" : s === "failed" ? "❌" : s === "stale" ? "⚠️" : "❔";
+  const ago = (d: number) => !isFinite(d) ? "기록 없음" : d < 1 ? `${Math.round(d * 24)}시간 전` : `${Math.floor(d)}일 전`;
+  return (
+    <div className="banner" style={{ marginBottom: 20 }}>
+      <b>운영 잡 헬스</b>{bad > 0 && <span style={{ color: "var(--danger)", fontWeight: 700, marginLeft: 6 }}>⚠️ {bad}건 확인 필요</span>}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 6, marginTop: 8 }}>
+        {rows.map((r) => (
+          <a key={r.file} href={r.url ?? `https://github.com/comdows/web1/actions/workflows/${r.file}`}
+             target="_blank" rel="noopener noreferrer"
+             style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, textDecoration: "none", color: "inherit" }}>
+            <span>{ico(r.state)}</span>
+            <span style={{ minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.label}</span>
+            <span className="mono faint" style={{ marginLeft: "auto", flexShrink: 0 }}>
+              {r.state === "unknown" ? "확인 불가" : r.state === "running" ? "실행 중" : ago(r.days)}
+            </span>
+          </a>
+        ))}
+      </div>
+      {rows.some((r) => r.state === "stale") && (
+        <div className="frm-note" style={{ marginTop: 6 }}>⚠️ = 마지막 실행이 예상 주기를 넘김 — Actions에서 스케줄이 살아있는지 확인하세요.</div>
+      )}
+    </div>
+  );
+}
+
 function GrowthPanel() {
   const [weeks, setWeeks] = useState<Awaited<ReturnType<typeof fetchGrowthWeekly>>>([]);
   const [cohorts, setCohorts] = useState<Awaited<ReturnType<typeof fetchRetentionCohorts>>>([]);
@@ -1835,6 +1876,7 @@ export function Admin() {
         <StatTile n={metrics ? String(metrics.introduced) : "—"} l="누적 소개" tone="t" />
       </div>
 
+      <OpsHealthPanel />
       <GrowthPanel />
       <FunnelPanel />
 
