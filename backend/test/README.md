@@ -22,6 +22,13 @@ node ../backend/test/adversarial-smoke.mjs
 ```
 모듈은 `/opt/node22/lib/node_modules/playwright`, 브라우저 `executablePath:/opt/pw-browsers/chromium`, 원격은 `page.route`로 차단(Supabase 미접속). CI 미연결 이유: 브라우저 설치가 무겁다 — 릴리스 전 로컬 수동 실행.
 
+### 전 라우트 스모크 (동일 실행 절차)
+`backend/test/route-smoke.mjs` — **모든 뷰(24) × 비로그인/로그인/관리자** 정상 진입 경로 전수에서 흰 화면·pageerror가 없는지 검증(35 체크). 적대 스모크와 짝: 그쪽은 비정상 입력, 이쪽은 정상 경로 전수. Supabase·GitHub API는 mock(`profiles`만 역할 주입) — 운영 무영향.
+```bash
+node ../backend/test/route-smoke.mjs   # 위와 동일하게 dist 서버(4293) 띄운 상태에서
+```
+새 뷰를 추가하면 `PUBLIC_ROUTES`에 한 줄 추가할 것.
+
 ## 3. PG16 적대 시나리오 (수동/로컬 — Postgres 필요)
 `backend/test/rls-scenarios.sql` — 마이그레이션을 얹은 로컬 PG16에서 적대적 접근(anon 직격·권한 상승·연락처 CHECK·헬퍼 grant)이 막히는지 검증.
 
