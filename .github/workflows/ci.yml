@@ -19,6 +19,13 @@ jobs:
         working-directory: app
     steps:
       - uses: actions/checkout@v4
+      # 마이그레이션 정합 게이트 — ALL.sql은 cat 00*.sql 수동 재생성이라 깜빡하면 조용히 어긋남.
+      # (1) ALL.sql == 00*.sql 연결 (2) 번호 중복 없음(동시 작업으로 같은 000N 두 개 생기는 사고 차단)
+      - name: migrations integrity
+        working-directory: backend/migrations
+        run: |
+          cat 00*.sql | diff -q - ALL.sql || { echo "::error::ALL.sql이 00*.sql 연결과 다릅니다 — 'cat 00*.sql > ALL.sql'로 재생성 후 커밋하세요"; exit 1; }
+          dup=$(ls 00*.sql | cut -c1-4 | sort | uniq -d); [ -z "$dup" ] || { echo "::error::마이그레이션 번호 중복: $dup"; exit 1; }
       - uses: actions/setup-node@v4
         with:
           node-version: 22
