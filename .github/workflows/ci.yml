@@ -26,5 +26,7 @@ jobs:
           cache-dependency-path: app/package-lock.json
       - run: npm ci
       - run: npm run lint
+      # 골든 테스트(vitest) — 익명성 CONTACT_RE·세션 shape·가치진단 회귀 자동 차단(적대 입력 방어)
+      - run: npm test
       # build = tsc -b + 시드 검증 + vite + 프리렌더 ko/en(EN 금지 링크 grep이 실패 시 빌드 중단)
       - run: npm run build

@@ -21,8 +21,9 @@
 
 ## 검증 패턴 (필수)
 
-1. `cd app && npx tsc -b && npm run build`
+1. `cd app && npx tsc -b && npm test && npm run build` (npm test = vitest 골든: `app/test/*.test.ts` — anonymity CONTACT_RE·세션 shape·가치진단. CI 필수 게이트. 정규식 수정 시 서버 0009/0037 CHECK 동반 갱신).
 2. Playwright 스모크: `/tmp/serve-root/web1 → app/dist` 심링크 + `python3 -m http.server 42xx`(vite preview 금지 — 좀비 포트).
+   적대 입력 회귀는 `node backend/test/adversarial-smoke.mjs`(손상 세션·미존재 뷰·초장문·손상 localStorage), DB 방어 회귀는 `psql ... -f backend/test/rls-scenarios.sql`(PASS/FAIL). 상세: `backend/test/README.md`.
    모듈은 `/opt/node22/lib/node_modules/playwright/index.mjs`, 브라우저 `executablePath: "/opt/pw-browsers/chromium"`.
    원격 차단: `page.route("**://*.supabase.co/**", r => r.abort())`, 가짜 로그인: localStorage `sm.session.v1`.
 3. 마이그레이션은 로컬 Postgres 16으로 검증: `su postgres -c ".../pg_ctl -D /tmp/pgtest/data -o '-p 5433' ..."` + auth 스텁(스키마·auth.uid()·anon/authenticated 롤) 생성 후 ALL.sql 실행 + **재실행(멱등) 확인**.

@@ -191,7 +191,7 @@ export function SuggestInput({ value, onChange, placeholder, ariaLabel, autoFocu
   return (
     <span ref={boxRef} style={{ position: "relative", flex: 1, minWidth: 0, display: "flex" }}
       role="combobox" aria-expanded={open && items.length > 0} aria-haspopup="listbox">
-      <input value={value} aria-label={ariaLabel} placeholder={placeholder} autoFocus={autoFocus}
+      <input value={value} aria-label={ariaLabel} placeholder={placeholder} autoFocus={autoFocus} maxLength={100}
         aria-autocomplete="list" aria-activedescendant={active >= 0 ? `sug-${active}` : undefined}
         onChange={(e) => { onChange(e.target.value); setOpen(true); }}
         onFocus={() => setOpen(true)} onKeyDown={key}

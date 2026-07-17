@@ -1,5 +1,6 @@
 -- ============================================================
--- 세모플 DB 스키마 v1  (Supabase/Postgres)
+-- 세모플 DB 스키마 v1  (Supabase/Postgres) — 신규 DB 부트스트랩 전용(0001~0003)
+--   ※ 라이브 재적용은 개별 마이그레이션(000N)으로. ALL.sql 전체 재실행은 신규 DB에서만.
 -- 기준: redesign/handoff/API Spec.md (v0.9)
 -- 미래 기능(검수·라이프사이클·클레임·제휴·거래소·부스트·분석)을 선반영.
 -- 실행 순서: 0001_schema.sql → 0002_policies.sql → 0003_seed.sql
@@ -8,18 +9,20 @@
 create extension if not exists pg_trgm;        -- 한국어 부분일치 검색(ilike + trgm 인덱스)
 
 -- ── Enums (영문 코드; 한국어 라벨은 프론트 담당) ──────────────
-create type region_t            as enum ('domestic','overseas');            -- 국내/해외
-create type fee_band_t          as enum ('low','mid','high');               -- 수수료대
-create type lifecycle_t         as enum ('soon','review','verified','matched','rejected');
-create type submission_status_t as enum ('pending','hold','approved','rejected');
-create type collection_t        as enum ('interest','review','plan');       -- 관심/검토중/입점예정
-create type proposal_status_t   as enum ('pending','accepted','rejected','withdrawn');
-create type claim_method_t      as enum ('email','dns','meta','doc');       -- 도메인 이메일/DNS/메타태그/서류
-create type claim_status_t      as enum ('pending','code_sent','verified','rejected');
-create type deal_status_t       as enum ('open','in_progress','closed');
-create type boost_status_t      as enum ('draft','review','active','paused','done','rejected');
-create type role_t              as enum ('user','operator','admin');
-create type event_t             as enum ('impression','click','outbound','favorite','search');
+-- ALL.sql 재실행 안전: 각 create type을 do-block으로 감싸 이미 존재하면 건너뛴다
+-- (bare create type은 2회차 실행 시 "type already exists"로 전체를 중단시킴 — 운영 재적용 리스크).
+do $$ begin create type region_t            as enum ('domestic','overseas');                          exception when duplicate_object then null; end $$;  -- 국내/해외
+do $$ begin create type fee_band_t          as enum ('low','mid','high');                             exception when duplicate_object then null; end $$;  -- 수수료대
+do $$ begin create type lifecycle_t         as enum ('soon','review','verified','matched','rejected'); exception when duplicate_object then null; end $$;
+do $$ begin create type submission_status_t as enum ('pending','hold','approved','rejected');          exception when duplicate_object then null; end $$;
+do $$ begin create type collection_t        as enum ('interest','review','plan');                     exception when duplicate_object then null; end $$;  -- 관심/검토중/입점예정
+do $$ begin create type proposal_status_t   as enum ('pending','accepted','rejected','withdrawn');     exception when duplicate_object then null; end $$;
+do $$ begin create type claim_method_t      as enum ('email','dns','meta','doc');                     exception when duplicate_object then null; end $$;  -- 도메인 이메일/DNS/메타태그/서류
+do $$ begin create type claim_status_t      as enum ('pending','code_sent','verified','rejected');     exception when duplicate_object then null; end $$;
+do $$ begin create type deal_status_t       as enum ('open','in_progress','closed');                  exception when duplicate_object then null; end $$;
+do $$ begin create type boost_status_t      as enum ('draft','review','active','paused','done','rejected'); exception when duplicate_object then null; end $$;
+do $$ begin create type role_t              as enum ('user','operator','admin');                      exception when duplicate_object then null; end $$;
+do $$ begin create type event_t             as enum ('impression','click','outbound','favorite','search');  exception when duplicate_object then null; end $$;
 
 -- ── 공통 트리거: updated_at 자동 갱신 ─────────────────────────
 create or replace function public.tg_touch_updated_at() returns trigger

@@ -30,8 +30,23 @@ let profile: Profile | null = null;
 const listeners = new Set<() => void>();
 const emit = () => listeners.forEach((l) => l());
 
+/* 손상·조작된 세션 방어: 유효 JSON이어도 형태가 어긋나면(user.id 없음 등) 무효로 간주해 폐기한다.
+ * (store.ts readSet/Interests.get의 shape 검증과 동일 원칙 — 조작된 sm.session.v1 주입 시
+ *  이후 session.user.id/email 참조가 TypeError로 터지는 것을 부팅 시점에 차단.) */
+export function isValidSession(s: unknown): s is Session {
+  if (!s || typeof s !== "object") return false;
+  const o = s as Record<string, unknown>;
+  const u = o.user as Record<string, unknown> | undefined;
+  return typeof o.access_token === "string" && !!u && typeof u.id === "string" && u.id.length > 0;
+}
 function load(): Session | null {
-  try { const v = localStorage.getItem(KEY); return v ? JSON.parse(v) : null; } catch { return null; }
+  try {
+    const v = localStorage.getItem(KEY);
+    if (!v) return null;
+    const parsed = JSON.parse(v);
+    if (!isValidSession(parsed)) { localStorage.removeItem(KEY); return null; }
+    return parsed;
+  } catch { return null; }
 }
 function save(s: Session | null) {
   session = s;
