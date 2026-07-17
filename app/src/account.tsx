@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { groups, categoriesByGroup, partnerTypes } from "./data";
+import { hasContact } from "./lib/anonymity";
 import { Badge } from "./components";
 import { useNav } from "./nav";
 import {
@@ -515,7 +516,7 @@ export function Account() {
             if (pwBusy) return;
             setPwMsg({}); setPwBusy(true);
             try { await updatePassword(newPw); setPwMsg({ ok: "비밀번호가 변경됐어요 ✓" }); setNewPw(""); }
-            catch (ex) { setPwMsg({ err: ex instanceof Error ? ex.message : String(ex) }); }
+            catch (ex) { setPwMsg({ err: authErrKo(ex instanceof Error ? ex.message : String(ex)) }); }
             finally { setPwBusy(false); }
           }}>
           {recovery && <div className="ok">본인 확인 완료 — 새 비밀번호를 설정해 주세요.</div>}
@@ -535,7 +536,7 @@ export function Account() {
             if (emailBusy) return;
             setEmailMsg({}); setEmailBusy(true);
             try { await updateEmail(newEmail.trim()); setEmailMsg({ ok: "변경 메일을 보냈어요 — 새 이메일의 확인 링크를 눌러야 완료됩니다." }); setNewEmail(""); }
-            catch (ex) { setEmailMsg({ err: ex instanceof Error ? ex.message : String(ex) }); }
+            catch (ex) { setEmailMsg({ err: authErrKo(ex instanceof Error ? ex.message : String(ex)) }); }
             finally { setEmailBusy(false); }
           }}>
           <label>이메일 변경 <span style={{ fontWeight: 400, color: "var(--faint)" }}>(소개·안내가 이 주소로 갑니다 — 이직·메일 폐기 전에 꼭 갱신)</span>
@@ -892,6 +893,11 @@ export function Submit() {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
+    // 연락처 클라 선차단(서버 0005/0009 check와 이중화) — url은 대표 URL이라 검사 제외, 이름·소개만.
+    if (hasContact(name, desc)) {
+      setErr("연락처·메신저 ID·URL은 이름·소개에 적을 수 없어요 — 검수 시 삭제됩니다. 대표 URL 칸만 사용하세요.");
+      return;
+    }
     setErr(""); setBusy(true);
     try {
       await createSubmission({ name: name.trim(), url: url.trim(), category_id: cat, region, desc: desc.trim() });

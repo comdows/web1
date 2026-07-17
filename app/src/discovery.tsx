@@ -119,6 +119,11 @@ function CorrectionBox({ p }: { p: Platform }) {
     const fields: Record<string, string> = {};
     for (const k of Object.keys(base)) { const v = (f as Record<string, string>)[k].trim(); if (v && v !== base[k]) fields[k] = v; }
     if (Object.keys(fields).length === 0 && !note.trim()) { setErr("바뀐 내용을 입력해 주세요."); return; }
+    // 연락처 클라 선차단(서버 check와 이중화) — url 칸은 공식 주소라 검사 제외, 판단 필드·메모만.
+    if (hasContact(fields.fee_text, fields.settle_text, fields.enter_text, fields.strength, note)) {
+      setErr("연락처·메신저 ID·URL은 적을 수 없어요 — URL 정정 칸만 사용하세요.");
+      return;
+    }
     setBusy(true);
     try { await createCorrection({ id: p.id, name: p.name, url: p.url, category: p.category, region: p.region }, fields, note.trim(), isOp); setDone(true); setOpen(false); }
     catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
