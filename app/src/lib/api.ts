@@ -275,8 +275,8 @@ export async function getPopularSearches(): Promise<{ query: string; cnt: number
   return rest<{ query: string; cnt: number }[]>("v_popular_searches?select=*");
 }
 export async function getPendingCount(): Promise<number> {
-  const rows = await rest<{ id: string }[]>("submissions?status=eq.pending&select=id");
-  return rows.length;
+  // 개수만 필요 — count=exact 헤더로 본문 미전송(restCount). 이전엔 pending id 전량을 받아 length를 셌음.
+  return restCount("submissions?status=eq.pending&select=id");
 }
 
 /* ============================================================
@@ -766,18 +766,17 @@ export interface IntroQueueRow {
 /* 관리 콘솔 상단 요약 — 작업 큐별 대기 건수(한눈에 '뭐가 밀렸나'). 각 큐와 동일 필터. */
 export interface QueueCounts { submission: number; partner: number; deal: number; operator: number; deposit: number; intro: number; report: number; inquiry: number }
 export async function fetchQueueCounts(): Promise<QueueCounts> {
-  const n = async (pathQ: string) => {
-    try { return (await rest<{ id?: string }[]>(pathQ)).length; } catch { return 0; }
-  };
+  // 개수만 필요 — count=exact 헤더로 본문 미전송(restCount). 이전엔 큐별 id를 최대 200행씩 받아 length를 셌음
+  // (200 초과 시 200으로 잘려 실제 밀린 건수를 축소 표시) → 헤더 count로 전송량↓·정확도↑.
   const [submission, partner, deal, operator, deposit, intro, report, inquiry] = await Promise.all([
-    n("submissions?status=in.(pending,hold)&select=id&limit=200"),
-    n("partner_posts?status=eq.pending&select=id&limit=200"),
-    n("deal_submissions?status=in.(pending,hold)&select=id&limit=200"),
-    n("operator_claims?status=in.(pending,code_sent)&select=id&limit=200"),
-    n("v_admin_charges?status=eq.awaiting_deposit&select=id&limit=200"),
-    n("v_admin_intro_queue?status=eq.pending&select=id&limit=200"),
-    n("reports?status=eq.pending&select=id&limit=200"),
-    n("inquiries?status=eq.open&select=id&limit=200"),
+    restCount("submissions?status=in.(pending,hold)&select=id"),
+    restCount("partner_posts?status=eq.pending&select=id"),
+    restCount("deal_submissions?status=in.(pending,hold)&select=id"),
+    restCount("operator_claims?status=in.(pending,code_sent)&select=id"),
+    restCount("v_admin_charges?status=eq.awaiting_deposit&select=id"),
+    restCount("v_admin_intro_queue?status=eq.pending&select=id"),
+    restCount("reports?status=eq.pending&select=id"),
+    restCount("inquiries?status=eq.open&select=id"),
   ]);
   return { submission, partner, deal, operator, deposit, intro, report, inquiry };
 }
