@@ -60,6 +60,12 @@ select case when
      not has_function_privilege('anon','public.admin_set_suspended(uuid, boolean)','execute')
   then 'PASS' else 'FAIL' end || ' — admin_set_suspended anon 차단';
 
+-- ── 5.5) 운영자 답글 RPC(0040) — anon 차단·authenticated 허용 ──
+select case when
+     not has_function_privilege('anon','public.operator_reply_review(uuid, text)','execute')
+ and has_function_privilege('authenticated','public.operator_reply_review(uuid, text)','execute')
+  then 'PASS' else 'FAIL' end || ' — operator_reply_review grant(anon 차단)';
+
 -- ── 6) profiles: insert/delete 정책 부재(직접 프로필 생성·삭제 차단 — role 자가지정 방지) ──
 select case when not exists (
     select 1 from pg_policies
