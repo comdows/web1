@@ -473,8 +473,21 @@ export function Account() {
     return (
       <main className="page container">
         <h1>계정</h1>
-        <p className="lead" style={{ maxWidth: 520 }}>로그인하면 ★ 즐겨찾기가 계정에 저장되어 어느 기기에서나 이어지고, 빠진 플랫폼을 제보할 수 있습니다.</p>
-        <AuthPanel />
+        {/* 전환 페이지 리프트(D4) — 우측 공백을 가입 가치 제안으로 */}
+        <div className="auth-layout">
+          <AuthPanel />
+          <aside className="auth-value banner plain" aria-label="가입 혜택">
+            <b>가입하면 이렇게 달라져요</b>
+            <ul>
+              <li><span className="vico">★</span>즐겨찾기가 계정에 보관 — 폰·PC 어디서나 이어서 봐요.</li>
+              <li><span className="vico">🔔</span>검색 조건을 저장하면 조건에 맞는 새 플랫폼 등재를 알림으로.</li>
+              <li><span className="vico">✨</span>관심 분야를 고르면 홈이 내 분야 추천 중심으로 바뀌어요.</li>
+              <li><span className="vico">📝</span>빠진 플랫폼 제보·잘못된 정보 정정에 참여할 수 있어요.</li>
+              <li><span className="vico">🤝</span>제휴 매칭·거래소 등록과 운영자 인증(검증 배지)까지.</li>
+            </ul>
+            <div className="frm-note" style={{ marginTop: 12 }}>1,700+ 플랫폼 · 45개 분야 · 지금은 전부 무료</div>
+          </aside>
+        </div>
       </main>
     );
   }
@@ -503,7 +516,7 @@ export function Account() {
   };
 
   return (
-    <main className="page container">
+    <main className="page container" style={{ maxWidth: 900 }}>
       <h1>계정</h1>
       <div className="auth-card" data-tour="profile">
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
