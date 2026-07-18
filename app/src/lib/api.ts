@@ -605,7 +605,17 @@ export async function answerDealQuestion(id: string, answer: string, hide = fals
 }
 
 /* ── 플랫폼 이용 후기(0025) — 게시는 검수(published) 후, 공개 뷰는 작성자 비노출 ── */
-export interface PublicReview { platform_id: string; rating: number; body: string; created_at: string; id: string }
+export interface PublicReview {
+  platform_id: string; rating: number; body: string; created_at: string; id: string;
+  operator_reply?: string | null; operator_replied_at?: string | null; // 0040 — 운영자 답글
+}
+/* 운영자 후기 답글(0040 RPC) — 본인 인증 플랫폼·게시 후기만, 빈 문자열이면 답글 삭제 */
+export async function operatorReplyReview(reviewId: string, reply: string): Promise<void> {
+  await rest("rpc/operator_reply_review", {
+    method: "POST", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ p_review: reviewId, p_reply: reply }),
+  });
+}
 export async function fetchReviews(platformId: string): Promise<PublicReview[]> {
   return rest<PublicReview[]>(`v_reviews_public?platform_id=eq.${encodeURIComponent(platformId)}&select=*&limit=30`).catch(() => []);
 }

@@ -7,7 +7,7 @@ const HUB: Record<string, { intro: string; pickBy: string[] }> = hubIntros as ne
 import { Avatar, Badge, PlatformCard, ReportButton, ShareButton, SuggestInput, AiPricingBadge, AI_PRICING, EmptyState } from "./components";
 import { RecentQ, fuzzyCorrect } from "./lib/suggest";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
-import { amOperatorOf, createCorrection, createOperatorClaim, createSavedSearch, deleteMyReview, fetchPlatformNews, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent } from "./lib/api";
+import { amOperatorOf, createCorrection, createOperatorClaim, createSavedSearch, deleteMyReview, fetchPlatformNews, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent , operatorReplyReview, listMyOperatedPlatforms } from "./lib/api";
 import type { OperatorClaim, PlatformNews, PublicReview, SearchCriteria } from "./lib/api";
 import { useReviewStats } from "./lib/reviews";
 import { hasContact } from "./lib/anonymity";
@@ -197,6 +197,43 @@ function NewsSection({ platformId }: { platformId: string }) {
 /* ── 이용 후기(0025) — 게시는 검수(published) 후에만, 작성자 비노출(익명 게시).
  * 평점은 표시 전용 — 검색 정렬 랭킹에 반영하지 않는다(디렉토리 중립성). */
 const STAR = (n: number) => "★".repeat(n) + "☆".repeat(5 - n);
+/* R4 — 운영자 후기 답글 폼(0040 RPC). 클라 연락처 선차단(hasContact) + 서버 CHECK 이중화. */
+function OperatorReplyForm({ reviewId, current, onDone }: { reviewId: string; current: string; onDone: () => void }) {
+  const [open, setOpen] = useState(false);
+  const [text, setText] = useState(current);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const save = async (clear: boolean) => {
+    const v = clear ? "" : text.trim();
+    if (!clear && v.length < 5) { setErr("답변을 5자 이상 적어 주세요."); return; }
+    if (!clear && hasContact(v)) { setErr("연락처·이메일·URL·메신저 ID는 적을 수 없어요."); return; }
+    setErr(""); setBusy(true);
+    try { await operatorReplyReview(reviewId, v); setOpen(false); onDone(); }
+    catch (ex) {
+      const m = ex instanceof Error ? ex.message : String(ex);
+      setErr(/check|contact/i.test(m) ? "연락처로 보이는 표현이 있어 저장할 수 없어요." : m);
+    } finally { setBusy(false); }
+  };
+  if (!open) return (
+    <button className="linklike" style={{ fontSize: 12.5, marginTop: 4 }} onClick={() => { setText(current); setOpen(true); }}>
+      {current ? "운영자 답변 수정 →" : "↳ 운영자 답변 달기"}
+    </button>
+  );
+  return (
+    <div className="frm" style={{ marginTop: 8, display: "grid", gap: 6 }}>
+      <textarea value={text} maxLength={500} rows={2} placeholder="운영자 명의로 공개 게시됩니다 — 연락처·URL 금지"
+        onChange={(e) => setText(e.target.value)}
+        style={{ font: "inherit", padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 8, background: "var(--surface)", color: "var(--text)", resize: "vertical" }} />
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+        <button className="btn primary sm" disabled={busy} onClick={() => save(false)}>{busy ? "저장 중…" : "답변 게시"}</button>
+        {current && <button className="btn ghost sm" disabled={busy} onClick={() => save(true)}>답변 삭제</button>}
+        <button className="linklike" onClick={() => { setOpen(false); setErr(""); }}>취소</button>
+        {err && <span className="err" style={{ fontSize: 12.5 }}>{err}</span>}
+      </div>
+    </div>
+  );
+}
+
 function ReviewSection({ platformId }: { platformId: string }) {
   const go = useNav();
   const { session } = useSession();
@@ -209,11 +246,13 @@ function ReviewSection({ platformId }: { platformId: string }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [sent, setSent] = useState(false);
+  const [isOp, setIsOp] = useState(false); // R4 — 이 플랫폼의 인증 운영자면 답글 가능
   useEffect(() => {
-    setReviews(null); setMineStatus(""); setMineId(""); setSent(false); setErr(""); setBody(""); setRating(5);
+    setReviews(null); setMineStatus(""); setMineId(""); setSent(false); setErr(""); setBody(""); setRating(5); setIsOp(false);
     if (!remoteEnabled) return;
     let alive = true;
     fetchReviews(platformId).then((r) => { if (alive) setReviews(r); });
+    if (session) listMyOperatedPlatforms().then((ops) => { if (alive) setIsOp(ops.some((o) => o.platform_id === platformId)); }).catch(() => { /* noop */ });
     if (session) {
       getMyReview(platformId).then((m) => {
         if (alive && m) { setMineStatus(m.status); setMineId(m.id); setRating(m.rating); setBody(m.body); }
@@ -243,9 +282,15 @@ function ReviewSection({ platformId }: { platformId: string }) {
           <div className="sub-list" style={{ marginBottom: 10 }}>
             {reviews.map((r, i) => (
               <div className="sub-item" key={i} style={{ alignItems: "flex-start" }}>
-                <div style={{ minWidth: 0 }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
                   <span style={{ color: "var(--brand)", fontSize: 13 }} aria-label={`별점 ${r.rating}점`}>{STAR(r.rating)}</span>
                   <p style={{ margin: "4px 0 0", fontSize: 13.5 }}>{r.body}</p>
+                  {r.operator_reply && (
+                    <div className="banner plain" style={{ marginTop: 8, padding: "8px 10px", fontSize: 13 }}>
+                      ↳ <b>운영자 답변</b>{r.operator_replied_at ? <span className="faint"> · {r.operator_replied_at.slice(0, 10)}</span> : null}<br />{r.operator_reply}
+                    </div>
+                  )}
+                  {isOp && <OperatorReplyForm reviewId={r.id} current={r.operator_reply ?? ""} onDone={() => fetchReviews(platformId).then(setReviews)} />}
                 </div>
                 <span style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 4, flexShrink: 0 }}>
                   <span className="mono" style={{ color: "var(--faint)", fontSize: 11 }}>{r.created_at.slice(0, 10)}</span>
