@@ -977,6 +977,29 @@ export async function setMemberSuspended(userId: string, suspend: boolean): Prom
   });
 }
 
+/* ── 공지(R2) — app_settings 'notice' {text, until}. 읽기는 공개 정책(비로그인 포함), 쓰기는 admin.
+ * 기존 updateAppSetting은 PATCH라 미존재 키에 무효 — 공지는 upsert(POST merge-duplicates)로. ── */
+export interface SiteNotice { text: string; until: string | null }
+export async function getNotice(): Promise<SiteNotice | null> {
+  const rows = await rest<{ value: { text?: string; until?: string | null } }[]>("app_settings?key=eq.notice&select=value");
+  const v = rows[0]?.value;
+  return v && typeof v.text === "string" && v.text.trim() ? { text: v.text, until: v.until ?? null } : null;
+}
+export async function setNotice(text: string, until: string | null): Promise<void> {
+  await rest("app_settings", {
+    method: "POST", headers: { Prefer: "resolution=merge-duplicates,return=minimal" },
+    body: JSON.stringify({ key: "notice", value: { text: text.trim(), until } }),
+  });
+}
+
+/* ── 소식 수기 추가(R2) — platform_news admin insert 정책(0027). 수집기와 동일 테이블·URL unique. ── */
+export async function addPlatformNews(input: { platform_id: string; title: string; url: string; source: string }): Promise<void> {
+  await rest("platform_news", {
+    method: "POST", headers: { Prefer: "return=minimal" },
+    body: JSON.stringify({ ...input, published_at: new Date().toISOString() }),
+  });
+}
+
 /* ── 관리자: 운영 스위치(app_settings — admin write RLS는 0011) ── */
 export interface AppSetting { key: string; value: Record<string, unknown> }
 export async function listAppSettings(): Promise<AppSetting[]> {

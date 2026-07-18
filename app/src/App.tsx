@@ -35,7 +35,8 @@ const DealView   = lazy(() => import("./pages").then((m) => ({ default: m.DealDe
 const Support    = lazy(() => import("./support").then((m) => ({ default: m.Support })));
 import { useSession } from "./lib/auth";
 import { startTour, HOME_TOUR } from "./lib/tour";
-import { fetchRecentPlatforms, listSavedSearches, remoteEnabled, rest, trackEvent, unreadNotifCount } from "./lib/api";
+import { fetchRecentPlatforms, getNotice, listSavedSearches, remoteEnabled, rest, trackEvent, unreadNotifCount } from "./lib/api";
+import type { SiteNotice } from "./lib/api";
 import type { SavedSearch } from "./lib/api";
 
 const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
@@ -86,6 +87,13 @@ export default function App() {
   const [view, setView] = useState<ViewName>(init.view);
   const [detailId, setDetailId] = useState(init.id);
   const [pricingNotice, setPricingNotice] = useState<string | null>(null); // 유료화 30일 공지(0011 app_settings)
+  const [notice, setNoticeState] = useState<SiteNotice | null>(null); // 관리자 자유 공지(R2 — app_settings 'notice')
+  useEffect(() => {
+    if (!remoteEnabled) return;
+    getNotice().then((n) => {
+      if (n && (!n.until || n.until >= new Date().toISOString().slice(0, 10))) setNoticeState(n);
+    }).catch(() => { /* 공지 없음 */ });
+  }, []);
   useEffect(() => {
     if (!remoteEnabled) return;
     rest<{ value: string | null }[]>("app_settings?key=eq.pricing_announced_at&select=value")
@@ -293,6 +301,11 @@ export default function App() {
           ⏰ <b>세션이 만료됐어요</b> — 안전을 위해 로그아웃되었습니다. 다시 로그인해 주세요.{" "}
           <button className="btn sm" onClick={() => { setSessionExpired(false); go("account"); }}>로그인</button>{" "}
           <button className="linklike" onClick={() => setSessionExpired(false)}>닫기</button>
+        </div></div>
+      )}
+      {notice && (
+        <div className="container"><div className="banner" style={{ marginTop: 10 }}>
+          📢 <b>공지</b> — {notice.text}
         </div></div>
       )}
       {pricingNotice && (
