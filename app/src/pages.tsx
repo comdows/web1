@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { FormEvent, ReactNode } from "react";
 import { listings, categoryById, groups, categoriesByGroup, partnerGoals, partnerGroups, partnerTypes } from "./data";
 import type { PartnerType } from "./data";
-import { Badge, ReportButton, ShareButton } from "./components";
+import { Badge, ReportButton, ShareButton, EmptyState } from "./components";
 import { FLAGS } from "./config";
 import { useNav } from "./nav";
 import { startTour, PARTNERS_TOUR, EXCHANGE_TOUR } from "./lib/tour";
@@ -1067,13 +1067,13 @@ export function Exchange() {
             (세모플은 안내 대가를 받지 않습니다).</p></div>
       </div>
 
-      <div className="banner" style={{ marginBottom: 12 }}>
+      <div className="banner warn" style={{ marginBottom: 12 }}>
         🕶️ <b>익명성 규칙</b> — 게시 전 검수에서 전부 확인합니다:
         플랫폼명·URL 유추 표현 금지 · 정확한 수치 대신 밴드(연매출 1~5억) · 지역은 광역 단위 ·
         <b>희망 가격은 게시하지 않음</b>(소개 후 당사자 협상) · 연락처·개인정보 금지.
       </div>
 
-      <div className="banner" style={{ marginBottom: 18 }}>
+      <div className="banner plain" style={{ marginBottom: 18 }}>
         📋 <b>매각 준비 체크리스트</b> — 소개가 빨라집니다:
         ① 최근 12개월 매출·비용 증빙 ② 회원·트래픽 지표(MAU·재방문) ③ 이전 가능한 자산 목록(접수 폼에서 체크) ④ 매각 사유와 희망 형태.
         증빙 원본은 게시하지 않아요 — <b>소개 후 NDA 하에 직접 공유</b>가 원칙입니다.
@@ -1125,6 +1125,10 @@ export function Exchange() {
       {/* ── 매물 보드 ── */}
       <div className="sec-title" id="x-board" data-tour="x-board">매물 보드</div>
       <div className="result-meta">매물 {shown.length}건 (익명 리스팅{shown.length > 0 && shown.every((d) => d.demo) ? " — 아직 데모 예시" : ""})</div>
+      {shown.length === 0 && (
+        <EmptyState icon="🏪" text="아직 게시된 매물이 없어요 — 첫 매물을 기다리고 있습니다. 매각을 준비 중이라면 익명으로 먼저 접수해 보세요."
+          actionLabel="매각 접수하기 →" onAction={() => document.getElementById("x-reg")?.scrollIntoView({ behavior: "smooth" })} />
+      )}
       <div className="card-grid">
         {shown.map((d) => (
           <div className="pcard" key={d.id}>

@@ -4,7 +4,7 @@ import { categories, groups, categoriesByGroup, categoryById } from "./data";
 import type { Platform } from "./data";
 import hubIntros from "./data/hub-intros.ko.json"; // 분야 허브 편집 인트로(검색 랜딩 안내)
 const HUB: Record<string, { intro: string; pickBy: string[] }> = hubIntros as never;
-import { Avatar, Badge, PlatformCard, ReportButton, ShareButton, SuggestInput, AiPricingBadge, AI_PRICING } from "./components";
+import { Avatar, Badge, PlatformCard, ReportButton, ShareButton, SuggestInput, AiPricingBadge, AI_PRICING, EmptyState } from "./components";
 import { RecentQ, fuzzyCorrect } from "./lib/suggest";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
 import { amOperatorOf, createCorrection, createOperatorClaim, createSavedSearch, deleteMyReview, fetchPlatformNews, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent } from "./lib/api";
@@ -238,7 +238,7 @@ function ReviewSection({ platformId }: { platformId: string }) {
         {stat && <span style={{ textTransform: "none", letterSpacing: 0, marginLeft: 8 }}>★{stat.avg_rating} · {stat.review_count}건</span>}
       </div>
       {reviews === null ? <div className="empty">불러오는 중…</div>
-        : reviews.length === 0 ? <div className="empty">아직 게시된 후기가 없어요 — 이용해 보셨다면 첫 후기를 남겨 주세요.</div>
+        : reviews.length === 0 ? <EmptyState icon="💬" text="아직 게시된 후기가 없어요 — 이용해 보셨다면 첫 후기를 남겨 주세요." />
         : (
           <div className="sub-list" style={{ marginBottom: 10 }}>
             {reviews.map((r, i) => (
@@ -418,7 +418,7 @@ export function PlatformDetail({ id }: { id?: string }) {
 
       <OperatorClaimBox platformId={p.id} platformUrl={p.url} />
 
-      <div className="panel-note banner" data-tour="correction">
+      <div className="panel-note banner warn" data-tour="correction">
         ⓘ <b>수수료대·정산 주기·입점 조건은 공개 정보를 바탕으로 한 세모플의 개략 추정치</b>이며 해당 플랫폼의 공식 수치가 아닙니다.
         요율·조건은 카테고리·시기·계약에 따라 다르고 수시로 바뀌므로, 실제 값은 반드시 <b>공식 사이트</b>에서 확인하세요.
         <CorrectionBox p={p} />

@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { groups, categoriesByGroup, partnerTypes } from "./data";
 import { hasContact } from "./lib/anonymity";
-import { Badge } from "./components";
+import { Badge, EmptyState } from "./components";
 import { useNav } from "./nav";
 import { useInterests } from "./lib/store";
 import { startTour, ACCOUNT_TOUR } from "./lib/tour";
@@ -375,6 +375,7 @@ function savedSearchUrl(c: SavedSearch["criteria"]): string {
   return `${import.meta.env.BASE_URL}?${p}`;
 }
 function SavedSearchesPanel() {
+  const go = useNav();
   const { session } = useSession();
   const [rows, setRows] = useState<SavedSearch[] | null>(null);
   const reload = () => { listSavedSearches().then(setRows).catch(() => setRows([])); };
@@ -384,7 +385,8 @@ function SavedSearchesPanel() {
     <>
       <div className="sec-title" data-tour="saved" style={{ marginTop: 28 }}>내 저장 검색 <span className="faint" style={{ fontWeight: 400, fontSize: 13 }}>· 조건에 맞는 새 플랫폼이 등재되면 알림</span></div>
       {rows.length === 0 ? (
-        <div className="empty">저장한 검색이 없어요 — 검색 결과 화면에서 <b>🔔 이 조건 저장</b>을 누르면 조건에 맞는 신규 등재를 알림으로 받아요.</div>
+        <EmptyState icon="🔔" text={<>저장한 검색이 없어요 — 검색 결과에서 <b>🔔 이 조건 저장</b>을 누르면 조건에 맞는 신규 등재를 알림으로 받아요.</>}
+          actionLabel="검색하러 가기 →" onAction={() => go("search")} />
       ) : (
         <div className="sub-list">
           {rows.map((s) => (
@@ -610,7 +612,8 @@ export function Account() {
           <div className="empty">목록을 불러오지 못했어요. <button className="linklike" onClick={() => setReload((n) => n + 1)}>다시 시도</button></div>
         ) : subs === null ? <div className="empty">불러오는 중…</div>
         : subs.length === 0 ? (
-          <div className="empty">아직 제보한 플랫폼이 없어요. <a onClick={() => go("submit")} style={{ cursor: "pointer" }}>+ 플랫폼 제보하기</a></div>
+          <EmptyState icon="📝" text="아직 제보한 플랫폼이 없어요 — 빠진 플랫폼을 알려주시면 검수 후 등재됩니다."
+            actionLabel="+ 플랫폼 제보하기" onAction={() => go("submit")} />
         ) : (
           <div className="sub-list">
             {subs.map((s) => {
@@ -717,7 +720,8 @@ export function Account() {
         <div className="empty">활동 내역을 불러오지 못했어요. <button className="linklike" onClick={() => setReload((n) => n + 1)}>다시 시도</button></div>
       ) : acts === null ? <div className="empty">불러오는 중…</div>
       : (acts.pp.length + acts.ds.length + acts.pi.length + acts.di.length + acts.br.length) === 0 ? (
-        <div className="empty">제휴 제안·매각 접수·매칭 신청·관심 등록이 여기에 표시됩니다.</div>
+        <EmptyState icon="🤝" text="제휴 제안·매각 접수·매칭 신청·관심 등록이 여기에 표시됩니다."
+          actionLabel="제휴 매칭 둘러보기 →" onAction={() => go("partners")} />
       ) : (() => {
         // 매칭된 매물을 적합도(scoreBriefDeal) 순으로 — 여러 브리프에 걸리면 최고 점수 채택
         const matchScore = new Map<string, number>();

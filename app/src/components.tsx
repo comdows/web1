@@ -27,6 +27,20 @@ export function Logo() {
   );
 }
 
+/* 빈 상태(D3) — 아이콘+설명+행동 버튼. "점선 박스+한 줄"의 빈약한 빈 화면을 공용으로 대체. */
+export function EmptyState({ icon, text, actionLabel, onAction, children }: {
+  icon: string; text: ReactNode; actionLabel?: string; onAction?: () => void; children?: ReactNode;
+}) {
+  return (
+    <div className="empty es">
+      <div className="es-ico" aria-hidden>{icon}</div>
+      <p className="es-text">{text}</p>
+      {actionLabel && onAction && <button className="btn primary sm" onClick={onAction}>{actionLabel}</button>}
+      {children}
+    </div>
+  );
+}
+
 export function Badge({ kind, children }: { kind: "new" | "good" | "soon" | "muted" | "verify" | "ad"; children: ReactNode }) {
   return <span className={`badge ${kind}`}>{children}</span>;
 }
