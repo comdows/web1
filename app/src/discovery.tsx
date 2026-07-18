@@ -16,6 +16,7 @@ import { usePopularity } from "./lib/popularity";
 import { rankSimilar } from "./lib/match";
 import { Compare as CompareStore, Favs, Interests, Recent, useCompare, useFavs } from "./lib/store";
 import { useNav } from "./nav";
+import { startTour, SEARCH_TOUR, DETAIL_TOUR } from "./lib/tour";
 import { useSession } from "./lib/auth";
 import { FLAGS } from "./config";
 import { ProposalComposer } from "./proposal";
@@ -58,7 +59,7 @@ function OperatorClaimBox({ platformId, platformUrl }: { platformId: string; pla
   };
 
   return (
-    <div className="banner" style={{ margin: "14px 0" }}>
+    <div className="banner" data-tour="claim" style={{ margin: "14px 0" }}>
       {isOp ? (
         <>✓ <b>운영자 인증 완료</b> — 이 플랫폼에 검증 배지가 표시됩니다. 정보 수정은 정정 제보 또는 문의로 반영돼요.</>
       ) : done || claim?.status === "pending" || claim?.status === "code_sent" ? (
@@ -335,6 +336,12 @@ export function PlatformDetail({ id }: { id?: string }) {
     try { if (sessionStorage.getItem("sm.seen.v1")) return false; sessionStorage.setItem("sm.seen.v1", "1"); } catch { /* noop */ }
     return true;
   });
+  /* 상세 화면 투어(G2) — 플랫폼이 로드된 첫 진입 1회 자동 */
+  useEffect(() => {
+    if (!p) return;
+    const t = setTimeout(() => { startTour("detail", DETAIL_TOUR, { auto: true }); }, 900);
+    return () => clearTimeout(t);
+  }, [p]);
   if (!p) {
     if (fetching || (!loaded && remoteEnabled)) return <div className="page container"><div className="empty">불러오는 중…</div></div>;
     return (
@@ -367,7 +374,7 @@ export function PlatformDetail({ id }: { id?: string }) {
         <div style={{ flex: 1, minWidth: 0 }}>
           <h1>{p.name} {p.verified && <Badge kind="verify">검증</Badge>}{p.new && <Badge kind="new">NEW</Badge>}</h1>
           <div className="cat">{cat?.icon} <span className="linklike" onClick={() => go("search", { q: cat?.name ?? "" })}>{cat?.name}</span> · {p.region}</div>
-          <div className="detail-cta">
+          <div className="detail-cta" data-tour="actions">
             <a className="btn primary" href={p.url} target="_blank" rel="noopener noreferrer" onClick={() => { Recent.push(p.id); trackEvent("outbound", p.id); }}>공식 사이트 방문 ↗</a>
             <button className={`btn ghost ${on ? "on" : ""}`} onClick={() => favs.toggle(p.id)}>{on ? "★ 저장됨" : "☆ 즐겨찾기"}</button>
             <button className={`btn ghost ${inCmp ? "on" : ""}`} disabled={!inCmp && cmp.full} onClick={() => cmp.toggle(p.id)}>{inCmp ? "✓ 비교 담김" : "+ 비교 담기"}</button>
@@ -383,7 +390,7 @@ export function PlatformDetail({ id }: { id?: string }) {
 
       {p.blurb && <p className="lead" style={{ maxWidth: 640, marginTop: 4 }}>{p.blurb}</p>}
 
-      <div className="facts">
+      <div className="facts" data-tour="facts">
         <div className="fact"><div className="k">분야</div><div className="v">{cat?.icon} {cat?.name}</div></div>
         <div className="fact"><div className="k">지역</div><div className="v">{p.region}</div></div>
         <div className="fact"><div className="k">신규 여부</div><div className="v">{p.new ? "🆕 최근 등록" : "기존 등록"}</div></div>
@@ -411,7 +418,7 @@ export function PlatformDetail({ id }: { id?: string }) {
 
       <OperatorClaimBox platformId={p.id} platformUrl={p.url} />
 
-      <div className="panel-note banner">
+      <div className="panel-note banner" data-tour="correction">
         ⓘ <b>수수료대·정산 주기·입점 조건은 공개 정보를 바탕으로 한 세모플의 개략 추정치</b>이며 해당 플랫폼의 공식 수치가 아닙니다.
         요율·조건은 카테고리·시기·계약에 따라 다르고 수시로 바뀌므로, 실제 값은 반드시 <b>공식 사이트</b>에서 확인하세요.
         <CorrectionBox p={p} />
@@ -497,7 +504,7 @@ function SaveSearchButton({ criteria, label }: { criteria: SearchCriteria; label
     catch (ex) { setErr(ex instanceof Error ? ex.message : "저장 실패"); setState("idle"); }
   };
   return (
-    <span style={{ marginLeft: 8, display: "inline-flex", gap: 6, alignItems: "center" }}>
+    <span data-tour="save-search" style={{ marginLeft: 8, display: "inline-flex", gap: 6, alignItems: "center" }}>
       <button className="btn ghost sm" disabled={state === "busy"} onClick={save}
         title="이 검색 조건을 저장하면 조건에 맞는 새 플랫폼이 등재될 때 알림을 받아요">
         {state === "busy" ? "저장 중…" : "🔔 이 조건 저장"}
@@ -567,6 +574,12 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
     return list;
   }, [q, cats, region, onlyNew, fees, sort, platforms, pop]);
 
+  /* 검색 화면 투어(G2) — 첫 진입 1회 자동 */
+  useEffect(() => {
+    const t = setTimeout(() => { startTour("search", SEARCH_TOUR, { auto: true }); }, 900);
+    return () => clearTimeout(t);
+  }, []);
+
   const activeChips: { label: string; clear: () => void }[] = [];
   cats.forEach((c) => activeChips.push({ label: categoryById(c)?.name ?? c, clear: () => toggleCat(c) }));
   if (region !== "all") activeChips.push({ label: region, clear: () => setRegion("all") });
@@ -585,7 +598,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
         {showFilters ? "필터 접기 ▴" : `필터 열기${activeChips.length ? ` (${activeChips.length}개 적용 중)` : ""} ▾`}
       </button>
       <div className={`search-layout ${showFilters ? "filters-open" : ""}`}>
-        <aside className="facets">
+        <aside className="facets" data-tour="facets">
           <div className="facet-group">
             <div className="facet-title">지역</div>
             {["all", "국내", "해외"].map((r) => (
@@ -664,7 +677,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
               const label = (parts.slice(0, 3).join(" · ") || "전체 플랫폼").slice(0, 80);
               return <SaveSearchButton criteria={criteria} label={label} />;
             })()}
-            <select className="select" aria-label="정렬" value={sort} onChange={(e) => setSort(e.target.value as Sort)} style={{ marginLeft: "auto" }}>
+            <select className="select" aria-label="정렬" data-tour="sort" value={sort} onChange={(e) => setSort(e.target.value as Sort)} style={{ marginLeft: "auto" }}>
               <option value="relevance">관련도</option>
               <option value="popular">인기순</option>
               <option value="new">신규 우선</option>
@@ -684,7 +697,7 @@ export function SearchResults({ initialQ = "" }: { initialQ?: string }) {
                   return fix ? <> 혹시 <button className="linklike" onClick={() => setQ(fix)}><b>{fix}</b></button> 을(를) 찾으셨나요?</> : null; })()}
                 {" "}필터를 줄여보세요. 찾는 플랫폼이 없다면 <button className="linklike" onClick={() => go("submit")}>+ 제보</button>해 주시면 검수 후 등재해 드려요.
               </div>
-            : <div className="card-grid">{results.slice(0, 300).map((p) => <PlatformCard key={p.id} p={p} />)}</div>}
+            : <div className="card-grid" data-tour="results">{results.slice(0, 300).map((p) => <PlatformCard key={p.id} p={p} />)}</div>}
           {results.length > 300 && <div className="result-meta">상위 300개 표시 · 검색어·필터로 좁혀보세요.</div>}
         </div>
       </div>
