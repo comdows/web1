@@ -8,7 +8,7 @@ import { useSession } from "./lib/auth";
 import {
   briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
-  countFrontErrors7d, fetchAdminMetrics, fetchTourStats, fetchFunnel, fetchIntroSuccess, fetchOpsHealth, fetchOutboundCounts, fetchQueueCounts, fetchReferrers, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin, listFrontErrors,
+  addPlatformNews, countFrontErrors7d, fetchAdminMetrics, fetchTourStats, getNotice, setNotice, fetchFunnel, fetchIntroSuccess, fetchOpsHealth, fetchOutboundCounts, fetchQueueCounts, fetchReferrers, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin, listFrontErrors,
   reviewAutoListed,
   listDealSubmissions, listOperatorClaims,
   adminDeclineInterest, adminIntroduce, cancelCharge, confirmDeposit, createSponsorSlot, declinePendingInterests,
@@ -1177,6 +1177,36 @@ function InquiryQueue() {
 }
 
 /* ── 🗞 소식 관리(0027·0028) — 자동 수집된 기사 오탐 삭제(공개 피드라 대응 시급) ── */
+/* 🗞 소식 수기 추가(R2) — 공지·보도 링크를 관리자가 직접 등재(수집기와 동일 테이블, URL unique) */
+function NewsAddForm({ onAdded }: { onAdded: () => void }) {
+  const [f, setF] = useState({ platform_id: "", title: "", url: "", source: "" });
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<{ ok?: string; err?: string }>({});
+  const submit = async () => {
+    setMsg({}); setBusy(true);
+    try {
+      await addPlatformNews({ platform_id: f.platform_id.trim(), title: f.title.trim(), url: f.url.trim(), source: f.source.trim() || "세모플" });
+      setMsg({ ok: "추가됐어요 ✓ (해당 플랫폼 상세·소식 피드에 노출)" });
+      setF({ platform_id: "", title: "", url: "", source: "" });
+      onAdded();
+    } catch (ex) {
+      const m = ex instanceof Error ? ex.message : String(ex);
+      setMsg({ err: /duplicate|unique/i.test(m) ? "이미 등재된 URL이에요." : /foreign key|platform/i.test(m) ? "플랫폼 id를 확인하세요(미등재 id)." : m });
+    } finally { setBusy(false); }
+  };
+  return (
+    <div className="admin-form" style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center", marginBottom: 10 }}>
+      <input style={{ width: 130 }} placeholder="플랫폼 id" value={f.platform_id} onChange={(e) => setF({ ...f, platform_id: e.target.value })} />
+      <input style={{ flex: 1, minWidth: 180 }} placeholder="제목(4자 이상)" maxLength={300} value={f.title} onChange={(e) => setF({ ...f, title: e.target.value })} />
+      <input style={{ flex: 1, minWidth: 180 }} placeholder="원문 URL" value={f.url} onChange={(e) => setF({ ...f, url: e.target.value })} />
+      <input style={{ width: 110 }} placeholder="출처(매체)" value={f.source} onChange={(e) => setF({ ...f, source: e.target.value })} />
+      <button className="btn ghost sm" disabled={busy || !f.platform_id.trim() || f.title.trim().length < 4 || !/^https?:\/\//.test(f.url.trim())} onClick={submit}>+ 소식 추가</button>
+      {msg.ok && <span className="ok" style={{ fontSize: 12.5 }}>{msg.ok}</span>}
+      {msg.err && <span className="err" style={{ fontSize: 12.5 }}>{msg.err}</span>}
+    </div>
+  );
+}
+
 function NewsPanel() {
   const [items, setItems] = useState<(PlatformNews & { platform_id: string; created_at: string })[] | null>(null);
   const [busy, setBusy] = useState(0);
@@ -1185,8 +1215,9 @@ function NewsPanel() {
   }, []);
   useEffect(reload, [reload]);
   if (items === null) return <div className="empty">소식을 불러오지 못했어요(0027 마이그레이션 필요 여부 확인).</div>;
-  if (items.length === 0) return <div className="empty">수집된 소식이 아직 없습니다 — 주간 수집기가 채웁니다.</div>;
-  return (
+  return (<>
+    <NewsAddForm onAdded={reload} />
+    {items.length === 0 ? <div className="empty">수집된 소식이 아직 없습니다 — 주간 수집기가 채우거나 위에서 직접 추가하세요.</div> : (
     <details>
       <summary style={{ cursor: "pointer", fontSize: 13.5, marginBottom: 8 }}>최근 수집 {items.length}건 펼치기 — 오탐(다른 회사 기사)은 삭제하세요</summary>
       <div className="sub-list">
@@ -1209,7 +1240,8 @@ function NewsPanel() {
         ))}
       </div>
     </details>
-  );
+    )}
+  </>);
 }
 
 /* ── 🧹 게시된 리뷰 관리(0028) — 사후 문제(신고 등) 발생 시 재숨김(moderateReview 재사용) ── */
@@ -1317,6 +1349,40 @@ const SETTING_HINTS: Record<string, string> = {
   outreach: "제휴 제안 서버 발송 — 발신 도메인 인증 후에만 켜세요",
   pricing_announced_at: "유료화 공지일(YYYY-MM-DD 문자열) — 설정 시 30일 배너 노출",
 };
+/* 📢 공지 발행(R2) — app_settings 'notice' {text, until}. 전 방문자 상단 배너로 노출, 비우면 내림. */
+function NoticePanel() {
+  const [text, setText] = useState("");
+  const [until, setUntil] = useState("");
+  const [state, setState] = useState<"idle" | "busy" | "done">("idle");
+  const [err, setErr] = useState("");
+  useEffect(() => {
+    getNotice().then((n) => { if (n) { setText(n.text); setUntil(n.until ?? ""); } }).catch(() => { /* noop */ });
+  }, []);
+  const save = async (clear: boolean) => {
+    setErr(""); setState("busy");
+    try {
+      await setNotice(clear ? "" : text, clear ? null : (until || null));
+      if (clear) { setText(""); setUntil(""); }
+      setState("done"); setTimeout(() => setState("idle"), 2000);
+    } catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); setState("idle"); }
+  };
+  return (
+    <div className="admin-form" style={{ display: "grid", gap: 8, maxWidth: 640 }}>
+      <textarea value={text} maxLength={200} rows={2} placeholder="공지 내용(200자) — 예: 7/25(금) 02~04시 점검으로 접속이 잠시 불안정할 수 있어요."
+        onChange={(e) => setText(e.target.value)}
+        style={{ font: "inherit", padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 8, background: "var(--surface)", color: "var(--text)", resize: "vertical" }} />
+      <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+        <label style={{ fontSize: 12.5, color: "var(--muted)" }}>게시 종료일 <input type="date" value={until} onChange={(e) => setUntil(e.target.value)} /></label>
+        <button className="btn primary sm" disabled={state === "busy" || !text.trim()} onClick={() => save(false)}>공지 게시</button>
+        <button className="btn ghost sm" disabled={state === "busy"} onClick={() => save(true)}>공지 내리기</button>
+        {state === "done" && <span className="ok">반영됐어요 ✓</span>}
+        {err && <span className="err">{err}</span>}
+      </div>
+      <div className="frm-note">전 방문자(비로그인 포함) 상단 배너로 노출됩니다. 종료일이 지나면 자동으로 숨겨져요. 남발 방지 — 점검·정책 변경 등 필요할 때만.</div>
+    </div>
+  );
+}
+
 function SettingsPanel() {
   const [rows, setRows] = useState<AppSetting[] | null>(null);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
@@ -1992,7 +2058,10 @@ export function Admin() {
       <div className="sec-title">🧹 게시된 리뷰 관리 (사후 재숨김)</div>
       <PublishedReviewsPanel />
 
-      <div className="sec-title">🗞 소식 관리 (자동 수집 — 오탐 삭제)</div>
+      <div className="sec-title">📢 공지 발행</div>
+      <NoticePanel />
+
+      <div className="sec-title">🗞 소식 관리 (자동 수집·수기 추가)</div>
       <NewsPanel />
 
       <div className="sec-title" id="q-operator">🏷 운영자 인증 신청{counts?.operator ? ` · ${counts.operator}건` : ""}</div>
