@@ -5,6 +5,8 @@ import { groups, categoriesByGroup, partnerTypes } from "./data";
 import { hasContact } from "./lib/anonymity";
 import { Badge } from "./components";
 import { useNav } from "./nav";
+import { useInterests } from "./lib/store";
+import { startTour, ACCOUNT_TOUR } from "./lib/tour";
 import {
   consumeHashNotice, consumeRecoveryPending, requestPasswordReset, resendConfirmation,
   signIn, signInWithGoogle, signOut, signUp, updateEmail, updatePassword, useSession, refreshProfile,
@@ -380,7 +382,7 @@ function SavedSearchesPanel() {
   if (!session || rows === null) return null;
   return (
     <>
-      <div className="sec-title" style={{ marginTop: 28 }}>내 저장 검색 <span className="faint" style={{ fontWeight: 400, fontSize: 13 }}>· 조건에 맞는 새 플랫폼이 등재되면 알림</span></div>
+      <div className="sec-title" data-tour="saved" style={{ marginTop: 28 }}>내 저장 검색 <span className="faint" style={{ fontWeight: 400, fontSize: 13 }}>· 조건에 맞는 새 플랫폼이 등재되면 알림</span></div>
       {rows.length === 0 ? (
         <div className="empty">저장한 검색이 없어요 — 검색 결과 화면에서 <b>🔔 이 조건 저장</b>을 누르면 조건에 맞는 신규 등재를 알림으로 받아요.</div>
       ) : (
@@ -433,6 +435,12 @@ export function Account() {
   const [briefDeals, setBriefDeals] = useState<PublicDeal[]>([]); // 브리프 조건 대조용(공개 뷰)
   const [outcomes, setOutcomes] = useState<Map<string, IntroOutcomeKind>>(new Map()); // 소개 후 성사 응답(0021)
 
+  const interests = useInterests(); // 관심 분야 배너(온보딩 연결 — G2)
+  /* 계정 화면 투어(G2) — 로그인 후 첫 진입 1회 자동(비로그인은 앵커 부재로 자동 스킵) */
+  useEffect(() => {
+    const t = setTimeout(() => { startTour("account", ACCOUNT_TOUR, { auto: true }); }, 900);
+    return () => clearTimeout(t);
+  }, []);
   useEffect(() => { setName(profile?.display_name ?? ""); }, [profile?.display_name]);
   useEffect(() => {
     if (!session) { setSubs(null); return; }
@@ -495,7 +503,7 @@ export function Account() {
   return (
     <main className="page container">
       <h1>계정</h1>
-      <div className="auth-card">
+      <div className="auth-card" data-tour="profile">
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14, flexWrap: "wrap" }}>
           <span className="mono" style={{ fontSize: 13 }}>{session.user.email}</span>
           <Badge kind={roleInfo.kind}>{roleInfo.label}</Badge>
@@ -587,11 +595,17 @@ export function Account() {
         </div>
       </div>
 
+      {/* 관심 분야(온보딩) 진입점 — 가입 후 사실상 도달 불가하던 개인화 설정 연결(G2) */}
+      <div className="banner" data-tour="interests" style={{ marginTop: 16 }}>
+        ✨ <b>관심 분야</b> — {interests ? "설정돼 있어요. 홈 추천·주간 신규 필터에 반영됩니다." : "아직 설정 전이에요. 골라두면 홈이 내 분야 중심으로 바뀌어요."}{" "}
+        <button className="btn ghost sm" onClick={() => go("onboarding")}>{interests ? "다시 고르기 →" : "관심 분야 고르기 →"}</button>
+      </div>
+
       <OperatorDash />
 
       <SavedSearchesPanel />
 
-      <div className="sec-title" style={{ marginTop: 28 }}>내 제보</div>
+      <div className="sec-title" data-tour="submits" style={{ marginTop: 28 }}>내 제보</div>
       {subsError ? (
           <div className="empty">목록을 불러오지 못했어요. <button className="linklike" onClick={() => setReload((n) => n + 1)}>다시 시도</button></div>
         ) : subs === null ? <div className="empty">불러오는 중…</div>
