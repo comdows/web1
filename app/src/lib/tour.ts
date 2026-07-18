@@ -27,10 +27,13 @@ export async function startTour(id: string, steps: TourStep[], opts?: { auto?: b
   const [{ driver }] = await Promise.all([import("driver.js"), import("driver.js/dist/driver.css")]);
   markSeen(id);
   trackEvent("click", undefined, `tour:${id}:${opts?.auto ? "auto" : "manual"}`, { type: "tour", id });
+  let reached = 0; // 완료 계측 — 닫힐 때 어느 스텝까지 봤는지(이탈 지점 분석)
   const d = driver({
     showProgress: true,
     progressText: "{{current}} / {{total}}",
     nextBtnText: "다음", prevBtnText: "이전", doneBtnText: "완료",
+    onHighlighted: () => { reached = Math.max(reached, (d.getActiveIndex() ?? 0) + 1); },
+    onDestroyed: () => { trackEvent("click", undefined, `tour:${id}:end:${reached}/${present.length}`, { type: "tour", id }); },
     steps: present.map((s) => ({
       element: s.anchor ? `[data-tour="${s.anchor}"]` : undefined,
       popover: { title: s.title, description: s.text },
