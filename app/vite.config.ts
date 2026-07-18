@@ -14,6 +14,8 @@ export default defineConfig({
         // 코드 변경 시 데이터 청크 캐시가 살아남게 한다(재방문 로드 개선). 이름은 안정 캐싱 목적.
         codeSplitting: {
           groups: [
+            // driver.js(투어)는 실행 시점에 동적 import — vendor(부트 필수)에 합쳐지지 않게 먼저 분리
+            { name: "tour", test: /node_modules[\\/]driver\.js/ },
             { name: "vendor", test: /node_modules/ },
             // articles(가이드 본문)는 제외 — 부트 필수가 아니라 lazy guide 청크에 실린다(월간 증분이 부트 페이로드를 키우지 않게)
             { name: "data", test: /src[\\/]data[\\/](?!articles).*\.json$/ },

@@ -394,3 +394,18 @@ a.foot-link{display:inline-block}
   .search-layout .facets{display:none}
   .search-layout.filters-open .facets{display:block}
 }
+
+/* ── 인앱 투어(driver.js) 팝오버 — 디자인 토큰으로 라이트/다크 자동 대응 ── */
+.driver-popover{background:var(--surface);color:var(--text);border:1px solid var(--line);
+  border-radius:var(--r-md,10px);box-shadow:0 12px 32px rgba(0,0,0,.18);max-width:320px}
+.driver-popover-title{color:var(--heading);font-size:15px;font-weight:800}
+.driver-popover-description{color:var(--muted);font-size:13.5px;line-height:1.55}
+.driver-popover-progress-text{color:var(--faint);font-size:12px}
+.driver-popover-navigation-btns button{background:var(--brand);color:var(--on-brand);border:none;
+  border-radius:8px;padding:6px 12px;font-weight:700;font-size:12.5px;cursor:pointer;text-shadow:none}
+.driver-popover-navigation-btns button.driver-popover-prev-btn{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.driver-popover-arrow-side-left.driver-popover-arrow{border-left-color:var(--surface)}
+.driver-popover-arrow-side-right.driver-popover-arrow{border-right-color:var(--surface)}
+.driver-popover-arrow-side-top.driver-popover-arrow{border-top-color:var(--surface)}
+.driver-popover-arrow-side-bottom.driver-popover-arrow{border-bottom-color:var(--surface)}
+.driver-popover-close-btn{color:var(--faint)}

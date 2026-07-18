@@ -1,0 +1,54 @@
+/* 인앱 하이라이트 투어(driver.js) — 화면별 자동 1회 + 명시적 재실행 버튼.
+ * driver.js는 시작 시점에 동적 import(부트 페이로드 무증가 — vite tour 청크).
+ * 완료 기록은 sm.tour.v1(투어 id → timestamp 맵, store.ts와 동일한 localStorage 방어 패턴).
+ * 앵커는 [data-tour="..."] 속성 — 미존재 앵커 스텝은 자동 스킵(lazy 뷰·조건부 렌더 대응). */
+import { trackEvent } from "./api";
+
+export interface TourStep { anchor?: string; title: string; text: string }
+
+const KEY = "sm.tour.v1";
+function seenMap(): Record<string, number> {
+  try {
+    const p: unknown = JSON.parse(localStorage.getItem(KEY) || "{}");
+    return p && typeof p === "object" && !Array.isArray(p) ? (p as Record<string, number>) : {};
+  } catch { return {}; }
+}
+export function tourSeen(id: string): boolean { return !!seenMap()[id]; }
+function markSeen(id: string) {
+  try { localStorage.setItem(KEY, JSON.stringify({ ...seenMap(), [id]: Date.now() })); } catch { /* noop */ }
+}
+
+/* 투어 실행. auto=true면 이미 본 투어는 재실행하지 않는다(피로 방지 — 재실행은 명시적 버튼만).
+ * 시작 즉시 seen 기록: 중도에 닫아도 다음 방문에 다시 튀어나오지 않게. */
+export async function startTour(id: string, steps: TourStep[], opts?: { auto?: boolean }): Promise<boolean> {
+  if (opts?.auto && tourSeen(id)) return false;
+  const present = steps.filter((s) => !s.anchor || document.querySelector(`[data-tour="${s.anchor}"]`));
+  if (present.length < 2) return false; // 앵커가 대부분 없는 화면(조건부 렌더)이면 실행하지 않음
+  const [{ driver }] = await Promise.all([import("driver.js"), import("driver.js/dist/driver.css")]);
+  markSeen(id);
+  trackEvent("click", undefined, `tour:${id}:${opts?.auto ? "auto" : "manual"}`, { type: "tour", id });
+  const d = driver({
+    showProgress: true,
+    progressText: "{{current}} / {{total}}",
+    nextBtnText: "다음", prevBtnText: "이전", doneBtnText: "완료",
+    steps: present.map((s) => ({
+      element: s.anchor ? `[data-tour="${s.anchor}"]` : undefined,
+      popover: { title: s.title, description: s.text },
+    })),
+  });
+  d.drive();
+  return true;
+}
+
+/* ── 투어 정의 ── */
+
+/* 홈 첫 방문(G1): 검색 → 상황 칩 → 카드 액션 → 분야 그리드 → 도구 → 가입 가치 */
+export const HOME_TOUR: TourStep[] = [
+  { title: "세모플에 오신 걸 환영해요 👋", text: "세상의 모든 플랫폼을 분야별로 모아둔 디렉토리예요. 30초만에 핵심 사용법을 알려드릴게요." },
+  { anchor: "search", title: "① 검색으로 시작", text: "플랫폼 이름(스마트스토어)도, 하려는 일(재능마켓, 크라우드펀딩)도 검색돼요. 자동완성이 분야까지 제안해요." },
+  { anchor: "chips", title: "② 상황으로 시작해도 돼요", text: "입점·소싱·홍보처럼 지금 하려는 일을 고르면 맞는 분야로 바로 이동해요." },
+  { anchor: "popular", title: "③ 카드에서 바로 저장·비교", text: "카드의 ☆로 즐겨찾기, [+ 비교]로 최대 4개까지 담아 수수료·정산 조건을 나란히 비교할 수 있어요." },
+  { anchor: "groups", title: "④ 분야별로 훑어보기", text: "45개 분야를 그룹별로 정리했어요. 분야 카드를 누르면 해당 분야 전체 목록과 필터가 열려요." },
+  { anchor: "tools", title: "⑤ 찾는 걸로 끝나지 않아요", text: "제휴 파트너 매칭, 플랫폼(스토어·계정) 양수도 거래소, AI 도구 추천까지 — 사업 단계에 맞게 이용하세요." },
+  { anchor: "account", title: "⑥ 가입하면 좋은 점", text: "즐겨찾기가 계정에 보관되고, 저장한 검색 조건에 맞는 새 플랫폼이 오면 알림을 받아요. 언제든 이 투어는 하단 '둘러보기'로 다시 볼 수 있어요." },
+];
