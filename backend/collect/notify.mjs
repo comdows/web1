@@ -4,6 +4,9 @@
  *   2.5) fav_news: 즐겨찾기한 플랫폼의 최근 7일 소식(platform_news, 0027) → 즐겨찾기 소유자(사용자당 상한).
  *   2.7) search_match: 저장된 검색(saved_searches, 0030) 조건에 맞는 신규(is_new) 플랫폼 → 저장자(사용자당 상한).
  *   3) sub_expiry: 구독 만료 임박(D-7) 갱신 안내(0026).
+ *   4) proposal: 내 인증 플랫폼에 온 제휴 제안(outreach_proposals) → 운영자(R3).
+ *   5) review_result: 내 제보·매각 접수의 승인/반려 확정 → 제출자(R3).
+ *   6) inquiry_reply: 내 문의 답변 등록 → 작성자(R3 — support 화면의 "알림으로 알려드려요" 약속 이행).
  * "접속해야만 확인" 문제를 오프사이트 인프라 없이 해소. (이메일 발송은 게이트 뒤 별도 — README 참고)
  *
  * 멱등: notifications.unique(user_id, kind, ref_id) + PostgREST on_conflict ignore-duplicates →
@@ -77,12 +80,15 @@ const CAT_NEW_CAP = 5; // 사용자당 1회 실행에서 "관심 분야 신규" 
 
 /* ── 데이터 로드 ── */
 let briefs, deals, favorites, platforms, expiring, news, saved, categories, token;
+let proposals, operators, subDecided, dealSubDecided, answered;
 if (FIXTURE) {
   const fs = await import("node:fs");
   const fx = JSON.parse(fs.readFileSync(FIXTURE, "utf8"));
   briefs = fx.briefs || []; deals = fx.deals || [];
   favorites = fx.favorites || []; platforms = fx.platforms || []; expiring = fx.expiring || [];
   news = fx.news || []; saved = fx.saved || []; categories = fx.categories || [];
+  proposals = fx.proposals || []; operators = fx.operators || [];
+  subDecided = fx.subDecided || []; dealSubDecided = fx.dealSubDecided || []; answered = fx.answered || [];
 } else {
   token = await login();
   await assertAdmin(token);
@@ -99,8 +105,15 @@ if (FIXTURE) {
   // 저장된 검색(0030) — admin 봇이 전 조건 조회(RLS 'own saved read'의 is_admin 분기). 미적용 DB 폴백.
   saved = await rest(token, "saved_searches?select=id,user_id,label,criteria&limit=5000").catch(() => []);
   categories = await rest(token, "categories?select=id,name").catch(() => []);
+  // R3 — 최근 30일 창(첫 도입 시 과거 전체 플러딩 방지; 멱등 unique로 조합당 1회 보장)
+  const d30 = new Date(Date.now() - 30 * 86400e3).toISOString();
+  proposals = await rest(token, `outreach_proposals?created_at=gte.${d30}&target_platform_id=not.is.null&select=id,target_platform_id,sender_name,type_id,subject`).catch(() => []);
+  operators = await rest(token, "platform_operators?select=user_id,platform_id").catch(() => []);
+  subDecided = await rest(token, `submissions?status=in.(approved,rejected)&created_at=gte.${d30}&select=id,user_id,status,review_reason,payload`).catch(() => []);
+  dealSubDecided = await rest(token, `deal_submissions?status=in.(approved,rejected)&created_at=gte.${d30}&select=id,submitter_id,status,review_reason,approved_deal_id`).catch(() => []);
+  answered = await rest(token, `inquiries?status=eq.answered&replied_at=gte.${d30}&select=id,user_id,title`).catch(() => []);
 }
-console.log(`활성 브리프 ${briefs.length} · 공개 매물 ${deals.length} · 즐겨찾기 ${favorites.length} · 플랫폼 ${platforms.length} · 만료 임박 구독 ${(expiring || []).length} · 최근 소식 ${(news || []).length} · 저장 검색 ${(saved || []).length}`);
+console.log(`활성 브리프 ${briefs.length} · 공개 매물 ${deals.length} · 즐겨찾기 ${favorites.length} · 플랫폼 ${platforms.length} · 만료 임박 구독 ${(expiring || []).length} · 최근 소식 ${(news || []).length} · 저장 검색 ${(saved || []).length} · 제안 ${(proposals || []).length} · 검수확정 ${(subDecided || []).length + (dealSubDecided || []).length} · 문의답변 ${(answered || []).length}`);
 
 const notifs = [];
 
@@ -217,7 +230,55 @@ for (const e of expiring || []) {
     url: "?view=account",
   });
 }
-console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new + fav_news + search_match + sub_expiry)`);
+/* 4) 받은 제휴 제안(R3) — 대상 플랫폼의 인증 운영자 전원에게. ref_id=제안 id(1회). */
+const opsByPlatform = new Map(); // platform_id → [user_id]
+for (const o of operators || []) { const a = opsByPlatform.get(o.platform_id) || []; a.push(o.user_id); opsByPlatform.set(o.platform_id, a); }
+for (const pr of proposals || []) {
+  for (const uid of opsByPlatform.get(pr.target_platform_id) || []) {
+    notifs.push({
+      user_id: uid, kind: "proposal", ref_type: "proposal", ref_id: pr.id,
+      title: "내 플랫폼에 제휴 제안이 도착했어요",
+      body: `${pr.sender_name} — ${(pr.subject || "").slice(0, 100)}`,
+      url: "?view=account",
+    });
+  }
+}
+
+/* 5) 제보·매각 접수 검수 결과(R3) — 승인/반려 확정을 제출자에게. ref_id=접수 id(1회). */
+for (const sub of subDecided || []) {
+  if (!sub.user_id) continue;
+  const nm = sub.payload?.name || "제보하신 플랫폼";
+  notifs.push({
+    user_id: sub.user_id, kind: "review_result", ref_type: "submission", ref_id: `sub:${sub.id}`,
+    title: sub.status === "approved" ? `제보하신 "${nm}"이(가) 등재됐어요 🎉` : `제보하신 "${nm}" 검수 결과 안내`,
+    body: sub.status === "approved" ? "검수를 통과해 디렉토리에 등재됐습니다. 참여 감사해요!"
+      : `아쉽지만 반려됐어요${sub.review_reason ? ` — ${String(sub.review_reason).slice(0, 80)}` : ""}. 자세한 내용은 계정 → 내 제보에서.`,
+    url: "?view=account",
+  });
+}
+for (const ds of dealSubDecided || []) {
+  if (!ds.submitter_id) continue;
+  notifs.push({
+    user_id: ds.submitter_id, kind: "review_result", ref_type: "deal_submission", ref_id: `deal:${ds.id}`,
+    title: ds.status === "approved" ? `매각 접수가 게시됐어요 (${ds.approved_deal_id || "익명 리스팅"})` : "매각 접수 검수 결과 안내",
+    body: ds.status === "approved" ? "익명 매물로 게시됐습니다 — 관심이 들어오면 다시 알려드려요."
+      : `아쉽지만 반려됐어요${ds.review_reason ? ` — ${String(ds.review_reason).slice(0, 80)}` : ""}. 계정 → 내 활동에서 확인하세요.`,
+    url: "?view=account",
+  });
+}
+
+/* 6) 문의 답변(R3) — support 화면의 "답변이 등록되면 알림" 약속 이행. ref_id=문의 id(1회). */
+for (const q of answered || []) {
+  if (!q.user_id) continue;
+  notifs.push({
+    user_id: q.user_id, kind: "inquiry_reply", ref_type: "inquiry", ref_id: q.id,
+    title: "문의하신 내용에 답변이 등록됐어요",
+    body: `"${(q.title || "").slice(0, 80)}" — 문의·도움말에서 답변을 확인하세요.`,
+    url: "?view=support",
+  });
+}
+
+console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new + fav_news + search_match + sub_expiry + proposal + review_result + inquiry_reply)`);
 
 if (DRY) {
   for (const n of notifs.slice(0, 30)) console.log(`  + ${n.user_id.slice(0, 8)}… ← ${n.ref_id}: ${n.title}`);
