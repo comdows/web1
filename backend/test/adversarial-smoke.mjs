@@ -13,6 +13,7 @@ async function newPage(initScript) {
   const page = await browser.newPage();
   const errs = [];
   page.on("pageerror", (e) => errs.push(String(e.message).slice(0, 160)));
+  await page.route(/^https?:\/\/(?!localhost)/, (r) => r.abort()); // localhost 외 전부 차단(파비콘·CDN hang 방지)
   await page.route("**://*.supabase.co/**", (r) => r.abort());      // 원격 차단(정적만)
   if (initScript) await page.addInitScript(initScript);
   return { page, errs };

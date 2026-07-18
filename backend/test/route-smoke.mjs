@@ -15,6 +15,8 @@ async function newPage(role /* null | "member" | "admin" */) {
   const page = await browser.newPage();
   const errs = [];
   page.on("pageerror", (e) => errs.push(String(e.message).slice(0, 150)));
+  // localhost 외 전부 차단(먼저 등록 = 마지막 매칭) — 파비콘·CDN이 프록시 환경에서 매달리면 networkidle이 안 온다
+  await page.route(/^https?:\/\/(?!localhost)/, (r) => r.abort());
   // GitHub API(운영 잡 헬스 카드)도 mock — 외부 의존 없이 결정적으로
   await page.route("**://api.github.com/**", (r) => r.fulfill({ status: 200, contentType: "application/json", body: '{"workflow_runs":[]}' }));
   await page.route("**://*.supabase.co/**", (r) => {
