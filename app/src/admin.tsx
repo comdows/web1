@@ -8,7 +8,7 @@ import { useSession } from "./lib/auth";
 import {
   briefMatchesDeal, createPlatform, deactivateBrief, fetchLatestDealCode, getDealOwner,
   getPendingCount, getPlatformLifecycle, getPopularSearches, getStats, LIFECYCLE_NEXT,
-  countFrontErrors7d, fetchAdminMetrics, fetchFunnel, fetchIntroSuccess, fetchOpsHealth, fetchOutboundCounts, fetchQueueCounts, fetchReferrers, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin, listFrontErrors,
+  countFrontErrors7d, fetchAdminMetrics, fetchTourStats, fetchFunnel, fetchIntroSuccess, fetchOpsHealth, fetchOutboundCounts, fetchQueueCounts, fetchReferrers, getAdminContactEmail, getPlatformFull, listAdminIntroQueue, listAutoListed, listBuyerBriefs, listDealsAdmin, listFrontErrors,
   reviewAutoListed,
   listDealSubmissions, listOperatorClaims,
   adminDeclineInterest, adminIntroduce, cancelCharge, confirmDeposit, createSponsorSlot, declinePendingInterests,
@@ -415,6 +415,27 @@ function FrontErrorsPanel() {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+/* 투어 완주율(G6) — 가이드 레이어가 실제로 도움 되는지: 시작 대비 완주·이탈 확인 */
+function TourStatsPanel() {
+  const [stats, setStats] = useState<Awaited<ReturnType<typeof fetchTourStats>>>([]);
+  useEffect(() => { fetchTourStats().then(setStats).catch(() => { /* noop */ }); }, []);
+  if (stats.length === 0) return null;
+  const LABEL: Record<string, string> = { home: "홈", search: "검색", detail: "상세", account: "계정", partners: "제휴", exchange: "거래소" };
+  return (
+    <div className="banner" style={{ marginBottom: 20 }}>
+      <b>가이드 투어 이용률</b> <span className="faint" style={{ fontSize: 12 }}>· 최근 기록 기준(90일 purge 내)</span>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(170px, 1fr))", gap: 6, marginTop: 8 }}>
+        {stats.map((t) => (
+          <div key={t.id} style={{ fontSize: 12.5 }}>
+            <b>{LABEL[t.id] ?? t.id}</b> — 시작 {t.starts} · 완주 {t.completes}
+            {t.ends > 0 && <span className="faint"> ({Math.round((t.completes / t.ends) * 100)}%)</span>}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1909,6 +1930,7 @@ export function Admin() {
 
       <OpsHealthPanel />
       <FrontErrorsPanel />
+      <TourStatsPanel />
       <GrowthPanel />
       <FunnelPanel />
 
