@@ -33,6 +33,7 @@ const Optout     = lazy(() => import("./account").then((m) => ({ default: m.Opto
 const DealView   = lazy(() => import("./pages").then((m) => ({ default: m.DealDetailPage })));
 const Support    = lazy(() => import("./support").then((m) => ({ default: m.Support })));
 import { useSession } from "./lib/auth";
+import { startTour, HOME_TOUR } from "./lib/tour";
 import { fetchRecentPlatforms, listSavedSearches, remoteEnabled, rest, trackEvent, unreadNotifCount } from "./lib/api";
 import type { SavedSearch } from "./lib/api";
 
@@ -241,6 +242,13 @@ export default function App() {
     return () => { alive = false; };
   }, [session, interests]);
 
+  /* 홈 첫 방문 투어(G1) — 렌더 안정 후 1회 자동(본 적 있으면 startTour가 스킵). 즐겨찾기 모드는 제외. */
+  useEffect(() => {
+    if (view !== "home" || fav) return;
+    const t = setTimeout(() => { startTour("home", HOME_TOUR, { auto: true }); }, 1200);
+    return () => clearTimeout(t);
+  }, [view, fav]);
+
   /* 의도 칩 → 그룹 섹션 스크롤 / AI 파인더 */
   const scrollToGroup = (gid: string) => {
     const el = document.getElementById(`g-${gid}`);
@@ -269,7 +277,7 @@ export default function App() {
             </NavItem>
           )}
           {remoteEnabled && (
-            <button className="btn login" onClick={() => go("account")}>
+            <button className="btn login" data-tour="account" onClick={() => go("account")}>
               {session ? (profile?.display_name || "내 계정") : "로그인"}
               {isAdmin && <span className="soon" style={{ marginLeft: 4, color: "var(--teal)" }}>admin</span>}
             </button>
@@ -321,18 +329,19 @@ export default function App() {
             <div className="hero-in">
               <h1>어떤 분야에 어떤 플랫폼이 있을까?</h1>
               <p className="sub">입점·소싱·홍보·AI까지 — 사업에 필요한 플랫폼을 분야별로 찾아보세요.</p>
-              <div className="search">
+              <div className="search" data-tour="search">
                 <span className="ico" aria-hidden><IcSearch size={18} /></span>
                 <SuggestInput value={q} onChange={setQ} ariaLabel="플랫폼·분야 검색"
                   placeholder="플랫폼 이름이나 분야를 검색해 보세요 — 예: 스마트스토어, 재능마켓"
                   onSubmitQuery={(v) => submitSearch(v)} onPickCategory={goCat} />
                 <button className="go" onClick={() => submitSearch()}>검색</button>
               </div>
-              <div className="intent-chips">
+              <div className="intent-chips" data-tour="chips">
                 <button className="ichip" onClick={() => scrollToGroup("commerce")}>입점하고 싶어요</button>
                 <button className="ichip" onClick={() => scrollToGroup("trade")}>상품을 소싱해요</button>
                 <button className="ichip" onClick={() => scrollToGroup("service")}>서비스를 알리고 싶어요</button>
                 <button className="ichip" onClick={() => go("ai-finder")}>AI 도구를 찾아요</button>
+                <button className="ichip" onClick={() => startTour("home", HOME_TOUR)} aria-label="사용법 둘러보기">❔ 둘러보기</button>
               </div>
               {sinceCount > 0 && (
                 <button className="fchip on" onClick={() => go("weekly")}>다녀간 사이 새 플랫폼·AI {sinceCount}개 →</button>
@@ -391,7 +400,7 @@ export default function App() {
               <section className="home-sec"><div className="container">
                 <div className="sec-title" style={{ marginTop: 0 }}>이번 주 많이 찾은 플랫폼
                   <button className="sec-link" onClick={() => go("search")}>전체 보기 →</button></div>
-                <div className="pop-grid">{popular.map((p) => <PlatformCard key={p.id} p={p} />)}</div>
+                <div className="pop-grid" data-tour="popular">{popular.map((p) => <PlatformCard key={p.id} p={p} />)}</div>
 
                 {recentPlatforms.length >= 2 && (<>
                   <div className="sec-title">최근 본 플랫폼</div>
@@ -405,7 +414,7 @@ export default function App() {
               </div></section>
 
               {/* ── 1a 분야별로 찾아보기: 그룹별 3열 카드 + 더 보기 ── */}
-              <section className="home-sec alt"><div className="container">
+              <section className="home-sec alt"><div className="container" data-tour="groups">
                 <div className="sec-title" style={{ marginTop: 0, marginBottom: 6 }}>분야별로 찾아보기
                   <button className="sec-link" onClick={() => go("packs")}>업종별 시작 조합 →</button></div>
                 <p className="sec-sub" style={{ margin: "0 0 8px" }}>{categories.length}개 분야 · 그룹별 상위 분야만 먼저 보여드려요</p>
@@ -444,7 +453,7 @@ export default function App() {
               </div></section>
 
               {/* ── 1a 도구 섹션: 찾는 걸로 끝나지 않아요 ── */}
-              <section className="home-sec tools"><div className="container">
+              <section className="home-sec tools"><div className="container" data-tour="tools">
                 <div className="sec-title" style={{ marginTop: 0 }}>찾는 걸로 끝나지 않아요</div>
                 <div className="tool-grid">
                   <button className="tcard" onClick={() => go("partners")}>
