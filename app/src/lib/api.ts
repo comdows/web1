@@ -939,6 +939,23 @@ export async function fetchOpsHealth(): Promise<OpsRun[]> {
   }));
 }
 
+/* ── 관리자: 투어 계측 집계(G6) — events(entity_type='tour')의 최근 기록을 클라에서 집계.
+ * query 형식: tour:<id>:auto|manual(시작) · tour:<id>:end:n/N(종료·도달 스텝). RLS admin-only 읽기. */
+export interface TourStat { id: string; starts: number; ends: number; completes: number }
+export async function fetchTourStats(): Promise<TourStat[]> {
+  const rows = await rest<{ query: string | null }[]>("events?entity_type=eq.tour&select=query&order=created_at.desc&limit=1000");
+  const m = new Map<string, TourStat>();
+  for (const r of rows) {
+    const mt = (r.query || "").match(/^tour:([a-z-]+):(auto|manual|end:(\d+)\/(\d+))$/);
+    if (!mt) continue;
+    const st = m.get(mt[1]) ?? { id: mt[1], starts: 0, ends: 0, completes: 0 };
+    if (mt[2] === "auto" || mt[2] === "manual") st.starts++;
+    else { st.ends++; if (mt[3] === mt[4]) st.completes++; }
+    m.set(mt[1], st);
+  }
+  return [...m.values()].sort((a, b) => b.starts - a.starts);
+}
+
 /* ── 관리자: 회원 조회·정지(0028 v_admin_members + admin_set_suspended RPC) ── */
 export interface AdminMember {
   id: string; email: string | null; display_name: string | null; role: string;

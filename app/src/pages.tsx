@@ -5,6 +5,7 @@ import type { PartnerType } from "./data";
 import { Badge, ReportButton, ShareButton } from "./components";
 import { FLAGS } from "./config";
 import { useNav } from "./nav";
+import { startTour, PARTNERS_TOUR, EXCHANGE_TOUR } from "./lib/tour";
 import { useSession } from "./lib/auth";
 import {
   applyToPartnerPost, askDealQuestion, createBuyerBrief, createDealSubmission, createPartnerPost,
@@ -78,9 +79,9 @@ function EquityDivertCard() {
   );
 }
 
-function ProcessStrip({ steps }: { steps: { t: string; d: string }[] }) {
+function ProcessStrip({ steps, anchor }: { steps: { t: string; d: string }[]; anchor?: string }) {
   return (
-    <div className="process">
+    <div className="process" data-tour={anchor}>
       {steps.map((s, i) => (
         <div className="step" key={i}>
           <div className="num mono">{String(i + 1).padStart(2, "0")}</div>
@@ -284,6 +285,11 @@ export function Partners() {
   const [orderBusy, setOrderBusy] = useState(false);   // 더블클릭 중복 주문 방지
   const [founderDone, setFounderDone] = useState(false); // 프로필의 신청 시각과 합산해 버튼 상태 복원
 
+  /* 제휴 화면 투어(G5) — 첫 진입 1회 자동 */
+  useEffect(() => {
+    const t = setTimeout(() => { startTour("partners", PARTNERS_TOUR, { auto: true }); }, 900);
+    return () => clearTimeout(t);
+  }, []);
   useEffect(() => {
     if (!remoteEnabled) { setPosts([]); return; }
     fetchPartnerPosts().then(setPosts).catch(() => setPosts([]));
@@ -333,7 +339,7 @@ export function Partners() {
         세모플은 <b>연결·소개만</b> 하고 정산·계약은 두 플랫폼이 직접 합니다(자금 미보유 원칙).
       </p>
 
-      <ProcessStrip steps={[
+      <ProcessStrip anchor="p-process" steps={[
         { t: "제휴 방식 고르기", d: "아래 카탈로그에서 우리에게 맞는 방식을 찾습니다" },
         { t: "제안 등록", d: "Give/Get·규모를 적어 제안을 올립니다(검수 후 게시)" },
         { t: "세모플이 확인·소개", d: "상대 실재 확인 후 양측 동의 시에만 소개" },
@@ -354,7 +360,7 @@ export function Partners() {
       </div>
 
       {/* ── 제휴 방식 카탈로그 (공개) ── */}
-      <div className="sec-title" id="p-catalog">제휴 방식 카탈로그 · {partnerTypes.length}가지</div>
+      <div className="sec-title" id="p-catalog" data-tour="p-catalog">제휴 방식 카탈로그 · {partnerTypes.length}가지</div>
       <div className="chips-row">
         <button className={`fchip ${goal === "" ? "on" : ""}`} onClick={() => setGoal("")}>전체</button>
         {partnerGoals.map((g) => (
@@ -407,7 +413,7 @@ export function Partners() {
       })}
 
       {/* ── 제안 등록 ── */}
-      <div className="sec-title" id="ppost-form">제휴 제안 등록</div>
+      <div className="sec-title" id="ppost-form" data-tour="p-form">제휴 제안 등록</div>
       {!remoteEnabled ? (
         <div className="banner">백엔드 미연결 빌드 — <a href={ISSUE("[제휴 제안]", "제휴 방식:\n플랫폼 이름:\nGive:\nGet:", "stage2,제휴제안")} target="_blank" rel="noopener noreferrer">GitHub 이슈로 제안</a></div>
       ) : posted ? (
@@ -428,7 +434,7 @@ export function Partners() {
       )}
 
       {/* ── 요금 안내 (stage2-monetization-plan.md) ── */}
-      <div className="sec-title" id="p-pricing">요금 안내</div>
+      <div className="sec-title" id="p-pricing" data-tour="p-pricing">요금 안내</div>
       <div className="banner" style={{ marginBottom: 14 }}>
         ✅ <b>지금은 전면 무료(베타)</b>입니다. 유료화는 매칭이 충분히 활발해진 뒤(공개 기준 충족 시) 단계적으로 시작하며,
         진행 중인 제휴는 무료로 마무리됩니다.
@@ -497,7 +503,7 @@ export function Partners() {
       </p>
 
       {/* ── 매칭 보드 ── */}
-      <div className="sec-title" id="p-board">제휴 매칭 보드</div>
+      <div className="sec-title" id="p-board" data-tour="p-board">제휴 매칭 보드</div>
       <div className="chips-row">
         <button className={`fchip ${boardType === "" ? "on" : ""}`} onClick={() => setBoardType("")}>전체</button>
         {boardTypes.map((id) => (
@@ -986,6 +992,11 @@ export function Exchange() {
   const [interestIn, setInterestIn] = useState<string | null>(null);
   const [interested, setInterested] = useState<Set<string>>(new Set());
 
+  /* 거래소 화면 투어(G5) — 첫 진입 1회 자동 */
+  useEffect(() => {
+    const t = setTimeout(() => { startTour("exchange", EXCHANGE_TOUR, { auto: true }); }, 900);
+    return () => clearTimeout(t);
+  }, []);
   useEffect(() => {
     if (!remoteEnabled) { setDeals(null); return; }
     fetchDeals().then(setDeals).catch(() => setDeals(null));
@@ -1021,7 +1032,7 @@ export function Exchange() {
         <button className="fchip" onClick={() => go("value-check")}>가치 자가 진단 →</button>
       </div>
 
-      <ProcessStrip steps={[
+      <ProcessStrip anchor="x-process" steps={[
         { t: "익명 등록", d: "검수(보통 3영업일 이내) 후 코드명(D-101)으로만 게시 — 실명·연락처 없음" },
         { t: "관심 수집", d: "인수 희망자의 관심 등록 + 브리프 조건 매칭" },
         { t: "양측 확인 후 소개", d: "매도자 의사 확인 → 쌍방 동의 시에만 소개(NDA·다음 단계 가이드 안내)" },
@@ -1029,7 +1040,7 @@ export function Exchange() {
       ]} />
 
       {/* 왜 중개하지 않는가 (stage3-exchange-plan.md §1) */}
-      <div className="sec-title" id="x-why">세모플이 "중개"하지 않는 이유</div>
+      <div className="sec-title" id="x-why" data-tour="x-why">세모플이 "중개"하지 않는 이유</div>
       <div className="card-grid" style={{ marginBottom: 12 }}>
         <div className="pcard"><h4>⚖️ 법이 그렇게 정합니다</h4>
           <p>주식(지분) 양수도는 자본시장법상 증권 거래라 인가 없는 중개·주선이 <b>무인가 투자중개업(형사처벌 대상)</b>이
@@ -1069,7 +1080,7 @@ export function Exchange() {
       </div>
 
       {/* ── 등록(매각 접수 · 인수 브리프) ── */}
-      <div className="sec-title" id="x-reg">등록</div>
+      <div className="sec-title" id="x-reg" data-tour="x-reg">등록</div>
       {!remoteEnabled ? (
         <div className="banner">백엔드 미연결 빌드 — <a href={ISSUE("[거래소 등록]", "구분(매각/인수):\n분야:\n밴드:", "stage3")} target="_blank" rel="noopener noreferrer">GitHub 이슈로 등록</a></div>
       ) : done ? (
@@ -1112,7 +1123,7 @@ export function Exchange() {
       </p>
 
       {/* ── 매물 보드 ── */}
-      <div className="sec-title" id="x-board">매물 보드</div>
+      <div className="sec-title" id="x-board" data-tour="x-board">매물 보드</div>
       <div className="result-meta">매물 {shown.length}건 (익명 리스팅{shown.length > 0 && shown.every((d) => d.demo) ? " — 아직 데모 예시" : ""})</div>
       <div className="card-grid">
         {shown.map((d) => (
