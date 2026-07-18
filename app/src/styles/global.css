@@ -105,8 +105,10 @@ button{font-family:inherit}
 .pcard h4{margin:0;font-size:15px;font-weight:var(--w-bold);color:var(--text);display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .pcard .cat{font-size:12px;color:var(--hint);margin-top:1px}
 .pcard p{margin:0;font-size:13px;color:var(--muted);line-height:1.55}
-.pcard .star{margin-left:auto;color:var(--hint);cursor:pointer;font-size:17px;background:none;border:none;line-height:1;align-self:flex-start}
-.pcard .star.on{color:#f59e0b}
+/* ☆ 즐겨찾기 — 핵심 전환 루프의 시작점인데 배경과 동화되던 문제(D1): 크기·색 강화 + 호버 반응 */
+.pcard .star{margin-left:auto;color:var(--muted);cursor:pointer;font-size:20px;background:none;border:none;line-height:1;align-self:flex-start;transition:color var(--dur-fast,.12s) ease,transform var(--dur-fast,.12s) ease}
+.pcard .star:hover{color:#f59e0b;transform:scale(1.18)}
+.pcard .star.on{color:#f59e0b;text-shadow:0 0 6px rgba(245,158,11,.35)}
 .pcard .cta{font-size:13px;font-weight:var(--w-semibold);color:var(--brand);margin-top:auto}
 .ext{font-size:12.5px;color:var(--brand)}
 .pname{background:none;border:none;padding:0;font:inherit;color:inherit;cursor:pointer;text-align:left}

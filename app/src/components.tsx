@@ -194,8 +194,10 @@ export function SuggestInput({ value, onChange, placeholder, ariaLabel, autoFocu
       role="combobox" aria-expanded={open && items.length > 0} aria-haspopup="listbox">
       <input value={value} aria-label={ariaLabel} placeholder={placeholder} autoFocus={autoFocus} maxLength={100}
         aria-autocomplete="list" aria-activedescendant={active >= 0 ? `sug-${active}` : undefined}
+        /* 열림은 사용자 행동(타이핑·클릭·↓키)에만 — autoFocus의 프로그램적 focus로
+         * 진입 즉시 펼쳐져 결과 상단(건수·정렬·조건저장)을 가리던 문제 수정(D1) */
         onChange={(e) => { onChange(e.target.value); setOpen(true); }}
-        onFocus={() => setOpen(true)} onKeyDown={key}
+        onPointerDown={() => setOpen(true)} onKeyDown={key}
         style={{ flex: 1, minWidth: 0, background: "none", border: "none", outline: "none", font: "inherit", color: "inherit" }} />
       {open && items.length > 0 && (
         <ul className="suggest" role="listbox" aria-label="검색 제안">
