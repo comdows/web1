@@ -46,6 +46,7 @@ const PUBLIC_ROUTES = [
   ["가치 진단", "?view=value-check"], ["AI 파인더", "?view=ai-finder"], ["주간 신규", "?view=weekly"],
   ["스타터 팩", "?view=packs"], ["소식", "?view=news"], ["가이드", "?view=guide&id=openmarket-entry-checklist"],
   ["계정(로그인 폼)", "?view=account"], ["제보", "?view=submit"], ["관리(비로그인 안내)", "?view=admin"],
+  ["도움말 허브", "?view=help"], ["도움말 글", "?view=guide&id=help-search"],
   ["약관", "?view=terms"], ["개인정보", "?view=privacy"], ["알림", "?view=notifications"],
   ["수신거부", "?view=optout"], ["매물 상세(미존재)", "?view=deal&id=d-x"], ["문의", "?view=support"],
 ];

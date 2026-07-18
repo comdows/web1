@@ -27,7 +27,7 @@ const ARTICLES = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT
   for (const [slug, a] of Object.entries(ARTICLES)) {
     if (!/^[a-z0-9-]+$/.test(slug)) errs.push(`가이드 slug 형식 오류: ${slug}`);
     if (!a.title?.trim() || !a.desc?.trim() || !a.sections?.length) errs.push(`가이드 필수 필드 누락: ${slug}`);
-    if (!cids.has(a.category)) errs.push(`가이드가 없는 분야 참조: ${slug} → ${a.category}`);
+    if (a.kind !== "help" && !cids.has(a.category)) errs.push(`가이드가 없는 분야 참조: ${slug} → ${a.category}`); // 도움말(help)은 분야 무소속
     for (const r of a.related ?? []) if (!pids.has(r)) errs.push(`가이드의 미등재 플랫폼 참조: ${slug} → ${r}`);
   }
   if (errs.length) { console.error("가이드 데이터 오류:\n" + errs.map((e) => `  - ${e}`).join("\n")); process.exit(1); }
@@ -254,6 +254,7 @@ fs.writeFileSync(path.join(DIST, "404.html"), template
  * 특정 플랫폼 추천이 아니라 "비교 축" 서술 — 고지문 포함. */
 let guideCount = 0;
 for (const [slug, a] of Object.entries(ARTICLES)) {
+  const isHelp = a.kind === "help"; // 도움말은 분야 무소속 — 분야 링크 대신 도움말 허브로
   const cat = catById.get(a.category);
   const title = `${a.title} | 세모플`;
   const canonical = `${SITE}/guide/${slug}/`;
@@ -265,18 +266,18 @@ for (const [slug, a] of Object.entries(ARTICLES)) {
       mainEntityOfPage: canonical },
     { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
       { "@type": "ListItem", position: 1, name: "세모플", item: `${SITE}/` },
-      { "@type": "ListItem", position: 2, name: cat?.name ?? "분야", item: `${SITE}/c/${a.category}/` },
+      { "@type": "ListItem", position: 2, name: isHelp ? "도움말" : (cat?.name ?? "분야"), item: isHelp ? `${SITE}/?view=help` : `${SITE}/c/${a.category}/` },
       { "@type": "ListItem", position: 3, name: a.title, item: canonical }] },
   ]);
   const body = `
 <main style="max-width:720px;margin:32px auto;padding:0 20px">
-  <p><a href="${BASE}">세모플 — 세상의 모든 플랫폼</a> › <a href="${BASE}c/${a.category}/">${esc(cat?.icon ?? "")} ${esc(cat?.name ?? "")}</a></p>
+  <p><a href="${BASE}">세모플 — 세상의 모든 플랫폼</a> › ${isHelp ? `<a href="${BASE}?view=help">❓ 도움말</a>` : `<a href="${BASE}c/${a.category}/">${esc(cat?.icon ?? "")} ${esc(cat?.name ?? "")}</a>`}</p>
   <h1>${esc(a.title)}</h1>
   <p>${esc(a.date)} · 세모플 가이드</p>
   <p>${esc(a.desc)}</p>
   ${a.sections.map((s) => `<h2>${esc(s.h)}</h2><p>${esc(s.b)}</p>`).join("")}
   ${relTitles.length ? `<h2>이 글에서 함께 볼 플랫폼</h2><ul>${relTitles.map((p) => `<li><a href="${BASE}p/${p.id}/">${esc(p.name)}</a> — ${esc(p.blurb)}</li>`).join("")}</ul>` : ""}
-  <p><a href="${BASE}c/${a.category}/">${esc(cat?.name ?? "")} 플랫폼 전체 보기 →</a></p>
+  ${isHelp ? `<p><a href="${BASE}?view=help">도움말 센터 전체 보기 →</a></p>` : `<p><a href="${BASE}c/${a.category}/">${esc(cat?.name ?? "")} 플랫폼 전체 보기 →</a></p>`}
   <p>이 가이드는 공개 정보를 바탕으로 한 일반적 안내이며 특정 플랫폼의 공식 조건·추천이 아닙니다. 요율·정책은 수시로 바뀌므로 실제 조건은 각 공식 사이트에서 확인하세요.</p>
 </main>`;
   const dir = path.join(DIST, "guide", slug);
@@ -330,7 +331,7 @@ for (const [slug, a] of Object.entries(ARTICLES)) {
  * lastmod: 정적 데이터엔 플랫폼별 갱신시각이 없다 → 매 빌드 전 URL을 today로 찍으면 "전체가 바뀐 것"처럼
  * 보여 크롤 신뢰도가 떨어진다. 목록이 실제로 커지는 홈·허브·동적 뷰와 신규(new) 상세만 today, 안정 상세는 lastmod 생략. */
 const today = new Date().toISOString().slice(0, 10);
-const staticUrls = ["", "?view=partners", "?view=exchange", "?view=ai-finder", "?view=packs", "?view=weekly", "?view=onboarding", "?view=deal-guide", "?view=value-check"];
+const staticUrls = ["", "?view=help", "?view=partners", "?view=exchange", "?view=ai-finder", "?view=packs", "?view=weekly", "?view=onboarding", "?view=deal-guide", "?view=value-check"];
 const urls = [
   ...staticUrls.map((u) => ({ loc: `${SITE}/${u}`, lastmod: today })),
   { loc: `${SITE}/news/`, lastmod: today }, // 소식 랜딩(자주 갱신 — today)
