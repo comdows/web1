@@ -133,6 +133,7 @@ export function Footer() {
         </div>
         <div>
           <div className="foot-h">안내</div>
+          <button className="foot-link" onClick={() => go("help")}>❓ 도움말·이용 안내</button>
           <p className="foot-desc">세모플은 제휴·거래의 <b>당사자가 아니며</b>, 정보 게시와 쌍방 동의에 따른 소개만 제공합니다.
             계약·정산·실사는 당사자와 전문 자문사가 직접 진행합니다.</p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>

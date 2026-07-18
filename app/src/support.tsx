@@ -99,6 +99,10 @@ export function Support() {
   return (
     <main className="container" style={{ paddingTop: 24, paddingBottom: 48 }}>
       <h1>문의·도움말</h1>
+      <div className="banner" style={{ marginBottom: 14 }}>
+        ❓ 사용법이 궁금하다면 <b>도움말 센터</b>부터 — 가입·검색·제보·제휴·거래 단계별 안내와 화면 투어가 있어요.{" "}
+        <button className="btn ghost sm" onClick={() => go("help")}>도움말 센터 →</button>
+      </div>
       <p className="sub" style={{ marginBottom: 18 }}>자주 묻는 질문에서 먼저 찾아보고, 없으면 아래로 문의해 주세요.</p>
 
       <div className="sec-title">자주 묻는 질문</div>
