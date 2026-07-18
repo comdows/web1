@@ -438,6 +438,13 @@ export function Account() {
   const [outcomes, setOutcomes] = useState<Map<string, IntroOutcomeKind>>(new Map()); // 소개 후 성사 응답(0021)
 
   const interests = useInterests(); // 관심 분야 배너(온보딩 연결 — G2)
+  const [isOperator, setIsOperator] = useState(false); // R1: 인증 운영자 여부(platform_operators 조인)
+  useEffect(() => {
+    if (!session) { setIsOperator(false); return; }
+    let alive = true;
+    listMyOperatedPlatforms().then((r) => { if (alive) setIsOperator(r.length > 0); }).catch(() => { /* noop */ });
+    return () => { alive = false; };
+  }, [session]);
   /* 계정 화면 투어(G2) — 로그인 후 첫 진입 1회 자동(비로그인은 앵커 부재로 자동 스킵) */
   useEffect(() => {
     const t = setTimeout(() => { startTour("account", ACCOUNT_TOUR, { auto: true }); }, 900);
@@ -493,8 +500,9 @@ export function Account() {
   }
 
   const role = profile?.role ?? "user";
+  /* R1: profiles.role='operator'는 부여 경로가 없어 도달 불가 — 실판별 소스(platform_operators)로 배지 표시 */
   const roleInfo = role === "admin" ? { kind: "verify" as const, label: "관리자" }
-    : role === "operator" ? { kind: "good" as const, label: "운영자" }
+    : isOperator ? { kind: "good" as const, label: "운영자 ✓" }
     : { kind: "muted" as const, label: "일반 회원" };
 
   /* 셀프 취소·마감·철회 — 권한은 0009 RLS/RPC가 판정(pending만 삭제 가능 등) */
