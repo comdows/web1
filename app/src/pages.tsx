@@ -384,7 +384,6 @@ export function Partners() {
                     <h4 style={{ marginBottom: 4 }}>{t.label}</h4>
                     <div className="chips-row" style={{ margin: "6px 0" }}>
                       <Badge kind={SETTLE[t.settlement].kind}>{SETTLE[t.settlement].label}</Badge>
-                      <Badge kind="muted">{EFFORT[t.effort]}</Badge>
                       {t.feeTier === "A"
                         ? <Badge kind="good">연결 무료</Badge>
                         : <Badge kind="soon">연결료 {won(t.feeTier === "B" ? PRICES.connB : PRICES.connC)} · 예정</Badge>}
@@ -394,13 +393,15 @@ export function Partners() {
                       <div className="type-detail">
                         <div><span className="k">작동 방식</span>{t.mechanics}</div>
                         <div><span className="k">예시</span>{t.example}</div>
+                        <div><span className="k">준비 난이도</span>{EFFORT[t.effort]}</div>
                       </div>
                     )}
                     <div className="pcard-actions">
                       <button className="linklike" onClick={() => setOpenType(open ? null : t.id)}>
                         {open ? "접기 ▴" : "작동 방식·예시 ▾"}
                       </button>
-                      <button className="btn primary sm" style={{ marginLeft: "auto" }} onClick={() => openForm(t.id)}>
+                      {/* D5: 카탈로그 22장 전부 primary였던 CTA 인플레이션 해소 — 화면 primary는 등록 폼 하나만 */}
+                      <button className="btn ghost sm" style={{ marginLeft: "auto" }} onClick={() => openForm(t.id)}>
                         이 방식으로 제안 →
                       </button>
                     </div>
