@@ -7,6 +7,8 @@
  *   4) proposal: 내 인증 플랫폼에 온 제휴 제안(outreach_proposals) → 운영자(R3).
  *   5) review_result: 내 제보·매각 접수의 승인/반려 확정 → 제출자(R3).
  *   6) inquiry_reply: 내 문의 답변 등록 → 작성자(R3 — support 화면의 "알림으로 알려드려요" 약속 이행).
+ *   7) post_stale: 게시 60일 경과한 제휴 제안·매물 → 소유자에게 갱신 안내(0041 — 90일 미갱신 시
+ *      공개 뷰가 자동 제외하므로 잡은 알림만 만들고 상태는 건드리지 않는다).
  * "접속해야만 확인" 문제를 오프사이트 인프라 없이 해소. (이메일 발송은 게이트 뒤 별도 — README 참고)
  *
  * 멱등: notifications.unique(user_id, kind, ref_id) + PostgREST on_conflict ignore-duplicates →
@@ -80,7 +82,7 @@ const CAT_NEW_CAP = 5; // 사용자당 1회 실행에서 "관심 분야 신규" 
 
 /* ── 데이터 로드 ── */
 let briefs, deals, favorites, platforms, expiring, news, saved, categories, token;
-let proposals, operators, subDecided, dealSubDecided, answered;
+let proposals, operators, subDecided, dealSubDecided, answered, stalePosts, staleDeals;
 if (FIXTURE) {
   const fs = await import("node:fs");
   const fx = JSON.parse(fs.readFileSync(FIXTURE, "utf8"));
@@ -89,6 +91,7 @@ if (FIXTURE) {
   news = fx.news || []; saved = fx.saved || []; categories = fx.categories || [];
   proposals = fx.proposals || []; operators = fx.operators || [];
   subDecided = fx.subDecided || []; dealSubDecided = fx.dealSubDecided || []; answered = fx.answered || [];
+  stalePosts = fx.stalePosts || []; staleDeals = fx.staleDeals || [];
 } else {
   token = await login();
   await assertAdmin(token);
@@ -112,6 +115,9 @@ if (FIXTURE) {
   subDecided = await rest(token, `submissions?status=in.(approved,rejected)&created_at=gte.${d30}&select=id,user_id,status,review_reason,payload`).catch(() => []);
   dealSubDecided = await rest(token, `deal_submissions?status=in.(approved,rejected)&created_at=gte.${d30}&select=id,submitter_id,status,review_reason,approved_deal_id`).catch(() => []);
   answered = await rest(token, `inquiries?status=eq.answered&replied_at=gte.${d30}&select=id,user_id,title`).catch(() => []);
+  // 수명 관리(0041) — 경과 판정(coalesce 갱신일)은 JS에서. 미적용 DB(refreshed_at 없음) 폴백.
+  stalePosts = await rest(token, "partner_posts?status=eq.published&select=id,created_by,title,published_at,refreshed_at,created_at&limit=2000").catch(() => []);
+  staleDeals = await rest(token, "deals?status=eq.open&is_demo=is.false&owner_id=not.is.null&select=id,owner_id,refreshed_at,created_at&limit=2000").catch(() => []);
 }
 console.log(`활성 브리프 ${briefs.length} · 공개 매물 ${deals.length} · 즐겨찾기 ${favorites.length} · 플랫폼 ${platforms.length} · 만료 임박 구독 ${(expiring || []).length} · 최근 소식 ${(news || []).length} · 저장 검색 ${(saved || []).length} · 제안 ${(proposals || []).length} · 검수확정 ${(subDecided || []).length + (dealSubDecided || []).length} · 문의답변 ${(answered || []).length}`);
 
@@ -278,7 +284,33 @@ for (const q of answered || []) {
   });
 }
 
-console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new + fav_news + search_match + sub_expiry + proposal + review_result + inquiry_reply)`);
+/* 7) 게시글 수명(0041) — 기준시각(갱신일 ?? 게시시각) 60일 경과 시 소유자에게 갱신 안내.
+ * ref_id에 기준일을 포함해 갱신 주기당 1회만(갱신하면 기준일이 바뀌어 다음 주기에 다시 1회). */
+const STALE_MS = 60 * 86400e3;
+for (const p of stalePosts || []) {
+  const base = new Date(p.refreshed_at || p.published_at || p.created_at).getTime();
+  if (!(Date.now() - base >= STALE_MS)) continue;
+  notifs.push({
+    user_id: p.created_by, kind: "post_stale", ref_type: "partner_post",
+    ref_id: `pp:${p.id}:${new Date(base).toISOString().slice(0, 10)}`,
+    title: "제휴 제안이 게시 60일을 넘겼어요",
+    body: `"${(p.title || "").slice(0, 60)}" — 계속 유효하면 계정 → 내 활동에서 갱신해 주세요. 90일 미갱신 시 보드에서 잠시 내려가요(갱신하면 복구).`,
+    url: "?view=account",
+  });
+}
+for (const d of staleDeals || []) {
+  const base = new Date(d.refreshed_at || d.created_at).getTime();
+  if (!(Date.now() - base >= STALE_MS)) continue;
+  notifs.push({
+    user_id: d.owner_id, kind: "post_stale", ref_type: "deal",
+    ref_id: `deal:${d.id}:${new Date(base).toISOString().slice(0, 10)}`,
+    title: `매물 ${d.id}이(가) 게시 60일을 넘겼어요`,
+    body: "매각 의사가 유효하면 계정 → 내 활동에서 갱신해 주세요. 90일 미갱신 시 보드에서 잠시 내려가요(갱신하면 복구).",
+    url: "?view=account",
+  });
+}
+
+console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new + fav_news + search_match + sub_expiry + proposal + review_result + inquiry_reply + post_stale)`);
 
 if (DRY) {
   for (const n of notifs.slice(0, 30)) console.log(`  + ${n.user_id.slice(0, 8)}… ← ${n.ref_id}: ${n.title}`);
