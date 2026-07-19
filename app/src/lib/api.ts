@@ -820,7 +820,10 @@ export async function deleteMyAccount(): Promise<void> {
 export async function listMyPartnerPosts(): Promise<PartnerPostAdmin[]> {
   const uid = getSession()?.user.id;
   if (!uid) return [];
-  return rest<PartnerPostAdmin[]>(`partner_posts?created_by=eq.${uid}&select=id,title,category_id,type_id,give_text,get_text,want_categories,size_text,detail,status,review_reason,created_at,published_at,refreshed_at&order=created_at.desc&limit=50`);
+  const base = `partner_posts?created_by=eq.${uid}&select=id,title,category_id,type_id,give_text,get_text,want_categories,size_text,detail,status,review_reason,created_at`;
+  // 0041 미적용 DB(refreshed_at 없음)에서 내 활동 전체가 깨지지 않게 — 수명 컬럼 없이 재시도
+  return rest<PartnerPostAdmin[]>(`${base},published_at,refreshed_at&order=created_at.desc&limit=50`)
+    .catch(() => rest<PartnerPostAdmin[]>(`${base}&order=created_at.desc&limit=50`));
 }
 /* ── 게시글 수명 관리(0041) — 90일 미갱신 open 게시글은 공개 뷰에서 내려간다.
  * 갱신은 좁은 RPC(소유자·게시 상태만, refreshed_at만 변경) — "다시 게시"도 같은 호출(재노출). ── */
