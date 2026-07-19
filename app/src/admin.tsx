@@ -1057,7 +1057,7 @@ function ReviewQueue() {
 
 /* ── 🚩 신고 큐(0028) — 회원 신고를 확인하고 해결/기각. 조치(숨김·삭제·상태 변경)는 각 큐·패널에서. ── */
 const REPORT_TYPE_KO: Record<ReportRow["target_type"], string> = {
-  review: "리뷰", partner_post: "제휴 제안", deal: "매물", platform_news: "소식 기사", platform: "플랫폼",
+  review: "리뷰", partner_post: "제휴 제안", deal: "매물", platform_news: "소식 기사", platform: "플랫폼", platform_question: "플랫폼 Q&A",
 };
 function ReportQueue() {
   const go = useNav();

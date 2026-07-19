@@ -7,8 +7,8 @@ const HUB: Record<string, { intro: string; pickBy: string[] }> = hubIntros as ne
 import { Avatar, Badge, PlatformCard, ReportButton, ShareButton, SuggestInput, AiPricingBadge, AI_PRICING, EmptyState } from "./components";
 import { RecentQ, fuzzyCorrect } from "./lib/suggest";
 import { usePlatforms, usePlatformIndex, usePlatformsLoaded, usePlatformStats } from "./lib/platforms";
-import { amOperatorOf, createCorrection, createOperatorClaim, createSavedSearch, deleteMyReview, fetchPlatformNews, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent , operatorReplyReview, listMyOperatedPlatforms } from "./lib/api";
-import type { OperatorClaim, PlatformNews, PublicReview, SearchCriteria } from "./lib/api";
+import { amOperatorOf, createCorrection, createOperatorClaim, createSavedSearch, deleteMyReview, fetchPlatformNews, fetchReviews, getMyClaim, getMyReview, getPlatform, remoteEnabled, submitReview, trackEvent , operatorReplyReview, listMyOperatedPlatforms, fetchPlatformQuestions, listMyQuestionsFor, askPlatformQuestion, fetchQuestionInbox, answerPlatformQuestion } from "./lib/api";
+import type { OperatorClaim, PlatformNews, PublicReview, SearchCriteria, PublicQA, MyQuestionRow, InboxQuestion } from "./lib/api";
 import { useReviewStats } from "./lib/reviews";
 import { hasContact } from "./lib/anonymity";
 import { pickRecommended, sortByRelevance, sortByPopularity } from "./lib/search";
@@ -190,6 +190,130 @@ function NewsSection({ platformId }: { platformId: string }) {
         ))}
       </div>
       <p className="sub faint" style={{ fontSize: 12, marginTop: -4 }}>외부 매체 기사 링크입니다 — 내용은 각 매체 책임이며 세모플의 평가가 아닙니다.</p>
+    </>
+  );
+}
+
+/* ── 플랫폼 Q&A(0042 — P2) — 공개는 "답변된 질문"만(FAQ 자산화, 무응답 게시판 방지).
+ * 질문은 익명 게시, 답변은 인증 운영자·admin만(RPC). 클라 연락처 선차단 + 서버 CHECK 이중화. */
+function QAAnswerForm({ q, onDone }: { q: InboxQuestion; onDone: () => void }) {
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const save = async () => {
+    const v = text.trim();
+    if (v.length < 5) { setErr("답변을 5자 이상 적어 주세요."); return; }
+    if (hasContact(v)) { setErr("연락처·이메일·URL·메신저 ID는 적을 수 없어요."); return; }
+    setErr(""); setBusy(true);
+    try { await answerPlatformQuestion(q.id, v); onDone(); }
+    catch (ex) {
+      const m = ex instanceof Error ? ex.message : String(ex);
+      setErr(/check|contact/i.test(m) ? "연락처로 보이는 표현이 있어 저장할 수 없어요." : m);
+    } finally { setBusy(false); }
+  };
+  return (
+    <div className="frm" style={{ marginTop: 6, display: "grid", gap: 6 }}>
+      <textarea value={text} maxLength={500} rows={2} placeholder="운영자 명의로 공개 게시됩니다 — 연락처·URL 금지"
+        onChange={(e) => setText(e.target.value)}
+        style={{ font: "inherit", padding: "8px 10px", border: "1px solid var(--line)", borderRadius: 8, background: "var(--surface)", color: "var(--text)", resize: "vertical" }} />
+      <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+        <button className="btn primary sm" disabled={busy} onClick={save}>{busy ? "게시 중…" : "답변 게시"}</button>
+        {err && <span className="err" style={{ fontSize: 12.5 }}>{err}</span>}
+      </div>
+    </div>
+  );
+}
+
+function QASection({ platformId }: { platformId: string }) {
+  const go = useNav();
+  const { session } = useSession();
+  const [faq, setFaq] = useState<PublicQA[] | null>(null);
+  const [mine, setMine] = useState<MyQuestionRow[]>([]);
+  const [inbox, setInbox] = useState<InboxQuestion[]>([]);
+  const [isOp, setIsOp] = useState(false);
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState("");
+  const [sent, setSent] = useState(false);
+  const reload = () => {
+    fetchPlatformQuestions(platformId).then(setFaq);
+    if (session) listMyQuestionsFor(platformId).then(setMine);
+  };
+  useEffect(() => {
+    setFaq(null); setMine([]); setInbox([]); setIsOp(false); setText(""); setErr(""); setSent(false);
+    if (!remoteEnabled) return;
+    let alive = true;
+    fetchPlatformQuestions(platformId).then((r) => { if (alive) setFaq(r); });
+    if (session) {
+      listMyQuestionsFor(platformId).then((r) => { if (alive) setMine(r); });
+      listMyOperatedPlatforms().then((ops) => {
+        if (!alive || !ops.some((o) => o.platform_id === platformId)) return;
+        setIsOp(true);
+        fetchQuestionInbox(platformId).then((r) => { if (alive) setInbox(r); });
+      }).catch(() => { /* noop */ });
+    }
+    return () => { alive = false; };
+  }, [platformId, session]);
+  if (!remoteEnabled) return null;
+  const myPending = mine.some((m) => m.status === "pending");
+  const ask = async (e: FormEvent) => {
+    e.preventDefault();
+    const v = text.trim();
+    if (v.length < 5) { setErr("질문을 5자 이상 적어 주세요."); return; }
+    if (hasContact(v)) { setErr("연락처·이메일·URL·메신저 ID는 적을 수 없어요."); return; }
+    setErr(""); setBusy(true);
+    try { await askPlatformQuestion(platformId, v); setSent(true); setText(""); reload(); }
+    catch (ex) { setErr(ex instanceof Error ? ex.message : String(ex)); }
+    finally { setBusy(false); }
+  };
+  return (
+    <>
+      <div className="sec-title">질문·답변
+        {faq && faq.length > 0 && <span style={{ textTransform: "none", letterSpacing: 0, marginLeft: 8 }}>{faq.length}건</span>}
+      </div>
+      {faq === null ? <div className="empty">불러오는 중…</div>
+        : faq.length === 0 ? <EmptyState icon="❓" text="아직 게시된 Q&A가 없어요 — 입점·수수료 등 궁금한 점을 질문해 보세요. 답변이 등록되면 공개돼요." />
+        : (
+          <div className="sub-list" style={{ marginBottom: 10 }}>
+            {faq.map((q) => (
+              <div className="sub-item" key={q.id} style={{ alignItems: "flex-start" }}>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <p style={{ margin: 0, fontSize: 13.5 }}><b>Q.</b> {q.question}</p>
+                  <div className="banner plain" style={{ marginTop: 6, padding: "8px 10px", fontSize: 13 }}>
+                    <b>A.</b> <span className="faint">운영자 답변{q.answered_at ? ` · ${q.answered_at.slice(0, 10)}` : ""}</span><br />{q.answer}
+                  </div>
+                </div>
+                <span style={{ flexShrink: 0 }}><ReportButton targetType="platform_question" targetId={q.id} /></span>
+              </div>
+            ))}
+          </div>
+        )}
+      {isOp && inbox.length > 0 && (
+        <div className="banner warn" style={{ marginBottom: 10 }}>
+          📥 <b>답변 대기 질문 {inbox.length}건</b> — 답변을 게시하면 질문이 공개 Q&A로 올라가요.
+          {inbox.map((q) => (
+            <div key={q.id} style={{ marginTop: 8 }}>
+              <p style={{ margin: 0, fontSize: 13.5 }}><b>Q.</b> {q.question} <span className="mono faint" style={{ fontSize: 11 }}>{q.created_at.slice(0, 10)}</span></p>
+              <QAAnswerForm q={q} onDone={() => { fetchQuestionInbox(platformId).then(setInbox); reload(); }} />
+            </div>
+          ))}
+        </div>
+      )}
+      {sent || myPending ? <div className="ok" style={{ fontSize: 13 }}>질문이 접수됐어요 — 답변이 등록되면 알림으로 알려드리고, 그때 공개 Q&A로 게시됩니다.</div>
+        : !session ? <div className="frm-note">질문하려면 로그인이 필요해요. <button className="linklike" onClick={() => go("account")}>로그인 →</button></div>
+        : (
+          <form className="frm" onSubmit={ask} style={{ maxWidth: 560 }}>
+            <label>질문하기 <span style={{ fontWeight: 400, color: "var(--faint)" }}>(5~300자 · 익명 접수 · 연락처 금지)</span>
+              <textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} maxLength={300}
+                placeholder="예: 개인 판매자도 입점할 수 있나요? 정산 주기가 실제로 어떻게 되나요?" />
+            </label>
+            {err && <div className="err">{err}</div>}
+            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+              <button className="btn ghost sm" disabled={busy} type="submit">질문 올리기</button>
+              <span className="frm-note" style={{ margin: 0 }}>운영자 인증이 없는 플랫폼은 답변이 늦거나 없을 수 있어요 — 답변된 질문만 공개돼요.</span>
+            </div>
+          </form>
+        )}
     </>
   );
 }
@@ -473,6 +597,8 @@ export function PlatformDetail({ id }: { id?: string }) {
       <NewsSection platformId={p.id} />
 
       <ReviewSection platformId={p.id} />
+
+      <QASection platformId={p.id} />
 
       {related.length > 0 && (() => {
         const alts = related.slice(0, 3);

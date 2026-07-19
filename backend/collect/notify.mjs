@@ -9,6 +9,7 @@
  *   6) inquiry_reply: 내 문의 답변 등록 → 작성자(R3 — support 화면의 "알림으로 알려드려요" 약속 이행).
  *   7) post_stale: 게시 60일 경과한 제휴 제안·매물 → 소유자에게 갱신 안내(0041 — 90일 미갱신 시
  *      공개 뷰가 자동 제외하므로 잡은 알림만 만들고 상태는 건드리지 않는다).
+ *   8) qa_answer: 내 플랫폼 질문에 답변 등록(0042) → 질문자("답변이 등록되면 알림" 약속 이행).
  * "접속해야만 확인" 문제를 오프사이트 인프라 없이 해소. (이메일 발송은 게이트 뒤 별도 — README 참고)
  *
  * 멱등: notifications.unique(user_id, kind, ref_id) + PostgREST on_conflict ignore-duplicates →
@@ -82,7 +83,7 @@ const CAT_NEW_CAP = 5; // 사용자당 1회 실행에서 "관심 분야 신규" 
 
 /* ── 데이터 로드 ── */
 let briefs, deals, favorites, platforms, expiring, news, saved, categories, token;
-let proposals, operators, subDecided, dealSubDecided, answered, stalePosts, staleDeals;
+let proposals, operators, subDecided, dealSubDecided, answered, stalePosts, staleDeals, qaAnswered;
 if (FIXTURE) {
   const fs = await import("node:fs");
   const fx = JSON.parse(fs.readFileSync(FIXTURE, "utf8"));
@@ -91,7 +92,7 @@ if (FIXTURE) {
   news = fx.news || []; saved = fx.saved || []; categories = fx.categories || [];
   proposals = fx.proposals || []; operators = fx.operators || [];
   subDecided = fx.subDecided || []; dealSubDecided = fx.dealSubDecided || []; answered = fx.answered || [];
-  stalePosts = fx.stalePosts || []; staleDeals = fx.staleDeals || [];
+  stalePosts = fx.stalePosts || []; staleDeals = fx.staleDeals || []; qaAnswered = fx.qaAnswered || [];
 } else {
   token = await login();
   await assertAdmin(token);
@@ -118,6 +119,8 @@ if (FIXTURE) {
   // 수명 관리(0041) — 경과 판정(coalesce 갱신일)은 JS에서. 미적용 DB(refreshed_at 없음) 폴백.
   stalePosts = await rest(token, "partner_posts?status=eq.published&select=id,created_by,title,published_at,refreshed_at,created_at&limit=2000").catch(() => []);
   staleDeals = await rest(token, "deals?status=eq.open&is_demo=is.false&owner_id=not.is.null&select=id,owner_id,refreshed_at,created_at&limit=2000").catch(() => []);
+  // 플랫폼 Q&A 답변 확정(0042) — 미적용 DB 폴백
+  qaAnswered = await rest(token, `platform_questions?status=eq.answered&answered_at=gte.${d30}&select=id,asker_id,platform_id`).catch(() => []);
 }
 console.log(`활성 브리프 ${briefs.length} · 공개 매물 ${deals.length} · 즐겨찾기 ${favorites.length} · 플랫폼 ${platforms.length} · 만료 임박 구독 ${(expiring || []).length} · 최근 소식 ${(news || []).length} · 저장 검색 ${(saved || []).length} · 제안 ${(proposals || []).length} · 검수확정 ${(subDecided || []).length + (dealSubDecided || []).length} · 문의답변 ${(answered || []).length}`);
 
@@ -310,7 +313,19 @@ for (const d of staleDeals || []) {
   });
 }
 
-console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new + fav_news + search_match + sub_expiry + proposal + review_result + inquiry_reply + post_stale)`);
+/* 8) 플랫폼 Q&A 답변(0042) — 질문 화면의 "답변이 등록되면 알림" 약속 이행. ref_id=질문 id(1회). */
+const platName = new Map((platforms || []).map((p) => [p.id, p.name]));
+for (const q of qaAnswered || []) {
+  if (!q.asker_id) continue;
+  notifs.push({
+    user_id: q.asker_id, kind: "qa_answer", ref_type: "platform_question", ref_id: q.id,
+    title: "질문하신 내용에 답변이 등록됐어요",
+    body: `${platName.get(q.platform_id) || q.platform_id} 상세의 질문·답변에서 확인하세요 — 답변과 함께 공개 Q&A로 게시됐어요.`,
+    url: `?view=detail&id=${q.platform_id}`,
+  });
+}
+
+console.log(`알림 후보 ${notifs.length}건 (deal_match + cat_new + fav_news + search_match + sub_expiry + proposal + review_result + inquiry_reply + post_stale + qa_answer)`);
 
 if (DRY) {
   for (const n of notifs.slice(0, 30)) console.log(`  + ${n.user_id.slice(0, 8)}… ← ${n.ref_id}: ${n.title}`);

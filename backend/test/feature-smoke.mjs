@@ -16,7 +16,7 @@ const ADMIN_ID = "00000000-0000-0000-0000-0000000000ad";
 const FUTURE = "2099-01-01", PAST = "2020-01-01";
 
 /* mock 원격: notice(app_settings)·후기 뷰·운영자 조인·알림함·profiles 역할 주입 외 전부 []. */
-async function newPage({ role = null, notice = null, reviews = null, notifs = null, operated = null, viewport = null, myPosts = null, boardPosts = null, onRpc = null } = {}) {
+async function newPage({ role = null, notice = null, reviews = null, notifs = null, operated = null, viewport = null, myPosts = null, boardPosts = null, onRpc = null, qaPublic = null, qaInbox = null, onAsk = null } = {}) {
   const page = await browser.newPage(viewport ? { viewport } : {});
   const errs = [];
   page.on("pageerror", (e) => errs.push(String(e.message).slice(0, 150)));
@@ -27,9 +27,13 @@ async function newPage({ role = null, notice = null, reviews = null, notifs = nu
     const u = r.request().url();
     const json = (b) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(b) });
     if (u.includes("app_settings") && u.includes("key=eq.notice")) return json(notice ? [{ value: notice }] : []);
-    if (u.includes("rpc/refresh_my_")) { if (onRpc) onRpc(u, r.request().postData()); return r.fulfill({ status: 204, body: "" }); }
+    if (u.includes("rpc/refresh_my_") || u.includes("rpc/operator_answer_platform_question")) { if (onRpc) onRpc(u, r.request().postData()); return r.fulfill({ status: 204, body: "" }); }
     if (u.includes("v_partner_posts_public")) return json(boardPosts ?? []);
     if (u.includes("partner_posts") && u.includes("created_by")) return json(myPosts ?? []);
+    if (u.includes("v_platform_questions_public")) return json(qaPublic ?? []);
+    if (u.includes("v_platform_questions_inbox")) return json(qaInbox ?? []);
+    if (u.includes("/platform_questions") && r.request().method() === "POST") { if (onAsk) onAsk(r.request().postData()); return r.fulfill({ status: 201, body: "" }); }
+    if (u.includes("/platform_questions")) return json([]);
     if (u.includes("v_reviews_public")) return json(reviews ?? []);
     if (u.includes("platform_operators")) return json(operated ?? []);
     if (u.includes("/notifications") && r.request().method() === "GET") return json(notifs ?? []);
@@ -182,6 +186,51 @@ const noHScroll = (page) => page.evaluate(() => document.documentElement.scrollW
   ok("수명: 보드 카드 '✓ 확인' 표시", tb.includes("✓ 2026-07-15 확인"));
   ok("수명(보드): pageerror 0", b.errs.length === 0);
   await b.page.close();
+}
+
+// ── 8.6) 플랫폼 Q&A(0042): 공개 FAQ 렌더 / 질문 폼(연락처 차단·접수) / 운영자 대기함 답변 ──
+{
+  const qaPublic = [{ id: "cccccccc-0000-0000-0000-00000000c001", platform_id: "coupang", question: "개인 판매자도 입점할 수 있나요?", answer: "사업자 등록 후 입점 가능합니다. 공식 안내를 확인하세요.", answered_at: "2026-07-10T00:00:00Z" }];
+  // 비로그인: 답변된 Q&A 렌더 + 질문은 로그인 안내
+  const g = await newPage({ qaPublic });
+  await g.page.goto(BASE + "?view=detail&id=coupang", { waitUntil: "networkidle" });
+  const tg = await text(g.page);
+  ok("Q&A: 답변된 질문 공개 렌더", tg.includes("개인 판매자도 입점할 수 있나요") && tg.includes("사업자 등록 후 입점 가능합니다"));
+  ok("Q&A: 비로그인 질문 로그인 안내", tg.includes("질문하려면 로그인이 필요해요"));
+  ok("Q&A(비로그인): pageerror 0", g.errs.length === 0);
+  await g.page.close();
+
+  // 회원: 연락처 클라 차단 → 정상 질문 접수(POST 페이로드)
+  const asks = [];
+  const m = await newPage({ role: "member", qaPublic, onAsk: (b) => asks.push(String(b)) });
+  await m.page.addInitScript(() => localStorage.setItem("sm.tour.v1", JSON.stringify({ home: 1, detail: 1 })));
+  await m.page.goto(BASE + "?view=detail&id=coupang", { waitUntil: "networkidle" });
+  await m.page.fill("form.frm textarea[maxlength='300']", "연락 주세요 010-1234-5678");
+  await m.page.click("text=질문 올리기");
+  await m.page.waitForTimeout(400);
+  ok("Q&A: 연락처 질문 클라 차단", (await text(m.page)).includes("연락처·이메일·URL·메신저 ID는 적을 수 없어요") && asks.length === 0);
+  await m.page.fill("form.frm textarea[maxlength='300']", "정산 주기가 실제로 어떻게 되나요?");
+  await m.page.click("text=질문 올리기");
+  await m.page.waitForTimeout(600);
+  ok("Q&A: 질문 접수(POST) + 접수 안내", asks.some((b) => b.includes("정산 주기가 실제로")) && (await text(m.page)).includes("질문이 접수됐어요"));
+  ok("Q&A(회원): pageerror 0", m.errs.length === 0);
+  await m.page.close();
+
+  // 운영자: 대기함 노출 → 답변 게시 → RPC 페이로드
+  const rpcs = [];
+  const qaInbox = [{ id: "cccccccc-0000-0000-0000-00000000c002", platform_id: "coupang", question: "배송비 정책이 어떻게 되나요?", created_at: "2026-07-15T00:00:00Z" }];
+  const op = await newPage({ role: "member", qaPublic, qaInbox, operated: [{ platform_id: "coupang", granted_at: "2026-01-01T00:00:00Z" }], onRpc: (u, b) => rpcs.push([u, String(b)]) });
+  await op.page.addInitScript(() => localStorage.setItem("sm.tour.v1", JSON.stringify({ home: 1, detail: 1 })));
+  await op.page.goto(BASE + "?view=detail&id=coupang", { waitUntil: "networkidle" });
+  await op.page.waitForTimeout(600);
+  ok("Q&A: 운영자 대기함 노출", (await text(op.page)).includes("답변 대기 질문 1건"));
+  // 후기 폼 textarea(동일 maxlength)와 구분 — 대기함 배너(.banner.warn) 안으로 한정
+  await op.page.fill(".banner.warn textarea", "기본 배송비는 판매자 설정을 따릅니다. 공식 안내를 참고하세요.");
+  await op.page.click(".banner.warn >> text=답변 게시");
+  await op.page.waitForTimeout(600);
+  ok("Q&A: 답변 게시 → RPC 호출", rpcs.some(([u, b]) => u.includes("operator_answer_platform_question") && b.includes("cccccccc-0000-0000-0000-00000000c002")));
+  ok("Q&A(운영자): pageerror 0", op.errs.length === 0);
+  await op.page.close();
 }
 
 // ── 9) 모바일(375×667): 공지+투어 / 상세 답글 / 도움말 — 렌더 + 가로 오버플로 없음 ──

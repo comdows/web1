@@ -27,9 +27,10 @@ export function Notifications() {
 
   const open = async (n: Notification) => {
     if (!n.read_at) { await markNotifRead(n.id).catch(() => { /* noop */ }); }
-    // url은 "?view=exchange" 형태의 상대 경로 → 뷰 이름만 파싱해 이동
+    // url은 "?view=detail&id=coupang" 형태의 상대 경로 → 뷰·id를 파싱해 이동(qa_answer 등 딥링크)
     const v = n.url?.match(/view=([a-z-]+)/)?.[1] as ViewName | undefined;
-    if (v) go(v); else load();
+    const id = n.url?.match(/[?&]id=([\w-]+)/)?.[1];
+    if (v) go(v, id ? { id } : undefined); else load();
   };
   const readAll = async () => { await markAllNotifsRead().catch(() => { /* noop */ }); load(); };
 
