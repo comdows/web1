@@ -619,6 +619,41 @@ export async function operatorReplyReview(reviewId: string, reply: string): Prom
     body: JSON.stringify({ p_review: reviewId, p_reply: reply }),
   });
 }
+/* ── 플랫폼 Q&A(0042 — P2) — 공개는 "답변된 질문"만(FAQ 자산화, 무응답 게시판 방지).
+ * 질문은 익명(공개·운영자 뷰 모두 작성자 컬럼 없음), 유저당 플랫폼별 미답변 1개(DB unique). ── */
+export interface PublicQA { id: string; platform_id: string; question: string; answer: string | null; answered_at: string | null }
+export async function fetchPlatformQuestions(platformId: string): Promise<PublicQA[]> {
+  return rest<PublicQA[]>(`v_platform_questions_public?platform_id=eq.${encodeURIComponent(platformId)}&select=*&limit=30`).catch(() => []);
+}
+export interface MyQuestionRow { id: string; question: string; status: "pending" | "answered" | "hidden"; created_at: string }
+export async function listMyQuestionsFor(platformId: string): Promise<MyQuestionRow[]> {
+  const uid = getSession()?.user.id;
+  if (!uid) return [];
+  return rest<MyQuestionRow[]>(`platform_questions?asker_id=eq.${uid}&platform_id=eq.${encodeURIComponent(platformId)}&select=id,question,status,created_at&order=created_at.desc&limit=10`).catch(() => []);
+}
+export async function askPlatformQuestion(platformId: string, question: string): Promise<void> {
+  const uid = getSession()?.user.id;
+  if (!uid) throw new Error("로그인이 필요해요.");
+  try {
+    await rest("platform_questions", {
+      method: "POST", headers: { Prefer: "return=minimal" },
+      body: JSON.stringify({ platform_id: platformId, asker_id: uid, question }),
+    });
+  } catch (e) {
+    if ((e as { status?: number }).status === 409) throw new Error("이 플랫폼에 답변 대기 중인 질문이 이미 있어요 — 답변이 등록된 뒤 새 질문을 올릴 수 있어요.");
+    throw e;
+  }
+}
+export interface InboxQuestion { id: string; platform_id: string; question: string; created_at: string }
+export async function fetchQuestionInbox(platformId?: string): Promise<InboxQuestion[]> {
+  const q = platformId ? `platform_id=eq.${encodeURIComponent(platformId)}&` : "";
+  return rest<InboxQuestion[]>(`v_platform_questions_inbox?${q}select=*&limit=50`).catch(() => []);
+}
+export async function answerPlatformQuestion(questionId: string, answer: string): Promise<void> {
+  await rest("rpc/operator_answer_platform_question", {
+    method: "POST", body: JSON.stringify({ p_question: questionId, p_answer: answer }),
+  });
+}
 export async function fetchReviews(platformId: string): Promise<PublicReview[]> {
   return rest<PublicReview[]>(`v_reviews_public?platform_id=eq.${encodeURIComponent(platformId)}&select=*&limit=30`).catch(() => []);
 }
@@ -671,7 +706,7 @@ export async function deleteMyReview(id: string): Promise<void> {
 }
 
 /* ── 신고(0028 reports) — 게시물 문제 신고: 접수는 회원, 처리는 관리 콘솔 큐 ── */
-export type ReportTargetType = "review" | "partner_post" | "deal" | "platform_news" | "platform";
+export type ReportTargetType = "review" | "partner_post" | "deal" | "platform_news" | "platform" | "platform_question";
 export async function createReport(targetType: ReportTargetType, targetId: string, reason: string): Promise<void> {
   const uid = getSession()?.user.id;
   if (!uid) throw new Error("로그인이 필요합니다");

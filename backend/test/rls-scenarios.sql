@@ -74,6 +74,15 @@ select case when
  and has_function_privilege('authenticated','public.refresh_my_deal(text)','execute')
   then 'PASS' else 'FAIL' end || ' — refresh_my_* grant(anon 차단)';
 
+-- ── 5.7) 플랫폼 Q&A(0042) — 답변 RPC anon 차단·공개 뷰 작성자 비노출·대기함 anon 차단 ──
+select case when
+     not has_function_privilege('anon','public.operator_answer_platform_question(uuid, text)','execute')
+ and has_function_privilege('authenticated','public.operator_answer_platform_question(uuid, text)','execute')
+ and not exists (select 1 from information_schema.columns
+                 where table_schema='public' and table_name='v_platform_questions_public' and column_name='asker_id')
+ and not has_table_privilege('anon','public.v_platform_questions_inbox','select')
+  then 'PASS' else 'FAIL' end || ' — platform Q&A(RPC grant·익명 뷰·대기함 차단)';
+
 -- ── 6) profiles: insert/delete 정책 부재(직접 프로필 생성·삭제 차단 — role 자가지정 방지) ──
 select case when not exists (
     select 1 from pg_policies
