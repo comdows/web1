@@ -16,7 +16,8 @@ import { FLAGS } from "./config";
 import {
   briefMatchesDeal, cancelDealSubmission, cancelSubmission, closeMyPost, createSubmission,
   deactivateBrief, deleteMyAccount, fetchDeals, fetchOperatorStats, listInterestsOnMyPosts, listMyBriefs, listMyCharges, listMyDealInterests,
-  listMyDealSubmissions, listMyIntroOutcomes, listMyOperatedPlatforms, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions, listMySubscriptions, fetchMyCreditBalance, listReceivedProposals,
+  listMyDealSubmissions, listMyIntroOutcomes, listMyOpenDeals, listMyOperatedPlatforms, listMyPartnerInterests, listMyPartnerPosts, listMySubmissions, listMySubscriptions, fetchMyCreditBalance, listReceivedProposals,
+  refreshMyDeal, refreshMyPartnerPost,
   partnerRefCode, placeOrder, recordIntroOutcome, registerOptout, remoteEnabled, respondToInterest, updateDisplayName, withdrawDealInterest, withdrawPartnerInterest,
   listSavedSearches, deleteSavedSearch,
 } from "./lib/api";
@@ -26,7 +27,7 @@ import { scoreBriefDeal } from "./lib/match";
 import { usePlatformIndex } from "./lib/platforms";
 import { PRICES, won } from "./lib/pricing";
 import type { DepositInstructions } from "./lib/billing";
-import type { BuyerBriefRow, DealSubmissionRow, IntroOutcomeKind, MyCharge, MyInterestRow, MyPostInterest, MySubscription, OperatorStats, PartnerPostAdmin, PublicDeal, ReceivedProposal, Submission } from "./lib/api";
+import type { BuyerBriefRow, DealSubmissionRow, IntroOutcomeKind, MyCharge, MyDealRow, MyInterestRow, MyPostInterest, MySubscription, OperatorStats, PartnerPostAdmin, PublicDeal, ReceivedProposal, Submission } from "./lib/api";
 
 const OUTCOME_LABEL: Record<IntroOutcomeKind, string> = { progressing: "진행 중", success: "성사됨 🎉", no: "성사 안 됨" };
 /* 소개 후 성사·후기 회수(0021) — 성공보수 아닌 품질 신호. 응답하면 갱신 가능. */
@@ -432,7 +433,7 @@ export function Account() {
   const [deposit, setDeposit] = useState<DepositInstructions | null>(null); // 스폰서 주문 무통장 안내
   const [charges, setCharges] = useState<MyCharge[]>([]);                // 내 결제·청구 내역(입금 안내 재확인)
   const [bank, setBank] = useState("");                                  // 입금 계좌(app_settings)
-  const [acts, setActs] = useState<{ pp: PartnerPostAdmin[]; ds: DealSubmissionRow[]; pi: MyInterestRow[]; di: MyInterestRow[]; br: BuyerBriefRow[] } | null>(null);
+  const [acts, setActs] = useState<{ pp: PartnerPostAdmin[]; ds: DealSubmissionRow[]; pi: MyInterestRow[]; di: MyInterestRow[]; br: BuyerBriefRow[]; md: MyDealRow[] } | null>(null);
   const [actsErr, setActsErr] = useState(false);
   const [briefDeals, setBriefDeals] = useState<PublicDeal[]>([]); // 브리프 조건 대조용(공개 뷰)
   const [outcomes, setOutcomes] = useState<Map<string, IntroOutcomeKind>>(new Map()); // 소개 후 성사 응답(0021)
@@ -463,10 +464,10 @@ export function Account() {
     listMyIntroOutcomes().then((m) => { if (alive) setOutcomes(m); }).catch(() => { /* noop */ });
     listMyCharges().then((r) => { if (alive) setCharges(r); }).catch(() => { /* noop */ });
     fetchBillingSettings().then((s) => { if (alive) setBank(s?.bank ?? ""); });
-    Promise.all([listMyPartnerPosts(), listMyDealSubmissions(), listMyPartnerInterests(), listMyDealInterests(), listMyBriefs()])
-      .then(([pp, ds, pi, di, br]) => {
+    Promise.all([listMyPartnerPosts(), listMyDealSubmissions(), listMyPartnerInterests(), listMyDealInterests(), listMyBriefs(), listMyOpenDeals().catch(() => [] as MyDealRow[])])
+      .then(([pp, ds, pi, di, br, md]) => {
         if (!alive) return;
-        setActs({ pp, ds, pi, di, br });
+        setActs({ pp, ds, pi, di, br, md });
         // 활성 브리프가 있으면 공개 매물과 조건 대조("우선 안내" 약속의 인앱 이행)
         if (br.some((b) => b.active)) fetchDeals().then((d) => { if (alive) setBriefDeals(d.filter((x) => !x.is_demo)); }).catch(() => { /* noop */ });
       })
@@ -504,6 +505,13 @@ export function Account() {
   const roleInfo = role === "admin" ? { kind: "verify" as const, label: "관리자" }
     : isOperator ? { kind: "good" as const, label: "운영자 ✓" }
     : { kind: "muted" as const, label: "일반 회원" };
+
+  /* 게시글 수명(0041): 기준시각(갱신일 ?? 게시일)에서 경과일 계산 — 60일+ 확인 안내, 90일+는 보드 미노출(갱신=재노출) */
+  const lifecycleOf = (baseIso: string | null | undefined) => {
+    if (!baseIso) return null;
+    const days = Math.floor((Date.now() - new Date(baseIso).getTime()) / 86400000);
+    return { days, state: days >= 90 ? ("expired" as const) : days >= 60 ? ("stale" as const) : ("fresh" as const) };
+  };
 
   /* 셀프 취소·마감·철회 — 권한은 0009 RLS/RPC가 판정(pending만 삭제 가능 등) */
   const doAct = async (id: string, fn: () => Promise<void>) => {
@@ -772,6 +780,17 @@ export function Account() {
               <div className="sub-item" key={p.id}>
                 <div style={{ minWidth: 0 }}>🤝 <b>{p.title}</b> <span className="mono" style={{ fontSize: 11, color: "var(--faint)" }}>{p.created_at.slice(0, 10)}</span>
                   {p.status === "rejected" && p.review_reason && <div className="frm-note">반려 사유: {p.review_reason}</div>}
+                  {p.status === "published" && (() => {
+                    const lc = lifecycleOf(p.refreshed_at ?? p.published_at ?? p.created_at);
+                    if (!lc || lc.state === "fresh") return null;
+                    return (
+                      <div className="frm-note">
+                        {lc.state === "expired"
+                          ? <>게시 {lc.days}일 — 90일이 지나 보드에서 내려가 있어요. 계속 유효하면 <b>다시 게시</b>를 눌러 주세요.</>
+                          : <>게시 {lc.days}일 — 계속 유효하면 <b>갱신</b>해 주세요. 90일 미갱신 시 보드에서 잠시 내려가요(갱신하면 복구).</>}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0, flexWrap: "wrap" }}>
                   {FLAGS.billing.sponsor && p.status === "published" && (
@@ -787,11 +806,22 @@ export function Account() {
                         setTimeout(() => document.getElementById("deposit-banner")?.scrollIntoView({ behavior: "smooth", block: "center" }), 80);
                       })}>🪧 상단 고정 신청</button>
                   )}
+                  {p.status === "published" && (() => {
+                    const lc = lifecycleOf(p.refreshed_at ?? p.published_at ?? p.created_at);
+                    if (!lc || lc.state === "fresh") return null;
+                    return (
+                      <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === p.id}
+                        onClick={() => doAct(p.id, () => refreshMyPartnerPost(p.id))}>
+                        {lc.state === "expired" ? "🔄 다시 게시" : "🔄 갱신"}</button>
+                    );
+                  })()}
                   {(p.status === "pending" || p.status === "published") && (
                     <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === p.id}
                       onClick={() => doAct(p.id, () => closeMyPost(p.id))}>{p.status === "pending" ? "철회" : "마감"}</button>
                   )}
-                  <Badge kind={b.k}>{b.l}</Badge>
+                  {p.status === "published" && lifecycleOf(p.refreshed_at ?? p.published_at ?? p.created_at)?.state === "expired"
+                    ? <Badge kind="soon">확인 필요</Badge>
+                    : <Badge kind={b.k}>{b.l}</Badge>}
                 </div>
               </div>
             );
@@ -812,6 +842,18 @@ export function Account() {
                     </div>
                   )}
                   {s.status === "approved" && <div className="frm-note">관심이 들어오면 세모플이 이메일로 소개 진행 여부를 확인드려요 — 메일함을 확인해 주세요.</div>}
+                  {s.status === "approved" && s.approved_deal_id && (() => {
+                    const d = acts.md.find((x) => x.id === s.approved_deal_id && x.status === "open");
+                    const lc = d ? lifecycleOf(d.refreshed_at ?? d.created_at) : null;
+                    if (!lc || lc.state === "fresh") return null;
+                    return (
+                      <div className="frm-note">
+                        {lc.state === "expired"
+                          ? <>게시 {lc.days}일 — 90일이 지나 보드에서 내려가 있어요. 매각 의사가 유효하면 <b>다시 게시</b>를 눌러 주세요.</>
+                          : <>게시 {lc.days}일 — 매각 의사가 유효하면 <b>갱신</b>해 주세요. 90일 미갱신 시 보드에서 잠시 내려가요(갱신하면 복구).</>}
+                      </div>
+                    );
+                  })()}
                   {s.status === "rejected" && s.review_reason && <div className="frm-note">반려 사유: {s.review_reason}</div>}
                 </div>
                 <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
@@ -819,6 +861,16 @@ export function Account() {
                     <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === s.id}
                       onClick={() => doAct(s.id, () => cancelDealSubmission(s.id))}>취소</button>
                   )}
+                  {s.status === "approved" && s.approved_deal_id && (() => {
+                    const d = acts.md.find((x) => x.id === s.approved_deal_id && x.status === "open");
+                    const lc = d ? lifecycleOf(d.refreshed_at ?? d.created_at) : null;
+                    if (!lc || lc.state === "fresh") return null;
+                    return (
+                      <button className="linklike" style={{ fontSize: 12 }} disabled={actBusy === s.id}
+                        onClick={() => doAct(s.id, () => refreshMyDeal(s.approved_deal_id!))}>
+                        {lc.state === "expired" ? "🔄 다시 게시" : "🔄 갱신"}</button>
+                    );
+                  })()}
                   <Badge kind={b.k}>{b.l}</Badge>
                 </div>
               </div>

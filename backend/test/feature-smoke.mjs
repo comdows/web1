@@ -16,7 +16,7 @@ const ADMIN_ID = "00000000-0000-0000-0000-0000000000ad";
 const FUTURE = "2099-01-01", PAST = "2020-01-01";
 
 /* mock 원격: notice(app_settings)·후기 뷰·운영자 조인·알림함·profiles 역할 주입 외 전부 []. */
-async function newPage({ role = null, notice = null, reviews = null, notifs = null, operated = null, viewport = null } = {}) {
+async function newPage({ role = null, notice = null, reviews = null, notifs = null, operated = null, viewport = null, myPosts = null, boardPosts = null, onRpc = null } = {}) {
   const page = await browser.newPage(viewport ? { viewport } : {});
   const errs = [];
   page.on("pageerror", (e) => errs.push(String(e.message).slice(0, 150)));
@@ -27,6 +27,9 @@ async function newPage({ role = null, notice = null, reviews = null, notifs = nu
     const u = r.request().url();
     const json = (b) => r.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(b) });
     if (u.includes("app_settings") && u.includes("key=eq.notice")) return json(notice ? [{ value: notice }] : []);
+    if (u.includes("rpc/refresh_my_")) { if (onRpc) onRpc(u, r.request().postData()); return r.fulfill({ status: 204, body: "" }); }
+    if (u.includes("v_partner_posts_public")) return json(boardPosts ?? []);
+    if (u.includes("partner_posts") && u.includes("created_by")) return json(myPosts ?? []);
     if (u.includes("v_reviews_public")) return json(reviews ?? []);
     if (u.includes("platform_operators")) return json(operated ?? []);
     if (u.includes("/notifications") && r.request().method() === "GET") return json(notifs ?? []);
@@ -149,6 +152,38 @@ const noHScroll = (page) => page.evaluate(() => document.documentElement.scrollW
   ok("관리자: pageerror 0", errs.length === 0);
   await page.close();
 }
+// ── 8.5) 게시글 수명 관리(0041): 내 활동 60일+ 갱신 버튼 → RPC / 보드 "✓ 확인" 표시 ──
+{
+  const old = new Date(Date.now() - 70 * 86400e3).toISOString();
+  const myPosts = [{ id: "bbbbbbbb-0000-0000-0000-00000000b001", title: "오래된 내 제안", category_id: "openmarket", type_id: "t1",
+    give_text: "g", get_text: "g", want_categories: [], size_text: "", detail: "", status: "published",
+    review_reason: null, created_at: old, published_at: old, refreshed_at: null }];
+  const rpcCalls = [];
+  const { page, errs } = await newPage({ role: "member", myPosts, onRpc: (u, body) => rpcCalls.push([u, body]) });
+  // 계정 첫 방문 투어(driver 오버레이)가 클릭을 가로채지 않게 — 본 것으로 시드
+  await page.addInitScript(() => localStorage.setItem("sm.tour.v1", JSON.stringify({ home: 1, account: 1 })));
+  await page.goto(BASE + "?view=account", { waitUntil: "networkidle" });
+  await page.waitForTimeout(800);
+  const t = await text(page);
+  ok("수명: 60일+ 게시글에 갱신 안내", t.includes("계속 유효하면"));
+  ok("수명: 갱신 버튼 노출", t.includes("🔄 갱신"));
+  await page.click("text=🔄 갱신");
+  await page.waitForTimeout(600);
+  ok("수명: 갱신 클릭 → refresh RPC 호출", rpcCalls.some(([u, b]) => u.includes("refresh_my_partner_post") && String(b).includes("bbbbbbbb-0000-0000-0000-00000000b001")));
+  ok("수명(내 활동): pageerror 0", errs.length === 0);
+  await page.close();
+
+  const boardPosts = [{ id: "bbbbbbbb-0000-0000-0000-00000000b002", title: "확인된 제안", category_id: "openmarket", type_id: "t1",
+    give_text: "상호 홍보", get_text: "입점 연계", want_categories: [], size_text: "월 방문 1만", detail: "", status: "published",
+    posted: "2026-05-01", pro_verified: false, refreshed: "2026-07-15" }];
+  const b = await newPage({ boardPosts });
+  await b.page.goto(BASE + "?view=partners", { waitUntil: "networkidle" });
+  const tb = await text(b.page);
+  ok("수명: 보드 카드 '✓ 확인' 표시", tb.includes("✓ 2026-07-15 확인"));
+  ok("수명(보드): pageerror 0", b.errs.length === 0);
+  await b.page.close();
+}
+
 // ── 9) 모바일(375×667): 공지+투어 / 상세 답글 / 도움말 — 렌더 + 가로 오버플로 없음 ──
 {
   const vp = { width: 375, height: 667 };

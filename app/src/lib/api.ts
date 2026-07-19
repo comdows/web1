@@ -289,6 +289,7 @@ export interface PartnerPost {
   give_text: string; get_text: string; want_categories: string[];
   size_text: string; detail: string; status: "published" | "matched"; posted: string | null;
   pro_verified?: boolean; // 작성자가 활성 Pro 구독자(0011 뷰 — boolean만, 익명성 유지)
+  refreshed?: string | null; // 소유자 유효성 재확인일(0041 — 90일 미갱신 open은 뷰에서 제외)
 }
 /* 참조번호(표시용) — id에서 파생. 반익명 보드에서 신원 대신 제안을 지칭하는 수단(문의·소개 요청·검수 소통용) */
 export const partnerRefCode = (id: string) => "P-" + id.replace(/-/g, "").slice(0, 4).toUpperCase();
@@ -329,6 +330,7 @@ export interface PublicDeal {
   mode: string; summary: string; highlights: string[]; sale_reason: string | null;
   status: "open" | "in_progress"; is_demo: boolean; posted: string;
   owner_verified?: boolean; proofs?: string[]; // 0022 — 운영자 확인·준비 증빙 태그
+  refreshed?: string | null; // 소유자 유효성 재확인일(0041)
 }
 export async function fetchDeals(): Promise<PublicDeal[]> {
   return rest<PublicDeal[]>("v_deals_public?select=*&order=posted.desc&limit=100");
@@ -547,6 +549,7 @@ export interface PartnerPostAdmin {
   get_text: string; want_categories: string[]; size_text: string; detail: string;
   status: "pending" | "published" | "matched" | "rejected" | "closed";
   review_reason: string | null; created_at: string;
+  published_at?: string | null; refreshed_at?: string | null; // 수명 관리(0041 — listMyPartnerPosts만 조회)
 }
 export async function listPartnerPosts(statuses: string[]): Promise<PartnerPostAdmin[]> {
   return rest<PartnerPostAdmin[]>(`partner_posts?status=in.(${statuses.join(",")})&select=id,title,category_id,type_id,give_text,get_text,want_categories,size_text,detail,status,review_reason,created_at&order=created_at.asc&limit=100`);
@@ -817,7 +820,21 @@ export async function deleteMyAccount(): Promise<void> {
 export async function listMyPartnerPosts(): Promise<PartnerPostAdmin[]> {
   const uid = getSession()?.user.id;
   if (!uid) return [];
-  return rest<PartnerPostAdmin[]>(`partner_posts?created_by=eq.${uid}&select=id,title,category_id,type_id,give_text,get_text,want_categories,size_text,detail,status,review_reason,created_at&order=created_at.desc&limit=50`);
+  return rest<PartnerPostAdmin[]>(`partner_posts?created_by=eq.${uid}&select=id,title,category_id,type_id,give_text,get_text,want_categories,size_text,detail,status,review_reason,created_at,published_at,refreshed_at&order=created_at.desc&limit=50`);
+}
+/* ── 게시글 수명 관리(0041) — 90일 미갱신 open 게시글은 공개 뷰에서 내려간다.
+ * 갱신은 좁은 RPC(소유자·게시 상태만, refreshed_at만 변경) — "다시 게시"도 같은 호출(재노출). ── */
+export interface MyDealRow { id: string; status: string; posted: string; refreshed_at: string | null; created_at: string }
+export async function listMyOpenDeals(): Promise<MyDealRow[]> {
+  const uid = getSession()?.user.id;
+  if (!uid) return [];
+  return rest<MyDealRow[]>(`deals?owner_id=eq.${uid}&status=in.(open,in_progress)&select=id,status,posted,refreshed_at,created_at&order=created_at.desc&limit=50`);
+}
+export async function refreshMyPartnerPost(postId: string): Promise<void> {
+  await rest("rpc/refresh_my_partner_post", { method: "POST", body: JSON.stringify({ p_post_id: postId }) });
+}
+export async function refreshMyDeal(dealId: string): Promise<void> {
+  await rest("rpc/refresh_my_deal", { method: "POST", body: JSON.stringify({ p_deal_id: dealId }) });
 }
 export async function listMyDealSubmissions(): Promise<DealSubmissionRow[]> {
   const uid = getSession()?.user.id;
