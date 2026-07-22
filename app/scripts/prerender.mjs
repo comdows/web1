@@ -5,10 +5,11 @@
  * (App.tsx가 /p/<id> 경로를 detail 뷰로 해석). sitemap.xml·robots.txt도 함께 생성. */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { SITE_URL, SITE_BASE, CUSTOM_DOMAIN } from "../site.config.mjs";
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = path.join(ROOT, "dist");
 const SITE = SITE_URL;          // canonical·sitemap·og 접두어(끝 슬래시 없음)
 const BASE = SITE_BASE;         // 정적 본문 내부 링크 접두어(끝 슬래시 포함)

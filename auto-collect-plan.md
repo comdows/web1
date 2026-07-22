@@ -1,55 +1,85 @@
-# 신규 플랫폼·AI 도구 자동 수집 계획 v1 (2026-07)
+# 신규 플랫폼·AI 도구 자동 수집 계획 v3 (2026-07-22)
 
-> 목표: 매주 새로 나오는 플랫폼·AI 도구를 사람이 찾아다니지 않아도 되게 한다.
-> 원칙: **자동 등재는 하지 않는다** — 수집기는 후보를 "제보 검수 큐"에 넣을 뿐이고,
-> 등재는 언제나 관리자 승인(중립·중복·품질 기준)을 거친다.
+> 목표: 최신 출시뿐 아니라 이미 존재하지만 세모플에 없는 플랫폼을 지속 발굴한다.
+> 원칙: main 풀에서 직접 URL·중복·분야·신뢰도 게이트를 모두 통과한 후보만 `lifecycle=review`로 자동 공개하고,
+> 관리자가 사후 검수해 `verified` 승격 또는 공개 제외한다.
 
 ## 1. 구조
 
 ```
-GitHub Actions (매주 월 07:00 KST + 수동 실행)
+GitHub Actions (월·수·금 07:00 KST + 수동 실행)
   └ backend/collect/collect.mjs
-      ① 소스 수집 — Product Hunt AI 피드 · Hacker News Show HN · 플래텀(국내, 출시 소식만)
-      ② 정규화 — 제목에서 부제 제거, HTML 제거, 지역 태깅(해외/국내)
-      ③ 중복 제거 — 기존 등재 1,637개(호스트·이름) + 봇의 과거 제보와 대조, 회차당 최대 15건
-      ④ 봇 계정 로그인(anon 키 + 비밀번호 — 서비스 키 불사용) → submissions 테이블에 후보 투입
-  └ 관리 콘솔 "제보 검수 큐"에 🤖 자동 수집 배지로 표시 → 이름·분야 다듬고 ✓ 승인·등재
+      ① 26개 소스 수집
+         · Product Hunt 6토픽 · HN 3키워드 + 전체 최신 + 과거 백필
+         · GitHub SaaS/Marketplace 최신 + 과거 백필 · BetaList
+         · 국내 매체 6 · GeekNews · Google News 검색 3
+      ② 정규화 — 제목/HTML/지역/실사이트 URL 정리
+      ③ 중복 제거 — 운영 DB 호스트·이름 + 봇의 과거 제보를 1,000행씩 끝까지 조회해 대조
+      ④ 국가 × 유입 풀 완전 분리 — 버킷 간 남는 예산 이월 없음
+         · 국내 main 22 / 국내 ad 8 / 해외 main 22 / 해외 ad 8 (기본 60건)
+         · 각 버킷 안에서 소스별 라운드로빈 + 40% 과거 백필 예약
+      ⑤ AI 보강 — 실제 플랫폼 여부·45개 분야·한국어 소개문 판정
+      ⑥ main 고신뢰 후보만 lifecycle=review 자동등재, ad는 점수와 관계없이 일반 제보 검수 큐
+  └ 관리 콘솔 "자동 등재 사후 검수" → URL·분야·소개문 확인 후 확정/내리기
 ```
 
-- 새 테이블·정책 없음: 기존 `submissions` RLS("본인 제보 insert / 본인+admin select")를 그대로 사용.
-- 봇은 일반 회원이라 권한이 최소(자기 제보만 가능) — 비밀번호가 새어도 등재는 불가능.
-- 회차당 15건 상한: 1인 검수 부담 제한. 소스·상한은 collect.mjs 상단에서 조정.
+- main은 기술·산업 편집/커뮤니티 소스, ad는 Product Hunt·BetaList·국내 스타트업/출시 홍보형 매체·출시 검색 소스다. 같은 후보가 양쪽에 잡히면 전역 중복 제거에서 main을 보존한다.
+- 자동등재 서버 RPC가 스위치·수집 봇·`collection_pool=main`·국가 일치·신뢰도·중복·분야를 다시 검증한다(0043).
+- 검수 큐 10칸도 국내 main 4 / 국내 ad 1 / 해외 main 4 / 해외 ad 1로 분리하며, 기존 pending 점유량을 버킷별로 먼저 차감한다.
+- HN 전체/과거와 GitHub 광역 검색은 `ANTHROPIC_API_KEY`의 실제 플랫폼+분야 판정을 통과해야만 자동등재된다. AI가 없거나 실패하면 신뢰도 79 이하로 제한한다.
+- GitHub 후보는 공식 Search API 결과 중 별도 제품 홈페이지가 있는 저장소만 사용한다. 코드·패키지·동영상·앱스토어·Product Hunt 링크는 직접 URL로 인정하지 않는다.
+- 과거 백필은 `GITHUB_RUN_NUMBER`를 슬롯으로 사용해 HN 약 5년(30일 창), GitHub 약 5년(90일 창)을 순환한다.
+- 소스 실패가 전체의 20% 이상이면 `ops-alert` 이슈를 만든다.
+- 2026-07-22 분리 전 운영 DB 읽기 전용 기준선: 외부 항목 885건 수집 → 기존 플랫폼 중복 제거 후 후보 상한 60건 충족, 기존 플랫폼 소식 30건 매칭.
 
-## 2. 사용자 설정 (최초 1회, ~5분)
+## 2. 운영 설정
 
-1. **봇 계정 만들기** — 사이트에서 회원가입(예: `semopl.bot@본인도메인` 또는 별도 지메일),
-   확인 메일 클릭까지 완료. 관리자 지정 불필요(일반 회원이면 됨).
-2. **GitHub Secrets 등록** — 리포 Settings → Secrets and variables → Actions → New repository secret:
-   | 이름 | 값 |
-   |---|---|
-   | `SUPABASE_URL` | `https://yoibyjexxtiopmxjxihf.supabase.co` |
-   | `SUPABASE_ANON_KEY` | 사이트 빌드에 쓰는 공개 anon 키(.env.production과 동일) |
-   | `BOT_EMAIL` | 봇 계정 이메일 |
-   | `BOT_PASSWORD` | 봇 계정 비밀번호 |
-3. **수동 실행으로 테스트** — Actions 탭 → `collect-candidates` → Run workflow.
-   성공하면 관리 콘솔 검수 큐에 🤖 후보가 보인다. 이후 매주 월요일 아침 자동 실행.
+필수 Secrets:
+
+| 이름 | 용도 |
+|---|---|
+| `SUPABASE_URL` / `SUPABASE_ANON_KEY` | 운영 DB·Auth 접속 |
+| `BOT_EMAIL` / `BOT_PASSWORD` | 최소 권한 수집 봇 로그인 |
+
+선택 보강:
+
+| 이름 | 용도 |
+|---|---|
+| `ANTHROPIC_API_KEY` | 광역 검색 안전 게이트·분류·한국어 소개문. 운영 설정 완료 |
+| `PH_TOKEN` | Product Hunt 실사이트 URL 해석. 유무와 관계없이 ad 풀·검수 큐 전용 |
+| `ADMIN_BOT_EMAIL` / `ADMIN_BOT_PASSWORD` | 기존 플랫폼 소식 연결 |
+
+`GITHUB_TOKEN`은 Actions 기본 토큰을 사용하므로 별도 Secret이 필요 없다.
+
+수동 실행 입력:
+
+- `max_per_run`: 1~100, 기본 60
+- `backfill_slot`: 특정 과거 구간 재수집 시 지정. 비우면 실행 번호로 자동 순환
+
+선택 환경변수 `COLLECT_DOMESTIC_SHARE`(기본 0.5), `COLLECT_AD_SHARE`(기본 0.25)로 비율을 조정할 수 있다. 어떤 값에서도 버킷 간 잔여 예산은 재분배하지 않는다.
 
 ## 3. 검수 요령
 
-- 🤖 배지 카드의 출처(producthunt/hn/platum)를 보고 공식 사이트를 열어 실체 확인
-- 이름을 한국 사용자 기준으로 다듬고(부제 제거), 분야 선택(AI 도구면 ai_* 분야), 소개 한 줄 재작성
-- 뉴스 링크(플래텀 아카이브 등)가 딸려온 경우 공식 URL로 교체 후 승인, 실체 없으면 반려
-- 반려해도 다음 회차에 다시 오지 않는다(봇의 과거 제보와 dedup — 상태 무관)
+- 자동등재 항목은 이미 공개 상태다. URL이 실제 서비스인지, 분야와 소개문이 맞는지 확인한다.
+- 정상: **확정(검증)** → `verified=true`, `lifecycle=verified`.
+- 오등재·템플릿·블로그·중복: **내리기** → `lifecycle=rejected`, 공개 제외.
+- 일반 제보 큐의 뉴스·디렉토리 링크는 공식 서비스 URL로 교체한 뒤 승인한다.
+- 자동등재 정확도와 소스별 반려율이 쌓이기 전까지 임계값 80은 낮추지 않는다.
 
 ## 4. 로컬 검증
 
-```
-node backend/collect/collect.mjs --dry --fixture <픽스처 디렉토리>   # 네트워크 없이 파서 검증
-node backend/collect/collect.mjs --dry                               # 실제 소스 수집까지(투입 없음)
+```powershell
+node backend/collect/collect.mjs --dry --fixture backend/collect/fixtures
+node --test backend/collect/pool-selection.test.mjs
+node backend/collect/collect.mjs --dry
+$env:COLLECT_MAX_PER_RUN=100; $env:COLLECT_BACKFILL_SLOT=0; node backend/collect/collect.mjs --dry
 ```
 
-## 5. 확장 여지 (필요해지면)
+`--dry`는 외부 소스를 읽지만 DB에는 쓰지 않고 AI 비용도 발생시키지 않는다.
 
-- 소스 추가: GitHub Trending(AI 리포), 벤처스퀘어 RSS, There's An AI For That 신규 목록
-- 기존 등재 정보 갱신 감지(도메인 사망·리브랜딩) — 주기적 URL 헬스체크 잡
-- 후보 사전 분류: 제목 키워드로 category_id 추정해 검수 시간 단축
+## 5. 소스 정책
+
+- 공식 API·RSS를 우선하고 공개 API가 없는 디렉토리의 무단 스크래핑은 추가하지 않는다.
+- 새 소스에는 `region`과 `pool`을 함께 지정한다. `pool` 생략은 main으로 간주되므로 홍보·출시형 소스는 반드시 `pool: "ad"`를 명시한다.
+- Product Hunt API 문서는 상업적 사용을 금지하고 별도 문의를 요구한다. 기존 6토픽 이상으로 확대하기 전 사용 허가를 확인하고, 미확인 상태에서는 RSS 폴백을 유지한다.
+- 다음 확장은 소스 개수보다 실제 반려율을 기준으로 결정한다. 후보량이 아니라 검증 통과 플랫폼 수가 핵심 지표다.

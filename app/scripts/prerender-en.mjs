@@ -6,10 +6,11 @@
  * 데이터: platforms.en.json(검수된 commerce+trade 번역만) — 미번역 플랫폼은 EN에서 조용히 생략. */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { SITE_URL } from "../site.config.mjs";
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = path.join(ROOT, "dist");
 const SITE = SITE_URL;
 

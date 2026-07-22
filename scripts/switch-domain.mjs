@@ -7,8 +7,9 @@
  * 되돌리기: node scripts/switch-domain.mjs --revert  (GitHub Pages 기본 주소로 복귀) */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const arg = process.argv[2];
 if (!arg) {
   console.error("사용법: node scripts/switch-domain.mjs <도메인>   (예: semopl.com)\n        node scripts/switch-domain.mjs --revert   (기본 주소로 복귀)");

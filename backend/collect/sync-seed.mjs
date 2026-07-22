@@ -17,9 +17,10 @@
 import fs from "node:fs";
 import path from "node:path";
 import { execSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 
 const DRY = process.argv.includes("--dry");
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const P_KO = path.join(ROOT, "app/src/data/platforms.json");
 const P_EN = path.join(ROOT, "app/src/data/platforms.en.json");
 

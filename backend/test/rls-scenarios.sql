@@ -83,6 +83,13 @@ select case when
  and not has_table_privilege('anon','public.v_platform_questions_inbox','select')
   then 'PASS' else 'FAIL' end || ' — platform Q&A(RPC grant·익명 뷰·대기함 차단)';
 
+-- ── 5.8) 수집 풀 분리(0043) — 광고 풀·국가 불일치 서버 거절 + anon 차단 ──
+select case when
+     not has_function_privilege('anon','public.auto_list_candidate(jsonb, integer)','execute')
+ and pg_get_functiondef('public.auto_list_candidate(jsonb, integer)'::regprocedure) like '%AD_POOL_REVIEW_ONLY%'
+ and pg_get_functiondef('public.auto_list_candidate(jsonb, integer)'::regprocedure) like '%COLLECTION_REGION_MISMATCH%'
+  then 'PASS' else 'FAIL' end || ' — auto_list_candidate 국가별 main/ad 서버 경계';
+
 -- ── 6) profiles: insert/delete 정책 부재(직접 프로필 생성·삭제 차단 — role 자가지정 방지) ──
 select case when not exists (
     select 1 from pg_policies

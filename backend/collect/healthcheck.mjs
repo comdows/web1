@@ -4,8 +4,9 @@
  * 봇 차단(403 등)은 "확인 필요"로만 분류해 오탐을 줄인다. */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, "app/src/data/platforms.json"), "utf8"));
 
 /* 라이브 데이터 우선 — 정적 시드만 돌면 콘솔에서 승인·정정된 등재분이 영구 무점검이 된다.

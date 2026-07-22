@@ -13,10 +13,10 @@ app/                 프론트엔드 (Vite + React + TS)
 backend/
   migrations/        0001 스키마 → 0002 RLS → 0003 시드 → 0004 오픈 → 0005 소개·동의 → 0006 AI (ALL.sql = 전체)
   seed/build-seed.mjs     platforms.json → 0003 재생성 (데이터 변경 시 실행)
-  collect/collect.mjs     주 3회 신규 수집기(21소스·전 분야 분류·스마트 중복제거) → 제보 검수 큐(기본) / 고신뢰 자동 등재(스위치 on 시)
-                          소스: PH 6토픽(PH_TOKEN 있으면 API로 실사이트 URL → 자동등재 자격)·HN 3쿼리·BetaList
+  collect/collect.mjs     주 3회 신규 수집기(26소스·국가×main/ad 독립 예산·버킷별 백필 40%·운영 DB 전체 페이지 중복검사) → ad 검수 큐 / main 고신뢰 자동 등재
+                          소스: PH 6토픽·HN 3쿼리+전체 최신+5년 백필·GitHub SaaS/Marketplace 최신+5년 백필·BetaList
                           + 국내 매체 6(플래텀·벤처스퀘어·스타트업레시피·아웃스탠딩·요즘IT·바이라인)
-                          + 국내 커뮤니티 2(GeekNews·디스콰이엇) + 구글뉴스 검색 3
+                          + GeekNews + 구글뉴스 검색 3. 광역 HN/GitHub 후보는 AI 플랫폼 판정 통과 시에만 자동등재
   collect/enrich.mjs      AI 보강(선택) — ANTHROPIC_API_KEY 있으면 Claude Haiku로 후보 분류·한국어 소개문·제품 판정(없으면 정규식 폴백)
   collect/sync-seed.mjs   DB→정적 시드 역동기화 — 검수 승인분을 platforms.json(+EN 번역)에 반영해 SEO·/en/까지 연결
                           (Actions sync-seed 수동 실행 → 변경 시 PR 자동 생성 — 검수 승인 몰아서 한 뒤 1회 돌리는 리듬)
@@ -59,25 +59,29 @@ backend/
 
 ## 설정 상태 / 대기 항목
 
+> 실제 운영 상태의 단일 원천은 [`dev-roadmap-v3.md` §0](dev-roadmap-v3.md#0-현재-위치)입니다(기준일 2026-07-22). 이 절은 실행 절차와 체크 이력을 동기화합니다.
+
 - [x] Supabase 마이그레이션 **0001~0011 전체 실행 완료(2026-07-05)** — 신규 SQL은 `backend/migrations/`에 추가 후 SQL Editor에서 실행
 - [x] `0012_billing_hardening.sql` 실행 완료(2026-07-05 — 종합 QA 수정)
 - [x] **`0013_qa3.sql` 실행 완료**(3차 QA — 본인 게시물 자기 신청 RLS 차단. 실행 전에도 클라이언트 가드로 버튼은 숨겨짐)
 - [x] **`0014_judgment_seed.sql` 실행 완료**(판단 필드 시드 — 수수료대·정산·입점조건·강점 1,637행 UPDATE. 정적 빌드엔 이미 반영, 원격 DB 반영용)
 - [x] **`0015_outreach.sql` 실행 완료**(제휴 제안 아웃리치 — 발송 기록·수신거부·게이트. 실행 후에도 서버 발송은 off, 회원 본인 메일로 발송)
-- [x] **`0016_autolist.sql` 실행 완료**(자동 수집 고신뢰 자동 등재 + 사후 검수 — `auto_listed` 컬럼·`auto_list_candidate`/`review_auto_listed` RPC·`app_settings 'autolist'`. **스위치 기본 off** → 실행해도 수집기는 전부 검수 큐로. 자동 수집 소스 확장(벤처스퀘어·스타트업레시피)과 스마트 중복제거(호스트 정규화·이름 퍼지)는 이 마이그레이션 없이도 동작)
-- [ ] (선택) **자동 등재 켜기**(수집 신뢰도를 몇 주 지켜본 뒤에만 — "자동 등재 없음" 원칙을 부분 개방). **관리 콘솔에서 스위치로 처리**(수기 SQL 불필요):
-  ① 검수 큐의 🤖 자동 수집 카드 신뢰도 배지를 관찰(고신뢰=80↑가 실제로 정확한지 확인)
-  ② 관리 콘솔 → **"📥 자동 수집 설정"** → "감지된 봇을 수집기로 지정" → "자동 등재 켜기" 체크(min_confidence 조정 가능). 끄기·되돌리기도 같은 패널에서 즉시.
-  ③ 이후 수집기는 directUrl 소스(HN 등) + 분야추정 + 신뢰도≥80만 lifecycle=review로 자동 등재 → 관리 콘솔 "🤖 자동 등재 사후 검수"에서 확정/내리기 스팟체크(국내 뉴스·PH 게시물은 실사이트 링크가 아니라 자동 등재 대상 아님 → 일괄 승인으로)
+- [x] **`0016_autolist.sql` 실행 완료**(자동 수집 고신뢰 자동 등재 + 사후 검수 — `auto_listed` 컬럼·`auto_list_candidate`/`review_auto_listed` RPC·`app_settings 'autolist'`. 기본값은 off지만 **운영 설정은 현재 on**. 자동 수집 소스 확장과 스마트 중복제거는 스위치와 무관하게 동작)
+- [x] **자동 등재 활성화 확인(2026-07-22)** — `enabled:true`, `min_confidence:80`, 수집 봇 지정 완료. directUrl·분야 판정·임계값을 서버 RPC가 재검증한 뒤 `lifecycle=review`로만 등재한다.
+  ① [최근 collect 실행](https://github.com/comdows/semopl/actions/runs/29874744086): 자동등재 23건·일반 검수 큐 2건
+  ② 관리 콘솔 **"🤖 자동 등재 사후 검수"**의 대기 44건을 확인해 각 항목을 확정/내리기
+  ③ **운영 결정: 활성 상태 유지(2026-07-22).** 새 자동등재분은 주간 루틴에서 검수하고, 정확도 근거가 쌓이기 전까지 임계값은 확대하지 않음
 - [x] **`0017_measurement.sql` 실행 완료**(계측 보강 — `events.ref`(유입경로) 컬럼 + 퍼널·유입 admin 뷰 `v_funnel_7d`/`v_referrers_7d`. 멱등. 실행 후 방문이 쌓이면 관리 콘솔 "퍼널·유입" 패널에 노출→클릭→외부방문 전환율·유입경로가 채워짐)
 - [x] **`0018_notifications.sql` 실행 완료**(인앱 알림 — `notifications` 테이블 + RLS(본인만 열람·읽음, 생성은 admin 봇). 멱등. 실행 후 `match-notify` 워크플로가 ①인수 브리프↔신규 매물 ②관심 분야(즐겨찾기 유도) 신규 플랫폼 알림을 넣고, 헬스체크는 관심 플랫폼 죽은 링크를 알림 → 회원 헤더 🔔에 표시. 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요)
 - [x] **`backend/migrations/0030_saved_searches.sql` 실행 완료(2026-07-15)**(저장된 검색 + 조건 알림 — `saved_searches` 테이블(본인 CRUD·admin 조회, 사용자당 20). 멱등. 실행 후 검색 결과 화면 "🔔 이 조건 저장" → 계정 "내 저장 검색" 관리, 주간 `match-notify`가 조건에 맞는 신규 플랫폼을 `search_match` 인앱 알림으로 발송. 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요. 실행 전에도 사이트 정상(저장 버튼만 접수 실패 안내))
 - [x] **`backend/migrations/0031_user_interests.sql` 실행 완료(2026-07-15)**(로그인 개인화 — `user_interests` 테이블(본인 upsert·admin 조회). 멱등. 실행 후 온보딩·관심 선택이 서버에 저장돼 기기 간 동기화, 로그인 홈에 "🔔 내 저장 검색" 개인화 블록 노출. 실행 전에도 사이트 정상(관심은 로컬에만 저장))
 - [x] **`backend/migrations/0032_ai_pricing.sql` 실행 완료(2026-07-15)**(AI 도구 요금형태 — `platforms.ai_pricing` 컬럼(free/freemium/paid) + AI 163개 시드. 멱등(컬럼 add if not exists + id별 UPDATE). 실행 후 AI 파인더 "요금 형태" 필터·카드/상세/비교 배지 노출. 요금 "형태"만(금액 게재 안 함) — 편집 추정. 실행 전에도 사이트 정상(정적 데이터로 표시))
-- [ ] **`backend/migrations/0036_grants_fix.sql` 실행**(운영 장애 수정 — RLS 정책 헬퍼 함수(is_suspended 등) authenticated 권한 재부여. 멱등. **이거 없으면 봇·회원의 제보 insert가 permission denied로 거부됨**(run 29513012891에서 확인) — 수집기 검수 큐 투입의 전제)
-- [ ] **`backend/migrations/0035_judgment_seed2.sql` 실행**(판단 필드 소탕 2차 — 수수료 구조가 공지로 알려진 25건 UPDATE(리드 과금·광고 상품·구독·정률·협의형 구분, 금액 미게재). 멱등. 정적 빌드엔 이미 반영 — 원격 DB 반영용. fee_band 커버리지 85→107)
-- [ ] **`backend/migrations/0034_growth.sql` 실행**(성장 계측 — `events.entity_type/entity_id` 컬럼 + `metrics_weekly` 주간 스냅샷 + `admin_snapshot_weekly` RPC + 성장/코호트/머니패스 admin 뷰. 멱등. 실행 후 관리 콘솔 "성장" 패널이 채워지고 `metrics-weekly` 워크플로(매주 월, 기존 `ADMIN_BOT_*` Secrets 재사용 — 추가 설정 불필요)가 주간 확정치를 적재. 실행 전에도 사이트 정상 — 매물 조회 이벤트만 기록 생략)
 - [x] **`backend/migrations/0033_brief_region.sql` 실행 완료(2026-07-15)**(매칭 지능화 — `buyer_briefs.region_pref` 컬럼(''=무관/domestic/해외). 멱등(컬럼 add if not exists + 조건부 check). 실행 후 인수 브리프에 지역 선호 저장 → 브리프↔매물 매칭이 지역·예산 하한까지 반영(내 활동·관리 소개큐·주간 `match-notify`). 실행 전에도 사이트 정상(지역 필드는 빈값=무관 처리))
+- [x] **`backend/migrations/0034_growth.sql` 실행 완료**(성장 계측 — `events.entity_type/entity_id` + `metrics_weekly` + 성장/코호트/머니패스 뷰. [2026-07-20 주간 스냅샷](https://github.com/comdows/semopl/actions/runs/29717870523) 적재 성공: 세션 1·WAU 1·검색 0·외부방문 4)
+- [x] **`backend/migrations/0035_judgment_seed2.sql` 실행 완료**(판단 필드 소탕 2차 25건. 2026-07-22 운영 DB를 읽기 전용 대조해 25/25건 일치 확인)
+- [x] **`backend/migrations/0036_grants_fix.sql` 실행 완료**(RLS 헬퍼 권한 재부여. 최신 수집 실행에서 자동등재 23건·검수 큐 2건 투입 성공으로 동작 확인)
+- [x] **`backend/migrations/0037~0042` 운영 반영 완료**(RLS 하드닝·events 인덱스·프론트 오류 수집·후기 답글·게시글 수명·플랫폼 Q&A. 0039 `event_t.error`는 2026-07-22 운영 스키마에서 재확인)
+- [x] **`backend/migrations/0043_collect_pool_isolation.sql` 실행 완료(2026-07-22)** — 광고 풀의 자동등재 RPC 우회와 국가 버킷 불일치를 서버에서 거절한다. 수집기와 DB의 이중 방어 운영 반영 완료.
 - [x] **`backend/migrations/0029_ai_expand.sql` 실행 완료(2026-07-11)**(AI 도구 확장 — 82종 추가로 80→163개, AI스튜디오스 분야 이동(assets→영상 AI). 멱등. 라이브 반영됨 — URL은 월간 헬스체크가 검증)
 - [x] **`backend/migrations/0028_ops_moderation.sql` 실행 완료(2026-07-11)**(실운용 준비 — ①신고 `reports`(회원 신고→콘솔 🚩 신고 큐) ②인앱 문의 `inquiries`(문의·도움말 페이지→📬 문의 큐) ③회원 정지 `suspended_at`+`admin_set_suspended`(쓰기만 차단) ④리뷰 본인 삭제 정책 ⑤리뷰·질문·관심 사용자당 상한 ⑥알림 보존 정리 `purge_old_notifications`. 멱등. 실행됨 — 신고·문의 접수가 동작하고 주간 백업·다이제스트에 신설 테이블이 포함됩니다)
 - [x] **`backend/migrations/0027_platform_news.sql` 실행 완료(2026-07-11)**(플랫폼 소식 피드 — `platform_news` 테이블(공개 read·admin insert). 멱등. 실행 후 주간 수집기가 국내 뉴스 중 기존 등재 플랫폼 관련 기사를 자동 연결 → 상세 "최근 소식" 섹션 + 즐겨찾기 회원 fav_news 알림. 소식 연결을 켜려면 collect-candidates 워크플로 Secrets에 `ADMIN_BOT_EMAIL`/`ADMIN_BOT_PASSWORD`가 필요한데 **저장소 Secrets에 이미 있어 추가 설정 불필요**(미설정이어도 후보 수집은 정상))
@@ -103,7 +107,7 @@ backend/
   ④ `app_settings 'outreach'` → `server_send: true` + `config.ts FLAGS.outreach = true` + 재배포(**둘 다 켜야 열림**)
 - [x] 자동 수집 Secrets + 봇 계정 (2026-07-05 설정 완료)
 - [ ] (선택) **수집 보강 Secrets** — 없어도 수집은 폴백으로 정상 동작:
-  ① `PH_TOKEN`: producthunt.com/v2/oauth/applications에서 앱 생성 → Developer Token 복사 → repo Settings→Secrets→Actions 등록. PH 6토픽이 API로 제품 실사이트 URL을 받아 **자동등재 자격**을 얻음(없으면 RSS 폴백 — 검수 큐 전용)
+  ① `PH_TOKEN`: producthunt.com/v2/oauth/applications에서 앱 생성 → Developer Token 복사 → repo Settings→Secrets→Actions 등록. PH 6토픽의 제품 실사이트 URL을 확보해 검수 품질을 높임(**PH는 ad 풀이라 항상 검수 큐 전용**, 없으면 RSS 폴백)
   ② `ANTHROPIC_API_KEY`: console.anthropic.com에서 발급 → 같은 곳 등록. 후보를 Claude Haiku가 분류·한국어 소개문 생성·제품 판정(주당 후보 ~60건 기준 소액 과금). 없으면 정규식 분류만
   ③ 등록 후 Actions → collect-candidates → Run workflow 1회로 소스·보강 동작 확인
 - [x] 일일 다이제스트 Secrets(ADMIN_BOT — admin 롤 지정 완료)

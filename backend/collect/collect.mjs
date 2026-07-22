@@ -1,7 +1,8 @@
 /* 신규 플랫폼·AI 도구 자동 수집기 — GitHub Actions 주간 실행(collect.yml).
  *
  * 흐름: 소스 수집(RSS/API) → 정규화 → 중복 제거(기존 등재 + 봇의 과거 제보) → 봇 계정으로
- * submissions에 후보 투입 → 관리 콘솔 "제보 검수 큐"에서 사람이 승인해야만 등재된다(자동 등재 없음).
+ * 국가×main/ad 독립 예산으로 후보를 선별해 main 고신뢰분은 사후검수 상태로 자동등재하고,
+ * ad·저신뢰분은 submissions 검수 큐로 보낸다.
  * 부가(G-C): 국내 뉴스 기사 제목이 "기존 등재 플랫폼"과 매칭되면 platform_news(0027)로 연결
  *   — 신규 후보 플로우와 독립이며, 실패해도 후보 투입 결과에 영향 없음.
  *
@@ -11,7 +12,7 @@
  *   ADMIN_BOT_EMAIL, ADMIN_BOT_PASSWORD (선택) — 소식(platform_news) 투입용 admin 봇(notify·digest와 동일 계정).
  *     미설정이면 소식 매핑만 건너뛴다(후보 수집은 정상 동작).
  *   PH_TOKEN (선택)          — Product Hunt API 토큰. 있으면 PH 소스가 GraphQL API로 제품 실사이트
- *     URL(website)을 받아 자동등재(directUrl) 자격을 얻는다. 없으면 기존 RSS 피드로 폴백(검수 큐 전용).
+ *     URL(website)을 받아 검수 품질을 높인다. PH는 ad 풀이라 토큰 유무와 관계없이 검수 큐 전용이다.
  *   ANTHROPIC_API_KEY (선택) — 있으면 후보 배치를 Claude Haiku로 분류·한국어 소개문 보강(enrich.mjs).
  *     없으면 기존 정규식 분류만 사용.
  *
@@ -21,27 +22,44 @@
  */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { enrich } from "./enrich.mjs";
+import {
+  buildCollectionBudgets,
+  countCollectionBuckets,
+  dedupeCandidatesPreferMain,
+  isAutoListEligible,
+  selectCandidatesByCollectionPool,
+} from "./pool-selection.mjs";
 
 const DRY = process.argv.includes("--dry");
 const fixIdx = process.argv.indexOf("--fixture");
 const FIXTURE_DIR = fixIdx > -1 ? process.argv[fixIdx + 1] : null;
-const MAX_PER_RUN = 30; // 수집 상한(자동등재가 고신뢰분 흡수 + 일괄 승인으로 나머지 처리)
+const MAX_PER_RUN = Math.max(1, Math.min(100, Number(process.env.COLLECT_MAX_PER_RUN) || 60));
+const BACKFILL_SHARE = 0.4; // 회차 예산 40%는 과거 구간 발굴에 예약(최신 소스가 상한을 독점하지 않게)
+const COLLECTION_POOL_OPTIONS = {
+  // 네 버킷은 남는 예산을 서로 빌려주지 않는다. 기본은 국가 50:50, 각 국가 안에서 main 75% / ad 25%.
+  domesticShare: process.env.COLLECT_DOMESTIC_SHARE?.trim() || 0.5,
+  adShare: process.env.COLLECT_AD_SHARE?.trim() || 0.25,
+  backfillShare: BACKFILL_SHARE,
+};
 const BOT_PENDING_CAP = 10; // 봇 미처리 제보 RLS 상한(0028 my_pending_count<10)과 동일 — 검수 큐 투입은 이 한도 준수
 
 const SB_URL = process.env.SUPABASE_URL;
 const SB_KEY = process.env.SUPABASE_ANON_KEY;
 // 45개 분야 목록(정적 시드) — AI 보강(enrich)의 분류 화이트리스트로 사용
 const CATEGORIES = JSON.parse(fs.readFileSync(
-  path.join(path.dirname(new URL(import.meta.url).pathname), "../../app/src/data/platforms.json"), "utf8"
+  path.join(path.dirname(fileURLToPath(import.meta.url)), "../../app/src/data/platforms.json"), "utf8"
 )).categories;
 
 /* ── 소스 정의 ─────────────────────────────────────────────── */
-// directUrl: 항목 url이 "그 제품의 실제 사이트"인 소스(HN·PH는 제품 링크). 국내 뉴스 RSS는 url이
-//   "기사 주소"라 사람이 실 URL을 찾아야 함(directUrl=false) → 자동 등재(D) 대상에서 제외되고 검수/일괄승인(C)로 감.
+// directUrl: 항목 url이 "그 제품의 실제 사이트"인 소스. main 풀 자동등재의 필요조건이며, ad 풀에서는 검수 신호로만 쓴다.
+//   국내 뉴스 RSS는 기사 주소라 사람이 실 URL을 찾아야 함(directUrl=false) → 검수/일괄승인(C)로 감.
 // koLaunch: 국내 뉴스는 "출시/론칭" 기사만 후보로(일반 소식 제외).
 // ph: Product Hunt API 토픽 슬러그 — PH_TOKEN이 있으면 GraphQL API로 제품 실사이트(website)를 받아
-//   항목 단위 directUrl:true가 된다(자동등재 자격). 토큰이 없으면 url(RSS 피드)로 폴백(현행 동작).
+//   항목 단위 directUrl:true가 된다(검수 품질 신호). 토큰이 없으면 url(RSS 피드)로 폴백(현행 동작).
+// pool: 명시하지 않으면 main. 제품 홍보·출시 중심 소스(PH·BetaList·국내 스타트업 매체·출시 검색)는
+//   ad로 격리하며 점수와 관계없이 자동등재하지 않는다. 기술·산업 편집/커뮤니티 소스는 main.
 const SOURCES = [
   {
     id: "producthunt",
@@ -52,6 +70,7 @@ const SOURCES = [
     region: "overseas",
     parse: parseAtom,
     ph: "artificial-intelligence",
+    pool: "ad",
     directUrl: false, // 피드 링크는 PH 게시물 페이지(제품 사이트 아님) — API 경로는 항목별 override
   },
   {
@@ -82,12 +101,78 @@ const SOURCES = [
     directUrl: true,
   },
   {
+    id: "hn-recent",
+    label: "Hacker News (Show HN · 전체 최신)",
+    url: "https://hn.algolia.com/api/v1/search_by_date?tags=show_hn&hitsPerPage=100",
+    fixture: "hn-recent.json",
+    region: "overseas",
+    parse: parseHN,
+    requireAiForAuto: true,
+    directUrl: true,
+  },
+  {
+    id: "hn-backfill",
+    label: "Hacker News (Show HN · 과거 백필)",
+    fixture: "hn-backfill.json",
+    region: "overseas",
+    parse: parseHN,
+    hnBackfill: true,
+    backfill: true,
+    requireAiForAuto: true,
+    directUrl: true,
+  },
+  // GitHub 공식 Search API — 홈페이지가 있는 SaaS/마켓플레이스 저장소만 제품 후보로 사용.
+  // GITHUB_TOKEN은 Actions 기본 토큰이라 별도 Secret이 필요 없고, 홈페이지가 집계/코드 호스트면 제외한다.
+  {
+    id: "github-saas",
+    label: "GitHub (SaaS · 최신)",
+    fixture: "github-search.json",
+    region: "overseas",
+    parse: parseGitHub,
+    github: { topic: "saas", minStars: 10, mode: "recent" },
+    requireAiForAuto: true,
+    directUrl: true,
+  },
+  {
+    id: "github-marketplace",
+    label: "GitHub (Marketplace · 최신)",
+    fixture: "github-search.json",
+    region: "overseas",
+    parse: parseGitHub,
+    github: { topic: "marketplace", minStars: 10, mode: "recent" },
+    requireAiForAuto: true,
+    directUrl: true,
+  },
+  {
+    id: "github-saas-backfill",
+    label: "GitHub (SaaS · 과거 백필)",
+    fixture: "github-search-backfill.json",
+    region: "overseas",
+    parse: parseGitHub,
+    github: { topic: "saas", minStars: 10, mode: "backfill" },
+    backfill: true,
+    requireAiForAuto: true,
+    directUrl: true,
+  },
+  {
+    id: "github-marketplace-backfill",
+    label: "GitHub (Marketplace · 과거 백필)",
+    fixture: "github-search-backfill.json",
+    region: "overseas",
+    parse: parseGitHub,
+    github: { topic: "marketplace", minStars: 10, mode: "backfill" },
+    backfill: true,
+    requireAiForAuto: true,
+    directUrl: true,
+  },
+  {
     id: "betalist",
     label: "BetaList (신규 스타트업)",
     url: "https://feeds.feedburner.com/BetaList", // betalist.com/feed는 404(run 29513012891) — 공식 피드버너로
     fixture: "betalist.xml",
     region: "overseas",
     parse: parseRss,
+    pool: "ad",
     directUrl: false, // 피드 링크는 betalist 게시물 페이지
   },
   {
@@ -98,6 +183,7 @@ const SOURCES = [
     region: "domestic",
     parse: parseRss,
     koLaunch: true,
+    pool: "ad",
     directUrl: false,
   },
   {
@@ -108,6 +194,7 @@ const SOURCES = [
     region: "domestic",
     parse: parseRss,
     koLaunch: true,
+    pool: "ad",
     directUrl: false,
   },
   {
@@ -118,6 +205,7 @@ const SOURCES = [
     region: "domestic",
     parse: parseRss,
     koLaunch: true,
+    pool: "ad",
     directUrl: false,
   },
   // ── 국내 매체 확대(커머스·서비스·핀테크 발굴) — 기사 URL이라 directUrl:false·koLaunch ──
@@ -172,6 +260,7 @@ const SOURCES = [
     region: "domestic",
     parse: parseRss,
     koLaunch: true,
+    pool: "ad",
     directUrl: false,
   },
   {
@@ -182,6 +271,7 @@ const SOURCES = [
     region: "domestic",
     parse: parseRss,
     koLaunch: true,
+    pool: "ad",
     directUrl: false,
   },
   {
@@ -192,6 +282,7 @@ const SOURCES = [
     region: "domestic",
     parse: parseRss,
     koLaunch: true,
+    pool: "ad",
     directUrl: false,
   },
   // ── 글로벌 제품 디렉토리 확대(AI 외 커머스·핀테크·생산성) — PH 링크는 게시물 페이지라 directUrl:false,
@@ -204,6 +295,7 @@ const SOURCES = [
     region: "overseas",
     parse: parseAtom,
     ph: "e-commerce",
+    pool: "ad",
     directUrl: false,
     catHint: "openmarket",
   },
@@ -215,6 +307,7 @@ const SOURCES = [
     region: "overseas",
     parse: parseAtom,
     ph: "fintech",
+    pool: "ad",
     directUrl: false,
     catHint: "finance",
   },
@@ -226,6 +319,7 @@ const SOURCES = [
     region: "overseas",
     parse: parseAtom,
     ph: "developer-tools",
+    pool: "ad",
     directUrl: false,
     catHint: "ai_code",
   },
@@ -237,6 +331,7 @@ const SOURCES = [
     region: "overseas",
     parse: parseAtom,
     ph: "marketing",
+    pool: "ad",
     directUrl: false,
     catHint: "ai_marketing",
   },
@@ -248,12 +343,20 @@ const SOURCES = [
     region: "overseas",
     parse: parseAtom,
     ph: "productivity",
+    pool: "ad",
     directUrl: false,
     catHint: "ai_auto",
   },
 ];
 
 /* ── 파서(외부 의존성 없이 단순 정규식 — 실패 항목은 건너뜀) ── */
+const NON_PRODUCT_HOSTS = /(^|\.)(github\.com|gitlab\.com|bitbucket\.org|npmjs\.com|pypi\.org|crates\.io|docker\.com|youtube\.com|youtu\.be|discord\.com|discord\.gg|medium\.com|dev\.to|substack\.com|producthunt\.com|news\.ycombinator\.com|apps\.apple\.com|play\.google\.com)$/i;
+function isDirectProductUrl(value) {
+  try {
+    const u = new URL(value);
+    return /^https?:$/.test(u.protocol) && !NON_PRODUCT_HOSTS.test(u.hostname) && !/^(localhost|127\.0\.0\.1)$/i.test(u.hostname);
+  } catch { return false; }
+}
 function decode(s) {
   return (s || "")
     .replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, "$1")
@@ -287,8 +390,18 @@ function parseHN(json) {
     // "Show HN: 이름 – 설명" → 이름/설명 분리(설명은 분류·신뢰도에 활용). 구분자 없으면 전체가 이름.
     const full = decode(h.title).replace(/^Show HN:\s*/i, "");
     const m = full.match(/^(.+?)\s*(?:[—–|]|\s-|:)\s+(.+)$/);
-    return m ? { name: m[1], url: h.url, desc: m[2].slice(0, 160) } : { name: full, url: h.url, desc: "" };
+    const base = m ? { name: m[1], url: h.url, desc: m[2].slice(0, 160) } : { name: full, url: h.url, desc: "" };
+    return { ...base, _direct: isDirectProductUrl(h.url) };
   });
+}
+function parseGitHub(json) {
+  const d = typeof json === "string" ? JSON.parse(json) : json;
+  return (d.items || []).map((repo) => ({
+    name: decode(repo.name || repo.full_name || ""),
+    url: String(repo.homepage || "").trim(),
+    desc: decode(repo.description || "").slice(0, 160),
+    _direct: true,
+  })).filter((it) => it.name && isDirectProductUrl(it.url));
 }
 /* PH GraphQL API 응답 → 항목. 실측(run 29513012891): website 필드가 PH 상품페이지를 돌려주는 경우가
  * 많아 productLinks에서 비-PH 링크를 우선 채택하고, PH 링크(/r/ 리다이렉트 포함)면 리다이렉트를
@@ -463,14 +576,16 @@ function normalize(items, src) {
     .filter((it) => !src.koLaunch || KO_LAUNCH.test(it.name + it.desc))
     .map((it) => ({
       name: it.name, url: it.url, desc: it.desc,
-      region: src.region, source: src.id, sourceLabel: src.label,
+      region: src.region, pool: src.pool || "main", source: src.id, sourceLabel: src.label,
+      backfill: !!src.backfill,
+      requireAiForAuto: !!src.requireAiForAuto,
       directUrl: !!(it._direct ?? src.directUrl), catHint: src.catHint || "", // _direct: PH API 항목별 override
     }));
 }
 
 /* ── 자동 등재 신뢰도 점수(D, 0~100) ──────────────────────────
- * "url이 제품 실사이트인가"가 핵심 안전 신호 — directUrl이 아니면 최대치가 임계 아래로 묶여
- * 절대 자동 등재되지 않는다(국내 뉴스는 기사 URL이라 사람이 실 URL 확인 필요 → 검수/일괄승인으로).*/
+ * "url이 제품 실사이트인가"가 핵심 안전 신호 — directUrl이 아니면 최대치가 임계 아래로 묶인다.
+ * 이 점수와 별개로 ad 풀은 항상 자동등재 금지다. */
 function confidence(c) {
   let score = 30;
   if (c.directUrl) score += 25;
@@ -481,6 +596,8 @@ function confidence(c) {
   if (n.length >= 2 && n.length <= 40 && !/^[A-Z ]+$/.test(n)) score += 10;
   if (AGGREGATOR_HOSTS.test(host(c.url))) score -= 25;
   score = Math.max(0, Math.min(100, score));
+  // 광역 검색(HN 전체·과거, GitHub)은 AI가 실제 플랫폼+분야를 확인해야만 자동등재 임계에 도달.
+  if (c.requireAiForAuto && !c.aiCat) score = Math.min(score, 79);
   // 비직접 URL(기사·게시물 링크)은 실사이트가 아니라 자동등재 임계(min_confidence≥80) 아래로 고정.
   // 단 분야·설명 가점은 반영돼 검수 트리아지·일괄 선택에 쓸모 있는 점수(≤55)를 준다.
   if (!c.directUrl) score = Math.min(score, 55);
@@ -491,7 +608,7 @@ function confidence(c) {
 /* 개별 소스 실패는 흡수하되(일시 장애·포맷 변경 가능성), 전 소스 동시 실패는
  * 수집기 자체의 고장(네트워크·차단·파서 붕괴)이므로 런을 실패시켜 알림을 받는다 — 조용한 수집 정체 방지 */
 let sourceFails = 0;
-const failedSources = []; // 부분 실패 알림용(3개 이상이면 ops-alert 이슈 — collect.yml)
+const failedSources = []; // 부분 실패 알림용(전체 소스의 20% 이상이면 ops-alert 이슈 — collect.yml)
 /* 국내 뉴스 원문 항목(제목 전체 보존 — NAME_CUT 미적용). 기존 플랫폼 소식 매핑(G-C)용. */
 const newsRaw = [];
 function takeItems(items, src) {
@@ -501,6 +618,51 @@ function takeItems(items, src) {
     }
   }
   return normalize(items, src);
+}
+const DAY_MS = 86_400_000;
+function backfillWindow(spanDays, slots, baseDays) {
+  const forced = Number.parseInt(process.env.COLLECT_BACKFILL_SLOT || "", 10);
+  const runNumber = Number.parseInt(process.env.GITHUB_RUN_NUMBER || "", 10);
+  const seed = Number.isInteger(forced) ? forced : (Number.isInteger(runNumber) ? runNumber : Math.floor(Date.now() / DAY_MS));
+  const slot = ((seed % slots) + slots) % slots;
+  const endMs = Date.now() - (baseDays + slot * spanDays) * DAY_MS;
+  return { slot, startMs: endMs - spanDays * DAY_MS, endMs };
+}
+function sourceUrl(src) {
+  if (!src.hnBackfill) return src.url;
+  const { startMs, endMs } = backfillWindow(30, 60, 14); // 최근 14일 이전부터 약 5년을 30일 창으로 순환
+  const url = new URL("https://hn.algolia.com/api/v1/search_by_date");
+  url.searchParams.set("tags", "show_hn");
+  url.searchParams.set("hitsPerPage", "100");
+  url.searchParams.set("numericFilters", `created_at_i>${Math.floor(startMs / 1000)},created_at_i<${Math.floor(endMs / 1000)}`);
+  return url.toString();
+}
+function githubSearchUrl(src) {
+  const cfg = src.github;
+  const terms = [`topic:${cfg.topic}`, `stars:>=${cfg.minStars}`, "archived:false"];
+  if (cfg.mode === "recent") {
+    terms.push(`created:>=${new Date(Date.now() - 180 * DAY_MS).toISOString().slice(0, 10)}`);
+  } else {
+    const { startMs, endMs } = backfillWindow(90, 20, 180); // 최근 6개월 이전 약 5년을 90일 창으로 순환
+    terms.push(`created:${new Date(startMs).toISOString().slice(0, 10)}..${new Date(endMs).toISOString().slice(0, 10)}`);
+  }
+  const url = new URL("https://api.github.com/search/repositories");
+  url.searchParams.set("q", terms.join(" "));
+  url.searchParams.set("sort", "updated");
+  url.searchParams.set("order", "desc");
+  url.searchParams.set("per_page", "30");
+  return url.toString();
+}
+async function fetchGitHub(src) {
+  const headers = {
+    Accept: "application/vnd.github+json",
+    "X-GitHub-Api-Version": "2022-11-28",
+    "User-Agent": "semopl-collector/1.0",
+    ...(process.env.GITHUB_TOKEN ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` } : {}),
+  };
+  const res = await fetch(githubSearchUrl(src), { headers });
+  if (!res.ok) throw new Error(`GitHub Search API HTTP ${res.status}`);
+  return parseGitHub(await res.text());
 }
 async function fetchSource(src) {
   if (FIXTURE_DIR) {
@@ -513,13 +675,15 @@ async function fetchSource(src) {
     return takeItems(src.parse(fs.readFileSync(p, "utf8")), src);
   }
   try {
-    // PH 토픽 소스: 토큰이 있으면 API(제품 실사이트 URL → 자동등재 자격), 없으면 RSS 폴백
+    if (src.github) return takeItems(await fetchGitHub(src), src);
+    // PH 토픽 소스: 토큰이 있으면 API로 제품 실사이트 URL을 얻고, 없으면 RSS로 폴백. 둘 다 ad 검수 전용.
     if (src.ph && process.env.PH_TOKEN) return takeItems(await fetchPH(src), src);
-    let res = await fetch(src.url, { headers: { "User-Agent": `semopl-collector/1.0 (+${process.env.SITE_URL ?? "https://comdows.github.io/web1"}/)` } });
+    const url = sourceUrl(src);
+    let res = await fetch(url, { headers: { "User-Agent": `semopl-collector/1.0 (+${process.env.SITE_URL ?? "https://comdows.github.io/web1"}/)` } });
     if (res.status === 403 || res.status === 405) {
       // 일부 피드(요즘IT 405 등)가 비브라우저 UA를 차단 — 브라우저 헤더로 1회 재시도
       // (compatible; RSSReader/1.0 재시도는 여전히 405 — run 29514189332)
-      res = await fetch(src.url, {
+      res = await fetch(url, {
         headers: {
           "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36",
           Accept: "application/rss+xml, application/atom+xml, application/xml, text/xml, */*",
@@ -617,6 +781,16 @@ async function rest(pathQ, init = {}, token) {
   const t = await res.text();
   return t ? JSON.parse(t) : undefined;
 }
+async function restAll(pathQ, token, pageSize = 1000) {
+  const rows = [];
+  const joiner = pathQ.includes("?") ? "&" : "?";
+  for (let offset = 0; ; offset += pageSize) {
+    const batch = await rest(`${pathQ}${joiner}limit=${pageSize}&offset=${offset}`, {}, token);
+    rows.push(...(batch || []));
+    if (!batch || batch.length < pageSize) break;
+  }
+  return rows;
+}
 async function botLogin() {
   const res = await fetch(`${SB_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",
@@ -631,9 +805,12 @@ async function botLogin() {
 /* ── 메인 ─────────────────────────────────────────────────── */
 const collected = (await Promise.all(SOURCES.map(fetchSource))).flat();
 console.log(`수집 ${collected.length}건 (${SOURCES.map((s) => s.id).join(", ")})`);
+const collectionBudgets = buildCollectionBudgets(MAX_PER_RUN, COLLECTION_POOL_OPTIONS);
+console.log(`분리 예산 ${Object.entries(collectionBudgets).map(([key, value]) => `${key}=${value}`).join(" · ")} (버킷 간 이월 없음)`);
 if (!FIXTURE_DIR && sourceFails >= SOURCES.length) throw new Error(`전 소스(${SOURCES.length}개) 수집 실패 — 수집기 점검 필요`);
-// 부분 실패(3개 이상): 런은 성공시키되 collect.yml이 ops-alert 이슈를 만들도록 output 전달 — 조용한 수집량 감소 방지
-if (!FIXTURE_DIR && sourceFails >= 3 && process.env.GITHUB_OUTPUT) {
+// 부분 실패(최소 3개·전체의 20% 이상): 런은 성공시키되 collect.yml이 ops-alert 이슈를 만들도록 output 전달.
+const sourceFailAlert = Math.max(3, Math.ceil(SOURCES.length * 0.2));
+if (!FIXTURE_DIR && sourceFails >= sourceFailAlert && process.env.GITHUB_OUTPUT) {
   fs.appendFileSync(process.env.GITHUB_OUTPUT, `srcfails=${sourceFails}\nsrcfailed=${failedSources.join(" ")}\n`);
 }
 
@@ -641,16 +818,17 @@ if (!FIXTURE_DIR && sourceFails >= 3 && process.env.GITHUB_OUTPUT) {
 // 모두 같은 호스트라 호스트로 묶으면 소스당 1건으로 붕괴)는 전체 URL로 구분한다.
 const dedupKey = (c) => (c.directUrl ? host(c.url) : (c.url || "").replace(/[?#].*$/, "").replace(/\/+$/, ""));
 
-// 1차: 수집분 내부 dedup
-const seen = new Set();
-let candidates = collected.filter((c) => { const k = dedupKey(c); if (!k || seen.has(k)) return false; seen.add(k); return true; });
+// 1차: 수집분 내부 전역 dedup. 같은 후보가 main/ad 양쪽에 잡히면 main을 보존해 광고 풀이
+// 메인 후보를 밀어내지 못하게 한다.
+let candidates = dedupeCandidatesPreferMain(collected, dedupKey, (c) => nameKey(c.name));
 
 if (DRY && !SB_URL) {
+  candidates = selectCandidatesByCollectionPool(candidates, MAX_PER_RUN, COLLECTION_POOL_OPTIONS);
   console.log(`\n[dry] DB 미접속 — 후보 ${candidates.length}건 · 뉴스 원문 ${newsRaw.length}건(플랫폼 매칭은 DB 필요):`);
   for (const c of candidates.slice(0, 40)) {
     const sc = confidence(c), cat = guessCategory(c.name, c.desc) || c.catHint || "";
-    const auto = c.directUrl && cat && sc >= 80 ? "★자동" : "검수";
-    console.log(`  - [${c.source}] (${sc} ${auto} ${cat || "미분류"}) ${c.name} | ${c.url}`);
+    const auto = c.pool === "main" && c.directUrl && cat && sc >= 80 ? "★자동" : "검수";
+    console.log(`  - [${c.region}/${c.pool}/${c.source}] (${sc} ${auto} ${cat || "미분류"}) ${c.name} | ${c.url}`);
   }
   process.exit(0);
 }
@@ -660,13 +838,13 @@ if (DRY && !SB_URL) {
 //  · knownUrls: 봇 과거 제보의 전체 URL(같은 기사·게시물 재투입 방지). 집계 호스트를 knownHosts에
 //    넣으면(예전 버그) 그 소스의 모든 후보가 영구 차단되므로 넣지 않는다.
 //  · knownKeys: 이름 정규화 키(퍼지 매칭) — 등재 + 과거 제보 양쪽.
-const platforms = await rest("platforms?select=id,url,name");
+const platforms = await restAll("platforms?select=id,url,name");
 const knownHosts = new Set(platforms.map((p) => host(p.url)).filter(Boolean));
 const knownKeys = new Set(platforms.map((p) => nameKey(p.name)).filter(Boolean));
 const knownUrls = new Set();
 
 const { token, uid } = DRY ? { token: null, uid: null } : await botLogin();
-const mySubs = token ? await rest("submissions?select=payload&limit=1000", {}, token) : [];
+const mySubs = token ? await restAll("submissions?select=payload", token) : [];
 for (const s of mySubs) {
   const u = (s.payload?.url ?? "").replace(/[?#].*$/, "").replace(/\/+$/, ""); if (u) knownUrls.add(u);
   const k = nameKey(s.payload?.name ?? ""); if (k) knownKeys.add(k);
@@ -678,8 +856,8 @@ candidates = candidates
     if (knownUrls.has(dedupKey(c))) return false;                      // 같은 기사·게시물 재투입 방지
     if (c.directUrl && knownHosts.has(host(c.url))) return false;      // 제품 실사이트 호스트 중복
     return true;
-  })
-  .slice(0, MAX_PER_RUN);
+  });
+candidates = selectCandidatesByCollectionPool(candidates, MAX_PER_RUN, COLLECTION_POOL_OPTIONS);
 
 // AI 보강(선택): ANTHROPIC_API_KEY가 있으면 배치로 분류·한국어 소개문·"제품 여부" 판정(enrich.mjs).
 // 키 부재·실패 시 null → 아래 매핑이 정규식 분류만으로 동작(현행 보존). DRY에서는 비용 방지로 생략.
@@ -698,12 +876,21 @@ candidates = candidates
     // category_id: AI 분류(화이트리스트 검증분·문맥 이해) 우선 → 키워드 추정 → 소스 catHint 폴백.
     // confidence()의 +20 가점은 키워드·AI 매치에만 → catHint만으론 자동등재 임계(80)에 못 미침(안전).
     const kwCat = guessCategory(c.name, c.desc);
-    return { ...c, ai, category_id: ai?.category_id || kwCat || c.catHint || "", confidence: confidence({ ...c, aiCat: !!ai?.category_id }) };
+    return {
+      ...c,
+      // AI가 국가를 교정하면 최종 버킷도 함께 이동한다. 이후 다시 독립 상한을 적용해 국가 간 누수를 막는다.
+      region: ai?.region || c.region,
+      ai,
+      category_id: ai?.category_id || kwCat || c.catHint || "",
+      confidence: confidence({ ...c, aiCat: !!ai?.category_id }),
+    };
   })
   .filter(Boolean);
+candidates = selectCandidatesByCollectionPool(candidates, MAX_PER_RUN, COLLECTION_POOL_OPTIONS);
 
-console.log(`중복 제거 후 신규 후보 ${candidates.length}건 (상한 ${MAX_PER_RUN})`);
-for (const c of candidates) console.log(`  + [${c.source}] (${c.confidence}) ${c.name} | ${c.url}`);
+const candidateBuckets = countCollectionBuckets(candidates);
+console.log(`중복 제거 후 신규 후보 ${candidates.length}건 (독립 상한 ${Object.entries(candidateBuckets).map(([key, value]) => `${key}=${value}`).join(" · ")})`);
+for (const c of candidates) console.log(`  + [${c.region}/${c.pool}/${c.source}] (${c.confidence}) ${c.name} | ${c.url}`);
 
 // 소식 매핑(G-C): 국내 뉴스 원문 ↔ 기존 플랫폼 — 후보 플로우와 별개(중복 제거와 무관하게 계산)
 const newsRows = buildNewsRows(newsRaw, platforms);
@@ -713,7 +900,7 @@ for (const r of newsRows) console.log(`  ~ [${r.source}] ${r.platform_id} ← ${
 if (DRY) { console.log("[dry] 투입 생략"); process.exit(0); }
 
 // 자동 등재(D) 스위치 — app_settings 'autolist'.enabled + collector_id 일치할 때만.
-// 기본 off → 전부 검수 큐로(오늘 동작 그대로). 켜져 있어도 confidence≥min & directUrl만 자동 등재.
+// main 풀의 고신뢰 직접 URL만 자동등재한다. ad 풀은 점수와 관계없이 검수 큐가 유일한 진입로다.
 let listed = 0, queued = 0, skipped = 0, insertFails = 0;
 if (candidates.length > 0) {
   let auto = { enabled: false, min_confidence: 80, collector_id: null };
@@ -723,25 +910,29 @@ if (candidates.length > 0) {
   } catch { /* 설정 없으면 off로 간주 */ }
   const autoOn = !!auto.enabled && auto.collector_id === uid;
 
-  // 검수 큐 투입은 봇 pending 상한(0028 RLS: status=pending < 10)을 넘으면 insert가 거부된다.
-  // 미리 현재 pending 수를 세어 남은 슬롯만큼만 넣고, 초과분은 건너뛴다(다음 런에 다시 후보로 올라옴) — 런 실패 방지.
-  const curPending = (await rest(`submissions?submitter_id=eq.${uid}&status=eq.pending&select=id`, {}, token))?.length ?? 0;
-  let slotsLeft = Math.max(0, BOT_PENDING_CAP - curPending);
+  const toPayload = (c) => ({
+    name: c.name,
+    url: c.url,
+    category_id: c.category_id,
+    region: c.region,
+    collection_region: c.region,
+    collection_pool: c.pool,
+    collection_source: c.source,
+    desc: c.ai?.blurb_ko || c.desc,
+    confidence: c.confidence,
+    note: `auto:${c.source} [${c.region}/${c.pool}] (${c.sourceLabel})`,
+    ...(c.ai ? { ai: true, ...(c.ai.blurb_ko && c.desc && c.ai.blurb_ko !== c.desc ? { src_desc: c.desc } : {}) } : {}),
+  });
 
+  // 자동등재 성공분을 먼저 확정하고, ad·저신뢰·자동등재 실패분만 별도 검수 후보로 넘긴다.
+  const reviewCandidates = [];
   for (const c of candidates) {
-    // AI 보강분: 한국어 소개문(blurb_ko)을 desc로 — 자동등재 RPC·검수 승인 모두 payload.desc를 blurb로 쓰므로
-    // 등재 품질이 그대로 올라간다. 원문 설명은 src_desc로 보존(검수 화면 참고용).
-    const payload = {
-      name: c.name, url: c.url, category_id: c.category_id, region: c.ai?.region || c.region,
-      desc: c.ai?.blurb_ko || c.desc, confidence: c.confidence, note: `auto:${c.source} (${c.sourceLabel})`,
-      ...(c.ai ? { ai: true, ...(c.ai.blurb_ko && c.desc && c.ai.blurb_ko !== c.desc ? { src_desc: c.desc } : {}) } : {}),
-    };
-    if (autoOn && c.directUrl && c.category_id && c.confidence >= auto.min_confidence) {
+    if (isAutoListEligible(c, { autoOn, minConfidence: auto.min_confidence })) {
       // 서버 RPC가 재검증(스위치·collector_id·중복·id 생성)하고 lifecycle='review'+auto_listed로 등재.
       try {
         await rest("rpc/auto_list_candidate", {
           method: "POST",
-          body: JSON.stringify({ p_payload: payload, p_confidence: c.confidence }),
+          body: JSON.stringify({ p_payload: toPayload(c), p_confidence: c.confidence }),
         }, token);
         listed++;
         continue;
@@ -749,7 +940,28 @@ if (candidates.length > 0) {
         console.warn(`[auto-list 실패→검수 큐로] ${c.name}: ${e.message}`);
       }
     }
-    if (slotsLeft <= 0) { skipped++; continue; } // 검수 큐 상한 도달 — 이번 런은 건너뜀
+    reviewCandidates.push(c);
+  }
+
+  // 검수 큐도 10칸 전체를 국가 × 풀 고정 예산으로 본다. 기존 pending 점유량을 버킷별로 차감해
+  // 과거 런의 한 버킷이 이번 런의 다른 버킷 몫을 잠식하지 못하게 한다.
+  const pending = await rest(`submissions?submitter_id=eq.${uid}&status=eq.pending&select=id,payload`, {}, token) || [];
+  const pendingBudgets = buildCollectionBudgets(BOT_PENDING_CAP, COLLECTION_POOL_OPTIONS);
+  const pendingRows = pending.map((row) => ({
+    region: row.payload?.collection_region || row.payload?.region || "overseas",
+    pool: row.payload?.collection_pool || "main",
+  }));
+  const pendingCounts = countCollectionBuckets(pendingRows);
+  const remainingBudgets = Object.fromEntries(Object.entries(pendingBudgets).map(([key, cap]) => [key, Math.max(0, cap - pendingCounts[key])]));
+  const globalSlotsLeft = Math.max(0, BOT_PENDING_CAP - pending.length);
+  const poolSlotsLeft = Object.values(remainingBudgets).reduce((sum, n) => sum + n, 0);
+  const queueCandidates = selectCandidatesByCollectionPool(reviewCandidates, poolSlotsLeft, {
+    ...COLLECTION_POOL_OPTIONS,
+    budgets: remainingBudgets,
+  }).slice(0, globalSlotsLeft);
+  skipped = reviewCandidates.length - queueCandidates.length;
+
+  for (const c of queueCandidates) {
     // 개별 insert 실패(RLS 거부 등)는 흡수 — 한 건 때문에 전체 런과 소식 매핑까지 죽이지 않는다.
     // 단 전건 실패면 계정·정책 문제이므로 런을 실패시켜 ops-alert가 뜨게 한다.
     try {
@@ -757,9 +969,9 @@ if (candidates.length > 0) {
       // "permission denied"로 거부된다(run 29518453932에서 확인된 원인 — anon은 의도적으로 차단됨).
       await rest("submissions", {
         method: "POST", headers: { Prefer: "return=minimal" },
-        body: JSON.stringify({ submitter_id: uid, payload }),
+        body: JSON.stringify({ submitter_id: uid, payload: toPayload(c) }),
       }, token);
-      queued++; slotsLeft--;
+      queued++;
     } catch (e) {
       insertFails++;
       console.warn(`[검수 큐 투입 실패] ${c.name}: ${e.message}`);
@@ -768,7 +980,7 @@ if (candidates.length > 0) {
   if (insertFails && queued === 0 && listed === 0) {
     throw new Error(`검수 큐 투입 전건 실패(${insertFails}건) — 봇 계정 권한·RLS 점검 필요(0036_grants_fix.sql 실행 여부 확인)`);
   }
-  if (skipped) console.log(`검수 큐 상한(${BOT_PENDING_CAP}) 도달 — ${skipped}건은 다음 런으로 이월(큐를 비우면 투입됨)`);
+  if (skipped) console.log(`검수 큐 독립 상한(${Object.entries(pendingBudgets).map(([key, value]) => `${key}=${value}`).join(" · ")}) 도달 — ${skipped}건은 다음 런으로 이월`);
 } else {
   console.log("신규 후보 없음");
 }

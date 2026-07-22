@@ -3,8 +3,9 @@
  * 소프트 경고(통과): http URL, 15자 미만 blurb — 카운트만 출력해 보강 대상으로 추적. */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const d = JSON.parse(fs.readFileSync(path.join(ROOT, "app/src/data/platforms.json"), "utf8"));
 
 /* 같은 도메인이어도 정당한 쌍(같은 회사의 다른 서비스 등) — 오탐 시 여기에 추가 */
