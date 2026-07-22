@@ -3,14 +3,23 @@
 # 후보만 자동 등재된다(사후 검수 큐). 부가: 국내 뉴스가 기존 플랫폼과 매칭되면 platform_news(0027) 연결.
 # 필요 Secrets: SUPABASE_URL, SUPABASE_ANON_KEY, BOT_EMAIL, BOT_PASSWORD
 #   + ADMIN_BOT_EMAIL, ADMIN_BOT_PASSWORD(선택 — 없으면 소식 연결만 생략)
-#   + PH_TOKEN(선택 — Product Hunt API로 제품 실사이트 URL 획득 → PH 소스 자동등재 자격. 없으면 RSS 폴백)
+#   + PH_TOKEN(선택 — Product Hunt API로 제품 실사이트 URL 획득. PH는 ad 풀이라 항상 검수 큐, 없으면 RSS 폴백)
 #   + ANTHROPIC_API_KEY(선택 — Claude Haiku로 후보 분류·한국어 소개문 보강. 없으면 정규식 분류만)
+# GitHub Search API는 기본 GITHUB_TOKEN을 사용하며 별도 Secret이 필요 없다.
 name: collect-candidates
 
 on:
   schedule:
     - cron: "0 22 * * 0,2,4"
   workflow_dispatch:
+    inputs:
+      max_per_run:
+        description: "회차당 후보 상한(1~100)"
+        required: false
+        default: "60"
+      backfill_slot:
+        description: "과거 탐색 구간 슬롯(선택, 비우면 GITHUB_RUN_NUMBER로 순환)"
+        required: false
 
 permissions:
   contents: read
@@ -32,6 +41,9 @@ jobs:
           SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
           BOT_EMAIL: ${{ secrets.BOT_EMAIL }}
           BOT_PASSWORD: ${{ secrets.BOT_PASSWORD }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          COLLECT_MAX_PER_RUN: ${{ inputs.max_per_run || '60' }}
+          COLLECT_BACKFILL_SLOT: ${{ inputs.backfill_slot }}
           # 소식(platform_news) 투입용 admin 봇 — notify·digest와 동일 계정(미설정 시 소식만 생략)
           ADMIN_BOT_EMAIL: ${{ secrets.ADMIN_BOT_EMAIL }}
           ADMIN_BOT_PASSWORD: ${{ secrets.ADMIN_BOT_PASSWORD }}
@@ -39,7 +51,7 @@ jobs:
           PH_TOKEN: ${{ secrets.PH_TOKEN }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: node backend/collect/collect.mjs
-      - name: 부분 실패 알림(소스 3개 이상 — 조용한 수집량 감소 방지)
+      - name: 부분 실패 알림(소스 20% 이상 — 조용한 수집량 감소 방지)
         if: steps.collect.outputs.srcfails != ''
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

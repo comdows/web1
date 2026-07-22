@@ -3,8 +3,9 @@
  * 클로드디자인(/design-sync)이 첫 줄 마커로 카드 인덱스를 만든다. */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const DIR = path.dirname(new URL(import.meta.url).pathname);
+const DIR = path.dirname(fileURLToPath(import.meta.url));
 const html = fs.readFileSync(path.join(DIR, "system.html"), "utf8");
 const tokens = fs.readFileSync(path.join(DIR, "tokens.css"), "utf8");
 const styleCss = (html.match(/<style>([\s\S]*?)<\/style>/) || [, ""])[1];

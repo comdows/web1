@@ -1,0 +1,30 @@
+{
+  "total_count": 3,
+  "incomplete_results": false,
+  "items": [
+    {
+      "name": "FixtureFlow",
+      "full_name": "fixture/fixture-flow",
+      "homepage": "https://fixture-flow.example",
+      "description": "SaaS workflow automation platform for small business teams",
+      "stargazers_count": 42,
+      "topics": ["saas", "automation"]
+    },
+    {
+      "name": "FixtureMarket",
+      "full_name": "fixture/fixture-market",
+      "homepage": "https://fixture-market.example",
+      "description": "Marketplace for independent creators and digital products",
+      "stargazers_count": 35,
+      "topics": ["marketplace", "creator"]
+    },
+    {
+      "name": "FixtureLibrary",
+      "full_name": "fixture/fixture-library",
+      "homepage": "https://github.com/fixture/fixture-library",
+      "description": "Code library without a separate product homepage",
+      "stargazers_count": 100,
+      "topics": ["saas"]
+    }
+  ]
+}

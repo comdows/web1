@@ -1,0 +1,22 @@
+{
+  "total_count": 2,
+  "incomplete_results": false,
+  "items": [
+    {
+      "name": "ArchiveSaaS",
+      "full_name": "fixture/archive-saas",
+      "homepage": "https://archive-saas.example",
+      "description": "Established SaaS platform for B2B order management",
+      "stargazers_count": 88,
+      "topics": ["saas"]
+    },
+    {
+      "name": "ArchiveMarket",
+      "full_name": "fixture/archive-market",
+      "homepage": "https://archive-market.example",
+      "description": "Established marketplace connecting wholesale buyers and sellers",
+      "stargazers_count": 64,
+      "topics": ["marketplace"]
+    }
+  ]
+}

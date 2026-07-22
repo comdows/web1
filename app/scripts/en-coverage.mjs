@@ -3,8 +3,9 @@
  * 사용: node app/scripts/en-coverage.mjs [--ids <분야id>]  (--ids: 해당 분야의 미번역 id 전체 나열) */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const KO = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.json"), "utf8"));
 const EN = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.en.json"), "utf8"));
 const HUB_EN = (() => { try { return JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/hub-intros.en.json"), "utf8")); } catch { return {}; } })();

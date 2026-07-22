@@ -2,8 +2,9 @@
  * 데이터가 갱신되면 재실행: node backend/seed/build-seed.mjs */
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "../..");
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const P = JSON.parse(fs.readFileSync(path.join(ROOT, "app/src/data/platforms.json"), "utf8"));
 const L = JSON.parse(fs.readFileSync(path.join(ROOT, "app/src/data/listings.json"), "utf8"));
 const PT = JSON.parse(fs.readFileSync(path.join(ROOT, "app/src/data/partnerTypes.json"), "utf8"));

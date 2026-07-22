@@ -1,0 +1,7 @@
+{
+  "hits": [
+    { "title": "Show HN: RoomPilot – booking platform for independent venues", "url": "https://roompilot.example" },
+    { "title": "Show HN: CoachLoop – marketplace for fitness coaches", "url": "https://coachloop.example" },
+    { "title": "Show HN: CodeOnly – open source library without a product site", "url": "https://github.com/fixture/code-only" }
+  ]
+}
