@@ -6,6 +6,6 @@
 export const CUSTOM_DOMAIN = "";   // 예: "semopl.com" — 빈 문자열이면 GitHub Pages 기본 주소
 
 export const SITE_ORIGIN = CUSTOM_DOMAIN ? `https://${CUSTOM_DOMAIN}` : "https://comdows.github.io";
-export const SITE_BASE = CUSTOM_DOMAIN ? "/" : "/web1/";
+export const SITE_BASE = CUSTOM_DOMAIN ? "/" : "/semopl/";
 /* origin+base 결합(끝 슬래시 없음) — canonical·sitemap·og:url의 접두어 */
 export const SITE_URL = SITE_ORIGIN + (SITE_BASE === "/" ? "" : SITE_BASE.replace(/\/$/, ""));

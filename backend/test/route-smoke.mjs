@@ -3,7 +3,7 @@
  * adversarial-smoke(적대 입력)와 역할 분리: 여기는 "정상 진입 경로 전수"가 목적. CI 미연결 — 릴리스 전 로컬 수동. */
 import { chromium } from "/opt/node22/lib/node_modules/playwright/index.mjs";
 
-const BASE = process.env.SMOKE_BASE || "http://localhost:4293/web1/";
+const BASE = process.env.SMOKE_BASE || "http://localhost:4293/semopl/";
 const results = [];
 const ok = (name, cond) => { results.push([cond ? "PASS" : "FAIL", name]); if (!cond) process.exitCode = 1; };
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });

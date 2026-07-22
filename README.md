@@ -1,7 +1,7 @@
 # 세모플 (SEMOPL) — 세상의 모든 플랫폼
 
 > 사업자용 B2B 인프라: **발견**(플랫폼·AI 도구 디렉토리 1,719개) → **제휴**(매칭 보드) → **거래**(자산·사업 양수도 익명 리스팅).
-> 라이브: https://comdows.github.io/web1/ · 스택: React(Vite+TS) SPA + Supabase(PostgREST/RLS) + GitHub Pages/Actions
+> 라이브: https://comdows.github.io/semopl/ · 스택: React(Vite+TS) SPA + Supabase(PostgREST/RLS) + GitHub Pages/Actions
 > 커스텀 도메인 전환: 주소는 `app/site.config.mjs` 단일 설정 — 구매 후 `node scripts/switch-domain.mjs <도메인>` 1회 + [domain-setup.md](domain-setup.md) 절차
 
 ## 구조
@@ -114,7 +114,7 @@ backend/
 - [x] 주간 백업 Secret `BACKUP_PASSPHRASE` (수동 실행 1회 성공 확인 — 패스프레이즈는 비밀번호 관리자에 보관)
 - [ ] (선택) Google 로그인: Supabase 대시보드 Authentication → Providers → Google 설정 후 `app/src/config.ts`의 `googleAuth: true`
 - [ ] **검색엔진 등록**(유입의 선행 조건 — 인증 파일은 각 콘솔에서 발급):
-  ① Google Search Console → 속성 추가(URL 접두어 `https://comdows.github.io/web1/`) → HTML 파일 인증 선택 → 받은 `google*.html`을 `app/public/`에 넣고 커밋 → 배포 후 확인 → `sitemap.xml` 제출
+  ① Google Search Console → 속성 추가(URL 접두어 `https://comdows.github.io/semopl/`) → HTML 파일 인증 선택 → 받은 `google*.html`을 `app/public/`에 넣고 커밋 → 배포 후 확인 → `sitemap.xml` 제출
   ② Bing 웹마스터 도구 — GSC 가져오기 지원(가장 쉬움). Bing은 ChatGPT 검색의 소스라 중요
   ③ 네이버 서치어드바이저 → 사이트 등록 → HTML 파일 인증(`naver*.html`을 `app/public/`에) → 사이트맵 제출
 - [ ] 특허 출원 — 발명 4건, 공지예외 12개월 시한 (patent-plan.md)

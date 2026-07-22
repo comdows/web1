@@ -7,7 +7,7 @@ const SB_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const SB_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined;
 export const authEnabled = Boolean(SB_URL && SB_KEY);
 
-/* 확인 메일 링크가 돌아올 주소 — GitHub Pages 서브패스(/web1/)를 포함해야 앱으로 복귀한다.
+/* 확인 메일 링크가 돌아올 주소 — GitHub Pages 서브패스(/semopl/)를 포함해야 앱으로 복귀한다.
  * 이 URL을 Supabase Auth의 Site URL·Redirect 허용목록에도 등록해야 링크가 유효하다. */
 const REDIRECT_URL = typeof location !== "undefined" ? location.origin + import.meta.env.BASE_URL : "";
 
@@ -88,7 +88,7 @@ function toSession(d: TokenResponse): Session | null {
 const redirectQ = REDIRECT_URL ? `?redirect_to=${encodeURIComponent(REDIRECT_URL)}` : "";
 
 /* 가입 — Supabase의 "Confirm email" 설정이 켜져 있으면 세션 없이 확인 메일만 발송된다.
- * redirect_to로 확인 링크가 우리 앱(/web1/)으로 돌아오게 한다.
+ * redirect_to로 확인 링크가 우리 앱(/semopl/)으로 돌아오게 한다.
  * termsVersion: 가입 시 동의한 약관 버전을 user_metadata에 기록(분쟁 시 동의 근거). */
 export async function signUp(email: string, password: string, termsVersion?: string): Promise<{ needsConfirm: boolean }> {
   const s = toSession(await gotrue(`signup${redirectQ}`, {

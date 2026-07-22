@@ -105,7 +105,7 @@ async function notifyFavoritersOfDead(deadResults) {
 
 const CONCURRENCY = 15;
 const TIMEOUT = 12000;
-const UA = `Mozilla/5.0 (compatible; semopl-healthcheck/1.0; +${process.env.SITE_URL ?? "https://comdows.github.io/web1"}/)`;
+const UA = `Mozilla/5.0 (compatible; semopl-healthcheck/1.0; +${process.env.SITE_URL ?? "https://comdows.github.io/semopl"}/)`;
 
 async function probe(p) {
   for (let attempt = 0; attempt < 2; attempt++) {

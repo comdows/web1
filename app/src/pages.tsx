@@ -25,7 +25,7 @@ import { PRICES, won } from "./lib/pricing";
 import type { ValueResult } from "./lib/valuation";
 
 const ISSUE = (title: string, body: string, labels?: string) =>
-  `https://github.com/comdows/web1/issues/new?title=${encodeURIComponent(title)}` +
+  `https://github.com/comdows/semopl/issues/new?title=${encodeURIComponent(title)}` +
   `&body=${encodeURIComponent(body + "\n\n(연락처는 적지 마세요 — 운영자가 이슈 댓글로 다음 절차를 안내합니다)")}` +
   (labels ? `&labels=${encodeURIComponent(labels)}` : "");
 

@@ -48,7 +48,7 @@ function OutcomePrompt({ refType, refId, current, onDone }: { refType: "partner"
   );
 }
 
-const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
+const REPORT_URL = "https://github.com/comdows/semopl/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
 
 const STATUS_BADGE: Record<Submission["status"], { kind: "new" | "good" | "soon" | "muted" | "verify"; label: string }> = {
   pending: { kind: "soon", label: "검수 대기" },

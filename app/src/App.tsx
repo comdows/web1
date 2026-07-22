@@ -39,7 +39,7 @@ import { fetchRecentPlatforms, getNotice, listSavedSearches, remoteEnabled, rest
 import type { SiteNotice } from "./lib/api";
 import type { SavedSearch } from "./lib/api";
 
-const REPORT_URL = "https://github.com/comdows/web1/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
+const REPORT_URL = "https://github.com/comdows/semopl/issues/new?title=" + encodeURIComponent("[플랫폼 제보]");
 /* 인기 데이터가 비어 있을 때 "이번 주 많이 찾은"의 대표 폴백(잘 알려진 국내외 대표군) */
 const FEATURED_FALLBACK = ["smartstore", "coupang", "kmong", "wadiz", "11st", "tumblbug", "amazongs", "navershopl"];
 
