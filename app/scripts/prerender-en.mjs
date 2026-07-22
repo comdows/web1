@@ -8,11 +8,12 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import { SITE_URL } from "../site.config.mjs";
+import { SITE_URL, SITE_BASE } from "../site.config.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const DIST = path.join(ROOT, "dist");
 const SITE = SITE_URL;
+const BASE = SITE_BASE;
 
 const data = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.json"), "utf8"));
 const EN = JSON.parse(fs.readFileSync(path.join(ROOT, "src/data/platforms.en.json"), "utf8"));
@@ -78,7 +79,7 @@ const FOOTER = `
   <p><b>SEMOPL</b> — Korean business platforms, organized. Directory information only; not legal, financial, or tax advice.
   Fees, eligibility, and terms change — always verify on each platform's official site.</p>
   <p>The partnership board and business-transfer exchange serve Korea-based businesses in Korean, under Korean law, and are not offered in English.</p>
-  <p><a href="https://github.com/comdows/web1/issues/new?title=${encodeURIComponent("[EN] Report an error / Ask about entering Korea")}" style="color:#7C97FF">Report an error or ask a question →</a> · <a href="/web1/en/about/" style="color:#7C97FF">About &amp; methodology</a> · <a href="/web1/" style="color:#7C97FF">한국어 사이트</a></p>
+  <p><a href="https://github.com/comdows/semopl/issues/new?title=${encodeURIComponent("[EN] Report an error / Ask about entering Korea")}" style="color:#7C97FF">Report an error or ask a question →</a> · <a href="${BASE}en/about/" style="color:#7C97FF">About &amp; methodology</a> · <a href="${BASE}" style="color:#7C97FF">한국어 사이트</a></p>
 </footer>`;
 
 function shell({ title, desc, canonical, koUrl, ld, body }) {
@@ -96,17 +97,17 @@ function shell({ title, desc, canonical, koUrl, ld, body }) {
     .replace(/(<div id="root">)(<\/div>)/, `$1${body}${FOOTER}$2`);
 }
 const MAIN = `<main style="max-width:760px;margin:32px auto;padding:0 20px">`;
-const NAV = `<p style="font-family:monospace;font-size:12px"><a href="/web1/en/" style="color:#7C97FF">SEMOPL — Korean platforms in English</a></p>`;
+const NAV = `<p style="font-family:monospace;font-size:12px"><a href="${BASE}en/" style="color:#7C97FF">SEMOPL — Korean platforms in English</a></p>`;
 /* Korea Entry Inquiry(0단계 수요 계측) — 접수는 GitHub Issue Form, 소개 이행·과금은 전부 한국어 레이어.
  * EN 표면은 'inquiry' 프레이밍만: 제휴 보드·연결료·약관 비노출(방화벽 불변) */
-const INQUIRY_URL = "https://github.com/comdows/web1/issues/new?template=korea-partner-inquiry.yml";
+const INQUIRY_URL = "https://github.com/comdows/semopl/issues/new?template=korea-partner-inquiry.yml";
 const inquiryCta = (topic) => `
 <p style="margin:28px 0;padding:14px 16px;border:1px solid #2a3350;border-radius:10px">
   <b>Looking for a Korean partner${topic ? ` in ${esc(topic)}` : ""}?</b>
   We review inquiries from businesses entering Korea and, where there is a fit, introduce them to platforms in this directory —
-  free for the inquiring business. <a href="/web1/en/partner-inquiry/" style="color:#7C97FF;font-weight:700">Submit an inquiry →</a>
+  free for the inquiring business. <a href="${BASE}en/partner-inquiry/" style="color:#7C97FF;font-weight:700">Submit an inquiry →</a>
 </p>`;
-const card = (p) => `<li style="margin:0 0 14px"><a href="/web1/en/p/${p.id}/" style="color:#7C97FF;font-weight:700">${esc(en(p.id).name)}</a>${p.region === "해외" ? " <small>(global)</small>" : ""} — ${esc(en(p.id).blurb)}</li>`;
+const card = (p) => `<li style="margin:0 0 14px"><a href="${BASE}en/p/${p.id}/" style="color:#7C97FF;font-weight:700">${esc(en(p.id).name)}</a>${p.region === "해외" ? " <small>(global)</small>" : ""} — ${esc(en(p.id).blurb)}</li>`;
 
 const write = (rel, html) => { const d = path.join(DIST, rel); fs.mkdirSync(d, { recursive: true }); fs.writeFileSync(path.join(d, "index.html"), html); };
 
@@ -126,20 +127,20 @@ write("en", shell({
   <p>Korea is one of the world's largest e-commerce markets — but its platform landscape is documented almost entirely in Korean.
   SEMOPL catalogs 1,600+ Korean business platforms in one taxonomy; this English layer covers the <b>${enPlats.length} commerce &amp; trade platforms</b> most relevant to foreign sellers, each linked to its official site.</p>
   <h2>Guides</h2>
-  <ul>${Object.entries(GUIDES).map(([slug, g]) => `<li style="margin-bottom:10px"><a href="/web1/en/guide/${slug}/" style="color:#7C97FF;font-weight:700">${esc(g.title)}</a> — ${esc(g.desc)}</li>`).join("")}
-  ${COMPARE.map((c) => `<li style="margin-bottom:10px"><a href="/web1/en/compare/${c.slug}/" style="color:#7C97FF;font-weight:700">${esc(c.title)}</a> — ${esc(c.desc)}</li>`).join("")}
-  <li style="margin-bottom:10px"><a href="/web1/en/official-links/" style="color:#7C97FF;font-weight:700">Official seller &amp; fee pages, verified</a> — direct links to the pages that are always current.</li></ul>
+  <ul>${Object.entries(GUIDES).map(([slug, g]) => `<li style="margin-bottom:10px"><a href="${BASE}en/guide/${slug}/" style="color:#7C97FF;font-weight:700">${esc(g.title)}</a> — ${esc(g.desc)}</li>`).join("")}
+  ${COMPARE.map((c) => `<li style="margin-bottom:10px"><a href="${BASE}en/compare/${c.slug}/" style="color:#7C97FF;font-weight:700">${esc(c.title)}</a> — ${esc(c.desc)}</li>`).join("")}
+  <li style="margin-bottom:10px"><a href="${BASE}en/official-links/" style="color:#7C97FF;font-weight:700">Official seller &amp; fee pages, verified</a> — direct links to the pages that are always current.</li></ul>
   <h2>AI tools for the Korean market</h2>
-  <p><a href="/web1/en/ai/" style="color:#7C97FF;font-weight:700">${AI.tools.length} AI tools verified for Korean →</a> —
+  <p><a href="${BASE}en/ai/" style="color:#7C97FF;font-weight:700">${AI.tools.length} AI tools verified for Korean →</a> —
   Korean-made B2B tools and global tools with documented Korean support: English docs, evidence links, and payment-from-abroad status for each.</p>
   ${(() => { // Recently added — ko 신규 플래그 중 EN 번역 존재분(빌드 시 자동 재생성 — 한계비용 0)
     const recent = data.platforms.filter((p) => p.new && EN.platforms[p.id]).slice(0, 8);
     return recent.length ? `<h2>Recently added</h2>
-  <ul>${recent.map((p) => `<li style="margin-bottom:8px"><a href="/web1/en/p/${p.id}/" style="color:#7C97FF;font-weight:700">${esc(en(p.id).name)}</a> — ${esc(en(p.id).blurb)}</li>`).join("")}</ul>` : "";
+  <ul>${recent.map((p) => `<li style="margin-bottom:8px"><a href="${BASE}en/p/${p.id}/" style="color:#7C97FF;font-weight:700">${esc(en(p.id).name)}</a> — ${esc(en(p.id).blurb)}</li>`).join("")}</ul>` : "";
   })()}
   <h2>Browse by category</h2>
-  <ul>${enCats.map((c) => `<li style="margin-bottom:8px"><a href="/web1/en/c/${c.id}/" style="color:#7C97FF;font-weight:700">${esc(catEn(c.id).name)}</a> (${byCat.get(c.id).length}) — ${esc(catEn(c.id).desc)}</li>`).join("")}</ul>
-  <p><a href="/web1/en/all/" style="color:#7C97FF;font-weight:700">All platforms A–Z →</a> — find a platform by name.</p>
+  <ul>${enCats.map((c) => `<li style="margin-bottom:8px"><a href="${BASE}en/c/${c.id}/" style="color:#7C97FF;font-weight:700">${esc(catEn(c.id).name)}</a> (${byCat.get(c.id).length}) — ${esc(catEn(c.id).desc)}</li>`).join("")}</ul>
+  <p><a href="${BASE}en/all/" style="color:#7C97FF;font-weight:700">All platforms A–Z →</a> — find a platform by name.</p>
   ${inquiryCta("")}
 </main>` }));
 
@@ -175,7 +176,7 @@ for (const p of enPlats) {
     desc: e.blurb.slice(0, 155),
     canonical: `${SITE}/en/p/${p.id}/`, koUrl: `${SITE}/p/${p.id}/`, ld,
     body: `${MAIN}${NAV}
-    <p><a href="/web1/en/c/${p.category}/" style="color:#7C97FF">${esc(ce.name)}</a>${p.region === "해외" ? " · global" : " · Korea"}</p>
+    <p><a href="${BASE}en/c/${p.category}/" style="color:#7C97FF">${esc(ce.name)}</a>${p.region === "해외" ? " · global" : " · Korea"}</p>
     <h1>${esc(e.name)}</h1>
     <p>${esc(e.blurb)}</p>
     <p><a href="${esc(p.url)}" rel="noopener" style="color:#7C97FF;font-weight:700">Official site →</a></p>
@@ -189,7 +190,7 @@ for (const p of enPlats) {
     </ul>
     <p><small style="opacity:.75">Verified against official sources on ${esc(PF[p.id].lastVerified)}. Details change — the official pages above are always current.</small></p>` : ""}
     <p><i>See the official site for fees, settlement cycles, and seller requirements — these change frequently and are not republished here.</i></p>
-    <p><a href="/web1/en/partner-inquiry/" style="color:#7C97FF">Looking to partner with Korean platforms like this? Submit an inquiry (free) →</a></p>
+    <p><a href="${BASE}en/partner-inquiry/" style="color:#7C97FF">Looking to partner with Korean platforms like this? Submit an inquiry (free) →</a></p>
     ${similar.length ? `<h2>Similar platforms</h2><ul>${similar.map(card).join("")}</ul>` : ""}
 </main>` }));
 }
@@ -203,7 +204,7 @@ for (const [slug, g] of Object.entries(GUIDES)) {
     <h1>${esc(g.title)}</h1>
     <p>${esc(g.intro)}</p>
     ${g.steps.map((s, i) => `<h2>${i + 1}. ${esc(s.t)}</h2><p>${esc(s.d)}</p>
-      <p>Categories: ${s.cats.map((c) => `<a href="/web1/en/c/${c}/" style="color:#7C97FF">${esc(catEn(c).name)}</a>`).join(" · ")}</p>`).join("")}
+      <p>Categories: ${s.cats.map((c) => `<a href="${BASE}en/c/${c}/" style="color:#7C97FF">${esc(catEn(c).name)}</a>`).join(" · ")}</p>`).join("")}
     <p><b>Note:</b> ${esc(g.note)}</p>
 </main>` }));
 }
@@ -223,7 +224,7 @@ write("en/about", shell({
   <h2>Listing criteria & updates</h2>
   <p>Platforms are included when a business can sell, source, ship, or promote through them. The underlying dataset is maintained weekly in Korean (new platforms are collected, reviewed by a human, then added); English entries follow after translation review. Dead links are checked monthly.</p>
   <h2>Corrections</h2>
-  <p><a href="https://github.com/comdows/web1/issues/new?title=${encodeURIComponent("[EN] Correction")}" style="color:#7C97FF">Report an error on GitHub →</a> — corrections ship in the next build.</p>
+  <p><a href="https://github.com/comdows/semopl/issues/new?title=${encodeURIComponent("[EN] Correction")}" style="color:#7C97FF">Report an error on GitHub →</a> — corrections ship in the next build.</p>
 </main>` }));
 
 /* ── /en/partner-inquiry/ — Korea Entry Inquiry 접수 안내(0단계 수요 계측).
@@ -250,7 +251,7 @@ write("en/partner-inquiry", shell({
   Business-transfer (M&amp;A) listings are not available through this channel.</p>
   <p style="margin:28px 0"><a href="${INQUIRY_URL}" rel="noopener" style="display:inline-block;padding:12px 18px;border:1px solid #3D63FF;border-radius:10px;color:#7C97FF;font-weight:700">Submit an inquiry on GitHub →</a></p>
   <p><small>The form is public. For sensitive matters, email <a href="mailto:comdows@hanmail.net" style="color:#7C97FF">comdows@hanmail.net</a> instead.
-  See <a href="/web1/en/about/" style="color:#7C97FF">About &amp; methodology</a> for how this directory is run — no paid placement, no consulting funnel.</small></p>
+  See <a href="${BASE}en/about/" style="color:#7C97FF">About &amp; methodology</a> for how this directory is run — no paid placement, no consulting funnel.</small></p>
 </main>` }));
 
 /* ── Korea AI Stack(/en/ai/) — 0단계 실측이 확인한 인용 공백만 겨냥:
@@ -264,7 +265,7 @@ const aiToolLink = (id) => {
   const t = AI.tools.find((x) => x.id === id);
   if (!t) return "";
   return AI.profiles[id]
-    ? `<a href="/web1/en/ai/${id}/" style="color:#7C97FF">${esc(t.name)}</a>`
+    ? `<a href="${BASE}en/ai/${id}/" style="color:#7C97FF">${esc(t.name)}</a>`
     : `<a href="${esc(t.officialUrl)}" rel="noopener" style="color:#7C97FF">${esc(t.name)}</a>`;
 };
 const aiVerifyLine = (t) => [
@@ -292,11 +293,11 @@ write("en/ai", shell({
   <p><b>How to read the fields</b> — <i>Korean</i>: what the Korean support actually is, with an official evidence link · <i>English docs</i>: whether an English UI/manual exists ·
   <i>Payment from abroad</i>: <b>confirmed</b> only when the official site shows self-serve checkout usable outside Korea; <b>unknown</b> means we could not verify without signing up.</p>
   <h2>Guides</h2>
-  <ul>${AI.guides.map((g) => `<li style="margin-bottom:8px"><a href="/web1/en/guide/${g.slug}/" style="color:#7C97FF;font-weight:700">${esc(g.title)}</a> — ${esc(g.desc)}</li>`).join("")}</ul>
+  <ul>${AI.guides.map((g) => `<li style="margin-bottom:8px"><a href="${BASE}en/guide/${g.slug}/" style="color:#7C97FF;font-weight:700">${esc(g.title)}</a> — ${esc(g.desc)}</li>`).join("")}</ul>
   ${[...aiByCat.entries()].map(([cat, list]) => `
   <h2>${esc(aiCatLabel(cat))}</h2>
   <ul>${list.map((t) => `<li style="margin:0 0 16px">
-    ${AI.profiles[t.id] ? `<a href="/web1/en/ai/${t.id}/" style="color:#7C97FF;font-weight:700">${esc(t.name)}</a>` : `<b>${esc(t.name)}</b>`}
+    ${AI.profiles[t.id] ? `<a href="${BASE}en/ai/${t.id}/" style="color:#7C97FF;font-weight:700">${esc(t.name)}</a>` : `<b>${esc(t.name)}</b>`}
     <small>(${t.origin === "korean" ? "Korean" : "global"})</small> — ${esc(t.blurb)}
     <br><small style="opacity:.8">${aiVerifyLine(t)} · <a href="${esc(t.officialUrl)}" rel="noopener" style="color:#7C97FF">official site →</a></small>
   </li>`).join("")}</ul>`).join("")}
@@ -315,7 +316,7 @@ for (const [pid, prof] of Object.entries(AI.profiles)) {
     desc: t.blurb.slice(0, 155),
     canonical: `${SITE}/en/ai/${pid}/`, ld,
     body: `${MAIN}${NAV}
-    <p><a href="/web1/en/ai/" style="color:#7C97FF">AI tools for Korea</a> · ${esc(aiCatLabel(t.category))}${t.origin === "korean" ? " · Korean" : " · global"}</p>
+    <p><a href="${BASE}en/ai/" style="color:#7C97FF">AI tools for Korea</a> · ${esc(aiCatLabel(t.category))}${t.origin === "korean" ? " · Korean" : " · global"}</p>
     <h1>${esc(t.name)}</h1>
     <p>${esc(t.blurb)}</p>
     <p style="padding:12px 14px;border:1px solid #2a3350;border-radius:10px"><small>${aiVerifyLine(t)}</small></p>
@@ -335,7 +336,7 @@ for (const g of AI.guides) {
     ${g.sections.map((s) => `<h2>${esc(s.h)}</h2><p>${esc(s.body)}</p>
       ${(s.toolIds ?? []).length ? `<p>Tools: ${s.toolIds.map(aiToolLink).filter(Boolean).join(" · ")}</p>` : ""}`).join("")}
     <p><b>Note:</b> ${esc(g.note)}</p>
-    <p><a href="/web1/en/ai/" style="color:#7C97FF">See all verified AI tools for the Korean market →</a></p>
+    <p><a href="${BASE}en/ai/" style="color:#7C97FF">See all verified AI tools for the Korean market →</a></p>
 </main>` }));
 }
 
@@ -351,12 +352,12 @@ write("en/official-links", shell({
   <h1>Official Seller &amp; Fee Pages, Verified</h1>
   <p>Fees and entry requirements change too often to republish — so instead we link you straight to the official pages.
   ${linked.length} platforms below have hand-verified links to their seller registration and/or fee pages. If a link goes stale,
-  <a href="https://github.com/comdows/web1/issues/new?title=${encodeURIComponent("[EN] Stale official link")}" style="color:#7C97FF">report it</a>.</p>
+  <a href="https://github.com/comdows/semopl/issues/new?title=${encodeURIComponent("[EN] Stale official link")}" style="color:#7C97FF">report it</a>.</p>
   ${[...linkedByCat.entries()].map(([cat, list]) => `
   <h2>${esc(catEn(cat).name)}</h2>
   <ul>${list.map((p) => {
     const L = PF[p.id].links;
-    return `<li style="margin:0 0 10px"><a href="/web1/en/p/${p.id}/" style="color:#7C97FF;font-weight:700">${esc(en(p.id).name)}</a> —
+    return `<li style="margin:0 0 10px"><a href="${BASE}en/p/${p.id}/" style="color:#7C97FF;font-weight:700">${esc(en(p.id).name)}</a> —
       ${L.seller ? `<a href="${esc(L.seller)}" rel="noopener" style="color:#7C97FF">seller page</a>` : ""}${L.seller && L.fees ? " · " : ""}${L.fees ? `<a href="${esc(L.fees)}" rel="noopener" style="color:#7C97FF">fee page</a>` : ""}
       <small style="opacity:.7">(verified ${esc(PF[p.id].lastVerified)})</small></li>`;
   }).join("")}</ul>`).join("")}
@@ -381,7 +382,7 @@ for (const c of COMPARE) {
     </table></div>
     <h2>Which one, when</h2>
     <p>${esc(c.verdict)}</p>
-    <p><b>Note:</b> ${esc(c.note)} Fees and terms are not compared here — check the <a href="/web1/en/official-links/" style="color:#7C97FF">official pages</a>.</p>
+    <p><b>Note:</b> ${esc(c.note)} Fees and terms are not compared here — check the <a href="${BASE}en/official-links/" style="color:#7C97FF">official pages</a>.</p>
 </main>` }));
 }
 
@@ -399,11 +400,11 @@ write("en/all", shell({
   body: `${MAIN}${NAV}
   <h1>All Platforms, A–Z</h1>
   <p>${enPlats.length} Korean commerce &amp; trade platforms. Know the name? Jump straight to it.
-  Also see <a href="/web1/en/ai/" style="color:#7C97FF">AI tools verified for Korean</a>.</p>
+  Also see <a href="${BASE}en/ai/" style="color:#7C97FF">AI tools verified for Korean</a>.</p>
   <p>${[...azGroups.keys()].map((k) => `<a href="#az-${k === "#" ? "etc" : k}" style="color:#7C97FF;margin-right:8px;font-weight:700">${k}</a>`).join("")}</p>
   ${[...azGroups.entries()].map(([k, list]) => `
   <h2 id="az-${k === "#" ? "etc" : k}">${esc(k)}</h2>
-  <ul>${list.map((p) => `<li><a href="/web1/en/p/${p.id}/" style="color:#7C97FF">${esc(en(p.id).name)}</a> — ${esc(catEn(p.category).name)}</li>`).join("")}</ul>`).join("")}
+  <ul>${list.map((p) => `<li><a href="${BASE}en/p/${p.id}/" style="color:#7C97FF">${esc(en(p.id).name)}</a> — ${esc(catEn(p.category).name)}</li>`).join("")}</ul>`).join("")}
 </main>` }));
 
 /* ── AI 인용 레이어: llms.txt + 공개 데이터셋(JSON) — DA 0에서 가장 유리한 전장 ──

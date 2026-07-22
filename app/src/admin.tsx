@@ -370,7 +370,7 @@ function OpsHealthPanel() {
       <b>운영 잡 헬스</b>{bad > 0 && <span style={{ color: "var(--danger)", fontWeight: 700, marginLeft: 6 }}>⚠️ {bad}건 확인 필요</span>}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(190px, 1fr))", gap: 6, marginTop: 8 }}>
         {rows.map((r) => (
-          <a key={r.file} href={r.url ?? `https://github.com/comdows/web1/actions/workflows/${r.file}`}
+          <a key={r.file} href={r.url ?? `https://github.com/comdows/semopl/actions/workflows/${r.file}`}
              target="_blank" rel="noopener noreferrer"
              style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, textDecoration: "none", color: "inherit" }}>
             <span>{ico(r.state)}</span>

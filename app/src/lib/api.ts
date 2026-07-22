@@ -995,7 +995,7 @@ const OPS_WORKFLOWS: Pick<OpsRun, "file" | "label" | "staleDays">[] = [
 export async function fetchOpsHealth(): Promise<OpsRun[]> {
   return Promise.all(OPS_WORKFLOWS.map(async (w) => {
     try {
-      const res = await fetch(`https://api.github.com/repos/comdows/web1/actions/workflows/${w.file}/runs?per_page=1`);
+      const res = await fetch(`https://api.github.com/repos/comdows/semopl/actions/workflows/${w.file}/runs?per_page=1`);
       if (!res.ok) throw new Error(String(res.status));
       const j = await res.json() as { workflow_runs?: { conclusion: string | null; run_started_at: string; html_url: string }[] };
       const r = j.workflow_runs?.[0];

@@ -29,7 +29,7 @@
 ```bash
 node scripts/switch-domain.mjs semopl.com   # 실제 도메인으로
 ```
-- 자동 처리: `app/site.config.mjs`(base `/web1/`→`/`, canonical·sitemap·og·hreflang·EN 레이어·CNAME 파일 전부 파생),
+- 자동 처리: `app/site.config.mjs`(base `/semopl/`→`/`, canonical·sitemap·og·hreflang·EN 레이어·CNAME 파일 전부 파생),
   배치·이메일의 주소 폴백, README·ops-checklist 표기, 옛 주소 잔존 검사.
 - 커밋 → PR → 머지 → Pages 배포. 배포되면 dist에 `CNAME`이 포함돼 바인딩이 유지됩니다.
 - 되돌리기: `node scripts/switch-domain.mjs --revert`
@@ -38,7 +38,7 @@ node scripts/switch-domain.mjs semopl.com   # 실제 도메인으로
 - `https://<도메인>/` 접속 + 자물쇠(HTTPS) 확인
 - `https://<도메인>/sitemap.xml` — 모든 URL이 새 도메인인지
 - `view-source:` 홈·상세 1곳 — `<link rel="canonical">`·`og:url`이 새 도메인인지
-- 옛 주소 `https://comdows.github.io/web1/` 접속 → 새 도메인으로 **301 자동 리다이렉트**되는지(GitHub 제공 — 기존 색인·링크 자산이 이어집니다)
+- 옛 주소 `https://comdows.github.io/semopl/` 접속 → 새 도메인으로 **301 자동 리다이렉트**되는지(GitHub 제공 — 기존 색인·링크 자산이 이어집니다)
 
 ## 5. Supabase Auth 갱신 (로그인 메일 복귀 주소)
 Supabase 대시보드 → **Authentication → URL Configuration**:

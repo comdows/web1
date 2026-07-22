@@ -21,7 +21,7 @@ if (!revert && !/^[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(domain)) {
   console.error(`도메인 형식이 이상해요: "${domain}" — 프로토콜 없이 semopl.com 형태로 입력하세요.`);
   process.exit(1);
 }
-const NEW_URL = revert ? "https://comdows.github.io/web1" : `https://${domain}`;
+const NEW_URL = revert ? "https://comdows.github.io/semopl" : `https://${domain}`;
 
 const edits = [];
 function patch(file, replacer) {
@@ -41,9 +41,9 @@ for (const f of ["backend/collect/digest.mjs", "backend/collect/collect.mjs", "b
 
 // ③ index.html og 원본 + 문서 표기 — revert는 어떤 도메인이었는지 알 수 없어 수동(안내만)
 if (!revert) {
-  patch("app/index.html", (s) => s.replaceAll("https://comdows.github.io/web1", NEW_URL));
+  patch("app/index.html", (s) => s.replaceAll("https://comdows.github.io/semopl", NEW_URL));
   for (const f of ["README.md", "ops-checklist.md"]) {
-    patch(f, (s) => s.replaceAll("https://comdows.github.io/web1", NEW_URL));
+    patch(f, (s) => s.replaceAll("https://comdows.github.io/semopl", NEW_URL));
   }
 } else {
   console.log("※ revert: README·ops-checklist의 도메인 표기는 수동으로 되돌려 주세요.");

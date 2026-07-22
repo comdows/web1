@@ -6,7 +6,7 @@
  * 원격은 전부 mock — 운영 무영향. 실행 절차는 README.md §2와 동일(dist 서버 4293). */
 import { chromium } from "/opt/node22/lib/node_modules/playwright/index.mjs";
 
-const BASE = process.env.SMOKE_BASE || "http://localhost:4293/web1/";
+const BASE = process.env.SMOKE_BASE || "http://localhost:4293/semopl/";
 const results = [];
 const ok = (name, cond) => { results.push([cond ? "PASS" : "FAIL", name]); if (!cond) process.exitCode = 1; };
 const browser = await chromium.launch({ executablePath: "/opt/pw-browsers/chromium" });

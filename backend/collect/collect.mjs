@@ -679,7 +679,7 @@ async function fetchSource(src) {
     // PH 토픽 소스: 토큰이 있으면 API로 제품 실사이트 URL을 얻고, 없으면 RSS로 폴백. 둘 다 ad 검수 전용.
     if (src.ph && process.env.PH_TOKEN) return takeItems(await fetchPH(src), src);
     const url = sourceUrl(src);
-    let res = await fetch(url, { headers: { "User-Agent": `semopl-collector/1.0 (+${process.env.SITE_URL ?? "https://comdows.github.io/web1"}/)` } });
+    let res = await fetch(url, { headers: { "User-Agent": `semopl-collector/1.0 (+${process.env.SITE_URL ?? "https://comdows.github.io/semopl"}/)` } });
     if (res.status === 403 || res.status === 405) {
       // 일부 피드(요즘IT 405 등)가 비브라우저 UA를 차단 — 브라우저 헤더로 1회 재시도
       // (compatible; RSSReader/1.0 재시도는 여전히 405 — run 29514189332)

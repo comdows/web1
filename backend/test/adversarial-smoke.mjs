@@ -3,7 +3,7 @@
  * 실행법은 backend/test/README.md 참조. CI 미연결(브라우저 무거움) — 릴리스 전 로컬 수동. */
 import { chromium } from "/opt/node22/lib/node_modules/playwright/index.mjs";
 
-const BASE = process.env.SMOKE_BASE || "http://localhost:4293/web1/";
+const BASE = process.env.SMOKE_BASE || "http://localhost:4293/semopl/";
 const results = [];
 const ok = (name, cond) => { results.push([cond ? "PASS" : "FAIL", name]); if (!cond) process.exitCode = 1; };
 
